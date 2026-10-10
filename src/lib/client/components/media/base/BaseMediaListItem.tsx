@@ -25,17 +25,19 @@ import {
 
 
 interface BaseMediaListItemProps {
-    showMediaType?: boolean;
-    loadEditDetails?: boolean;
-    onEdited?: () => Promise<void>;
+    rank?: number;
     isCurrent: boolean;
     isConnected: boolean;
     mediaType: MediaType;
+    showMediaType?: boolean;
     rating: React.ReactNode;
     userMedia: UserMediaItem;
+    loadEditDetails?: boolean;
     isMediaTypeActive: boolean;
+    annotation?: string | null;
     redoDisplay?: React.ReactNode;
     allStatuses: readonly Status[];
+    onEdited?: () => Promise<void>;
     ratingDisplay?: React.ReactNode;
     mediaDetailsDisplay?: React.ReactNode;
     queryOption: ReturnType<typeof mediaListOptions>;
@@ -44,19 +46,22 @@ interface BaseMediaListItemProps {
 
 export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     const [dialogOpen, setDialogOpen] = useState(false);
+
     const {
+        rank,
         rating,
-        showMediaType,
         onEdited,
-        loadEditDetails,
-        isCurrent,
         mediaType,
         userMedia,
+        isCurrent,
+        annotation,
         redoDisplay,
         queryOption,
         isConnected,
         allStatuses,
+        showMediaType,
         ratingDisplay,
+        loadEditDetails,
         isMediaTypeActive,
         mediaDetailsDisplay
     } = props;
@@ -67,11 +72,13 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     return (
         <>
             <MediaCard item={userMedia} mediaType={mediaType}>
-                {showMediaDetails &&
+                {(rank !== undefined || showMediaDetails) &&
                     <MediaCardLeftCorner>
-                        {mediaDetailsDisplay}
+                        {rank !== undefined && <span>#{rank}</span>}
+                        {showMediaDetails && mediaDetailsDisplay}
                     </MediaCardLeftCorner>
                 }
+
                 {isConnected &&
                     <MediaCardRightCorner>
                         {isCurrent ?
@@ -116,6 +123,11 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                             </Badge>
                         </MediaCardDetails>
                         <MediaCardSignals>
+                            {annotation &&
+                                <span role="group" aria-label="Collection note">
+                                    <DisplayComment content={annotation}/>
+                                </span>
+                            }
                             {userMedia.comment &&
                                 <DisplayComment
                                     content={userMedia.comment}
@@ -133,12 +145,12 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
             </MediaCard>
 
             <UserMediaEditDialog
-                mediaType={mediaType}
                 onEdited={onEdited}
-                loadDetails={loadEditDetails}
+                mediaType={mediaType}
                 userMedia={userMedia}
                 dialogOpen={dialogOpen}
                 queryOption={queryOption}
+                loadDetails={loadEditDetails}
                 onOpenChange={() => setDialogOpen(false)}
             />
         </>

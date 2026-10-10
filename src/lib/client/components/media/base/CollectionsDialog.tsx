@@ -193,7 +193,8 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
 
                     <div className="p-4 border-t flex items-center justify-between bg-popover">
                         <Link
-                            to="/collections/user/$username"
+                            to="/lists/$username"
+                            search={{ kind: "collections" }}
                             params={{ username: currentUser!.name }}
                             className="flex items-center gap-1.5 text-xs text-foreground/90 hover:text-brand transition-colors"
                         >

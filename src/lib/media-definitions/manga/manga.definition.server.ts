@@ -1,15 +1,24 @@
 import {getTableColumns, ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {createArrayFilter} from "@/lib/server/domain/media/base/media-list.queries";
 import {MANGA_FIXED_DURATION_MIN, mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+
+
+const tables = {
+    mediaTable: manga,
+    listTable: mangaList,
+    genreTable: mangaGenre,
+    tagTable: mangaTags,
+    deleteDependents: [mangaAuthors, mangaGenre, mangaTags],
+};
 
 
 const sortColumns = {
-    ...getCommonMediaSortColumns({ mediaTable: manga, listTable: mangaList }),
+    ...getCommonMediaSortColumns(tables),
     redo: mangaList.redo,
     chapters: manga.chapters,
     providerRating: manga.voteAverage,
@@ -23,13 +32,16 @@ export const mangaServerDefinition = defineServerMediaDefinition({
     },
     repository: {
         sortColumns,
-        tables: {
-            mediaTable: manga,
-            listTable: mangaList,
-            genreTable: mangaGenre,
-            tagTable: mangaTags,
-            deleteDependents: [mangaAuthors, mangaGenre, mangaTags],
-        },
+        filters: defineMediaFilterDefinitions(mangaDefinition, tables, {
+            authors: {
+                entityTable: mangaAuthors,
+                filterColumn: mangaAuthors.name,
+            },
+            publishers: {
+                filterColumn: manga.publishers,
+            },
+        }),
+        tables,
         popularity: {
             eligibility: sql`${manga.voteCount} >= 5000`,
         },
@@ -40,20 +52,6 @@ export const mangaServerDefinition = defineServerMediaDefinition({
                 imageCover: manga.imageCover,
                 ...getTableColumns(mangaList),
             },
-            filters: {
-                authors: createArrayFilter({
-                    argName: "authors",
-                    mediaTable: manga,
-                    entityTable: mangaAuthors,
-                    filterColumn: mangaAuthors.name,
-                }),
-                publishers: createArrayFilter({
-                    argName: "publishers",
-                    mediaTable: manga,
-                    filterColumn: manga.publishers,
-                }),
-            },
-            filterOptions: {},
             defaultSort: getMediaSortLabel(mangaDefinition, mangaDefinition.sorting.default),
             sorts: createMediaListSorts(mangaDefinition, sortColumns, manga.id),
         },

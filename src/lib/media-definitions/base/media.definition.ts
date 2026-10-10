@@ -1,4 +1,5 @@
 import type {MediaSortKey} from "@/lib/media-definitions/base/media-sorting";
+import type {commonMediaFilters, MediaFilterSchemas} from "@/lib/media-definitions/base/media-filters";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {ContinueDefinition} from "@/lib/media-definitions/base/continue.definition";
 
@@ -60,11 +61,6 @@ type MediaProgressDefinition = Readonly<{
 
 export type MediaDefinition<TMediaType extends MediaType = MediaType> = Readonly<{
     statuses: readonly Status[];
-    sorting: Readonly<{
-        default: MediaSortKey;
-        options: readonly MediaSortKey[];
-        labels?: Readonly<Partial<Record<MediaSortKey, string>>>;
-    }>;
     statistics: MediaStatsDefinition;
     progress: MediaProgressDefinition;
     continue: ContinueDefinition<TMediaType> | (TMediaType extends typeof MediaType.MOVIES ? null : never);
@@ -73,6 +69,15 @@ export type MediaDefinition<TMediaType extends MediaType = MediaType> = Readonly
     }>;
     externalSearch?: Readonly<{
         provider: ApiProviderType;
+    }>;
+    filters: Readonly<{
+        metadata: MediaFilterSchemas;
+        common: Readonly<Partial<typeof commonMediaFilters>>;
+    }>;
+    sorting: Readonly<{
+        default: MediaSortKey;
+        options: readonly MediaSortKey[];
+        labels?: Readonly<Partial<Record<MediaSortKey, string>>>;
     }>;
     terminology: Readonly<{
         entry: Readonly<{

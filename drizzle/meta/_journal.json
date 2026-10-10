@@ -407,6 +407,13 @@
       "when": 1791291883760,
       "tag": "0057_mixed_media_collections",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1791538978048,
+      "tag": "0058_collection_profile_pins",
+      "breakpoints": true
     }
   ]
 }

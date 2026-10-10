@@ -3,6 +3,7 @@ import {MutationObserver, QueryClient, QueryObserver} from "@tanstack/react-quer
 import {MediaType, Status} from "@/lib/utils/enums";
 import {ContinueItem, continueOptions} from "@/lib/client/react-query/query-options/continue.options";
 import {useContinueMediaMutation} from "./continue.mutations";
+import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
 
 
 const mocks = vi.hoisted(() => ({ save: vi.fn(), toast: vi.fn(), navigate: vi.fn() }));
@@ -20,6 +21,7 @@ vi.mock("@tanstack/react-router", () => ({ useNavigate: () => mocks.navigate }))
 vi.mock("@/lib/client/hooks/use-auth", () => ({ useAuth: () => ({ currentUser: { name: "alice" } }) }));
 vi.mock("@/lib/client/components/ui/toast", () => ({ toast: { add: mocks.toast } }));
 vi.mock("@/lib/server/functions/continue", () => ({ postContinueMedia: mocks.save, getContinueMedia: vi.fn() }));
+vi.mock("@/lib/server/functions/profile-pins", () => ({ getProfilePins: vi.fn(), getOwnProfilePins: vi.fn() }));
 vi.mock("@/lib/client/react-query/query-options", async () => ({
     ...await import("@/lib/client/react-query/query-options/continue.options"),
     mediaDetailsOptions: (type: MediaType, id: number) => ({ queryKey: ["details", type, id] }),
@@ -48,6 +50,7 @@ describe("Continue quick updates", () => {
         const secondaryKeys = [
             ["profile", "header", "alice"],
             ["profile", "summary", "alice"],
+            [...profilePinsOptions("alice").queryKey],
             ["allUpdates", "alice", {}],
             ["details", MediaType.MANGA, 1],
             ["userList", MediaType.MANGA, "alice", {}],

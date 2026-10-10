@@ -1,12 +1,13 @@
 import {beforeEach, afterEach, describe, expect, it, vi} from "vitest";
 import {MutationObserver, QueryClient, QueryObserver} from "@tanstack/react-query";
-import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 import {listFiltersOptions} from "@/lib/client/react-query/query-options/user-media.options";
 import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options/activity.options";
-import {useAddMediaToListMutation, useDeleteProfileUpdateMutation, useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
+import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
+import {useAddMediaToListMutation, useDeleteProfileUpdateMutation, useEditTagMutation, useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
 
 
 const server = vi.hoisted(() => ({
@@ -17,6 +18,7 @@ const server = vi.hoisted(() => ({
     deleteUpdates: vi.fn(),
     activityStats: vi.fn(),
     listFilters: vi.fn(),
+    editTag: vi.fn(),
     correction: vi.fn(),
     toast: vi.fn(),
 }));
@@ -44,6 +46,7 @@ vi.mock("@/lib/server/functions/user-media", () => ({
     postRemoveMediaFromList: server.remove,
     postUpdateUserCustomCover: server.cover,
     postDeleteUserUpdates: server.deleteUpdates,
+    postEditUserTag: server.editTag,
 }));
 vi.mock("@/lib/server/functions/user-monthly-activity", () => ({
     getMonthlyActivityStats: server.activityStats,
@@ -51,6 +54,7 @@ vi.mock("@/lib/server/functions/user-monthly-activity", () => ({
 vi.mock("@/lib/server/functions/media-lists", () => ({
     getMediaListFilters: server.listFilters,
 }));
+vi.mock("@/lib/server/functions/profile-pins", () => ({ getProfilePins: vi.fn(), getOwnProfilePins: vi.fn() }));
 vi.mock("@/lib/client/react-query/query-options", () => ({
     mediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["details", mediaType, mediaId] }),
     historyOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["onOpenHistory", mediaType, mediaId] }),
@@ -59,6 +63,7 @@ vi.mock("@/lib/client/react-query/query-options", () => ({
     profileRecentFeedOptions: (username: string) => ({ queryKey: ["profile", "recent-feed", username] }),
     profileSummaryOptions: (username: string) => ({ queryKey: ["profile", "summary", username] }),
     continueOptions: (username: string) => ({ queryKey: ["continue", username] }),
+    tagNamesOptions: (mediaType: MediaType) => ({ queryKey: ["tagNames", mediaType] }),
 }));
 vi.mock("@/lib/client/components/media/base/UserMediaDetails", () => ({ UserMediaDetails: () => null }));
 vi.mock("@/lib/client/components/ui/dialog", () => ({
@@ -148,6 +153,66 @@ describe("adding completed media", () => {
 });
 
 describe("list filter freshness", () => {
+    it.each([TagAction.RENAME, TagAction.DELETE_ALL])("refreshes tracking tags and cached tag names after %s", async action => {
+        const listKey = ["userList", MediaType.MOVIES, "alice", {}];
+        const detailsKey = ["details", MediaType.MOVIES, 3];
+        const otherUserKey = ["userList", MediaType.MOVIES, "bob", {}];
+        const otherMediaKey = ["userList", MediaType.BOOKS, "alice", {}];
+        const namesKey = ["tagNames", MediaType.MOVIES];
+        const pinsKey = profilePinsOptions("alice").queryKey;
+        const otherPinsKey = profilePinsOptions("bob").queryKey;
+        const previous = [{ name: "Old name" }, { name: "Keep" }];
+        const tags = action === TagAction.RENAME ? [{ name: "New name" }, { name: "Keep" }] : [{ name: "Keep" }];
+        queryClient.setQueryData(namesKey, previous);
+        for (const key of [pinsKey, otherPinsKey]) queryClient.setQueryData(key, { items: [], activeMediaTypes: [] });
+        for (const key of [listKey, detailsKey, otherUserKey, otherMediaKey]) queryClient.setQueryData(key, { tags: previous });
+        server.editTag.mockResolvedValueOnce(action === TagAction.RENAME ? { name: "New name" } : undefined);
+
+        await useEditTagMutation(MediaType.MOVIES).mutateAsync({
+            action,
+            tag: action === TagAction.RENAME ? { name: "New name", oldName: "Old name" } : { name: "Old name" },
+        });
+
+        expect(queryClient.getQueryData(namesKey)).toEqual(tags);
+        expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
+        expect(queryClient.getQueryState(detailsKey)?.isInvalidated).toBe(true);
+        expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);
+        expect(queryClient.getQueryState(otherMediaKey)?.isInvalidated).toBe(false);
+        expect(queryClient.getQueryState(pinsKey)?.isInvalidated).toBe(true);
+        expect(queryClient.getQueryState(otherPinsKey)?.isInvalidated).toBe(false);
+    });
+
+    it.each(["details", "userList"] as const)("reloads chosen platform filters after editing from %s", async source => {
+        const filtersOptions = listFiltersOptions(MediaType.GAMES, "alice");
+        const initialFilters = { genres: [], tags: [], platforms: [{ name: GamesPlatformsEnum.PC }] };
+        const updatedFilters = { genres: [], tags: [], platforms: [{ name: GamesPlatformsEnum.NINTENDO_SWITCH }] };
+        server.listFilters.mockResolvedValue(initialFilters);
+        await queryClient.fetchQuery(filtersOptions);
+        server.listFilters.mockResolvedValue(updatedFilters);
+
+        const otherUserKey = listFiltersOptions(MediaType.GAMES, "bob").queryKey;
+        const otherMediaKey = listFiltersOptions(MediaType.MOVIES, "alice").queryKey;
+        queryClient.setQueryData(otherUserKey, initialFilters);
+        queryClient.setQueryData(otherMediaKey, initialFilters);
+
+        const mutationKey = source === "details"
+            ? ["details", MediaType.GAMES, 1] as const
+            : ["userList", MediaType.GAMES, "alice", {}] as const;
+        queryClient.setQueryData(mutationKey, source === "details"
+            ? { userMedia: item }
+            : { results: { items: [item] } });
+        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, platform: GamesPlatformsEnum.NINTENDO_SWITCH } });
+
+        await useUpdateUserMediaMutation(MediaType.GAMES, 1, { queryKey: mutationKey } as UserMediaQueryOption)
+            .mutateAsync({ payload: { type: UpdateType.PLATFORM, platform: GamesPlatformsEnum.NINTENDO_SWITCH } });
+
+        expect(await queryClient.fetchQuery(filtersOptions)).toEqual(updatedFilters);
+        expect(server.listFilters).toHaveBeenCalledTimes(2);
+        expect(server.listFilters).toHaveBeenLastCalledWith({ data: { mediaType: MediaType.GAMES, username: "alice" } });
+        expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);
+        expect(queryClient.getQueryState(otherMediaKey)?.isInvalidated).toBe(false);
+    });
+
     it.each([
         ["add", "details"],
         ["add", "userList"],
@@ -229,6 +294,7 @@ describe("profile progress refresh", () => {
             ["profile", "summary", "alice"],
             ["profile", "header", "alice"],
             ["allUpdates", "alice", {}],
+            [...profilePinsOptions("alice").queryKey],
         ];
         const stableKeys = [
             ["profile", "alice"],
@@ -237,6 +303,7 @@ describe("profile progress refresh", () => {
             ["profile", "summary", "bob"],
             ["profile", "header", "bob"],
             ["continue", "bob"],
+            [...profilePinsOptions("bob").queryKey],
         ];
         const queries = [...progressKeys, ...stableKeys].map(key => {
             queryClient.setQueryData(key, { version: "before" });
@@ -374,10 +441,15 @@ describe("list editing refresh timing", () => {
         server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, comment: null } });
         await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
             .mutateAsync({ payload: { type: UpdateType.COMMENT, comment: null } });
+        const pinsKey = profilePinsOptions("alice").queryKey;
+        const otherPinsKey = profilePinsOptions("bob").queryKey;
+        for (const key of [pinsKey, otherPinsKey]) queryClient.setQueryData(key, { items: [], activeMediaTypes: [] });
         server.cover.mockResolvedValueOnce({ ...item, customCover: "/custom.jpg" });
         await useUpdateCustomCoverMutation(queryOption).mutateAsync({ data: new FormData() });
 
         expect(fetchList).not.toHaveBeenCalled();
+        expect(queryClient.getQueryState(pinsKey)?.isInvalidated).toBe(true);
+        expect(queryClient.getQueryState(otherPinsKey)?.isInvalidated).toBe(false);
         expect(queryClient.getQueryData<typeof initialList>(queryKey)?.results.items[0]).toMatchObject({
             comment: null,
             customCover: "/custom.jpg",

@@ -1,10 +1,22 @@
 import {describe, expect, it} from "vitest";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {jobDetailsSchema} from "./media-details.schema";
-import {mediaCatalogBrowseSearchSchema} from "./media-browse.schema";
+import {mediaBrowseFiltersSchema, mediaCatalogBrowseSearchSchema} from "./media-browse.schema";
 
 
 describe("catalogue browsing URL controls", () => {
+    it("retains bounded browsing filters and rating coercion while recovering malformed search", () => {
+        expect(mediaBrowseFiltersSchema.parse({
+            search: 1, minRating: "8.5", genres: ["  Drama  "], favorite: false, unknown: true,
+        })).toEqual({ search: undefined, minRating: 8.5, genres: ["Drama"], favorite: false });
+
+        for (const filters of [
+            { minRating: -1 }, { minRating: 11 }, { favorite: "true" },
+            { genres: Array.from({ length: 21 }, (_, index) => `Genre ${index}`) },
+            { mediaFilters: { books: { favorite: true } } },
+        ]) expect(mediaBrowseFiltersSchema.safeParse(filters).success).toBe(false);
+    });
+
     it("strips removed personal filters and sorting while retaining catalogue controls", () => {
         expect(mediaCatalogBrowseSearchSchema.parse({
             search: "movie", status: Status.COMPLETED, genres: ["Drama"], tags: ["Viewer tag"],

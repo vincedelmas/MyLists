@@ -1,3 +1,4 @@
+import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
@@ -6,6 +7,14 @@ export const MOVIES_FALLBACK_DURATION = 100;
 
 
 export const moviesDefinition = defineMediaDefinition({
+    filters: {
+        common: commonMediaFilters,
+        metadata: {
+            actors: mediaFilterNamesSchema,
+            directors: mediaFilterNamesSchema,
+            langs: mediaFilterNamesSchema,
+        },
+    },
     continue: null,
     statuses: [Status.COMPLETED, Status.PLAN_TO_WATCH],
     sorting: {

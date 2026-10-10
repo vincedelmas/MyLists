@@ -52,7 +52,7 @@ export const CollectionsLists = ({ mediaType, mediaId, isAnonymous }: Collection
                             activeCollections.map((collection) =>
                                 <Link
                                     key={collection.id}
-                                    to="/collections/$collectionId"
+                                    to="/lists/collections/$collectionId"
                                     params={{ collectionId: collection.id }}
                                     className="block rounded-lg p-3 transition-colors hover:bg-accent/50"
                                 >

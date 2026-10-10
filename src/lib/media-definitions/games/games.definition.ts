@@ -1,10 +1,19 @@
+import * as z from "zod";
+import {commonMediaFilters, MAX_MEDIA_FILTER_VALUES, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {PLAYTIME_MAX_MINUTES} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
-import {ApiProviderType, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {ApiProviderType, GamesPlatformsEnum, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 
 
 export const gamesDefinition = defineMediaDefinition({
+    filters: {
+        common: commonMediaFilters,
+        metadata: {
+            companies: mediaFilterNamesSchema,
+            platforms: z.array(z.enum(GamesPlatformsEnum)).max(MAX_MEDIA_FILTER_VALUES),
+        },
+    },
     continue: {
         status: Status.PLAYING,
         getUpdate: (state: ContinueStateByType[typeof MediaType.GAMES]) => {

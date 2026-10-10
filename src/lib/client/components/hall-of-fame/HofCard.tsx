@@ -89,7 +89,7 @@ export const HofCard = ({ userData }: HofCardProps) => {
                         <Link
                             key={mediaType}
                             disabled={!setting?.active}
-                            to="/list/$mediaType/$username"
+                            to="/lists/tracking/$mediaType/$username"
                             params={{ mediaType, username: userData.name }}
                             className={cn("group/media flex min-w-0 items-center gap-2", !setting?.active && "pointer-events-none opacity-40")}
                         >

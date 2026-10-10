@@ -1,6 +1,7 @@
 import {ColumnDef} from "@tanstack/react-table";
 import {MediaStatsFor} from "@/lib/types/stats.types";
 import {formatNumber} from "@/lib/utils/formatting/number";
+import {formatLocaleName} from "@/lib/utils/formatting/text";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {ExtractListByType} from "@/lib/types/query.options.types";
 import {JobType, MediaType, TvMediaType} from "@/lib/utils/enums";
@@ -13,11 +14,10 @@ import {getTvColumns} from "@/lib/client/components/media/tv/TvListColumns";
 import {TvUserDetails} from "@/lib/client/components/media/tv/TvUserDetails";
 import {TvExtraSections} from "@/lib/client/components/media/tv/TvExtraSections";
 import {TvUpComingAlert} from "@/lib/client/components/media/tv/TvUpComingAlert";
-import {getTvActiveFilters} from "@/lib/client/components/media/tv/TvActiveFilters";
 import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
 import {Clapperboard, RadioTower, SquareStack, UserRound, XLineTop} from "lucide-react";
 import {getTvContinueProgress} from "@/lib/client/components/media/tv/continue-progress";
-import {defineMediaConfig, MediaStatCardDefinition} from "@/lib/client/components/media/media-config.types";
+import {defineMediaConfig, MediaClientConfig, MediaStatCardDefinition} from "@/lib/client/components/media/media-config.types";
 
 
 const getTvStatCards = (stats: MediaStatsFor<TvMediaType>): MediaStatCardDefinition[] => [
@@ -36,6 +36,14 @@ const getTvStatCards = (stats: MediaStatsFor<TvMediaType>): MediaStatCardDefinit
 ];
 
 
+const tvMetadataFilters = {
+    actors: { title: "Actors", type: "search" },
+    creators: { title: "Creators", type: "search" },
+    networks: { title: "Networks", type: "search" },
+    langs: { title: "Countries", type: "checkbox", render: name => formatLocaleName(name, "region") },
+} satisfies MediaClientConfig<TvMediaType>["metadataFilters"];
+
+
 const createTvMediaConfig = <T extends TvMediaType>(mediaType: T) => defineMediaConfig<T>({
     mediaType,
     infoGrid: TvInfoGrid,
@@ -46,7 +54,7 @@ const createTvMediaConfig = <T extends TvMediaType>(mediaType: T) => defineMedia
     upComingAlert: TvUpComingAlert,
     extraSections: TvExtraSections,
     mediaUserDetails: TvUserDetails,
-    sheetFilters: getTvActiveFilters,
+    metadataFilters: tvMetadataFilters as MediaClientConfig<T>["metadataFilters"],
     continue: {
         getProgress: getTvContinueProgress,
     },

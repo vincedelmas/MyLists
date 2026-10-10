@@ -23,7 +23,7 @@ export class CollectionsService {
     ) {
     }
 
-    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor, filters: MediaBrowseFilters = { page: 1 }) {
+    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor, filters: MediaBrowseFilters = { page: 1 }, includeFilterOptions = false) {
         const collection = this.repository.getCollectionById(collectionId);
         if (!collection) throw notFound();
 
@@ -36,11 +36,11 @@ export class CollectionsService {
         const [isLiked, capabilities] = await Promise.all([
             actor.kind === "user" ? this.repository.findLikedCollection(actor.id, collectionId) : Promise.resolve(null),
             this.authorizationService.getCollectionCapabilities(actor, collection),
-            this.repository.incrementViewCount(collectionId),
+            includeFilterOptions ? undefined : this.repository.incrementViewCount(collectionId),
         ]);
 
         if (mode === "read") {
-            const results = await this.repository.getPaginatedCollectionItems(collectionId, collection.mediaTypes, filters, viewerId);
+            const results = await this.repository.getPaginatedCollectionItems(collectionId, collection.mediaTypes, filters, viewerId, includeFilterOptions);
 
             return {
                 ...results,
@@ -57,6 +57,7 @@ export class CollectionsService {
             const media = mediaMap.get(toItemKey(item))!;
 
             return {
+                userMedia: null,
                 status: null,
                 rating: null,
                 addedAt: null,
@@ -90,13 +91,13 @@ export class CollectionsService {
         };
     }
 
-    async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType) {
-        const collections = await this.repository.getUserCollections(targetUserId, actor, mediaType);
+    async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType, pinnedOnly = false) {
+        const collections = await this.repository.getUserCollections(targetUserId, actor, mediaType, pinnedOnly);
         return this._enrichWithPreviews(collections, actor);
     }
 
-    async getPaginatedUserCollections(targetUserId: number, params: Omit<UserCollectionsSearch, "username">, actor: Actor) {
-        const paginatedCollections = await this.repository.getPaginatedUserCollections(targetUserId, actor, params);
+    async getPaginatedUserCollections(targetUserId: number, params: Omit<UserCollectionsSearch, "username">, actor: Actor, publicOnly = false) {
+        const paginatedCollections = await this.repository.getPaginatedUserCollections(targetUserId, actor, params, publicOnly);
         const results = await this._enrichWithPreviews(paginatedCollections.items, actor);
 
         return {

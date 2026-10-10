@@ -1,9 +1,9 @@
 import {expect, runBun, signIn, test} from "../../../../../scripts/e2e/fixtures";
-import {browseActor, browseDirector, browseGem, browseMovies} from "../collections/-browse.data";
+import {browseActor, browseDirector, browseGem, browseMovies} from "../lists/collections/-browse.data";
 
 
 test("filters job titles by viewer membership with shared sorting and preserves pagination criteria", async ({ page }) => {
-    await runBun(["src/routes/_main/_viewer/collections/-browse.fixtures.ts"]);
+    await runBun(["src/routes/_main/_viewer/lists/collections/-browse.fixtures.ts"]);
     await page.goto(`/details/movies/actor/${encodeURIComponent(browseActor)}`);
     const controls = page.getByRole("group", { name: "Media browsing controls", exact: true });
     const results = page.locator('[aria-label="Browsing results and filters"]');

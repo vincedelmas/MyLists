@@ -69,7 +69,7 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
                         <Link
                             key={tag.name}
                             search={{ tags: [tag.name] }}
-                            to="/list/$mediaType/$username"
+                            to="/lists/tracking/$mediaType/$username"
                             params={{ mediaType, username: currentUser!.name }}
                         >
                             <Badge key={tag.name} variant="tag" className="max-w-50">

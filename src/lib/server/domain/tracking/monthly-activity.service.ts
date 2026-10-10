@@ -91,7 +91,7 @@ export class MonthlyActivityService {
 
     async getMonthlyActivityStats(userId: number, filters: MonthlyActivityStatsFilters) {
         const range = getActivityMonthRange(filters.year, filters.month, filters.view);
-        const mediaTypes = filters.mediaType ? [filters.mediaType] : Object.values(MediaType);
+        const mediaTypes = Object.values(MediaType);
 
         const activities = await this.repository.getMonthlyStatsContributions(userId, mediaTypes, range.startMonth, range.endMonth);
         const mediaDetailsByType = await resolveMonthlyActivityMedia(activities, this.mediaMonthlyActivityRegistry);

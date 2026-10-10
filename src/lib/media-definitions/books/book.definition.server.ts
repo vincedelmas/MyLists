@@ -2,14 +2,23 @@ import {getTableColumns, ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
-import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+
+
+const tables = {
+    mediaTable: books,
+    listTable: booksList,
+    genreTable: booksGenre,
+    tagTable: booksTags,
+    deleteDependents: [booksAuthors, booksGenre, booksTags],
+};
 
 
 const sortColumns = {
-    ...getCommonMediaSortColumns({ mediaTable: books, listTable: booksList }),
+    ...getCommonMediaSortColumns(tables),
     redo: booksList.redo,
     pages: books.pages,
 };
@@ -22,39 +31,22 @@ export const booksServerDefinition = defineServerMediaDefinition({
     },
     repository: {
         sortColumns,
-        tables: {
-            mediaTable: books,
-            listTable: booksList,
-            genreTable: booksGenre,
-            tagTable: booksTags,
-            deleteDependents: [booksAuthors, booksGenre, booksTags],
-        },
+        filters: defineMediaFilterDefinitions(booksDefinition, tables, {
+            langs: {
+                filterColumn: books.language,
+            },
+            authors: {
+                entityTable: booksAuthors,
+                filterColumn: booksAuthors.name,
+            },
+        }),
+        tables,
         listQuery: {
             selection: {
                 pages: books.pages,
                 mediaName: books.name,
                 imageCover: books.imageCover,
                 ...getTableColumns(booksList),
-            },
-            filters: {
-                langs: createArrayFilter({
-                    argName: "langs",
-                    mediaTable: books,
-                    filterColumn: books.language,
-                }),
-                authors: createArrayFilter({
-                    argName: "authors",
-                    mediaTable: books,
-                    entityTable: booksAuthors,
-                    filterColumn: booksAuthors.name,
-                }),
-            },
-            filterOptions: {
-                langs: createMediaColOptionsLoader({
-                    mediaTable: books,
-                    listTable: booksList,
-                    nameColumn: books.language,
-                }),
             },
             defaultSort: getMediaSortLabel(booksDefinition, booksDefinition.sorting.default),
             sorts: createMediaListSorts(booksDefinition, sortColumns, books.id),

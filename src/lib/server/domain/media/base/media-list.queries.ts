@@ -1,40 +1,12 @@
-import {MediaListArgs} from "@/lib/schemas";
+import type {MediaListArgs} from "@/lib/schemas/media-lists.schema";
 import {user} from "@/lib/server/database/schema";
-import type {IdNamePair} from "@/lib/types/media-common.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
+import type {IdNamePair} from "@/lib/types/media-common.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import type {ExpandedListFilters, MediaListData} from "@/lib/types/media-list.types";
 import type {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {and, asc, count, eq, inArray, isNotNull, like, notInArray, or, type SQL, sql} from "drizzle-orm";
-
-
-export type FilterDefinitions = Partial<Record<keyof MediaListArgs, FilterDefinition>>;
-export type FilterOptionLoaders = Record<string, (userId: number) => Promise<{ name: string }[]>>;
-
-type FilterDefinition = {
-    isActive: (args: MediaListArgs) => boolean;
-    getCondition: (args: MediaListArgs) => SQL | undefined;
-};
-
-type ArrayFilterDefinition = {
-    filterColumn: SQLiteColumn;
-    argName: keyof MediaListArgs;
-    mediaTable: SQLiteTable & { id: SQLiteColumn };
-    entityTable?: SQLiteTable & { mediaId: SQLiteColumn };
-    entityScope?: (args: MediaListArgs) => SQL | undefined;
-};
-
-type ListColOptionsDefinition = {
-    nameColumn: SQLiteColumn;
-    listTable: SQLiteTable & { userId: SQLiteColumn };
-};
-
-type MediaColOptionsDefinition = {
-    nameColumn: SQLiteColumn;
-    mediaTable: SQLiteTable & { id: SQLiteColumn };
-    listTable: SQLiteTable & { mediaId: SQLiteColumn; userId: SQLiteColumn };
-};
+import {and, asc, count, eq, inArray, notInArray, sql} from "drizzle-orm";
+import {getMediaCommonFilterConditions, getMediaMetadataFilterConditions, getMediaMetadataFilterOptions, getMediaNameSearchCondition} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
@@ -55,85 +27,30 @@ export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinit
 export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
     const { listQuery, tables: { listTable, mediaTable, tagTable, genreTable } } = definition;
 
-    const mediaNameSearchCondition = (query: string) => {
-        const pattern = `%${query}%`;
-        const nameCondition = like(mediaTable.name, pattern);
-
-        return mediaTable.originalName
-            ? or(nameCondition, like(mediaTable.originalName, pattern))
-            : nameCondition;
-    };
-
-    const baseFilterDefs: FilterDefinitions = {
-        search: {
-            isActive: (args: MediaListArgs) => !!args.search,
-            getCondition: (args: MediaListArgs) => mediaNameSearchCondition(args.search!),
-        },
-        favorite: {
-            isActive: (args: MediaListArgs) => args.favorite === true,
-            getCondition: (_args: MediaListArgs) => eq(listTable.favorite, true),
-        },
-        comment: {
-            isActive: (args: MediaListArgs) => args.comment === true,
-            getCondition: (_args: MediaListArgs) => isNotNull(listTable.comment),
-        },
-        hideCommon: {
-            isActive: (args: MediaListArgs) => args.hideCommon === true && !!args.currentUserId && args.currentUserId !== args.userId,
-            getCondition: (args: MediaListArgs) => {
-                const subQuery = getDbClient()
-                    .select({ mediaId: listTable.mediaId })
-                    .from(listTable)
-                    .where(eq(listTable.userId, args.currentUserId!));
-                return notInArray(listTable.mediaId, subQuery);
-            },
-        },
-        status: createArrayFilter({
-            argName: "status",
-            mediaTable: mediaTable,
-            filterColumn: listTable.status,
-        }),
-        tags: createArrayFilter({
-            argName: "tags",
-            mediaTable: mediaTable,
-            entityTable: tagTable,
-            filterColumn: tagTable.name,
-            entityScope: (args) => eq(tagTable.userId, args.userId!),
-        }),
-        genres: createArrayFilter({
-            argName: "genres",
-            mediaTable: mediaTable,
-            entityTable: genreTable,
-            filterColumn: genreTable.name,
-        }),
-    };
-
     return {
         async getListFilters(userId: number): Promise<ExpandedListFilters> {
-            const { filterOptions } = listQuery;
-
-            const genresPromise = getDbClient()
+            const genresPromise = definition.filters.common.genres ? getDbClient()
                 .selectDistinct({ name: sql<string>`${genreTable.name}` })
                 .from(genreTable)
                 .innerJoin(listTable, eq(listTable.mediaId, genreTable.mediaId))
                 .where(eq(listTable.userId, userId))
-                .orderBy(asc(genreTable.name));
+                .orderBy(asc(genreTable.name)) : [];
 
-            const tagsPromise = getDbClient()
+            const tagsPromise = definition.filters.common.tags ? getDbClient()
                 .selectDistinct({ name: sql<string>`${tagTable.name}` })
                 .from(tagTable)
-                .where(and(eq(tagTable.userId, userId)))
-                .orderBy(asc(tagTable.name));
+                .where(eq(tagTable.userId, userId))
+                .orderBy(asc(tagTable.name)) : [];
 
             const [genres, tags] = await Promise.all([genresPromise, tagsPromise]);
 
-            const specificEntries = await Promise.all(Object
-                .entries(filterOptions)
-                .map(async ([name, loadOptions]) => [name, await loadOptions(userId)] as const));
+            const mediaIds = getDbClient().select({ mediaId: listTable.mediaId }).from(listTable)
+                .where(eq(listTable.userId, userId)).getSQL();
 
             return {
                 tags,
                 genres,
-                ...Object.fromEntries(specificEntries),
+                ...getMediaMetadataFilterOptions(definition, { mediaIds, userId }),
             };
         },
 
@@ -163,7 +80,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
                 })
                 .from(listTable)
                 .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-                .where(and(eq(listTable.userId, userId), mediaNameSearchCondition(query)))
+                .where(and(eq(listTable.userId, userId), getMediaNameSearchCondition(mediaTable, query)))
                 .orderBy(asc(mediaTable.name))
                 .limit(limit);
         },
@@ -173,11 +90,6 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
             const sortKeyName = resolveSorting(args.sorting, Object.keys(listQuery.sorts), listQuery.defaultSort);
             const selectedSort = listQuery.sorts[sortKeyName];
             const filterArgs = { ...args, currentUserId, userId };
-
-            const allFilters = {
-                ...baseFilterDefs,
-                ...listQuery.filters,
-            };
 
             // Main query builder
             let queryBuilder = getDbClient()
@@ -194,16 +106,19 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
                 .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
                 .$dynamic();
 
-            // Iterate through all filters
-            const conditions = [eq(listTable.userId, userId)];
-            for (const filterName of Object.keys(allFilters)) {
-                const currentFilter = allFilters[filterName as keyof MediaListArgs];
-                if (currentFilter?.isActive(filterArgs)) {
-                    const condition = currentFilter.getCondition(filterArgs);
-                    if (condition) {
-                        conditions.push(condition);
-                    }
-                }
+            const conditions = [
+                eq(listTable.userId, userId),
+                ...getMediaCommonFilterConditions(definition, {
+                    ...filterArgs, favorite: filterArgs.favorite === true ? true : undefined,
+                }, userId),
+                ...getMediaMetadataFilterConditions(definition, filterArgs, userId),
+            ];
+
+            if (filterArgs.hideCommon && currentUserId && currentUserId !== userId) {
+                conditions.push(notInArray(listTable.mediaId, getDbClient()
+                    .select({ mediaId: listTable.mediaId })
+                    .from(listTable)
+                    .where(eq(listTable.userId, currentUserId))));
             }
 
             // Finish building query
@@ -254,47 +169,3 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
         },
     };
 };
-
-
-const isNonEmptyArray = (value: unknown): value is unknown[] => {
-    return Array.isArray(value) && value.length > 0;
-}
-
-
-export const createArrayFilter = ({ argName, entityTable, filterColumn, mediaTable, entityScope }: ArrayFilterDefinition): FilterDefinition => {
-    return ({
-        isActive: (args) => isNonEmptyArray(args[argName]),
-        getCondition: (args) => {
-            const values = args[argName] as string[];
-            if (!entityTable) return inArray(filterColumn, values);
-
-            const subQuery = getDbClient()
-                .select({ mediaId: entityTable.mediaId })
-                .from(entityTable)
-                .where(and(inArray(filterColumn, values), entityScope?.(args)));
-
-            return inArray(mediaTable.id, subQuery);
-        },
-    });
-}
-
-
-export const createMediaColOptionsLoader = ({ mediaTable, listTable, nameColumn }: MediaColOptionsDefinition) => {
-    return async (userId: number) => {
-        return getDbClient()
-            .selectDistinct({ name: sql<string>`${nameColumn}` })
-            .from(mediaTable)
-            .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(eq(listTable.userId, userId), isNotNull(nameColumn)));
-    }
-}
-
-
-export const createListColOptionsLoader = ({ listTable, nameColumn }: ListColOptionsDefinition) => {
-    return async (userId: number) => {
-        return getDbClient()
-            .selectDistinct({ name: sql<string>`${nameColumn}` })
-            .from(listTable)
-            .where(and(eq(listTable.userId, userId), isNotNull(nameColumn)));
-    }
-}

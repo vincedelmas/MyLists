@@ -1,12 +1,13 @@
+import type {ReactNode} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Button} from "@/lib/client/components/ui/button";
 import {Link, useLocation} from "@tanstack/react-router";
-import {Award, CalendarDays, ChartNoAxesColumn, EllipsisVertical, ListOrdered, Play, User, Zap} from "lucide-react";
-import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
+import {ActionsMenu} from "@/lib/client/components/general/ActionsMenu";
+import {Award, CalendarDays, ChartNoAxesColumn, LibraryBig, Play, User, Zap} from "lucide-react";
+import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "@/lib/client/components/ui/dropdown-menu";
 
 
-export const QuickActions = ({ username, mediaType }: { username: string, mediaType?: MediaType }) => {
+export const QuickActions = ({ username, mediaType, children }: { username: string; mediaType?: MediaType; children?: ReactNode }) => {
     const { currentUser } = useAuth();
     const { pathname } = useLocation();
     const isCurrent = currentUser?.name === username;
@@ -23,14 +24,15 @@ export const QuickActions = ({ username, mediaType }: { username: string, mediaT
         ...(isCurrent ? [
             {
                 icon: Play,
-                to: "/continue",
                 label: "Continue",
-                match: "/continue",
+                params: { username },
+                to: "/lists/continue/$username",
                 search: { activeTab: mediaType },
+                match: `/lists/continue/${username}`,
             },
             {
-                to: "/release-calendar",
                 icon: CalendarDays,
+                to: "/release-calendar",
                 label: "Release Calendar",
                 match: "/release-calendar",
             },
@@ -51,11 +53,11 @@ export const QuickActions = ({ username, mediaType }: { username: string, mediaT
             label: isCurrent ? "My Activity" : "User's Activity",
         },
         {
-            icon: ListOrdered,
+            icon: LibraryBig,
             params: { username },
-            to: "/collections/user/$username",
-            match: `/collections/user/${username}`,
-            label: isCurrent ? "My Collections" : "User's Collections",
+            to: "/lists/$username",
+            match: `/lists/${username}`,
+            label: "Lists & collections",
         },
         {
             icon: Award,
@@ -67,31 +69,32 @@ export const QuickActions = ({ username, mediaType }: { username: string, mediaT
     ];
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger render={<Button size="icon" variant="hover" aria-label="Quick actions"/>}>
-                <EllipsisVertical/>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-50">
-                <DropdownMenuGroup>
-                    {actions
-                        .filter((action) => pathname !== action.match)
-                        .map((action) =>
-                            <DropdownMenuItem
-                                key={action.to}
-                                render={
-                                    <Link
-                                        to={action.to}
-                                        params={"params" in action ? action.params : undefined}
-                                        search={"search" in action ? action.search : undefined}
-                                    />
-                                }
-                            >
-                                <action.icon/>
-                                <span>{action.label}</span>
-                            </DropdownMenuItem>
-                        )}
-                </DropdownMenuGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <ActionsMenu label="Quick actions">
+            {children &&
+                <>
+                    {children}
+                    <DropdownMenuSeparator/>
+                </>
+            }
+            <DropdownMenuGroup>
+                {actions
+                    .filter((action) => pathname !== action.match)
+                    .map((action) =>
+                        <DropdownMenuItem
+                            key={action.to}
+                            render={
+                                <Link
+                                    to={action.to}
+                                    params={"params" in action ? action.params : undefined}
+                                    search={"search" in action ? action.search : undefined}
+                                />
+                            }
+                        >
+                            <action.icon/>
+                            <span>{action.label}</span>
+                        </DropdownMenuItem>
+                    )}
+            </DropdownMenuGroup>
+        </ActionsMenu>
     );
 };

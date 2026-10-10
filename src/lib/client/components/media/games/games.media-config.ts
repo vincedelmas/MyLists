@@ -13,7 +13,6 @@ import {getGamesColumns} from "@/lib/client/components/media/games/GamesListColu
 import {GamesUserDetails} from "@/lib/client/components/media/games/GamesUserDetails";
 import {GamesExtraSections} from "@/lib/client/components/media/games/GamesExtraSections";
 import {GamesUpComingAlert} from "@/lib/client/components/media/games/GamesUpComingAlert";
-import {getGamesActiveFilters} from "@/lib/client/components/media/games/GamesActiveFilters";
 import {getGamesContinueProgress} from "@/lib/client/components/media/games/continue-progress";
 import {gameSearchFilterDefinition} from "@/lib/client/components/media/games/GameSearchFilters";
 
@@ -45,7 +44,10 @@ export const gamesMediaConfig = defineMediaConfig({
     extraSections: GamesExtraSections,
     mediaListColumns: getGamesColumns,
     mediaUserDetails: GamesUserDetails,
-    sheetFilters: getGamesActiveFilters,
+    metadataFilters: {
+        companies: { title: "Companies", type: "search" },
+        platforms: { title: "Platforms", type: "checkbox" },
+    },
     continue: {
         getProgress: getGamesContinueProgress,
     },

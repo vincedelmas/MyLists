@@ -1,7 +1,6 @@
 import {toActor} from "@/lib/server/authorization";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {contentAuthorizationMiddleware} from "@/lib/server/middlewares/authorization";
 import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     collectionDetailsReadSchema,
@@ -11,8 +10,7 @@ import {
     communityCollectionsSchema,
     createCollectionSchema,
     mediaCommunityCollectionsSchema,
-    updateCollectionSchema,
-    userCollectionsSearchSchema
+    updateCollectionSchema
 } from "@/lib/schemas";
 
 
@@ -39,20 +37,10 @@ export const getMediaCommunityCollections = createServerFn({ method: "GET" })
 export const getReadCollectionDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
     .validator(collectionDetailsReadSchema)
-    .handler(async ({ data: { collectionId, ...filters }, context: { currentUser } }) => {
+    .handler(async ({ data: { collectionId, includeFilterOptions, ...filters }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser), filters);
-    });
-
-
-export const getPaginatedUserCollections = createServerFn({ method: "GET" })
-    .middleware([contentAuthorizationMiddleware])
-    .validator(userCollectionsSearchSchema)
-    .handler(async ({ data: { search, page, mediaType }, context: { user, currentUser } }) => {
-        const container = await getContainer();
-        const collectionService = container.services.collections;
-        return collectionService.getPaginatedUserCollections(user.id, { search, page, mediaType }, toActor(currentUser));
+        return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser), filters, includeFilterOptions);
     });
 
 

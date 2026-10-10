@@ -24,7 +24,7 @@ test("adds a movie and persists status and rating changes", async ({ page }) => 
     await expect(page.getByRole("combobox").filter({ hasText: "Completed" })).toBeVisible();
     await expect(rating).toContainText("8.0");
 
-    await page.goto(`/list/movies/${users.owner.name}`);
+    await page.goto(`/lists/tracking/movies/${users.owner.name}`);
     await expect(page.getByRole("link", { name: `View ${movies.editable.name}`, exact: true })).toBeVisible();
 });
 
@@ -85,12 +85,12 @@ test("corrects book activity automatically and lets the reader review older mont
     await expect(currentPage).toBeEnabled();
     await page.reload();
     await expect(currentPage).toHaveValue("290");
-    await page.goto(`/list/books/${users.owner.name}/activity?year=2025&month=7`);
+    await page.goto(`/activity/${users.owner.name}?activeTab=books&year=2025&month=7`);
     const bookActivity = page.getByRole("article").filter({ has: page.getByRole("link", { name: "View Correction book", exact: true }) });
     await expect(bookActivity.getByText("160 p.", { exact: true })).toBeVisible();
 
     // The correction prompt must work over the list's edit dialog too.
-    await page.getByRole("link", { name: "List", exact: true }).click();
+    await page.goto(`/lists/tracking/books/${users.owner.name}`);
     await page.getByRole("button", { name: "Edit Correction book", exact: true }).click();
     const editor = page.getByRole("dialog", { name: "Correction book", exact: true });
     await editor.getByLabel("Current page", { exact: true }).fill("240");
@@ -104,7 +104,7 @@ test("corrects book activity automatically and lets the reader review older mont
     await expect(page.getByText("Progress updated; activity unchanged.", { exact: true })).toBeVisible();
     await page.goto("/details/books/301");
     await expect(currentPage).toHaveValue("240");
-    await page.goto(`/list/books/${users.owner.name}/activity?year=2025&month=8`);
+    await page.goto(`/activity/${users.owner.name}?activeTab=books&year=2025&month=8`);
     await expect(bookActivity.getByText("120 p.", { exact: true })).toBeVisible();
 });
 

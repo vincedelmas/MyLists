@@ -39,7 +39,8 @@ export const ProfileQuickLinksInline = ({ username, className }: ProfileQuickLin
                 Activity
             </Link>
             <Link
-                to="/collections/user/$username"
+                to="/lists/$username"
+                search={{ kind: "collections" }}
                 params={{ username }}
                 className={linkClassName}
             >

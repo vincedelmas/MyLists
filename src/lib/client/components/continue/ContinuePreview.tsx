@@ -1,5 +1,7 @@
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
-import {ArrowRight, Play} from "lucide-react";
+import {ArrowUpRight, Play} from "lucide-react";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ContinueCard} from "@/lib/client/components/continue/ContinueCard";
@@ -9,6 +11,7 @@ import {groupContinueItems} from "@/lib/client/components/continue/group-continu
 
 
 export const ContinuePreview = ({ items, isCurrent }: { items: ContinueItem[]; isCurrent: boolean }) => {
+    const { currentUser } = useAuth();
     const isSmallScreen = useBreakpoint("sm");
     const orderedItems = useContinueOrder(items);
     const { active } = groupContinueItems(orderedItems);
@@ -20,20 +23,21 @@ export const ContinuePreview = ({ items, isCurrent }: { items: ContinueItem[]; i
             <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col gap-1">
                     <h2 id="continue-preview-title" className="flex items-center gap-2 text-sm font-semibold">
-                        <Play className="size-4 text-brand" aria-hidden="true"/>
-                        {isCurrent
-                            ? "Continue"
-                            : "In progress"
-                        }
+                        <Play className="size-4 text-brand"/>
+                        {isCurrent ? "Continue" : "In progress"}
                     </h2>
                     <p className="text-xs text-muted-foreground">
                         Currently watching, reading, or playing
                     </p>
                 </div>
                 {isCurrent &&
-                    <Link to="/continue" aria-label="View all in-progress media" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                    <Link
+                        to="/lists/continue/$username"
+                        params={{ username: currentUser!.name }}
+                        className={cn(buttonVariants({ variant: "hover", size: "sm" }))}
+                    >
                         View all
-                        <ArrowRight data-icon="inline-end"/>
+                        <ArrowUpRight data-icon="inline-end"/>
                     </Link>
                 }
             </div>

@@ -63,7 +63,6 @@ const activitySortItems: { label: string, value: ActivitySort }[] = [
 
 interface MonthlyActivityContentProps {
     username: string;
-    fixedMediaType?: MediaType;
     filters: MonthlyActivitySearch;
     activityQueryOptions: ReturnType<typeof monthlyActivityOptions>;
     activityStatsQueryOptions: ReturnType<typeof monthlyActivityStatsOptions>;
@@ -71,12 +70,11 @@ interface MonthlyActivityContentProps {
 
 
 export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
-    const { username, filters, fixedMediaType, activityQueryOptions, activityStatsQueryOptions } = props;
+    const { username, filters, activityQueryOptions, activityStatsQueryOptions } = props;
 
     const { currentUser } = useAuth();
     const canEdit = currentUser?.name === username;
     const [addActivity, setAddActivity] = useState(false);
-    const activeFilters = fixedMediaType ? { ...filters, activeTab: fixedMediaType } : filters;
     const [editActivity, setEditActivity] = useState<MonthlyActivityEditor | null>(null);
     const [occurrencesActivity, setOccurrencesActivity] = useState<MonthlyActivityEditor | null>(null);
 
@@ -84,19 +82,19 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
     const activityStats = useSuspenseQuery(activityStatsQueryOptions).data;
     const mediaTypeFilters = createMediaSelectItems(apiData.mediaTypes, { leading: "all", leadingLabel: "All types" });
 
-    const { page, view, display, sort, activeTab, hiddenOnly, activityKind, year, month, search = "" } = activeFilters;
-    const hasFilters = search !== "" || activityKind !== ActivityKind.ALL || hiddenOnly || (!fixedMediaType && activeTab !== "all");
+    const { page, view, display, sort, activeTab, hiddenOnly, activityKind, year, month, search = "" } = filters;
+    const hasFilters = search !== "" || activityKind !== ActivityKind.ALL || hiddenOnly || activeTab !== "all";
 
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<MonthlyActivitySearch>({
         search, options: { resetScroll: false },
     });
 
-    const activeMediaTypes = fixedMediaType ? [fixedMediaType] : currentUser
+    const activeMediaTypes = currentUser
         ? getActiveMediaTypes(currentUser.settings)
         : apiData.mediaTypes;
 
     const handleFilterChange = (next: Partial<MonthlyActivitySearch>) => {
-        updateFilters({ page: 1, ...next, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) });
+        updateFilters({ page: 1, ...next });
     };
 
     const handleOccurrenceSelect = (occurrence: MonthlyActivityOccurrence) => {
@@ -115,7 +113,7 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
             activeYear={Number(year)}
             activeMonth={Number(month)}
             onDateChange={(year, month, nextView) => handleFilterChange({
-                year, month, view: nextView, activeTab: fixedMediaType ?? "all",
+                year, month, view: nextView, activeTab: "all",
             })}
         />
     );
@@ -124,11 +122,10 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
         <>
             <MonthlyActivityStats
                 stats={activityStats}
-                showTotalTime={!fixedMediaType}
             />
             {hasFilters &&
                 <p className="pt-3 text-xs text-muted-foreground">
-                    Stats cover {fixedMediaType ? `all visible ${fixedMediaType} activity` : "all visible media activity"} in this period.
+                    Stats cover all visible media activity in this period.
                     Filters apply to the results below.
                 </p>
             }
@@ -152,13 +149,13 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                             label: "Filter by activity kind",
                             onChange: (value: string) => handleFilterChange({ activityKind: value as ActivityKind }),
                         },
-                        ...(!fixedMediaType ? [{
+                        {
                             value: activeTab,
                             key: "media-type",
                             items: mediaTypeFilters,
                             label: "Filter by media type",
                             onChange: (value: string) => handleFilterChange({ activeTab: value as MediaType | "all" }),
-                        }] : []),
+                        },
                         {
                             key: "sort",
                             value: sort,
@@ -191,13 +188,13 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                     <BrowseAppliedFilters
                         total={apiData.total}
                         totalPages={apiData.pages}
-                        filters={{ page, search, mediaType: !fixedMediaType && activeTab !== "all" ? activeTab : undefined }}
+                        filters={{ page, search, mediaType: activeTab !== "all" ? activeTab : undefined }}
                         onRemove={key => handleFilterChange(key === "search" ? { search: undefined } : { activeTab: "all" })}
                         onReset={() => handleFilterChange({
                             hiddenOnly: false,
                             search: undefined,
                             activityKind: ActivityKind.ALL,
-                            activeTab: fixedMediaType ?? "all",
+                            activeTab: "all",
                         })}
                         additionalGroups={[
                             ...(activityKind !== ActivityKind.ALL ? [{
@@ -237,7 +234,7 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                         rows={apiData.items}
                         onEdit={setEditActivity}
                         onOccurrences={setOccurrencesActivity}
-                        showMediaType={!fixedMediaType && activeTab === "all"}
+                        showMediaType={activeTab === "all"}
                     />
                 }
 
@@ -281,7 +278,7 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                                     </MediaCardTitle>
                                     <MediaCardMeta>
                                         <MediaCardDetails>
-                                            {(!fixedMediaType && activeTab === "all") &&
+                                            {activeTab === "all" &&
                                                 <span className="flex min-w-0 items-center gap-1 capitalize">
                                                     <MediaTypeIcon mediaType={row.mediaType}/>
                                                     {view === "month" &&
@@ -315,7 +312,7 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                 <Pagination
                     currentPage={page}
                     totalPages={apiData.pages}
-                    onChangePage={(nextPage) => updateFilters({ page: nextPage, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) })}
+                    onChangePage={(nextPage) => updateFilters({ page: nextPage })}
                 />
             </section>
 
@@ -347,15 +344,6 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
             }
         </>
     );
-
-    if (fixedMediaType) {
-        return (
-            <div className="pt-6">
-                {calendarNavigation}
-                {activityContent}
-            </div>
-        );
-    }
 
     return (
         <PageTitle title={`${periodLabel} activity for ${username}`} onlyHelmet>

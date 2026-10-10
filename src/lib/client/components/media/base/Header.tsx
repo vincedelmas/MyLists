@@ -1,3 +1,4 @@
+import type {ReactNode} from "react";
 import type {Status} from "@/lib/utils/enums";
 import type {MediaListArgs, SearchType} from "@/lib/schemas";
 import type {ListPagination} from "@/lib/types/query.options.types";
@@ -7,6 +8,7 @@ import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrow
 
 interface HeaderProps {
     isGrid: boolean;
+    trailing?: ReactNode;
     filters: MediaListArgs;
     onGridClick: () => void;
     onFilterClick: () => void;
@@ -18,7 +20,7 @@ interface HeaderProps {
 
 
 export const Header = (props: HeaderProps) => {
-    const { allStatuses, filters, isGrid, onGridClick, onFilterClick, pagination, onSortChange, onStatusChange } = props;
+    const { allStatuses, filters, isGrid, trailing, onGridClick, onFilterClick, pagination, onSortChange, onStatusChange } = props;
     const { localSearch, handleInputChange } = useSearchNavigate<SearchType>({ search: filters.search ?? "" });
 
     const statusItems = ["All Statuses", ...allStatuses].map(status => ({ label: status, value: status }));
@@ -31,6 +33,7 @@ export const Header = (props: HeaderProps) => {
             onGridClick={onGridClick}
             onFiltersClick={onFilterClick}
             onSearchChange={handleInputChange}
+            trailing={trailing}
             searchLabel="Search this media list"
             searchPlaceholder="Search this list..."
             selects={[

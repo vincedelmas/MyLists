@@ -1,5 +1,5 @@
 import {Link} from "@tanstack/react-router";
-import {Activity, ArrowUpRight, ChartNoAxesColumn, ListOrdered} from "lucide-react";
+import {Activity, ArrowUpRight, ChartNoAxesColumn, LibraryBig} from "lucide-react";
 
 
 interface ProfilePortalGridProps {
@@ -26,19 +26,19 @@ export const ProfilePortalGrid = ({ username }: ProfilePortalGridProps) => {
     return (
         <nav aria-label={`Explore ${username}'s profile`} className="grid grid-cols-2 gap-2">
             <Link
-                to="/stats/$username"
+                to="/lists/$username"
                 params={{ username }}
                 className={`${portalClassName} col-span-2 flex items-center gap-3 p-3`}
             >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-                    <ChartNoAxesColumn aria-hidden="true" className="size-4"/>
+                    <LibraryBig aria-hidden="true" className="size-4"/>
                 </span>
                 <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">
-                        Statistics
+                        Lists &amp; collections
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">
-                        Ratings, time and deeper trends
+                        Lists, dynamic lists and collections
                     </span>
                 </span>
                 <Arrow/>
@@ -65,20 +65,20 @@ export const ProfilePortalGrid = ({ username }: ProfilePortalGridProps) => {
             </Link>
 
             <Link
-                to="/collections/user/$username"
+                to="/stats/$username"
                 params={{ username }}
                 className={`${portalClassName} flex min-h-22 flex-col justify-between p-3`}
             >
                 <span className="flex items-center justify-between">
-                    <ListOrdered aria-hidden="true" className="size-4 text-brand"/>
+                    <ChartNoAxesColumn aria-hidden="true" className="size-4 text-brand"/>
                     <Arrow/>
                 </span>
                 <span>
                     <span className="block text-sm font-semibold">
-                        Collections
+                        Statistics
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                        Curated lists
+                        Ratings and trends
                     </span>
                 </span>
             </Link>

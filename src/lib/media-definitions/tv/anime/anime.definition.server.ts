@@ -1,15 +1,28 @@
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {ANIME_FALLBACK_DURATION, animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
-import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, animeListSeasons, animeNetwork, animeTags} from "@/lib/server/database/schema/media/anime.schema";
 
 
+const tables = {
+    mediaTable: anime,
+    tagTable: animeTags,
+    listTable: animeList,
+    genreTable: animeGenre,
+    actorTable: animeActors,
+    networkTable: animeNetwork,
+    seasonStateTable: animeListSeasons,
+    epsPerSeasonTable: animeEpisodesPerSeason,
+    deleteDependents: [animeEpisodesPerSeason, animeNetwork, animeActors, animeGenre, animeTags],
+};
+
+
 const sortColumns = {
-    ...getCommonMediaSortColumns({ mediaTable: anime, listTable: animeList }),
+    ...getCommonMediaSortColumns(tables),
     redo: animeList.redo,
     providerRating: anime.voteAverage,
 };
@@ -21,22 +34,31 @@ export const animeServerDefinition = defineServerMediaDefinition({
         coverDirectory: "anime-covers",
     },
     repository: {
+        tables,
         sortColumns,
-        tables: {
-            mediaTable: anime,
-            tagTable: animeTags,
-            listTable: animeList,
-            genreTable: animeGenre,
-            actorTable: animeActors,
-            networkTable: animeNetwork,
-            seasonStateTable: animeListSeasons,
-            epsPerSeasonTable: animeEpisodesPerSeason,
-            deleteDependents: [animeEpisodesPerSeason, animeNetwork, animeActors, animeGenre, animeTags],
-        },
         popularity: {
             eligibility: sql`${anime.voteCount} >= 50`,
         },
+        filters: defineMediaFilterDefinitions(animeDefinition, tables, {
+            actors: {
+                entityTable: animeActors,
+                filterColumn: animeActors.name,
+            },
+            networks: {
+                entityTable: animeNetwork,
+                filterColumn: animeNetwork.name,
+            },
+            creators: {
+                filterColumn: anime.createdBy,
+                splitValues: true,
+            },
+            langs: {
+                filterColumn: anime.originCountry,
+            },
+        }),
         listQuery: {
+            sorts: createMediaListSorts(animeDefinition, sortColumns, anime.id),
+            defaultSort: getMediaSortLabel(animeDefinition, animeDefinition.sorting.default),
             selection: {
                 mediaName: anime.name,
                 imageCover: anime.imageCover,
@@ -51,44 +73,11 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 )`.mapWith(JSON.parse),
                 ...getTableColumns(animeList),
             },
-            filters: {
-                actors: createArrayFilter({
-                    argName: "actors",
-                    mediaTable: anime,
-                    entityTable: animeActors,
-                    filterColumn: animeActors.name,
-                }),
-                networks: createArrayFilter({
-                    argName: "networks",
-                    mediaTable: anime,
-                    entityTable: animeNetwork,
-                    filterColumn: animeNetwork.name,
-                }),
-                creators: createArrayFilter({
-                    argName: "creators",
-                    mediaTable: anime,
-                    filterColumn: anime.createdBy,
-                }),
-                langs: createArrayFilter({
-                    argName: "langs",
-                    mediaTable: anime,
-                    filterColumn: anime.originCountry,
-                }),
-            },
-            filterOptions: {
-                langs: createMediaColOptionsLoader({
-                    mediaTable: anime,
-                    listTable: animeList,
-                    nameColumn: anime.originCountry,
-                }),
-            },
-            defaultSort: getMediaSortLabel(animeDefinition, animeDefinition.sorting.default),
-            sorts: createMediaListSorts(animeDefinition, sortColumns, anime.id),
         },
         communityActivity: {
             aggregates: {
-                totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
                 totalRedo: sql<number>`COALESCE(SUM(${animeList.redo}), 0)`,
+                totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
             },
         },
         jobs: {
@@ -97,9 +86,14 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 nameColumn: animeActors.name,
                 mediaIdColumn: animeActors.mediaId,
             },
+            [JobType.PLATFORM]: {
+                sourceTable: animeNetwork,
+                nameColumn: animeNetwork.name,
+                mediaIdColumn: animeNetwork.mediaId,
+            },
             [JobType.CREATOR]: {
-                mediaIdColumn: anime.id,
                 sourceTable: anime,
+                mediaIdColumn: anime.id,
                 nameColumn: anime.createdBy,
                 postProcess: (results) => Array.from(
                     new Map(results
@@ -110,11 +104,6 @@ export const animeServerDefinition = defineServerMediaDefinition({
                         .map((name) => [name, { name }]),
                     ).values(),
                 ),
-            },
-            [JobType.PLATFORM]: {
-                sourceTable: animeNetwork,
-                nameColumn: animeNetwork.name,
-                mediaIdColumn: animeNetwork.mediaId,
             },
         },
     },
@@ -157,9 +146,9 @@ export const animeServerDefinition = defineServerMediaDefinition({
             "duration", "originCountry", "prodStatus", "synopsis", "lockStatus", "imageCover",
         ],
         progressTotals: (state, media) => ({
+            totalRedo: state?.redo ?? 0,
             totalSpecific: state?.total ?? 0,
             timeSpent: (state?.total ?? 0) * media.duration,
-            totalRedo: state?.redo ?? 0,
         }),
     },
     ingestion: {

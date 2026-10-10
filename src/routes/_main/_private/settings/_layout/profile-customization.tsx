@@ -1,3 +1,4 @@
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useId, useState} from "react";
 import {toItemKey} from "@/lib/utils/media/item-key";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -11,7 +12,7 @@ import {profileCustomizationSettingsSchema} from "@/lib/schemas";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {profileCustomOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {MAX_PROFILE_SMART_VIEWS} from "@/lib/schemas/smart-view-profile.schema";
+import {MAX_PROFILE_PINS} from "@/lib/schemas/profile-pins.schema";
 import {TabCustomContent} from "@/lib/client/components/user-settings/TabCustomContent";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {ProfileSidebarTabs} from "@/lib/client/components/user-settings/ProfileSidebarTabs";
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/profile-c
 
 function ProfileCustomForm() {
     const fieldId = useId();
+    const { currentUser } = useAuth();
     const { profileCustomQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(profileCustomQueryOptions).data;
     const mutation = useProfileCustomMutation({ noErrorToast: true });
@@ -126,15 +128,15 @@ function ProfileCustomForm() {
                             {activeTab === "overview" &&
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>Pinned smart lists</CardTitle>
+                                        <CardTitle>Pinned lists & collections</CardTitle>
                                     </CardHeader>
                                     <CardContent className="flex flex-col gap-4">
                                         <p className="text-sm text-muted-foreground">
-                                            Pin up to {MAX_PROFILE_SMART_VIEWS} saved lists to your overview.
-                                            They follow your profile privacy settings. With none pinned, the section is hidden.
+                                            Pin up to {MAX_PROFILE_PINS} dynamic lists and collections to your overview.
+                                            Visitors only see pins they can access. With none pinned, the section is hidden.
                                         </p>
                                         <div>
-                                            <Link to="/smart-views" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                                            <Link to="/lists/$username" params={{ username: currentUser!.name }} className={buttonVariants({ variant: "outline", size: "sm" })}>
                                                 Manage profile pins
                                             </Link>
                                         </div>

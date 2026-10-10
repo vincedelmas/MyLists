@@ -83,7 +83,7 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
                             <div key={st.status} className="flex items-center gap-1.5 overflow-hidden">
                                 <div className="size-2 rounded-full mt-1" style={{ backgroundColor: getThemeColor(st.status) }}/>
                                 <Link
-                                    to="/list/$mediaType/$username"
+                                    to="/lists/tracking/$mediaType/$username"
                                     search={{ status: [st.status] as Status[] }}
                                     params={{ mediaType: mediaSummary.mediaType, username }}
                                 >

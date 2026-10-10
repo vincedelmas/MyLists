@@ -1,6 +1,7 @@
 import * as z from "zod";
 import {PrivacyType} from "@/lib/utils/enums";
-import {mediaBrowseFiltersSchema, mediaCatalogBrowseSearchSchema} from "@/lib/schemas/media-browse.schema";
+import {mediaBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
+import {MEDIA_SORT_KEYS} from "@/lib/media-definitions/base/media-sorting";
 import {
     coercedPositiveIntFieldSchema,
     mediaTypeFieldSchema,
@@ -46,11 +47,8 @@ export const collectionIdSchema = z.object({
 });
 
 export const collectionDetailsReadSchema = mediaBrowseFiltersSchema.extend({
+    includeFilterOptions: z.boolean().optional(),
     collectionId: coercedPositiveIntFieldSchema,
-});
-
-export const collectionBrowseSearchSchema = mediaCatalogBrowseSearchSchema.extend({
-    mediaType: mediaTypeFieldSchema.optional().catch(undefined),
 });
 
 export const userCollectionsFiltersSchema = paginationSchema.extend({
@@ -66,6 +64,14 @@ export const communityCollectionsSchema = paginationSchema.extend({
     search: optionalSearchFieldSchema,
     mediaType: mediaTypeFieldSchema.optional().catch(undefined),
 });
+
+export const collectionBrowseSearchSchema = mediaBrowseFiltersSchema.extend({
+    display: z.enum(["grid", "table"]).optional(),
+    sorting: z.enum(["default", ...MEDIA_SORT_KEYS]).optional().catch(undefined),
+    fromCommunity: communityCollectionsSchema.optional(),
+});
+
+export const collectionNavigationSchema = collectionBrowseSearchSchema.pick({ fromCommunity: true });
 
 export const mediaCommunityCollectionsSchema = mediaTypeMediaIdSchema;
 

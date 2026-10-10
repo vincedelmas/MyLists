@@ -15,7 +15,7 @@ one unified interface.
 ### Key Features
 
 - **Multi-Media lists**: Dedicated lists for Movies, Series, Anime, Manga, Books, and Games.
-- **Smart Lists**: Save rules across your media lists and see live matches, created manually or through a connected assistant.
+- **Dynamic Lists**: Save rules across your media lists and see live matches, created manually or through a connected assistant.
 - **Upcoming Media**: Get notified when new Media are released.
 - **Advanced Analytics**: Visualize your habits with detailed stats, trends, and platform-wide insights.
 - **Daily Moviedle**: A daily guessing game to test your movie knowledge.
@@ -245,10 +245,14 @@ Media tools call existing website server functions and return their results:
 - `edit_media_tag` — attach or detach a tag on one entry
 - `update_media_cover` — set a cover URL or restore the catalog cover
 - `query_mylists` — inspect the analysis schema or run read-only SQL on the connected user's data
-- `smart_view_schema` — get the validated JSON rules and starter specifications for smart lists
-- `preview_smart_view` — check the current matches for a specification without saving it
-- `list_smart_views` — read saved specifications and their page URLs
-- `create_smart_view` — save a specification and return its page URL (requires write access)
+- `dynamic_list_schema` — get the validated JSON rules and starter specifications for dynamic lists
+- `preview_dynamic_list` — check the current matches for a specification without saving it
+- `list_dynamic_lists` — read saved specifications and their page URLs
+- `create_dynamic_list` — save a specification and return its page URL (requires write access)
+
+Dynamic-list metadata rules are grouped by media type in `filters.mediaFilters`. For example,
+`movies.actors` filters movies without excluding books in the same list. `dynamic_list_schema`
+returns the supported filter keys for each type, matching the website's tracking-list filters.
 
 User identity is supplied by the connection. Adding, rating, and editing tags are separate operations,
 just like on the website. `update_media` returns `kind: "saved"` after saving, or

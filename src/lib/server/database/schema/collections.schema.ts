@@ -8,6 +8,7 @@ import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm
 export const collections = sqliteTable("collections", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     ownerId: integer("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    profilePosition: integer("profile_position"),
     title: text("title").notNull(),
     description: text("description"),
     viewCount: integer("view_count").default(0).notNull(),
@@ -20,6 +21,8 @@ export const collections = sqliteTable("collections", {
 }, (table) => [
     index("ix_collections_privacy").on(table.privacy),
     index("ix_collections_owner_id").on(table.ownerId),
+    check("collections_profile_position_check", sql`${table.profilePosition} > 0`),
+    uniqueIndex("ux_collections_owner_profile_position").on(table.ownerId, table.profilePosition),
     check("collections_ordered_check", sql`${table.ordered} IN (0, 1)`),
     check("collections_counters_nonnegative_check", sql`${table.viewCount} >= 0 AND ${table.likeCount} >= 0 AND ${table.copiedCount} >= 0`),
 ]);

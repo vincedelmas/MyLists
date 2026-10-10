@@ -4,7 +4,7 @@ import type {MonthlyActivitySearch} from "@/lib/schemas";
 import {getMonthlyActivity, getMonthlyActivityMediaSearch, getMonthlyActivityStats} from "@/lib/server/functions/user-monthly-activity";
 
 
-type MonthlyActivityStatsSearchOpts = Pick<MonthlyActivitySearch, "year" | "month" | "view"> & { mediaType?: MediaType };
+type MonthlyActivityStatsSearchOpts = Pick<MonthlyActivitySearch, "year" | "month" | "view">;
 
 
 export const monthlyActivityStatsOptions = (username: string, search: MonthlyActivityStatsSearchOpts) => {

@@ -179,13 +179,14 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
 
                     <div className="p-4 border-t flex items-center justify-between bg-popover">
                         <Link
-                            to="/list/$mediaType/$username/tags"
+                            to="/lists/tracking/$mediaType/$username"
                             params={{ mediaType, username: currentUser!.name }}
+                            search={{ filtersTab: "tags" }}
                             className="flex items-center gap-1.5 text-xs text-foreground/90 hover:text-brand transition-colors"
                         >
                             <Tags className="size-3"/>
                             Open Tags
-                            <ChevronRight className="size-3 mt-0.5"/>
+                            <ChevronRight className="size-3 -ml-1"/>
                         </Link>
                         <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
                             Done

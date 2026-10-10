@@ -1,8 +1,8 @@
 import {queryOptions} from "@tanstack/react-query";
-import {JobType, MediaType} from "@/lib/utils/enums";
+import {MediaType} from "@/lib/utils/enums";
 import {MediaListArgs, SimpleSearch} from "@/lib/schemas";
 import {getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
-import {getMediaListFilters, getMediaListSearchFilters, getMediaListSF, getTagsViewFn, getUserListHeaderSF} from "@/lib/server/functions/media-lists";
+import {getMediaListFilters, getMediaListSF, getTagsViewFn, getUserListHeaderSF} from "@/lib/server/functions/media-lists";
 
 
 export const mediaListOptions = (mediaType: MediaType, username: string, search: MediaListArgs) => queryOptions({
@@ -27,14 +27,6 @@ export const listFiltersOptions = (mediaType: MediaType, username: string) => qu
     queryKey: ["listFilters", mediaType, username],
     queryFn: () => getMediaListFilters({ data: { mediaType, username } }),
     staleTime: Infinity,
-});
-
-
-export const filterSearchOptions = (mediaType: MediaType, username: string, query: string, job: JobType) => queryOptions({
-    queryKey: ["filterSearch", mediaType, username, query, job],
-    queryFn: () => getMediaListSearchFilters({ data: { mediaType, username, query, job } }),
-    staleTime: 2 * 60 * 1000,
-    enabled: query.length >= 2,
 });
 
 

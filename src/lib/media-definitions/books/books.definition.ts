@@ -1,3 +1,4 @@
+import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
@@ -8,6 +9,13 @@ export const BOOKS_FIXED_DURATION_MIN = 1.7;
 
 
 export const booksDefinition = defineMediaDefinition({
+    filters: {
+        common: commonMediaFilters,
+        metadata: {
+            authors: mediaFilterNamesSchema,
+            langs: mediaFilterNamesSchema,
+        },
+    },
     continue: {
         status: Status.READING,
         getUpdate: (state: ContinueStateByType[typeof MediaType.BOOKS]) => {

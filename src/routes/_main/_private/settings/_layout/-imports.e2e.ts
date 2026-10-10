@@ -35,7 +35,7 @@ test("uploads a CSV, processes it, and preserves the selected import on reload",
     expect(new URL(page.url()).searchParams.get("jobId")).toBe(jobId);
     await expect(page.getByText("Import finished.", { exact: true })).toBeVisible();
 
-    await page.goto(`/list/movies/${users.owner.name}`);
+    await page.goto(`/lists/tracking/movies/${users.owner.name}`);
     await expect(page.getByRole("link", { name: `View ${movies.imported.name}`, exact: true })).toBeVisible();
 });
 

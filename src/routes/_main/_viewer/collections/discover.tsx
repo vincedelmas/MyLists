@@ -63,7 +63,7 @@ function CollectionsDiscoverPage() {
                         onChange={handleInputChange}
                         placeholder="Search collections..."
                         aria-label="Search community collections"
-                        className="w-full max-w-md max-sm:col-span-2"
+                        className="w-full min-w-0 max-sm:col-span-2"
                     />
 
                     <div className={cn("w-full", isAnonymous && "max-sm:col-span-2")}>
@@ -96,7 +96,7 @@ function CollectionsDiscoverPage() {
 
                     {!isAnonymous &&
                         <Link
-                            to="/collections/create"
+                            to="/lists/collections/create"
                             className={buttonVariants({ className: "whitespace-nowrap" })}
                         >
                             <Plus data-icon="inline-start"/>
@@ -125,9 +125,9 @@ function CollectionsDiscoverPage() {
                         message={search ? `No public collections found for “${search}”.` : "No public collections found."}
                     />
                     :
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {apiData.items.map((collection) =>
-                            <CollectionCard key={collection.id} collection={collection} variant="showcase"/>
+                            <CollectionCard key={collection.id} collection={collection} variant="showcase" communitySearch={filters}/>
                         )}
                     </div>
                 }

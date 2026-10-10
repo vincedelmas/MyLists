@@ -6,7 +6,7 @@ import {capitalize} from "@/lib/utils/formatting/text";
 import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {getActiveMediaSettings} from "@/lib/utils/media/list-activation";
-import {Award, Calendar, ChartNoAxesColumn, ChevronDown, Layers3, ListOrdered, Play, Zap} from "lucide-react";
+import {Award, Calendar, ChartNoAxesColumn, ChevronDown, LibraryBig, Play, Zap} from "lucide-react";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 
 
@@ -88,7 +88,7 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                                 preview={preview}
                                 key={setting.mediaType}
                                 renderLink={(children) =>
-                                    <Link to="/list/$mediaType/$username" params={{ mediaType: setting.mediaType, username }}>
+                                    <Link to="/lists/tracking/$mediaType/$username" params={{ mediaType: setting.mediaType, username }}>
                                         {children}
                                     </Link>
                                 }
@@ -97,8 +97,8 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                                 {capitalize(setting.mediaType)} List
                             </MenuEntry>
                         )}
-                    <MenuEntry preview={preview} renderLink={(children) => <Link to="/smart-views">{children}</Link>}>
-                        <Layers3/> Smart Lists
+                    <MenuEntry preview={preview} renderLink={(children) => <Link to="/lists/continue/$username" params={{ username }}>{children}</Link>}>
+                        <Play/> Continue
                     </MenuEntry>
                 </MenuGroup>
             </div>
@@ -116,9 +116,6 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                         }
                     >
                         <ChartNoAxesColumn className="size-4"/> My Stats
-                    </MenuEntry>
-                    <MenuEntry preview={preview} renderLink={(children) => <Link to="/continue">{children}</Link>}>
-                        <Play/> Continue
                     </MenuEntry>
                     {currentYear && currentMonth &&
                         <MenuEntry
@@ -148,12 +145,12 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                     <MenuEntry
                         preview={preview}
                         renderLink={(children) =>
-                            <Link to="/collections/user/$username" params={{ username }}>
+                            <Link to="/lists/$username" params={{ username }}>
                                 {children}
                             </Link>
                         }
                     >
-                        <ListOrdered className="size-4"/> My Collections
+                        <LibraryBig/> Lists & collections
                     </MenuEntry>
                     <MenuEntry
                         preview={preview}

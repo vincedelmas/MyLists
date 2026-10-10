@@ -10,7 +10,6 @@ import {MangaFollowCard} from "@/lib/client/components/media/manga/MangaFollowCa
 import {MangaUnderTitle} from "@/lib/client/components/media/manga/MangaUnderTitle";
 import {getMangaColumns} from "@/lib/client/components/media/manga/MangaListColumns";
 import {MangaUserDetails} from "@/lib/client/components/media/manga/MangaUserDetails";
-import {getMangaActiveFilters} from "@/lib/client/components/media/manga/MangaActiveFilters";
 import {getMangaContinueProgress} from "@/lib/client/components/media/manga/continue-progress";
 
 
@@ -23,7 +22,10 @@ export const mangaMediaConfig = defineMediaConfig({
     mediaFollowCard: MangaFollowCard,
     mediaListColumns: getMangaColumns,
     mediaUserDetails: MangaUserDetails,
-    sheetFilters: getMangaActiveFilters,
+    metadataFilters: {
+        authors: { title: "Authors", type: "search" },
+        publishers: { title: "Publishers", type: "search" },
+    },
     continue: {
         getProgress: getMangaContinueProgress,
     },

@@ -2,7 +2,7 @@ import type {LucideIcon} from "lucide-react";
 import type {ComponentType, ReactNode} from "react";
 import type {ColumnDef} from "@tanstack/react-table";
 import type {MediaStatsFor} from "@/lib/types/stats.types";
-import type {SheetFilterObject} from "@/lib/types/media-list.types";
+import type {MediaFilterKeyFor} from "@/lib/media-definitions/definition.registry";
 import type {mediaListOptions} from "@/lib/client/react-query/query-options";
 import type {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
@@ -37,6 +37,8 @@ export interface MediaFollowCardProps<T extends MediaType> {
 
 
 export interface MediaListCardProps<T extends MediaType> {
+    rank?: number;
+    annotation?: string | null;
     showMediaType?: boolean;
     loadEditDetails?: boolean;
     onEdited?: () => Promise<void>;
@@ -73,10 +75,17 @@ interface MediaJobPresentation {
 }
 
 
+interface MediaFilterPresentation {
+    title: string;
+    type: "checkbox" | "search";
+    render?: (name: string) => string;
+}
+
+
 export interface MediaClientConfig<T extends MediaType> {
     mediaType: T;
     advancedSearch?: AdvancedSearchConfig;
-    sheetFilters: () => SheetFilterObject[];
+    metadataFilters: Readonly<Record<MediaFilterKeyFor<T>, MediaFilterPresentation>>;
     infoGrid: ComponentType<MediaDetailsProps<T>>;
     overTitle: ComponentType<MediaDetailsProps<T>>;
     underTitle: ComponentType<MediaDetailsProps<T>>;

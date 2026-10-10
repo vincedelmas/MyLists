@@ -7,11 +7,11 @@ import {movies, password, users} from "../../../../../scripts/e2e/data";
 const readToolNames = [
     "media_details", "tv_seasons", "game_platforms", "media_history",
     "search_catalog", "game_search_options", "search_my_list", "my_list_filters",
-    "search_my_list_filters", "my_tags", "query_mylists", "smart_view_schema", "preview_smart_view", "list_smart_views",
+    "search_my_list_filters", "my_tags", "query_mylists", "dynamic_list_schema", "preview_dynamic_list", "list_dynamic_lists",
 ];
 
 const writeToolNames = [
-    "resolve_catalog_media", "add_media", "update_media", "edit_media_tag", "update_media_cover", "create_smart_view",
+    "resolve_catalog_media", "add_media", "update_media", "edit_media_tag", "update_media_cover", "create_dynamic_list",
 ];
 
 
@@ -141,33 +141,50 @@ test("read-only consent exposes read tools and rejects write calls", async ({ pa
     expect((await write.json()).result.isError).toBe(true);
     const result = await callTool(request, connection.access_token, "media_details", { mediaType: "movies", mediaId: movies.editable.id });
     expect(result.userMedia).toBeNull();
-    const smartSchema = await callTool(request, connection.access_token, "smart_view_schema", {});
-    expect(smartSchema.schema.properties.version.const).toBe(1);
-    const spec = smartSchema.examples[0];
-    const preview = await callTool(request, connection.access_token, "preview_smart_view", { spec });
+    const listSchema = await callTool(request, connection.access_token, "dynamic_list_schema", {});
+    expect(listSchema.schema.properties.version.const).toBe(1);
+    expect(listSchema.supportedMediaFilters.movies).toEqual(["actors", "directors", "langs"]);
+    expect(listSchema.supportedMediaFilters.books).toEqual(["authors", "langs"]);
+    const metadataSchema = listSchema.schema.properties.filters.properties.mediaFilters;
+    expect(Object.keys(metadataSchema.properties.books.properties)).toEqual(["authors", "langs"]);
+    expect(metadataSchema.properties.books.additionalProperties).toBe(false);
+    expect(metadataSchema.properties.books.required).toBeUndefined();
+    expect(metadataSchema.properties.movies.properties.actors).toMatchObject({ type: "array", maxItems: 20 });
+    const spec = listSchema.examples[0];
+    const preview = await callTool(request, connection.access_token, "preview_dynamic_list", { spec });
     expect(preview.total).toBe(0);
-    expect(await callTool(request, connection.access_token, "list_smart_views", {})).toEqual([]);
-    const deniedView = await rpc(request, connection.access_token, "tools/call", { name: "create_smart_view", arguments: { spec } });
+    expect(await callTool(request, connection.access_token, "list_dynamic_lists", {})).toEqual([]);
+    const invalidFilters = await rpc(request, connection.access_token, "tools/call", {
+        name: "preview_dynamic_list",
+        arguments: { spec: { ...spec, filters: { mediaFilters: { books: { actors: ["Someone"] } } } } },
+    });
+    expect((await invalidFilters.json()).result.isError).toBe(true);
+    const invalidMetadataArray = await rpc(request, connection.access_token, "tools/call", {
+        name: "preview_dynamic_list",
+        arguments: { spec: { ...spec, filters: { mediaFilters: { movies: { actors: "Someone" } } } } },
+    });
+    expect((await invalidMetadataArray.json()).result.isError).toBe(true);
+    const deniedView = await rpc(request, connection.access_token, "tools/call", { name: "create_dynamic_list", arguments: { spec } });
     expect((await deniedView.json()).result.isError).toBe(true);
 });
 
 
-test("an assistant saves a live smart list across media types without leaking other users' entries", async ({ page, request, baseURL }) => {
-    await runBun(["src/routes/_main/_private/smart-views/-fixtures.ts"]);
+test("an assistant saves a live dynamic list across media types without leaking other users' entries", async ({ page, request, baseURL }) => {
+    await runBun(["src/routes/_main/_private/lists/dynamic/-fixtures.ts"]);
     const connection = await connectAssistant(page, request, baseURL!);
     const token = connection.access_token;
-    const { examples } = await callTool(request, token, "smart_view_schema", {});
+    const { examples } = await callTool(request, token, "dynamic_list_schema", {});
     const spec = { ...examples[0], title: "My forgotten plans" };
-    const preview = await callTool(request, token, "preview_smart_view", { spec });
+    const preview = await callTool(request, token, "preview_dynamic_list", { spec });
     expect(preview.total).toBe(2);
     expect(preview.items.map((item: { mediaType: string; mediaId: number }) => [item.mediaType, item.mediaId]))
         .toEqual([["movies", movies.private.id], ["books", 906]]);
 
-    const forged = await rpc(request, token, "tools/call", { name: "create_smart_view", arguments: { spec: { ...spec, userId: users.stranger.id } } });
+    const forged = await rpc(request, token, "tools/call", { name: "create_dynamic_list", arguments: { spec: { ...spec, userId: users.stranger.id } } });
     expect((await forged.json()).result.isError).toBe(true);
-    const saved = await callTool(request, token, "create_smart_view", { spec });
-    expect(saved.url).toBe(`${baseURL}/smart-views/${saved.id}`);
-    expect(await callTool(request, token, "list_smart_views", {})).toEqual([
+    const saved = await callTool(request, token, "create_dynamic_list", { spec });
+    expect(saved.url).toBe(`${baseURL}/lists/dynamic/${saved.id}`);
+    expect(await callTool(request, token, "list_dynamic_lists", {})).toEqual([
         expect.objectContaining({ id: saved.id, spec }),
     ]);
 

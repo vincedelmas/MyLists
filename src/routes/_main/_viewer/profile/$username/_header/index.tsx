@@ -14,7 +14,7 @@ import {createMediaTabItems} from "@/lib/client/components/general/media-type-op
 import {continueOptions} from "@/lib/client/react-query/query-options/continue.options";
 import {ProfilePortalGrid} from "@/lib/client/components/user-profile/ProfilePortalGrid";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
-import {profileSmartViewsOptions} from "@/lib/client/react-query/query-options/smart-views.options";
+import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
 import {profileOptions, profileRecentFeedOptions, profileSummaryOptions} from "@/lib/client/react-query/query-options";
 
 
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/"
         continueQueryOptions: continueOptions(username),
         summaryQueryOptions: profileSummaryOptions(username),
         recentFeedQueryOptions: profileRecentFeedOptions(username),
-        smartViewsQueryOptions: profileSmartViewsOptions(username),
+        pinsQueryOptions: profilePinsOptions(username),
     }),
     loader: async ({ context }) => {
         await Promise.all([
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/"
             context.queryClient.fetchQuery(context.summaryQueryOptions),
             context.queryClient.fetchQuery(context.continueQueryOptions),
             context.queryClient.fetchQuery(context.recentFeedQueryOptions),
-            context.queryClient.fetchQuery(context.smartViewsQueryOptions),
+            context.queryClient.fetchQuery(context.pinsQueryOptions),
         ]);
     },
     component: ProfileMain,
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/"
 
 
 function ProfileMain() {
-    const { profileQueryOptions, recentFeedQueryOptions, summaryQueryOptions, continueQueryOptions, smartViewsQueryOptions } = Route.useRouteContext();
+    const { profileQueryOptions, recentFeedQueryOptions, summaryQueryOptions, continueQueryOptions, pinsQueryOptions } = Route.useRouteContext();
 
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
@@ -50,7 +50,7 @@ function ProfileMain() {
     const apiData = useSuspenseQuery(profileQueryOptions).data;
     const inProgress = useSuspenseQuery(continueQueryOptions).data;
     const recentFeed = useSuspenseQuery(recentFeedQueryOptions).data;
-    const smartViews = useSuspenseQuery(smartViewsQueryOptions).data;
+    const profilePins = useSuspenseQuery(pinsQueryOptions).data;
     const activeMediaTypes = getActiveMediaTypes(summary.userMediaSettings);
 
     const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "overview", size: 15 });
@@ -99,7 +99,7 @@ function ProfileMain() {
                     {currentTab === "overview" ?
                         <OverviewTab
                             key={username}
-                            smartViews={smartViews}
+                            profilePins={profilePins}
                             perMedia={summary.perMediaSummary}
                             inProgressMedia={inProgress.items}
                             showContinue={apiData.showContinue}

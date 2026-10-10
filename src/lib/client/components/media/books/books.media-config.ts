@@ -2,6 +2,7 @@ import {PenLine, XLineTop} from "lucide-react";
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {formatLocaleName} from "@/lib/utils/formatting/text";
 import {BookListItem} from "@/lib/client/components/media/books/BookListItem";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {BooksInfoGrid} from "@/lib/client/components/media/books/BooksInfoGrid";
@@ -11,7 +12,6 @@ import {defineMediaConfig} from "@/lib/client/components/media/media-config.type
 import {BooksUnderTitle} from "@/lib/client/components/media/books/BooksUnderTitle";
 import {BooksUserDetails} from "@/lib/client/components/media/books/BookUserDetails";
 import {getBooksColumns} from "@/lib/client/components/media/books/BooksListColumns";
-import {getBooksActiveFilters} from "@/lib/client/components/media/books/BooksActiveFilters";
 import {getBooksContinueProgress} from "@/lib/client/components/media/books/continue-progress";
 import {bookSearchFilterDefinition} from "@/lib/client/components/media/books/BookSearchFilters";
 
@@ -25,7 +25,10 @@ export const booksMediaConfig = defineMediaConfig({
     mediaFollowCard: BookFollowCard,
     mediaListColumns: getBooksColumns,
     mediaUserDetails: BooksUserDetails,
-    sheetFilters: getBooksActiveFilters,
+    metadataFilters: {
+        authors: { title: "Authors", type: "search" },
+        langs: { title: "Languages", type: "checkbox", render: name => formatLocaleName(name, "language") },
+    },
     continue: {
         getProgress: getBooksContinueProgress,
     },

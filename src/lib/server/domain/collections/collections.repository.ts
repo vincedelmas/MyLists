@@ -5,14 +5,19 @@ import {paginate} from "@/lib/server/database/pagination";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {toItemKey} from "@/lib/utils/media/item-key";
+import type {MediaListData, ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import {Actor, profileCollectionVisibilityCondition} from "@/lib/server/authorization";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
+import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
+import {getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
-import {and, asc, count, desc, eq, getTableColumns, inArray, like, max, or, sql} from "drizzle-orm";
+import type {animeList, booksList, gamesList, mangaList, moviesList, seriesList} from "@/lib/server/database/schema";
+import {and, asc, count, desc, eq, getTableColumns, inArray, isNotNull, isNull, like, max, or, sql} from "drizzle-orm";
 import {collectionContainsMediaType, getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
 
 
@@ -42,6 +47,16 @@ const previewItemsSelection = sql`(
 )`.mapWith((value: string) => {
     return JSON.parse(value) as { mediaId: number; mediaType: MediaType }[];
 });
+
+
+type CollectionTrackingItem = MediaListData<
+    typeof animeList.$inferSelect
+    | typeof booksList.$inferSelect
+    | typeof gamesList.$inferSelect
+    | typeof mangaList.$inferSelect
+    | typeof moviesList.$inferSelect
+    | typeof seriesList.$inferSelect
+>["items"][number];
 
 
 export class CollectionsRepository {
@@ -115,7 +130,7 @@ export class CollectionsRepository {
             .all();
     }
 
-    static async getPaginatedCollectionItems(collectionId: number, mediaTypes: MediaType[], filters: MediaBrowseFilters, viewerId?: number) {
+    static async getPaginatedCollectionItems(collectionId: number, mediaTypes: MediaType[], filters: MediaBrowseFilters, viewerId?: number, includeFilterOptions = false) {
         const selectedTypes = filters.mediaType ? mediaTypes.filter(type => type === filters.mediaType) : mediaTypes;
         const sortKey = filters.sorting && filters.sorting !== "default" ? filters.sorting : undefined;
         const sort = sortKey ? MEDIA_SORT_DEFINITIONS[sortKey] : undefined;
@@ -187,15 +202,78 @@ export class CollectionsRepository {
                 : Promise.resolve([]),
         });
 
+        const trackingById = new Map<string, CollectionTrackingItem>();
+        if (viewerId !== undefined) {
+            for (const mediaType of new Set(result.items.map(item => item.mediaType))) {
+                const definition = getServerMediaDefinition(mediaType);
+                const { listTable, mediaTable } = definition.repository.tables;
+                const mediaIds = result.items.filter(item => item.mediaType === mediaType).map(item => item.mediaId);
+                const tracked = db
+                    .select(getMediaListSelection(definition.repository))
+                    .from(listTable)
+                    .innerJoin(user, eq(user.id, listTable.userId))
+                    .innerJoin(mediaTable, eq(mediaTable.id, listTable.mediaId))
+                    .where(and(eq(listTable.userId, viewerId), inArray(listTable.mediaId, mediaIds)))
+                    .all();
+
+                for (const item of tracked) {
+                    trackingById.set(toItemKey({ mediaType, mediaId: item.mediaId }), {
+                        ...item,
+                        common: false,
+                        imageCover: getImageUrl(definition.identity.coverDirectory, item.customCover ?? item.imageCover),
+                    } as CollectionTrackingItem);
+                }
+            }
+        }
+
+        const filterOptions: { tags: string[]; genres: string[]; mediaTypes: MediaType[]; mediaFilters: ScopedMediaFilterOptions } = {
+            tags: [], genres: [], mediaTypes, mediaFilters: {},
+        };
+        if (selectedTypes.length) {
+            const sources = selectedTypes.map(mediaType => {
+                const definition = getServerMediaDefinition(mediaType).repository;
+                const { listTable, tagTable, genreTable } = definition.tables;
+                const sourceMediaIds = db
+                    .select({ mediaId: collectionItems.mediaId })
+                    .from(collectionItems)
+                    .leftJoin(listTable, and(eq(listTable.mediaId, collectionItems.mediaId), viewerId === undefined ? sql`FALSE` : eq(listTable.userId, viewerId)))
+                    .where(and(
+                        eq(collectionItems.collectionId, collectionId), eq(collectionItems.mediaType, mediaType),
+                        filters.library === "in" ? isNotNull(listTable.userId) : undefined,
+                        filters.library === "out" ? isNull(listTable.userId) : undefined,
+                    ));
+
+                if (includeFilterOptions) {
+                    filterOptions.mediaFilters[mediaType] = getMediaMetadataFilterOptions(definition, { mediaIds: sourceMediaIds.getSQL(), userId: viewerId });
+                }
+
+                return {
+                    genres: db.select({ name: genreTable.name }).from(genreTable).where(and(
+                        inArray(genreTable.mediaId, sourceMediaIds),
+                        definition.filters.common.genres ? undefined : sql`FALSE`,
+                    )),
+                    tags: db.select({ name: tagTable.name }).from(tagTable).where(and(
+                        viewerId === undefined ? sql`FALSE` : eq(tagTable.userId, viewerId),
+                        inArray(tagTable.mediaId, sourceMediaIds),
+                        definition.filters.common.tags ? undefined : sql`FALSE`,
+                    )),
+                };
+            });
+
+            filterOptions.genres = db.all<{ name: string }>(sql`
+                SELECT DISTINCT "name" FROM (${sql.join(sources.map(source => source.genres.getSQL()), sql` UNION ALL `)})
+                ORDER BY "name" COLLATE NOCASE`).map(item => item.name);
+            filterOptions.tags = db.all<{ name: string }>(sql`
+                SELECT DISTINCT "name" FROM (${sql.join(sources.map(source => source.tags.getSQL()), sql` UNION ALL `)})
+                ORDER BY "name" COLLATE NOCASE`).map(item => item.name);
+        }
+
         return {
             ...result,
-            filterOptions: {
-                tags: [],
-                genres: [],
-                mediaTypes,
-            },
+            filterOptions,
             items: result.items.map(({ imageCover, sortValue: _sortValue, ...item }) => ({
                 ...item,
+                userMedia: trackingById.get(toItemKey(item)) ?? null,
                 mediaCover: getImageUrl(getServerMediaDefinition(item.mediaType).identity.coverDirectory, imageCover),
             })),
         };
@@ -250,7 +328,7 @@ export class CollectionsRepository {
             )).run();
     }
 
-    static async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType) {
+    static async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType, pinnedOnly = false) {
         return getDbClient()
             .select({
                 ...collectionSelection,
@@ -261,12 +339,13 @@ export class CollectionsRepository {
             .where(and(
                 eq(collections.ownerId, targetUserId),
                 mediaType ? collectionContainsMediaType(mediaType) : undefined,
+                pinnedOnly ? isNotNull(collections.profilePosition) : undefined,
                 profileCollectionVisibilityCondition(actor, targetUserId),
             ))
             .orderBy(desc(collections.likeCount));
     }
 
-    static async getPaginatedUserCollections(targetUserId: number, actor: Actor, params: Omit<UserCollectionsSearch, "username">) {
+    static async getPaginatedUserCollections(targetUserId: number, actor: Actor, params: Omit<UserCollectionsSearch, "username">, publicOnly = false) {
         const searchFilter = params.search?.trim();
         const visibilityCondition = profileCollectionVisibilityCondition(actor, targetUserId);
         const searchCondition = searchFilter ? like(collections.title, `%${searchFilter}%`) : undefined;
@@ -282,6 +361,7 @@ export class CollectionsRepository {
                     .where(and(
                         searchCondition,
                         visibilityCondition,
+                        publicOnly ? eq(collections.privacy, PrivacyType.PUBLIC) : undefined,
                         eq(collections.ownerId, targetUserId),
                         params.mediaType ? collectionContainsMediaType(params.mediaType) : undefined,
                     )).get()?.count ?? 0;
@@ -294,6 +374,7 @@ export class CollectionsRepository {
                     .where(and(
                         searchCondition,
                         visibilityCondition,
+                        publicOnly ? eq(collections.privacy, PrivacyType.PUBLIC) : undefined,
                         eq(collections.ownerId, targetUserId),
                         params.mediaType ? collectionContainsMediaType(params.mediaType) : undefined,
                     ))

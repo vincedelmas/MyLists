@@ -81,7 +81,7 @@ function ConnectedAppsPage() {
                                 </CardTitle>
                                 <CardDescription>
                                     {connection.scopes.includes("mylists:write")
-                                        ? "Can read and update your lists, and save smart lists"
+                                        ? "Can read and update your lists, and save dynamic lists"
                                         : "Can read your lists"
                                     }
                                 </CardDescription>

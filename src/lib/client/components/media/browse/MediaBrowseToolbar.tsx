@@ -11,6 +11,7 @@ interface MediaBrowseToolbarProps {
     search: string;
     isGrid: boolean;
     actions?: ReactNode;
+    trailing?: ReactNode;
     searchLabel?: string;
     onGridClick: () => void;
     searchPlaceholder?: string;
@@ -31,6 +32,7 @@ export const MediaBrowseToolbar = (props: MediaBrowseToolbarProps) => {
         search,
         isGrid,
         actions,
+        trailing,
         onGridClick,
         selects = [],
         onFiltersClick,
@@ -84,10 +86,13 @@ export const MediaBrowseToolbar = (props: MediaBrowseToolbarProps) => {
                             </Button>
                         }
 
-                        <ViewModeToggle
-                            isGrid={isGrid}
-                            onGridClick={onGridClick}
-                        />
+                        <div className="ml-auto flex shrink-0 items-center gap-1">
+                            <ViewModeToggle
+                                isGrid={isGrid}
+                                onGridClick={onGridClick}
+                            />
+                            {trailing}
+                        </div>
                     </div>
                 </div>
             </div>

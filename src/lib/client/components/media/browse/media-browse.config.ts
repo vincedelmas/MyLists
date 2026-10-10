@@ -10,6 +10,6 @@ export const MEDIA_BROWSE_LIBRARY_OPTIONS = [
 
 
 export const createMediaBrowseStatusOptions = (mediaTypes: readonly MediaType[]) => [
-    { value: "all", label: "All statuses" },
+    { value: "all" as const, label: "All statuses" },
     ...[...new Set(mediaTypes.flatMap(t => getMediaDefinition(t).statuses))].map(status => ({ value: status, label: status })),
 ];

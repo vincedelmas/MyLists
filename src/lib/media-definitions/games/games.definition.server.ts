@@ -2,14 +2,23 @@ import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {and, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
-import {createArrayFilter, createListColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+
+
+const tables = {
+    mediaTable: games,
+    listTable: gamesList,
+    genreTable: gamesGenre,
+    tagTable: gamesTags,
+    deleteDependents: [gamesCompanies, gamesPlatforms, gamesGenre, gamesTags],
+};
 
 
 const sortColumns = {
-    ...getCommonMediaSortColumns({ mediaTable: games, listTable: gamesList }),
+    ...getCommonMediaSortColumns(tables),
     playtime: gamesList.playtime,
     providerRating: games.voteAverage,
 };
@@ -22,13 +31,17 @@ export const gamesServerDefinition = defineServerMediaDefinition({
     },
     repository: {
         sortColumns,
-        tables: {
-            mediaTable: games,
-            listTable: gamesList,
-            genreTable: gamesGenre,
-            tagTable: gamesTags,
-            deleteDependents: [gamesCompanies, gamesPlatforms, gamesGenre, gamesTags],
-        },
+        filters: defineMediaFilterDefinitions(gamesDefinition, tables, {
+            platforms: {
+                filterColumn: gamesList.platform,
+                optionsTable: gamesList,
+            },
+            companies: {
+                entityTable: gamesCompanies,
+                filterColumn: gamesCompanies.name,
+            },
+        }),
+        tables,
         popularity: {
             eligibility: sql`${games.voteCount} >= 100`,
         },
@@ -37,25 +50,6 @@ export const gamesServerDefinition = defineServerMediaDefinition({
                 mediaName: games.name,
                 imageCover: games.imageCover,
                 ...getTableColumns(gamesList),
-            },
-            filters: {
-                platforms: createArrayFilter({
-                    argName: "platforms",
-                    mediaTable: games,
-                    filterColumn: gamesList.platform,
-                }),
-                companies: createArrayFilter({
-                    argName: "companies",
-                    mediaTable: games,
-                    entityTable: gamesCompanies,
-                    filterColumn: gamesCompanies.name,
-                }),
-            },
-            filterOptions: {
-                platforms: createListColOptionsLoader({
-                    listTable: gamesList,
-                    nameColumn: gamesList.platform,
-                }),
             },
             defaultSort: getMediaSortLabel(gamesDefinition, gamesDefinition.sorting.default),
             sorts: createMediaListSorts(gamesDefinition, sortColumns, games.id),

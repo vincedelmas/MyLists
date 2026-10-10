@@ -16,6 +16,7 @@ const invalidateCollectionSummaries = (queryClient: QueryClient) => Promise.all(
     queryClient.invalidateQueries({ queryKey: ["collections", "community"] }),
     queryClient.invalidateQueries({ queryKey: ["collections", "memberships"] }),
     queryClient.invalidateQueries({ queryKey: ["details", "collections", "community"] }),
+    queryClient.invalidateQueries({ queryKey: ["profile-pins"] }),
 ]);
 
 

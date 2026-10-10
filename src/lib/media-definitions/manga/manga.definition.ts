@@ -1,3 +1,4 @@
+import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
@@ -8,6 +9,13 @@ export const MANGA_FIXED_DURATION_MIN = 7;
 
 
 export const mangaDefinition = defineMediaDefinition({
+    filters: {
+        common: commonMediaFilters,
+        metadata: {
+            authors: mediaFilterNamesSchema,
+            publishers: mediaFilterNamesSchema,
+        },
+    },
     continue: {
         status: Status.READING,
         getUpdate: (state: ContinueStateByType[typeof MediaType.MANGA]) => {

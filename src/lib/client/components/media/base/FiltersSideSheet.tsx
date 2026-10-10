@@ -1,27 +1,26 @@
 import {X} from "lucide-react";
 import {MediaListArgs} from "@/lib/schemas";
-import React, {useId, useState} from "react";
-import {useQuery} from "@tanstack/react-query";
-import {JobType, MediaType} from "@/lib/utils/enums";
-import {Badge} from "@/lib/client/components/ui/badge";
-import {Button} from "@/lib/client/components/ui/button";
+import React, {useState} from "react";
+import {useIsMutating, useQuery} from "@tanstack/react-query";
+import {MediaType} from "@/lib/utils/enums";
 import {Spinner} from "@/lib/client/components/ui/spinner";
-import type {MediaListFilterKey} from "@/lib/types/media-list.types";
+import type {MediaCommonFilterKey, MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
-import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {SearchInput} from "@/lib/client/components/general/SearchInput";
-import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
-import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {MediaFiltersSheet} from "@/lib/client/components/media/browse/MediaFiltersSheet";
-import {filterSearchOptions, listFiltersOptions} from "@/lib/client/react-query/query-options";
-import {Field, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
-import {MediaFilterCheckbox, MediaFilterCheckboxGroup} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
+import {MediaFiltersSheet, type MediaFiltersTab} from "@/lib/client/components/media/browse/MediaFiltersSheet";
+import {MediaFilterTags, type MediaTagChange} from "@/lib/client/components/media/browse/MediaFilterTags";
+import {listFiltersOptions} from "@/lib/client/react-query/query-options";
+import {FieldGroup, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
+import {MediaSpecificFilters} from "@/lib/client/components/media/browse/MediaSpecificFilters";
+import {MediaFilterCheckbox} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
+import {getMediaCommonFilterKeys} from "@/lib/client/components/media/browse/media-filter.utils";
+import {MediaGenreFilter, MediaPersonalFilters} from "@/lib/client/components/media/browse/MediaCommonFilters";
 
 
-type AdvancedListFilters = Pick<MediaListArgs, MediaListFilterKey | "favorite" | "comment" | "hideCommon">;
+type AdvancedListFilters = Pick<MediaListArgs,
+    Exclude<MediaCommonFilterKey, "search" | "status" | "minRating"> | MediaMetadataFilterKey | "hideCommon"
+>;
 
 
 interface FiltersSideSheetProps {
@@ -30,20 +29,28 @@ interface FiltersSideSheetProps {
     isCurrent: boolean;
     mediaType: MediaType;
     filters: MediaListArgs;
+    activeTab: MediaFiltersTab;
+    onTabChange: (tab: MediaFiltersTab) => void;
+    onTagChange: (change: MediaTagChange) => void;
     onOpenChange: (open: boolean) => void;
     onFilterApply: (filters: Partial<MediaListArgs>) => void;
 }
 
 
-export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent, onOpenChange, onFilterApply }: FiltersSideSheetProps) => {
+export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent, activeTab, onTabChange, onTagChange, onOpenChange, onFilterApply }: FiltersSideSheetProps) => {
     const [draft, setDraft] = useState<Partial<AdvancedListFilters>>({});
-    const { data: listFilters, isPending, error } = useQuery({ ...listFiltersOptions(mediaType, username), enabled: open });
+    const isEditingTags = useIsMutating({ mutationKey: ["userMediaEdit", mediaType] }) > 0;
+    const { data: listFilters, isPending, error } = useQuery({
+        ...listFiltersOptions(mediaType, username), enabled: open && activeTab === "filters",
+    });
 
     const currentFilters = { ...filters, ...draft };
-    const activeFiltersConfig = mediaConfig[mediaType].sheetFilters();
+    const availableFilters = getMediaCommonFilterKeys([mediaType]);
 
     const handleSheetOpenChange = (nextOpen: boolean) => {
-        if (!nextOpen) setDraft({});
+        if (!nextOpen) {
+            setDraft({});
+        }
         onOpenChange(nextOpen);
     };
 
@@ -53,6 +60,7 @@ export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent
 
     const handleOnSubmit = (ev: React.SubmitEvent<HTMLFormElement>) => {
         ev.preventDefault();
+        if (isEditingTags) return;
         const advancedFilters = { ...draft };
 
         for (const key of Object.keys(advancedFilters) as (keyof AdvancedListFilters)[]) {
@@ -62,8 +70,8 @@ export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent
             }
         }
 
-        onFilterApply(advancedFilters);
         handleSheetOpenChange(false);
+        onFilterApply(advancedFilters);
     };
 
     return (
@@ -71,12 +79,34 @@ export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent
             open={open}
             onSubmit={handleOnSubmit}
             title="Additional Filters"
+            activeTab={activeTab}
+            onTabChange={onTabChange}
             onOpenChange={handleSheetOpenChange}
             description={<>How filters work <FilterInfoPopover/></>}
             footer={
-                <FormSubmitButton className="w-full" disabled={!!error} isLoading={isPending}>
+                <FormSubmitButton className="w-full" disabled={activeTab === "filters" && !!error} isLoading={isEditingTags || (activeTab === "filters" && isPending)}>
                     Apply Filters
                 </FormSubmitButton>
+            }
+            tags={availableFilters.has("tags") ?
+                <MediaFilterTags
+                    username={username}
+                    mediaType={mediaType}
+                    isOwner={isCurrent}
+                    selected={currentFilters.tags ?? []}
+                    onTagChange={change => {
+                        setDraft(current => {
+                            if (!current.tags?.includes(change.oldName)) return current;
+                            return {
+                                ...current,
+                                tags: current.tags.flatMap(name => name === change.oldName ? change.newName ? [change.newName] : [] : [name]),
+                            };
+                        });
+                        onTagChange(change);
+                    }}
+                    enabled={open && activeTab === "tags"}
+                    onChange={tags => handleRegisterChange("tags", tags)}
+                /> : undefined
             }
         >
             <FieldSet disabled={isPending}>
@@ -94,57 +124,27 @@ export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent
                         </div>
                         :
                         <FieldGroup>
-                            <MediaFilterCheckboxGroup
-                                title="Genres"
+                            <MediaGenreFilter
+                                availableFilters={availableFilters}
                                 selected={currentFilters.genres ?? []}
-                                items={listFilters?.genres.map(genre => genre.name) ?? []}
+                                options={listFilters?.genres.map(genre => genre.name) ?? []}
                                 onChange={genres => handleRegisterChange("genres", genres)}
                             />
-                            {activeFiltersConfig.map((filter) => {
-                                if (filter.type === "checkbox") {
-                                    const items = filter.getItems(listFilters!);
-                                    if (!items || items.length === 0) return null;
-
-                                    return (
-                                        <MediaFilterCheckboxGroup
-                                            key={filter.key}
-                                            title={filter.title}
-                                            items={items.map(item => item.name)}
-                                            selected={currentFilters[filter.key] ?? []}
-                                            onChange={values => handleRegisterChange(filter.key, values)}
-                                            renderLabel={name => filter.render ? filter.render(name, mediaType) : name}
-                                        />
-                                    );
-                                }
-                                if (filter.type === "search") {
-                                    return (
-                                        <SearchFilter
-                                            key={filter.key}
-                                            job={filter.job}
-                                            username={username}
-                                            title={filter.title}
-                                            mediaType={mediaType}
-                                            dataList={currentFilters[filter.key] ?? []}
-                                            onChange={values => handleRegisterChange(filter.key, values)}
-                                        />
-                                    );
-                                }
-                                return null;
-                            })}
+                            <MediaSpecificFilters
+                                mediaType={mediaType}
+                                options={listFilters!}
+                                filters={currentFilters}
+                                onChange={next => setDraft(current => ({ ...current, ...next }))}
+                            />
                             <FieldSet>
                                 <FieldLegend variant="label">
                                     Miscellaneous
                                 </FieldLegend>
                                 <FieldGroup data-slot="checkbox-group" className="grid grid-cols-2 gap-2">
-                                    <MediaFilterCheckbox
-                                        label="Favorites"
-                                        checked={currentFilters.favorite ?? false}
-                                        onChange={checked => handleRegisterChange("favorite", checked)}
-                                    />
-                                    <MediaFilterCheckbox
-                                        label="Comments"
-                                        checked={currentFilters.comment ?? false}
-                                        onChange={checked => handleRegisterChange("comment", checked)}
+                                    <MediaPersonalFilters
+                                        availableFilters={availableFilters}
+                                        filters={currentFilters}
+                                        onChange={next => setDraft(current => ({ ...current, ...next }))}
                                     />
                                     {!isCurrent &&
                                         <MediaFilterCheckbox
@@ -155,12 +155,6 @@ export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent
                                     }
                                 </FieldGroup>
                             </FieldSet>
-                            <MediaFilterCheckboxGroup
-                                title="Tags"
-                                selected={currentFilters.tags ?? []}
-                                items={listFilters?.tags.map(tag => tag.name) ?? []}
-                                onChange={tags => handleRegisterChange("tags", tags)}
-                            />
                         </FieldGroup>
                 }
             </FieldSet>
@@ -195,87 +189,3 @@ const FilterInfoPopover = () => (
         </div>
     </InfoPopover>
 );
-
-
-interface SearchFilterProps {
-    job: JobType;
-    title: string;
-    username: string;
-    dataList: string[];
-    mediaType: MediaType;
-    onChange: (values: string[]) => void;
-}
-
-
-const SearchFilter = ({ mediaType, username, job, title, dataList, onChange }: SearchFilterProps) => {
-    const fieldId = useId();
-    const { search, setSearch, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer();
-    const { data: filterResults, isPending, error } = useQuery(filterSearchOptions(mediaType, username, debouncedSearch, job));
-
-    const handleSearchClick = (data: string) => {
-        reset();
-        if (dataList.includes(data)) return;
-
-        onChange([...dataList, data]);
-    };
-
-    const handleRemoveData = (data: string) => {
-        onChange(dataList.filter(item => item !== data));
-    };
-
-    return (
-        <Field>
-            <FieldLabel htmlFor={`${fieldId}-search`}>
-                {title}
-            </FieldLabel>
-            <div ref={containerRef} className="relative">
-                <SearchInput
-                    value={search}
-                    className="w-70"
-                    id={`${fieldId}-search`}
-                    placeholder={`Search ${title.toLowerCase()}...`}
-                    onChange={(ev) => setSearch(ev.target.value)}
-                />
-                <SearchContainer
-                    error={error}
-                    isOpen={isOpen}
-                    search={search}
-                    className="w-70"
-                    isPending={isPending}
-                    debouncedSearch={debouncedSearch}
-                    hasResults={!!filterResults?.length}
-                >
-                    <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-60">
-                        {filterResults?.map((item) =>
-                            <button
-                                type="button"
-                                key={item.name}
-                                onClick={() => handleSearchClick(item.name!)}
-                                className="flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors"
-                            >
-                                <ProfileIcon
-                                    fallbackSize="text-xs"
-                                    className="size-9 border"
-                                    user={{ image: null, name: item.name! }}
-                                />
-                                <span className="text-left">
-                                    {item.name}
-                                </span>
-                            </button>
-                        )}
-                    </div>
-                </SearchContainer>
-            </div>
-            <div className="flex flex-wrap gap-2">
-                {dataList.map(item =>
-                    <Badge key={item} variant="outline">
-                        {item}
-                        <Button size="bare" type="button" variant="ghost" onClick={() => handleRemoveData(item)}>
-                            <X/>
-                        </Button>
-                    </Badge>
-                )}
-            </div>
-        </Field>
-    );
-};

@@ -10,6 +10,7 @@ import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
 import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
+import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
 import {
     allUpdatesOptions,
@@ -246,6 +247,10 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                 invalidations.push(queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }));
             }
 
+            if (variables.payload.type === UpdateType.PLATFORM) {
+                invalidations.push(queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }));
+            }
+
             if (activityUpdate) {
                 invalidations.push(queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }));
             }
@@ -312,8 +317,9 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: continueOptions(currentUser!.name).queryKey }),
-                queryClient.invalidateQueries({ queryKey: ["smart-views"], refetchType: "none" }),
-                queryClient.invalidateQueries({ queryKey: ["smart-views", "user", currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists"], refetchType: "none" }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 ...(queryOption.queryKey[0] === "details"
                     ? [queryClient.invalidateQueries({ queryKey: queryOption.queryKey })]
@@ -334,16 +340,24 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
             return postEditUserTag({ data: { mediaType, mediaId, tag, action } });
         },
         meta: { ...meta },
-        onSuccess: async (data) => {
+        onSuccess: async (data, { action, tag }) => {
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name] }),
-                queryClient.invalidateQueries({ queryKey: ["smart-views"], refetchType: "none" }),
-                queryClient.invalidateQueries({ queryKey: ["smart-views", "user", currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists"], refetchType: "none" }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }),
+                ...(action === TagAction.RENAME || action === TagAction.DELETE_ALL ? [
+                    queryClient.invalidateQueries({ queryKey: ["userList", mediaType, currentUser!.name] }),
+                    queryClient.invalidateQueries({ queryKey: ["details", mediaType] }),
+                ] : []),
             ]);
 
             queryClient.setQueryData(tagNamesOptions(mediaType, false).queryKey, (oldData) => {
-                if (!oldData || !data) return;
+                if (!oldData) return;
+                if (action === TagAction.DELETE_ALL) return oldData.filter(item => item.name !== tag.name);
+                if (!data) return oldData;
+                if (action === TagAction.RENAME) return oldData.map(item => item.name === tag.oldName ? data : item);
                 return oldData.map((c) => c?.name).includes(data?.name ?? "") ? oldData : [...oldData, data];
             });
         }

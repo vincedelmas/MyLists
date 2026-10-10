@@ -1,10 +1,10 @@
 import Database from "bun:sqlite";
-import {eq} from "drizzle-orm";
+import {and, eq} from "drizzle-orm";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
-import {JobType, MediaType, PrivacyType, RoleType, Status} from "@/lib/utils/enums";
+import {GamesPlatformsEnum, JobType, MediaType, PrivacyType, RoleType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
 import {AuthorizationService, toActor} from "@/lib/server/authorization";
 import type {SocialService} from "@/lib/server/domain/social/social.service";
@@ -12,8 +12,12 @@ import type {MediaServiceRegistry} from "@/lib/server/domain/media/media.registr
 import {CollectionsService} from "@/lib/server/domain/collections/collections.service";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {createMediaQueries} from "./media.queries";
 import {createMediaListQueries} from "./media-list.queries";
+import {createMediaBrowseQueryParts} from "./media-browse.queries";
+import {defineMediaFilterDefinitions} from "./media-filters.queries";
+import {moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
@@ -99,11 +103,74 @@ describe("collection and job media browsing", () => {
         expect(completed.items.map(item => item.mediaId)).toEqual([1]);
         const favorite = await collections.getCollectionDetails(collectionId, "read", viewer, { favorite: true, minRating: 8, tags: ["Viewer tag"] });
         expect(favorite.items).toMatchObject([{ mediaId: 55, status: Status.DROPPED, rating: 9, favorite: true }]);
+        const nonFavorites = await collections.getCollectionDetails(collectionId, "read", viewer, { favorite: false });
+        expect(nonFavorites.total).toBe(54);
+        expect(nonFavorites.items.some(item => item.mediaId === 1 && item.favorite === false)).toBe(true);
+        expect(nonFavorites.items.some(item => item.mediaId === 2 && !item.inUserList)).toBe(true);
+        expect(nonFavorites.items.every(item => item.favorite !== true)).toBe(true);
         const foreignTag = await collections.getCollectionDetails(collectionId, "read", viewer, { tags: ["Owner secret"] });
         expect(foreignTag.total).toBe(0);
         const out = await collections.getCollectionDetails(collectionId, "read", viewer, { library: "out" });
         expect(out.total).toBe(53);
         expect(out.items[0]).toMatchObject({ mediaId: 2, inUserList: false, status: null, rating: null, favorite: null });
+    });
+
+    it("applies only common filters composed by the media definition", async () => {
+        const definition = {
+            ...moviesServerDefinition,
+            repository: {
+                ...moviesServerDefinition.repository,
+                filters: defineMediaFilterDefinitions({
+                    ...moviesDefinition,
+                    filters: {
+                        common: { search: moviesDefinition.filters.common.search, favorite: moviesDefinition.filters.common.favorite },
+                        metadata: {},
+                    },
+                }, moviesServerDefinition.repository.tables, {}),
+            },
+        };
+        const ordinary = await createMediaListQueries(definition.repository)
+            .getMediaList(undefined, 2, { favorite: true, genres: ["Outside source"] });
+        expect(ordinary.items.map(item => item.mediaId)).toEqual([55]);
+
+        const parts = createMediaBrowseQueryParts(definition, { favorite: true, genres: ["Outside source"] }, 2);
+        const rows = dbContext.db.select({ mediaId: schema.movies.id }).from(schema.movies)
+            .leftJoin(schema.moviesList, parts.viewerJoin).where(and(...parts.conditions)).all();
+        expect(rows.map(row => row.mediaId)).toEqual([55]);
+    });
+
+
+    it("shares metadata facets with lists before pagination and lazily exposes source-scoped options", async () => {
+        dbContext.db.insert(schema.moviesActors).values([
+            { mediaId: 55, name: "Rare actor" }, { mediaId: 56, name: "Outside actor" },
+        ]).run();
+        const filters: MediaBrowseFilters = { mediaFilters: { movies: { actors: ["Rare actor"], directors: ["Test director"] } } };
+        const result = await collections.getCollectionDetails(collectionId, "read", viewer, filters);
+        expect(result).toMatchObject({ total: 1, items: [{ mediaId: 55, orderIndex: 55 }], filterOptions: { mediaFilters: {} } });
+        const ordinary = await createMediaListQueries(moviesServerDefinition.repository).getMediaList(undefined, 2, filters.mediaFilters!.movies!);
+        expect(ordinary.items.map(item => item.mediaId)).toEqual([55]);
+
+        const before = CollectionsRepository.getCollectionById(collectionId)!.viewCount;
+        const options = await collections.getCollectionDetails(collectionId, "read", toActor(), {}, true);
+        expect(options.filterOptions).toMatchObject({ mediaFilters: { movies: { actors: [
+            { name: "Rare actor" }, { name: "Test actor" }, { name: "Test actor alternate" },
+        ] } } });
+        expect(options.filterOptions.genres).toEqual(["Drama", "Rare", "Science fiction"]);
+        expect(options.filterOptions.tags).toEqual([]);
+        expect(CollectionsRepository.getCollectionById(collectionId)!.viewCount).toBe(before);
+        expect(() => createMediaBrowseQueryParts(getServerMediaDefinition(MediaType.GAMES), {
+            mediaFilters: { games: { platforms: [GamesPlatformsEnum.PC] } },
+        })).toThrow("Sign in");
+    });
+
+    it("filters stored viewer comments without reading the collection owner's comments", async () => {
+        dbContext.db.update(schema.moviesList).set({ comment: "Owner comment" }).where(eq(schema.moviesList.userId, 1)).run();
+        dbContext.db.update(schema.moviesList).set({ comment: "Viewer comment" })
+            .where(and(eq(schema.moviesList.userId, 2), eq(schema.moviesList.mediaId, 1))).run();
+        const result = await collections.getCollectionDetails(collectionId, "read", viewer, { comment: true });
+        expect(result.total).toBe(1);
+        expect(result.items[0].mediaId).toBe(1);
+        await expect(collections.getCollectionDetails(collectionId, "read", toActor(), { comment: true })).rejects.toThrow("Sign in");
     });
 
     it("keeps job results distinct and finds matching media beyond the first page", async () => {

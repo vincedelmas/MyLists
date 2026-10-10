@@ -98,7 +98,7 @@ function AdminCollectionsOverviewPage() {
             ),
             cell: ({ row: { original } }) => (
                 <div className="truncate line-clamp-1">
-                    <Link to="/collections/$collectionId" params={{ collectionId: original.id }}>
+                    <Link to="/lists/collections/$collectionId" params={{ collectionId: original.id }}>
                         {original.title}
                     </Link>
                 </div>

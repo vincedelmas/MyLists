@@ -6,7 +6,7 @@ import type {MediaDefinition} from "@/lib/media-definitions/base/media.definitio
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {MediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import type {AnySQLiteColumn, AnySQLiteTable, SelectedFieldsFlat} from "drizzle-orm/sqlite-core";
-import {FilterDefinitions, FilterOptionLoaders} from "@/lib/server/domain/media/base/media-list.queries";
+import type {MediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 type NotNullColumn<T> = AnySQLiteColumn<{ data: T; notNull: true }>;
@@ -116,6 +116,7 @@ interface MediaRepositoryDefinition<
 > {
     readonly tables: TTables;
     readonly sortColumns: TSortColumns;
+    readonly filters: MediaFilterDefinitions;
     readonly jobs: Partial<Record<JobType, JobDefinition>>;
     readonly popularity?: {
         readonly eligibility: SQL;
@@ -126,8 +127,6 @@ interface MediaRepositoryDefinition<
     readonly listQuery: {
         readonly sorts: TSortDefinitions;
         readonly selection: BaseSelection;
-        readonly filters: FilterDefinitions;
-        readonly filterOptions: FilterOptionLoaders;
         readonly defaultSort: NoInfer<Extract<keyof TSortDefinitions, string>>;
     };
 }
@@ -206,6 +205,7 @@ export interface ServerMediaDefinition<
 export type AnyMediaRepositoryDefinition = {
     readonly tables: BaseMediaTables;
     readonly sortColumns: MediaSortColumns;
+    readonly filters: MediaFilterDefinitions;
     readonly popularity?: { readonly eligibility: SQL };
     readonly jobs: Partial<Record<JobType, JobDefinition>>;
     readonly communityActivity: {
@@ -215,8 +215,6 @@ export type AnyMediaRepositoryDefinition = {
         readonly defaultSort: string;
         readonly sorts: SortDefinitions;
         readonly selection: BaseSelection;
-        readonly filters: FilterDefinitions;
-        readonly filterOptions: FilterOptionLoaders;
     };
 };
 

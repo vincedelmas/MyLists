@@ -2,14 +2,23 @@ import {getTableColumns, ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {MOVIES_FALLBACK_DURATION, moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
-import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {movies, moviesActors, moviesGenre, moviesList, moviesTags} from "@/lib/server/database/schema/media/movies.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+
+
+const tables = {
+    mediaTable: movies,
+    listTable: moviesList,
+    genreTable: moviesGenre,
+    tagTable: moviesTags,
+    deleteDependents: [moviesActors, moviesGenre, moviesTags],
+};
 
 
 const sortColumns = {
-    ...getCommonMediaSortColumns({ mediaTable: movies, listTable: moviesList }),
+    ...getCommonMediaSortColumns(tables),
     redo: moviesList.redo,
     providerRating: movies.voteAverage,
 };
@@ -22,13 +31,19 @@ export const moviesServerDefinition = defineServerMediaDefinition({
     },
     repository: {
         sortColumns,
-        tables: {
-            mediaTable: movies,
-            listTable: moviesList,
-            genreTable: moviesGenre,
-            tagTable: moviesTags,
-            deleteDependents: [moviesActors, moviesGenre, moviesTags],
-        },
+        filters: defineMediaFilterDefinitions(moviesDefinition, tables, {
+            actors: {
+                entityTable: moviesActors,
+                filterColumn: moviesActors.name,
+            },
+            langs: {
+                filterColumn: movies.originalLanguage,
+            },
+            directors: {
+                filterColumn: movies.directorName,
+            },
+        }),
+        tables,
         popularity: {
             eligibility: sql`${movies.voteCount} >= 1000`,
         },
@@ -37,31 +52,6 @@ export const moviesServerDefinition = defineServerMediaDefinition({
                 mediaName: movies.name,
                 imageCover: movies.imageCover,
                 ...getTableColumns(moviesList),
-            },
-            filters: {
-                actors: createArrayFilter({
-                    argName: "actors",
-                    mediaTable: movies,
-                    entityTable: moviesActors,
-                    filterColumn: moviesActors.name,
-                }),
-                langs: createArrayFilter({
-                    argName: "langs",
-                    mediaTable: movies,
-                    filterColumn: movies.originalLanguage,
-                }),
-                directors: createArrayFilter({
-                    argName: "directors",
-                    mediaTable: movies,
-                    filterColumn: movies.directorName,
-                }),
-            },
-            filterOptions: {
-                langs: createMediaColOptionsLoader({
-                    mediaTable: movies,
-                    listTable: moviesList,
-                    nameColumn: movies.originalLanguage,
-                }),
             },
             defaultSort: getMediaSortLabel(moviesDefinition, moviesDefinition.sorting.default),
             sorts: createMediaListSorts(moviesDefinition, sortColumns, movies.id),

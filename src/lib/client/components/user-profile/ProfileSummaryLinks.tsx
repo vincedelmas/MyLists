@@ -35,7 +35,8 @@ export const ProfileSummaryLinks = ({ username }: ProfileSummaryLinksProps) => {
                 Activity
             </Link>
             <Link
-                to="/collections/user/$username"
+                to="/lists/$username"
+                search={{ kind: "collections" }}
                 params={{ username }}
                 className={`${linkClassName} border-l border-border/70`}
             >

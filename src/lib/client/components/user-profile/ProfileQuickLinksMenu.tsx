@@ -62,7 +62,8 @@ export const ProfileQuickLinksMenu = ({ username, className }: ProfileQuickLinks
                             className="cursor-pointer"
                             render={
                                 <Link
-                                    to="/collections/user/$username"
+                                    to="/lists/$username"
+                                    search={{ kind: "collections" }}
                                     params={{ username }}
                                 />
                             }

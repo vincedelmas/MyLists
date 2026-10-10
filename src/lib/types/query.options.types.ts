@@ -4,7 +4,6 @@ import {
     achievementOptions,
     hallOfFameOptions,
     historyOptions,
-    listFiltersOptions,
     mediaDetailsOptions,
     mediaListOptions,
     profileHeaderOptions,
@@ -22,7 +21,6 @@ type MediaListOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof med
 type MediaDetailsOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaDetailsOptions>["queryFn"]>>>;
 export type HistoryOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof historyOptions>["queryFn"]>>>;
 export type ProfileHeaderOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof profileHeaderOptions>["queryFn"]>>>;
-export type ListFiltersOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof listFiltersOptions>["queryFn"]>>>;
 export type AchCard = Awaited<ReturnType<NonNullable<ReturnType<typeof achievementOptions>["queryFn"]>>>["result"][number];
 export type AchSummary = Awaited<ReturnType<NonNullable<ReturnType<typeof achievementOptions>["queryFn"]>>>["summary"][MediaType];
 export type HofUserData = Awaited<ReturnType<NonNullable<ReturnType<typeof hallOfFameOptions>["queryFn"]>>>["items"][number];

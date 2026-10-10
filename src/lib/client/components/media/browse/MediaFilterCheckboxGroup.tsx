@@ -2,7 +2,7 @@ import {useId, useState} from "react";
 import {ChevronDown, ChevronUp} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
-import {Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
+import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 
 
 interface MediaFilterCheckboxProps {
@@ -36,19 +36,22 @@ interface MediaFilterCheckboxGroupProps<T extends string> {
     title: string;
     items: readonly T[];
     selected: readonly T[];
+    disabled?: boolean;
+    error?: string;
     maxSelected?: number;
     onChange: (selected: T[]) => void;
     renderLabel?: (value: T) => string;
 }
 
 
-export const MediaFilterCheckboxGroup = <T extends string, >({ title, items, selected, maxSelected, renderLabel, onChange }: MediaFilterCheckboxGroupProps<T>) => {
+export const MediaFilterCheckboxGroup = <T extends string, >({ title, items, selected, maxSelected, disabled, error, renderLabel, onChange }: MediaFilterCheckboxGroupProps<T>) => {
+    const errorId = useId();
     const initialVisibleItems = 14;
     const [showAll, setShowAll] = useState(false);
     const visibleItems = showAll ? items : items.slice(0, initialVisibleItems);
 
     return (
-        <FieldSet>
+        <FieldSet disabled={disabled} data-invalid={!!error} aria-invalid={!!error} aria-describedby={error ? errorId : undefined}>
             <FieldLegend variant="label">
                 {title}
             </FieldLegend>
@@ -67,13 +70,13 @@ export const MediaFilterCheckboxGroup = <T extends string, >({ title, items, sel
                     :
                     visibleItems.map(value => {
                         const checked = selected.includes(value);
-                        const disabled = maxSelected !== undefined && selected.length >= maxSelected && !checked;
+                        const itemDisabled = disabled || (maxSelected !== undefined && selected.length >= maxSelected && !checked);
 
                         return (
                             <MediaFilterCheckbox
                                 key={value}
                                 checked={checked}
-                                disabled={disabled}
+                                disabled={itemDisabled}
                                 label={renderLabel ? renderLabel(value) : value}
                                 onChange={nextChecked => onChange(nextChecked
                                     ? [...selected, value]
@@ -85,13 +88,14 @@ export const MediaFilterCheckboxGroup = <T extends string, >({ title, items, sel
                 }
             </FieldGroup>
             {items.length > initialVisibleItems &&
-                <Button type="button" size="xs" variant="outline" className="w-fit" onClick={() => setShowAll(current => !current)}>
+                <Button type="button" size="xs" variant="outline" className="w-fit" disabled={disabled} onClick={() => setShowAll(current => !current)}>
                     {showAll
                         ? <>Less <ChevronUp data-icon="inline-end"/></>
                         : <>More <ChevronDown data-icon="inline-end"/></>
                     }
                 </Button>
             }
+            <FieldError id={errorId}>{error}</FieldError>
         </FieldSet>
     );
 };

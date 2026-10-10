@@ -9,14 +9,15 @@ type BaseSearchParams = {
 }
 
 
-type UseSearchNavigateProps = {
+type UseSearchNavigateProps<T extends BaseSearchParams> = {
     search: string;
     delay?: number;
     options?: NavigateOptions;
+    resetFilters?: Partial<T>;
 };
 
 
-export const useSearchNavigate = <T extends BaseSearchParams>({ search, delay = 400, options }: UseSearchNavigateProps) => {
+export const useSearchNavigate = <T extends BaseSearchParams>({ search, delay = 400, options, resetFilters }: UseSearchNavigateProps<T>) => {
     const navigate = useNavigate();
     const [input, setInput] = useState({ urlSearch: search, value: search, navigatedSearch: search });
 
@@ -43,14 +44,14 @@ export const useSearchNavigate = <T extends BaseSearchParams>({ search, delay = 
 
         if (value === "") {
             setInput(current => ({ ...current, navigatedSearch: "" }));
-            updateFilters({ search: undefined, page: 1 } as Partial<T>);
+            updateFilters({ ...resetFilters, search: undefined, page: 1 } as Partial<T>);
         }
     };
 
     useDebounceCallback(localSearch, delay, () => {
         if (localSearch !== input.navigatedSearch && localSearch !== search && localSearch !== "") {
             setInput(current => ({ ...current, navigatedSearch: localSearch }));
-            updateFilters({ search: localSearch, page: 1 } as Partial<T>);
+            updateFilters({ ...resetFilters, search: localSearch, page: 1 } as Partial<T>);
         }
     });
 

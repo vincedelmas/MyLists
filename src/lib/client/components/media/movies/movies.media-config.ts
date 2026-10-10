@@ -1,5 +1,6 @@
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {formatLocaleName} from "@/lib/utils/formatting/text";
 import {formatCurrency, formatNumber} from "@/lib/utils/formatting/number";
 import {MovieListItem} from "@/lib/client/components/media/movies/MovieListItem";
 import {moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
@@ -14,7 +15,6 @@ import {MoviesUserDetails} from "@/lib/client/components/media/movies/MoviesUser
 import {tmdbSearchFilterDefinition} from "@/lib/client/components/search/TmdbSearchFilters";
 import {MoviesExtraSections} from "@/lib/client/components/media/movies/MoviesExtraSections";
 import {MoviesUpComingAlert} from "@/lib/client/components/media/movies/MoviesUpComingAlert";
-import {getMoviesActiveFilters} from "@/lib/client/components/media/movies/MoviesActiveFilters";
 
 
 export const moviesMediaConfig = defineMediaConfig({
@@ -29,7 +29,11 @@ export const moviesMediaConfig = defineMediaConfig({
     extraSections: MoviesExtraSections,
     mediaListColumns: getMoviesColumns,
     mediaUserDetails: MoviesUserDetails,
-    sheetFilters: getMoviesActiveFilters,
+    metadataFilters: {
+        actors: { title: "Actors", type: "search" },
+        directors: { title: "Directors", type: "search" },
+        langs: { title: "Languages", type: "checkbox", render: name => formatLocaleName(name, "language") },
+    },
     jobs: {
         [JobType.ACTOR]: {
             label: "Actor",

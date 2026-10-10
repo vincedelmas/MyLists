@@ -1,12 +1,11 @@
 import {MediaType} from "@/lib/utils/enums";
 import {queryOptions} from "@tanstack/react-query";
-import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
+import {CommunitySearch} from "@/lib/schemas";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {
     getCommunityCollections,
     getEditCollectionDetails,
     getMediaCommunityCollections,
-    getPaginatedUserCollections,
     getReadCollectionDetails,
     getUserCollectionMemberships
 } from "@/lib/server/functions/collections";
@@ -21,15 +20,9 @@ export const collectionDetailsReadQueryKey = (collectionId: number) => {
 }
 
 
-export const paginatedUserCollectionsOptions = (search: UserCollectionsSearch) => queryOptions({
-    queryKey: ["collections", "user", "paginated", search] as const,
-    queryFn: () => getPaginatedUserCollections({data: search}),
-});
-
-
-export const collectionDetailsReadOptions = (collectionId: number, filters: MediaBrowseFilters) => queryOptions({
-    queryKey: [...collectionDetailsReadQueryKey(collectionId), filters] as const,
-    queryFn: () => getReadCollectionDetails({ data: { collectionId, ...filters } }),
+export const collectionDetailsReadOptions = (collectionId: number, filters: MediaBrowseFilters, includeFilterOptions = false) => queryOptions({
+    queryKey: [...collectionDetailsReadQueryKey(collectionId), filters, includeFilterOptions] as const,
+    queryFn: () => getReadCollectionDetails({ data: { collectionId, ...filters, includeFilterOptions } }),
 });
 
 

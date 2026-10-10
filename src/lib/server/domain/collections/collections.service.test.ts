@@ -33,7 +33,7 @@ const createService = () => {
             total: 0,
             items: [],
             perPage: 24,
-            filterOptions: { genres: [], tags: [], mediaTypes: [MediaType.MOVIES] },
+            filterOptions: { genres: [], tags: [], mediaTypes: [MediaType.MOVIES], mediaFilters: {} },
         }),
         findLikedCollection: vi.fn().mockReturnValue(null),
         incrementViewCount: vi.fn().mockResolvedValue(undefined),
@@ -98,7 +98,7 @@ describe("CollectionsService.getUserCollections", () => {
         const actor = toActor({ id: 20, role: RoleType.ADMIN });
         await service.getUserCollections(10, actor, MediaType.MOVIES);
 
-        expect(repository.getUserCollections).toHaveBeenCalledWith(10, actor, MediaType.MOVIES);
+        expect(repository.getUserCollections).toHaveBeenCalledWith(10, actor, MediaType.MOVIES, false);
     });
 });
 
@@ -111,7 +111,16 @@ describe("CollectionsService.getPaginatedUserCollections", () => {
         const actor = toActor({ id: 20, role: RoleType.USER });
         await service.getPaginatedUserCollections(10, filters, actor);
 
-        expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, actor, filters);
+        expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, actor, filters, false);
+    });
+
+    it("requests public collections before enriching previews when the profile is unavailable", async () => {
+        const { repository, service } = createService();
+        const actor = toActor();
+
+        await service.getPaginatedUserCollections(10, { page: 1 }, actor, true);
+
+        expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, actor, { page: 1 }, true);
     });
 });
 
@@ -160,14 +169,23 @@ describe("CollectionsService authorization", () => {
             total: 50,
             items: [],
             perPage: 24,
-            filterOptions: { genres: [], tags: [], mediaTypes: [MediaType.MOVIES] },
+            filterOptions: { genres: [], tags: [], mediaTypes: [MediaType.MOVIES], mediaFilters: {} },
         });
 
         const result = await service.getCollectionDetails(7, "read", actor, { page: 2 });
 
-        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, [MediaType.MOVIES], { page: 2 }, undefined);
+        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, [MediaType.MOVIES], { page: 2 }, undefined, false);
         expect(repository.getCollectionItems).not.toHaveBeenCalled();
         expect(result).toMatchObject({ page: 2, pages: 3, total: 50, perPage: 24 });
+    });
+
+    it("loads lazy facet options after authorization without counting another page view", async () => {
+        const { repository, authorizationService, collection, service } = createService();
+        const actor = toActor({ id: 20, role: RoleType.USER });
+        await service.getCollectionDetails(7, "read", actor, {}, true);
+        expect(authorizationService.decideCollection).toHaveBeenCalledWith(actor, "read", collection);
+        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, [MediaType.MOVIES], {}, 20, true);
+        expect(repository.incrementViewCount).not.toHaveBeenCalled();
     });
 
     it("keeps all items available in edit mode", async () => {

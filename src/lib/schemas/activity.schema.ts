@@ -61,8 +61,6 @@ export const monthlyActivityStatsSchema = monthlyActivitySchema.pick({
     view: true,
     month: true,
     username: true,
-}).extend({
-    mediaType: mediaTypeFieldSchema.optional(),
 });
 
 export const monthlyActivityMediaSearchSchema = z.object({

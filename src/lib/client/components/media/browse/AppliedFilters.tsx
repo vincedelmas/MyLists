@@ -3,13 +3,21 @@ import {Fragment} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import type {MediaListArgs} from "@/lib/schemas";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {capitalize} from "@/lib/utils/formatting/text";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/formatting/number";
-import {capitalize, formatLocaleName} from "@/lib/utils/formatting/text";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
+import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
+import {getMediaFilterDefinitions, getMediaFilterGroups} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
 export type MediaBrowseFilterKey = Exclude<keyof MediaBrowseFilters, "page" | "sorting">;
+
+
+export type MediaBrowseFilterScope = {
+    mediaType: MediaType;
+    field: MediaMetadataFilterKey;
+};
 
 
 interface AppliedFilterGroup {
@@ -28,23 +36,25 @@ interface AppliedFilterGroup {
 interface AppliedFiltersProps {
     total: number;
     page?: number;
+    canReset: boolean;
     totalPages: number;
     itemLabel?: string;
-    groups: AppliedFilterGroup[];
     resetLabel: string;
-    canReset: boolean;
     onReset: () => void;
+    groups: AppliedFilterGroup[];
 }
 
 
 const AppliedFilters = (props: AppliedFiltersProps) => {
-    const { total, page = 1, totalPages, itemLabel, groups, resetLabel, canReset, onReset } = props;
+    const { page = 1, total, totalPages, itemLabel, groups, resetLabel, canReset, onReset } = props;
 
     return (
-        <div className="flex min-h-9 items-start justify-between gap-3 py-4" role="group" aria-label="Browsing results and filters">
+        <div className="flex min-h-6 items-center justify-between gap-3" role="group" aria-label="Browsing results and filters">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
                 <span className="text-xs text-muted-foreground">
-                    <span className="text-sm font-semibold tabular-nums text-foreground">{formatNumber(total)}</span>
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
+                        {formatNumber(total)}
+                    </span>
                     {" "}{itemLabel ?? (total === 1 ? "title" : "titles")}
                 </span>
 
@@ -56,19 +66,24 @@ const AppliedFilters = (props: AppliedFiltersProps) => {
                         {group.items.map((item, index) =>
                             <Fragment key={item.key}>
                                 <Badge variant="outline" className="h-auto max-w-full">
-                                    <span className="truncate">{item.label}</span>
+                                    <span className="truncate">
+                                        {item.label}
+                                    </span>
                                     <Button
                                         size="bare"
                                         type="button"
                                         variant="ghost"
-                                        aria-label={item.removeLabel}
                                         onClick={item.onRemove}
+                                        aria-label={item.removeLabel}
                                     >
                                         <X data-icon="inline-end" aria-hidden="true"/>
                                     </Button>
                                 </Badge>
+
                                 {group.alternatives && index < group.items.length - 1 &&
-                                    <span className="px-0.5 text-[10px] font-medium text-muted-foreground">OR</span>
+                                    <span className="px-0.5 text-[10px] font-medium text-muted-foreground">
+                                        OR
+                                    </span>
                                 }
                             </Fragment>
                         )}
@@ -99,7 +114,7 @@ interface BrowseAppliedFiltersProps {
     onReset: () => void;
     filters: MediaBrowseFilters;
     additionalGroups?: AppliedFilterGroup[];
-    onRemove: (key: MediaBrowseFilterKey, value?: string) => void;
+    onRemove: (key: MediaBrowseFilterKey, value?: string, scope?: MediaBrowseFilterScope) => void;
 }
 
 
@@ -109,15 +124,20 @@ export const BrowseAppliedFilters = (props: BrowseAppliedFiltersProps) => {
 
     if (filters.search) {
         groups.push({
-            key: "search", label: "Search", items: [{
-                key: "search", label: filters.search, removeLabel: `Remove Search: ${filters.search}`,
+            key: "search",
+            label: "Search",
+            items: [{
+                key: "search",
+                label: filters.search,
                 onRemove: () => onRemove("search"),
+                removeLabel: `Remove Search: ${filters.search}`,
             }],
         });
     }
 
     if (filters.mediaType) {
         const label = filters.mediaType === "series" ? "TV series" : capitalize(filters.mediaType);
+
         groups.push({
             key: "mediaType", label: "Type", items: [{
                 key: "mediaType", label, removeLabel: `Remove ${filters.mediaType === "series" ? "TV series" : filters.mediaType}`,
@@ -164,6 +184,28 @@ export const BrowseAppliedFilters = (props: BrowseAppliedFiltersProps) => {
         });
     }
 
+    if (filters.comment) {
+        groups.push({
+            key: "comment", label: "Misc", items: [{
+                key: "comment", label: "Commented", removeLabel: "Remove Comments only", onRemove: () => onRemove("comment"),
+            }],
+        });
+    }
+
+    for (const group of getMediaFilterGroups(filters.mediaFilters)) {
+        groups.push({
+            key: `${group.mediaType}.${group.field}`,
+            label: group.label,
+            alternatives: true,
+            items: group.items.map(item => ({
+                key: item.value,
+                label: item.label,
+                removeLabel: `Remove ${group.label}: ${item.label}`,
+                onRemove: () => onRemove("mediaFilters", item.value, { mediaType: group.mediaType, field: group.field }),
+            })),
+        });
+    }
+
     if (filters.minRating !== undefined) {
         const label = `Rated at least ${filters.minRating} / 10`;
         groups.push({
@@ -179,8 +221,8 @@ export const BrowseAppliedFilters = (props: BrowseAppliedFiltersProps) => {
         <AppliedFilters
             total={total}
             groups={groups}
-            page={filters.page}
             onReset={onReset}
+            page={filters.page}
             itemLabel={itemLabel}
             totalPages={totalPages}
             resetLabel="Reset filters"
@@ -201,35 +243,54 @@ interface ListAppliedFiltersProps {
 
 export const ListAppliedFilters = ({ mediaType, filters, totalItems, totalPages, onFilterRemove }: ListAppliedFiltersProps) => {
     const {
-        page, perPage: _perPage, sorting: _sorting, status: _status, search: _search,
-        view: _view, currentUserId: _currentUserId, userId: _userId, ...rawFilters
+        page,
+        view: _view,
+        status: _status,
+        search: _search,
+        userId: _userId,
+        perPage: _perPage,
+        sorting: _sorting,
+        currentUserId: _currentUserId,
+        ...rawFilters
     } = filters;
+
     const groups: AppliedFilterGroup[] = [];
-    const miscItems: AppliedFilterGroup["items"] = [];
     const resetFilters: Partial<MediaListArgs> = {};
+    const miscItems: AppliedFilterGroup["items"] = [];
+    const metadataFilters = getMediaFilterDefinitions(mediaType);
 
     for (const [key, value] of Object.entries(rawFilters)) {
         const filterKey = key as keyof typeof rawFilters;
 
         if (Array.isArray(value) && value.length > 0) {
             resetFilters[filterKey] = undefined;
+            const definition = metadataFilters.find(filter => filter.key === key);
+
             groups.push({
-                key, label: key, alternatives: true,
+                key,
+                label: key,
+                alternatives: true,
                 items: value.map(item => ({
                     key: item,
-                    label: key === "langs"
-                        ? formatLocaleName(item, mediaType === MediaType.SERIES || mediaType === MediaType.ANIME ? "region" : "language")
-                        : capitalize(item),
                     removeLabel: `Remove ${item} filter`,
                     onRemove: () => onFilterRemove({ [filterKey]: [item] }),
+                    label: definition?.render ? definition.render(item) : capitalize(item),
                 })),
             });
         }
         else if (value === true) {
-            const label = key === "favorite" ? "Favorites" : key === "comment" ? "Commented" : "No Common";
             resetFilters[filterKey] = undefined;
+
+            const label = key === "favorite"
+                ? "Favorites"
+                : key === "comment"
+                    ? "Commented"
+                    : "No Common";
+
             miscItems.push({
-                key, label, removeLabel: `Remove ${label} filter`,
+                key,
+                label,
+                removeLabel: `Remove ${label} filter`,
                 onRemove: () => onFilterRemove({ [filterKey]: false }),
             });
         }
@@ -244,8 +305,8 @@ export const ListAppliedFilters = ({ mediaType, filters, totalItems, totalPages,
             page={page}
             groups={groups}
             total={totalItems}
-            totalPages={totalPages}
             resetLabel="Clear all"
+            totalPages={totalPages}
             canReset={groups.length > 0}
             itemLabel={capitalize(mediaType)}
             onReset={() => onFilterRemove({ ...resetFilters, search: "" })}

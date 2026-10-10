@@ -16,4 +16,4 @@ export * from "./admin.schema";
 export * from "./feature-votes.schema";
 export * from "./collections.schema";
 export * from "./imports.schema";
-export * from "./smart-views.schema";
+export * from "./dynamic-lists.schema";

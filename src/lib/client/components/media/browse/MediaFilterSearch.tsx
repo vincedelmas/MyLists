@@ -1,4 +1,5 @@
-import {useId} from "react";
+import {useId, useState} from "react";
+import {ChevronDown, ChevronUp} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {levenshteinDistance} from "@/lib/utils/levenshtein";
 import {Field, FieldDescription, FieldError, FieldLabel} from "@/lib/client/components/ui/field";
@@ -16,11 +17,13 @@ interface MediaFilterSearchProps {
     disabled?: boolean;
     error?: string;
     maxSelected?: number;
+    browseOptions?: boolean;
 }
 
 
-export const MediaFilterSearch = ({ label, options, value, onChange, disabled, error, maxSelected }: MediaFilterSearchProps) => {
+export const MediaFilterSearch = ({ label, options, value, onChange, disabled, error, maxSelected, browseOptions = false }: MediaFilterSearchProps) => {
     const fieldId = useId();
+    const [showAll, setShowAll] = useState(false);
     const { search, setSearch, debouncedSearch, isOpen, setIsOpen, reset, containerRef } = useSearchContainer({ debounceMs: 150 });
     const atLimit = maxSelected !== undefined && value.length >= maxSelected;
     const query = debouncedSearch.trim().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
@@ -38,6 +41,10 @@ export const MediaFilterSearch = ({ label, options, value, onChange, disabled, e
     }).filter(result => Number.isFinite(result.score)).sort((a, b) =>
         a.score - b.score || a.option.localeCompare(b.option)
     ).slice(0, 8);
+
+    const availableOptions = browseOptions
+        ? options.filter(option => !value.includes(option)).sort((a, b) => a.localeCompare(b))
+        : [];
 
     const selectOption = (option: string) => {
         onChange([...value, option]);
@@ -95,6 +102,25 @@ export const MediaFilterSearch = ({ label, options, value, onChange, disabled, e
                     </div>
                 </SearchContainer>
             </div>
+            {browseOptions &&
+                <FieldDescription>{options.length} available · {value.length} selected</FieldDescription>
+            }
+            {browseOptions && !search.trim() && availableOptions.length > 0 &&
+                <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap gap-1.5">
+                        {(showAll ? availableOptions : availableOptions.slice(0, 14)).map(option =>
+                            <Button key={option} type="button" variant="outline" size="xs" aria-label={`Select ${label.toLowerCase()}: ${option}`} className="h-auto max-w-full whitespace-normal text-left" disabled={disabled || atLimit} onClick={() => selectOption(option)}>
+                                {option}
+                            </Button>
+                        )}
+                    </div>
+                    {availableOptions.length > 14 &&
+                        <Button type="button" variant="ghost" size="xs" className="w-fit" disabled={disabled} onClick={() => setShowAll(current => !current)}>
+                            {showAll ? <>Less <ChevronUp data-icon="inline-end"/></> : <>More ({availableOptions.length - 14}) <ChevronDown data-icon="inline-end"/></>}
+                        </Button>
+                    }
+                </div>
+            }
             {atLimit &&
                 <FieldDescription id={`${fieldId}-limit`}>
                     Choose up to {maxSelected} values. Remove one to select another.

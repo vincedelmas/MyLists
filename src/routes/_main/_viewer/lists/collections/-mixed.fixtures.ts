@@ -17,6 +17,8 @@ db.transaction(() => {
     db.insert(schema.books).values({ ...common, name: title(MediaType.BOOKS), apiId: "collection-book-501", pages: 240 }).run();
     db.insert(schema.manga).values({ ...common, name: title(MediaType.MANGA), chapters: 20 }).run();
     db.insert(schema.games).values({ ...common, name: title(MediaType.GAMES) }).run();
+    db.insert(schema.moviesGenre).values({ mediaId: 501, name: "Movie genre" }).run();
+    db.insert(schema.booksGenre).values({ mediaId: 501, name: "Book genre" }).run();
     db.insert(schema.booksList).values({ userId: users.stranger.id, mediaId: 501, status: Status.COMPLETED, rating: 9 }).run();
     db.update(schema.userMediaSettings).set({ active: true, totalEntries: 1, statusCounts: { [Status.COMPLETED]: 1 } as Record<Status, number> })
         .where(and(eq(schema.userMediaSettings.userId, users.stranger.id), eq(schema.userMediaSettings.mediaType, MediaType.BOOKS))).run();

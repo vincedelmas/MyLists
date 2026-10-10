@@ -1,7 +1,7 @@
 import * as z from "zod";
 import {MediaType} from "@/lib/utils/enums";
 import {mediaBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
-import {scopedMediaFiltersSchema} from "@/lib/schemas/media-filters.schema";
+import {scopedMediaFiltersSchema, mediaTagMatchingSchema} from "@/lib/schemas/media-filters.schema";
 import {mediaRatingFilterSchema} from "@/lib/media-definitions/base/media-filters";
 import {mediaCommonFilterSchemas} from "@/lib/media-definitions/definition.registry";
 
@@ -33,7 +33,7 @@ export const dynamicListSpecSchema = z.strictObject({
         rated: z.boolean().optional(),
         tags: filterNamesSchema.optional(),
         excludeTags: filterNamesSchema.optional(),
-        tagsMatch: z.enum(["any", "all"]).optional(),
+        tagsMatch: mediaTagMatchingSchema.optional(),
         addedBefore: relativeMonthsSchema.optional(),
         addedWithin: relativeMonthsSchema.optional(),
         minRating: mediaRatingFilterSchema.optional(),

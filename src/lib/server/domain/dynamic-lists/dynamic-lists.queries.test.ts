@@ -364,6 +364,28 @@ describe("dynamic list live queries", () => {
         expect(saved.filters).toEqual({ statusGroup: "completed", minRating: 8 });
     });
 
+    it("scopes genres and tag rules to each media type without removing other types", () => {
+        addEntry(MediaType.MOVIES, 1, { rating: 9 });
+        addEntry(MediaType.MOVIES, 2, { rating: 9 });
+        addEntry(MediaType.BOOKS, 1, { rating: 8 });
+        dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 2, name: "Comedy" }]).run();
+        dbContext.db.insert(schema.booksGenre).values({ mediaId: 1, name: "History" }).run();
+        dbContext.db.insert(schema.moviesTags).values([
+            { userId: 1, mediaId: 1, name: "cozy" }, { userId: 1, mediaId: 1, name: "short" },
+            { userId: 2, mediaId: 2, name: "cozy" },
+        ]).run();
+        const mediaFilters = { movies: { genres: ["Drama"], tags: ["cozy", "short"], tagsMatch: "all" as const } };
+        const saved = getDynamicListResults(1, { ...spec, filters: { minRating: 8, mediaFilters } });
+        expect(saved.items.map(item => [item.mediaType, item.mediaId])).toEqual([[MediaType.BOOKS, 1], [MediaType.MOVIES, 1]]);
+        expect(getDynamicListResults(1, spec, { filters: { minRating: 8, mediaFilters } }).items).toEqual(saved.items);
+        expect(getDynamicListResults(1, { ...spec, filters: { mediaFilters: { movies: { tags: ["cozy"], excludeTags: ["short"] } } } }).items.map(item => item.mediaType)).toEqual([MediaType.BOOKS]);
+        const options = getDynamicListEditorFilterOptions(1, "all").mediaFilters;
+        expect(options.movies?.genres).toEqual([{ name: "Comedy" }, { name: "Drama" }]);
+        expect(options.movies?.tags).toEqual([{ name: "cozy" }, { name: "short" }]);
+        expect(options.books?.genres).toEqual([{ name: "History" }]);
+        expect(options.books?.tags).toEqual([]);
+    });
+
     it("filters and overrides ordering before pagination across media types", () => {
         for (let index = 1; index <= 28; index++) addEntry(MediaType.MOVIES, index, { title: `Movie ${index}`, addedAt: `2026-01-${String(index).padStart(2, "0")} 00:00:00` });
         addEntry(MediaType.BOOKS, 50, { title: "Movie 28", addedAt: "2026-02-01" });

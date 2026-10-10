@@ -84,7 +84,7 @@ export const dynamicListRules = (spec: DynamicListSpec) => {
     }
 
     for (const group of getMediaFilterGroups(spec.filters.mediaFilters)) {
-        rules.push(`${group.label}: ${group.items.map(item => item.label).join(" or ")}`);
+        rules.push(`${group.label}: ${group.items.map(item => item.label).join(group.matchAll ? " and " : " or ")}`);
     }
 
     return rules;

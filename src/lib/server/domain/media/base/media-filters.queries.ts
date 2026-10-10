@@ -1,3 +1,4 @@
+import type {ScopedMediaFilterValues} from "@/lib/schemas/media-filters.schema";
 import type {Status} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import type {NameObj} from "@/lib/types/media-common.types";
@@ -204,4 +205,32 @@ export const getMediaMetadataFilterOptions = (definition: AnyMediaRepositoryDefi
     }
 
     return options;
+};
+
+
+export const getMediaScopedFilterConditions = (definition: AnyMediaRepositoryDefinition, filters: ScopedMediaFilterValues = {}, userId?: number) => {
+    const conditions = [
+        ...getMediaCommonFilterConditions(definition, { genres: filters.genres }, userId),
+        ...getMediaMetadataFilterConditions(definition, filters, userId),
+    ];
+    if (!definition.filters.common.tags || (!filters.tags?.length && !filters.excludeTags?.length)) return conditions;
+    if (userId === undefined) throw new FormattedError("Sign in to filter by your own list.");
+
+    const { tagTable, mediaTable, listTable } = definition.tables;
+    conditions.push(isNotNull(listTable.userId));
+    if (filters.tags?.length) {
+        const tags = [...new Set(filters.tags)];
+        const matching = sql`SELECT DISTINCT ${tagTable.name} FROM ${tagTable}
+            WHERE ${tagTable.userId} = ${userId} AND ${tagTable.mediaId} = ${mediaTable.id}
+                AND ${tagTable.name} IN (${sql.join(tags.map(tag => sql`${tag}`), sql`, `)})`;
+        conditions.push(filters.tagsMatch === "all"
+            ? sql`(SELECT COUNT(*) FROM (${matching})) = ${tags.length}`
+            : sql`EXISTS (${matching})`);
+    }
+    if (filters.excludeTags?.length) {
+        conditions.push(sql`NOT EXISTS (SELECT 1 FROM ${tagTable}
+            WHERE ${tagTable.userId} = ${userId} AND ${tagTable.mediaId} = ${mediaTable.id}
+                AND ${tagTable.name} IN (${sql.join(filters.excludeTags.map(tag => sql`${tag}`), sql`, `)}))`);
+    }
+    return conditions;
 };

@@ -443,6 +443,17 @@ describe("collection media references", () => {
         expect(narrowed.total).toBe(0);
         expect(narrowed.filterOptions).toMatchObject({ genres: ["Fantasy"], tags: ["Bookshelf"] });
         expect(narrowed.filterOptions.mediaTypes).toEqual(filtered.filterOptions.mediaTypes);
+        const scoped = await service.getCollectionDetails(collectionId, "read", viewer, {
+            page: 1, mediaFilters: { movies: { genres: ["Missing"], tags: ["Watch again"] } },
+        }, true);
+        expect(scoped.items.map(item => item.mediaType).sort()).toEqual([MediaType.BOOKS, MediaType.GAMES]);
+        expect(scoped.filterOptions).toMatchObject({ mediaFilters: { movies: { genres: [{ name: "Drama" }], tags: [{ name: "Watch again" }] } } });
+        expect(scoped.filterOptions).toMatchObject({ mediaFilters: { books: { genres: [{ name: "Fantasy" }], tags: [{ name: "Bookshelf" }] } } });
+        const guest = await service.getCollectionDetails(collectionId, "read", toActor(null), {
+            page: 1, mediaFilters: { books: { genres: ["Missing"] } },
+        });
+        expect(guest.items.map(item => item.mediaType).sort()).toEqual([MediaType.GAMES, MediaType.MOVIES]);
+
     });
 
     it("filters restricted and private collections in SQL when only public summaries are allowed", async () => {

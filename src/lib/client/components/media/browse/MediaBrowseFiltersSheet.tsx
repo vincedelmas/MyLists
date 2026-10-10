@@ -1,17 +1,19 @@
+import {capitalize} from "@/lib/utils/formatting/text";
+import {MediaTagFilters} from "@/lib/client/components/media/browse/MediaTagFilters";
 import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
 import {useId, useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {capitalize} from "@/lib/utils/formatting/text";
-import type {MediaMetadataFilterOptions} from "@/lib/types/media-list.types";
+import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {MediaFiltersSheet, type MediaFiltersTab} from "@/lib/client/components/media/browse/MediaFiltersSheet";
 import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
-import {Field, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
+import {Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {type MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {MediaFilterCheckbox} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
+import {MediaTypeFilterTabs} from "@/lib/client/components/media/browse/MediaTypeFilterTabs";
 import {MediaSpecificFilters} from "@/lib/client/components/media/browse/MediaSpecificFilters";
 import {getMediaCommonFilterKeys} from "@/lib/client/components/media/browse/media-filter.utils";
 import {MediaGenreFilter, MediaPersonalFilters} from "@/lib/client/components/media/browse/MediaCommonFilters";
@@ -23,6 +25,7 @@ type AdvancedFilters = Pick<MediaBrowseFilters, "genres" | "tags" | "favorite" |
 interface MediaBrowseFiltersSheetProps {
     open: boolean;
     personal: boolean;
+    personalLabel?: string;
     filters: MediaBrowseFilters & { hideCommon?: boolean };
     allowHideCommon?: boolean;
     isPending?: boolean;
@@ -34,12 +37,12 @@ interface MediaBrowseFiltersSheetProps {
         genres: string[];
         tags: string[];
         mediaTypes?: MediaType[];
-        mediaFilters?: Partial<Record<MediaType, MediaMetadataFilterOptions>>;
+        mediaFilters?: ScopedMediaFilterOptions;
     };
 }
 
 
-export const MediaBrowseFiltersSheet = ({ open, onOpenChange, filters, options, personal, allowHideCommon = false, isPending = false, error, onRetry, onApply }: MediaBrowseFiltersSheetProps) => {
+export const MediaBrowseFiltersSheet = ({ open, onOpenChange, filters, options, personal, personalLabel = "Tracking filters", allowHideCommon = false, isPending = false, error, onRetry, onApply }: MediaBrowseFiltersSheetProps) => {
     const fieldId = useId();
     const [activeTab, setActiveTab] = useState<MediaFiltersTab>("filters");
     const [draft, setDraft] = useState<AdvancedFilters>(() => ({
@@ -51,7 +54,7 @@ export const MediaBrowseFiltersSheet = ({ open, onOpenChange, filters, options, 
         mediaFilters: filters.mediaFilters,
         hideCommon: filters.hideCommon,
     }));
-    const mediaTypes = filters.mediaType ? [filters.mediaType] : options.mediaTypes ?? Object.keys(options.mediaFilters ?? {}) as MediaType[];
+    const mediaTypes = options.mediaTypes ?? Object.keys(options.mediaFilters ?? {}) as MediaType[];
     const availableFilters = getMediaCommonFilterKeys(mediaTypes);
 
     return (
@@ -60,16 +63,16 @@ export const MediaBrowseFiltersSheet = ({ open, onOpenChange, filters, options, 
             title="Additional filters"
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            tags={personal && availableFilters.has("tags") ? error ?
+            tags={mediaTypes.length < 2 && personal && availableFilters.has("tags") ? error ?
                 <Alert variant="destructive"><AlertDescription>We couldn’t load tags. {onRetry && <Button type="button" variant="ghost" size="sm" onClick={onRetry}>Try again</Button>}</AlertDescription></Alert>
                 : isPending ?
                 <div role="status" aria-label="Loading tags" className="flex justify-center py-12"><Spinner className="size-8"/></div>
-                : <MediaFilterSearch
-                    label="Tags"
-                    options={options.tags}
-                    value={draft.tags ?? []}
-                    maxSelected={MAX_MEDIA_FILTER_VALUES}
-                    onChange={tags => setDraft(current => ({ ...current, tags: tags.length ? tags : undefined }))}
+                : <MediaTagFilters
+                    options={options.mediaFilters?.[mediaTypes[0]]?.tags?.map(item => item.name) ?? []}
+                    filters={draft.mediaFilters?.[mediaTypes[0]] ?? {}}
+                    onChange={next => setDraft(current => ({ ...current, mediaFilters: {
+                        ...current.mediaFilters, [mediaTypes[0]]: { ...current.mediaFilters?.[mediaTypes[0]], ...next },
+                    } }))}
                 /> : undefined}
             onOpenChange={onOpenChange}
             description="Narrow the titles shown here. Your saved list and views stay as they are."
@@ -104,78 +107,88 @@ export const MediaBrowseFiltersSheet = ({ open, onOpenChange, filters, options, 
                 <div role="status" aria-label="Loading filter options" className="flex justify-center py-12">
                     <Spinner className="size-8"/>
                 </div>
-                : <>
-                    <MediaGenreFilter
-                        availableFilters={availableFilters}
-                        options={options.genres}
-                        selected={draft.genres ?? []}
-                        maxSelected={MAX_MEDIA_FILTER_VALUES}
-                        onChange={genres => setDraft(current => ({ ...current, genres: genres.length ? genres : undefined }))}
-                    />
-                    {mediaTypes.map(mediaType =>
-                        <FieldSet key={mediaType}>
-                            <FieldLegend variant="label">
-                                {mediaType === MediaType.SERIES ? "TV series" : capitalize(mediaType)}
-                            </FieldLegend>
-                            <MediaSpecificFilters
-                                mediaType={mediaType}
-                                options={options.mediaFilters?.[mediaType] ?? {}}
-                                filters={draft.mediaFilters?.[mediaType] ?? {}}
-                                maxSelected={MAX_MEDIA_FILTER_VALUES}
-                                onChange={next => setDraft(current => ({
-                                    ...current,
-                                    mediaFilters: {
-                                        ...current.mediaFilters,
-                                        [mediaType]: { ...current.mediaFilters?.[mediaType], ...next },
-                                    },
-                                }))}
-                            />
-                        </FieldSet>
-                    )}
-                    {personal &&
-                        <FieldSet>
-                            <FieldLegend variant="label">
-                                List filters
-                            </FieldLegend>
-                            <FieldGroup>
-                                <MediaPersonalFilters
-                                    availableFilters={availableFilters}
-                                    filters={draft}
-                                    favoriteLabel="Favorites only"
-                                    commentLabel="Comments only"
-                                    onChange={next => setDraft(current => ({ ...current, ...next }))}
-                                />
-                                {allowHideCommon &&
-                                    <MediaFilterCheckbox
-                                        label="Hide Common"
-                                        checked={draft.hideCommon ?? false}
-                                        onChange={checked => setDraft(current => ({ ...current, hideCommon: checked ? true : undefined }))}
+                : <MediaTypeFilterTabs
+                    mediaTypes={mediaTypes}
+                    filters={draft.mediaFilters ?? {}}
+                    commonCount={Number(!!draft.favorite) + Number(!!draft.comment) + Number(draft.minRating !== undefined) + Number(!!draft.hideCommon) + (draft.genres?.length ?? 0) + (draft.tags?.length ?? 0)}
+                    common={personal || draft.genres?.length || draft.tags?.length ? <FieldGroup>
+                        {personal &&
+                            <FieldSet>
+                                <FieldLegend variant="label">
+                                    {personalLabel}
+                                </FieldLegend>
+                                <FieldDescription>These filters use tracking data and exclude titles that aren’t tracked.</FieldDescription>
+                                <FieldGroup>
+                                    <MediaPersonalFilters
+                                        availableFilters={availableFilters}
+                                        filters={draft}
+                                        favoriteLabel="Favorites only"
+                                        commentLabel="Comments only"
+                                        onChange={next => setDraft(current => ({ ...current, ...next }))}
                                     />
-                                }
-                                {availableFilters.has("minRating") &&
-                                    <Field>
-                                        <FieldLabel htmlFor={`${fieldId}-rating`}>
-                                            Minimum rating
-                                        </FieldLabel>
-                                        <Input
-                                            min={0}
-                                            max={10}
-                                            step={0.5}
-                                            type="number"
-                                            id={`${fieldId}-rating`}
-                                            placeholder="Any rating"
-                                            value={draft.minRating ?? ""}
-                                            onChange={ev => setDraft(current => ({
-                                                ...current,
-                                                minRating: ev.target.value === "" ? undefined : Number(ev.target.value),
-                                            }))}
+                                    {allowHideCommon &&
+                                        <MediaFilterCheckbox
+                                            label="Hide Common"
+                                            checked={draft.hideCommon ?? false}
+                                            onChange={checked => setDraft(current => ({ ...current, hideCommon: checked ? true : undefined }))}
                                         />
-                                    </Field>
-                                }
-                            </FieldGroup>
-                        </FieldSet>
-                    }
-                </>
+                                    }
+                                    {availableFilters.has("minRating") &&
+                                        <Field>
+                                            <FieldLabel htmlFor={`${fieldId}-rating`}>
+                                                Minimum rating
+                                            </FieldLabel>
+                                            <Input
+                                                min={0}
+                                                max={10}
+                                                step={0.5}
+                                                type="number"
+                                                id={`${fieldId}-rating`}
+                                                placeholder="Any rating"
+                                                value={draft.minRating ?? ""}
+                                                onChange={ev => setDraft(current => ({
+                                                    ...current,
+                                                    minRating: ev.target.value === "" ? undefined : Number(ev.target.value),
+                                                }))}
+                                            />
+                                        </Field>
+                                    }
+                                </FieldGroup>
+                            </FieldSet>
+                        }
+
+                        {draft.genres?.length || draft.tags?.length ?
+                            <FieldSet>
+                                <FieldLegend variant="label">Rules across all types</FieldLegend>
+                                <FieldDescription>These existing rules apply to every media type.</FieldDescription>
+                                <MediaGenreFilter availableFilters={availableFilters} options={options.genres} selected={draft.genres ?? []} onChange={genres => setDraft(current => ({ ...current, genres: genres.length ? genres : undefined }))}/>
+                                {personal && <MediaFilterSearch browseOptions label="Tags" options={options.tags} value={draft.tags ?? []} onChange={tags => setDraft(current => ({ ...current, tags: tags.length ? tags : undefined }))}/>}
+                            </FieldSet> : null
+                        }
+                    </FieldGroup> : undefined}
+                >
+                    {mediaType => {
+                        const scoped = draft.mediaFilters?.[mediaType] ?? {};
+                        const typeOptions = options.mediaFilters?.[mediaType] ?? {};
+                        const multiple = mediaTypes.length > 1;
+                        const update = (next: Partial<typeof scoped>) => setDraft(current => ({ ...current, mediaFilters: {
+                            ...current.mediaFilters, [mediaType]: { ...current.mediaFilters?.[mediaType], ...next },
+                        } }));
+                        return <FieldSet aria-label={mediaType === MediaType.SERIES ? "TV series" : capitalize(mediaType)}>
+                            <MediaGenreFilter
+                                availableFilters={getMediaCommonFilterKeys([mediaType])}
+                                options={typeOptions.genres?.map(item => item.name) ?? []}
+                                selected={scoped.genres ?? []}
+                                maxSelected={MAX_MEDIA_FILTER_VALUES}
+                                onChange={genres => update({ genres: genres.length ? genres : undefined })}
+                            />
+                            <MediaSpecificFilters mediaType={mediaType} options={typeOptions} filters={scoped} maxSelected={MAX_MEDIA_FILTER_VALUES} onChange={update}/>
+                            {personal && multiple &&
+                                <MediaTagFilters options={typeOptions.tags?.map(item => item.name) ?? []} filters={scoped} onChange={update}/>
+                            }
+                        </FieldSet>;
+                    }}
+                </MediaTypeFilterTabs>
             }
         </MediaFiltersSheet>
     );

@@ -5,7 +5,7 @@ import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import {createMediaSortOrder} from "@/lib/server/domain/media/base/media-sorting.queries";
-import {getMediaCommonFilterConditions, getMediaMetadataFilterConditions} from "@/lib/server/domain/media/base/media-filters.queries";
+import {getMediaCommonFilterConditions, getMediaScopedFilterConditions} from "@/lib/server/domain/media/base/media-filters.queries";
 import type {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {and, asc, eq, isNotNull, isNull, type SQL, sql} from "drizzle-orm";
 
@@ -31,7 +31,7 @@ export const createMediaBrowseQueryParts = (definition: AnyServerMediaDefinition
         ...getMediaCommonFilterConditions(definition.repository, {
             ...filters, status: filters.status === undefined ? undefined : [filters.status],
         }, viewerId),
-        ...getMediaMetadataFilterConditions(definition.repository, filters.mediaFilters?.[definition.identity.mediaType], viewerId),
+        ...getMediaScopedFilterConditions(definition.repository, filters.mediaFilters?.[definition.identity.mediaType], viewerId),
     ];
 
     if (filters.library !== undefined) {

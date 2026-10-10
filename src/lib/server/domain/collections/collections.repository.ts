@@ -230,7 +230,7 @@ export class CollectionsRepository {
             tags: [], genres: [], mediaTypes, mediaFilters: {},
         };
         if (selectedTypes.length) {
-            const sources = selectedTypes.map(mediaType => {
+            const sources = (includeFilterOptions ? mediaTypes : selectedTypes).map(mediaType => {
                 const definition = getServerMediaDefinition(mediaType).repository;
                 const { listTable, tagTable, genreTable } = definition.tables;
                 const sourceMediaIds = db
@@ -247,7 +247,7 @@ export class CollectionsRepository {
                     filterOptions.mediaFilters[mediaType] = getMediaMetadataFilterOptions(definition, { mediaIds: sourceMediaIds.getSQL(), userId: viewerId });
                 }
 
-                return {
+                const source = {
                     genres: db.select({ name: genreTable.name }).from(genreTable).where(and(
                         inArray(genreTable.mediaId, sourceMediaIds),
                         definition.filters.common.genres ? undefined : sql`FALSE`,
@@ -258,6 +258,13 @@ export class CollectionsRepository {
                         definition.filters.common.tags ? undefined : sql`FALSE`,
                     )),
                 };
+                if (includeFilterOptions) {
+                    Object.assign(filterOptions.mediaFilters[mediaType]!, {
+                        genres: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.genres.getSQL()}) ORDER BY "name" COLLATE NOCASE`),
+                        tags: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.tags.getSQL()}) ORDER BY "name" COLLATE NOCASE`),
+                    });
+                }
+                return source;
             });
 
             filterOptions.genres = db.all<{ name: string }>(sql`

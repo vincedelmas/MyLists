@@ -114,7 +114,7 @@ test("browses a ranked collection with shared sorting, preserves notes and tailo
     await expect(page.getByRole("link", { name: `View ${browseGem}`, exact: true })).toHaveCount(0);
     await expect(controls.getByRole("combobox", { name: "Filter by library", exact: true })).toHaveCount(0);
     await expect(controls.getByRole("combobox", { name: "Filter by status", exact: true })).toHaveCount(0);
-    await expect(controls.getByRole("button", { name: "Filters", exact: true })).toHaveCount(0);
+    await expect(controls.getByRole("button", { name: "Filters", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
     await search.fill(browseGem);
@@ -157,7 +157,7 @@ test("browses a ranked collection with shared sorting, preserves notes and tailo
     await page.goto(`/lists/collections/${publicCollection.id}`);
     await expect(results.getByText("30 titles", { exact: true })).toBeVisible();
     await expect(controls.getByRole("combobox", { name: "Filter by status", exact: true })).toHaveCount(0);
-    await expect(controls.getByRole("button", { name: "Filters", exact: true })).toHaveCount(0);
+    await expect(controls.getByRole("button", { name: "Filters", exact: true })).toBeVisible();
     const library = controls.getByRole("combobox", { name: "Filter by library", exact: true });
     await library.click();
     await page.getByRole("option", { name: "In my list", exact: true }).click();
@@ -223,7 +223,7 @@ test("browses a ranked collection with shared sorting, preserves notes and tailo
     await expect(sort).toContainText("Collection order");
     await expect(page).toHaveURL(url => !url.searchParams.has("sorting"));
     await expect(controls.getByRole("combobox", { name: "Filter by status", exact: true })).toHaveCount(0);
-    await expect(controls.getByRole("button", { name: "Filters", exact: true })).toHaveCount(0);
+    await expect(controls.getByRole("button", { name: "Filters", exact: true })).toBeVisible();
 });
 
 
@@ -352,6 +352,22 @@ test("browses mixed types with scoped sorting, clears type-specific sorts and jo
     const type = controls.getByRole("combobox", { name: "Filter by media type", exact: true });
     const sort = controls.getByRole("combobox", { name: "Sort collection titles", exact: true });
     await expect(results.getByText("6 titles", { exact: true })).toBeVisible();
+    await controls.getByRole("button", { name: "Filters", exact: true }).click();
+    const filters = page.getByRole("dialog", { name: "Additional filters", exact: true });
+    await expect(filters.getByRole("button", { name: "Common filters", exact: true })).toHaveCount(0);
+    await filters.getByRole("button", { name: "Movies filters", exact: true }).click();
+    await filters.getByRole("checkbox", { name: "Movie genre", exact: true }).check();
+    await expect(filters.getByRole("checkbox", { name: "Book genre", exact: true })).toHaveCount(0);
+    await filters.getByRole("button", { name: "Books filters", exact: true }).click();
+    await filters.getByRole("checkbox", { name: "Book genre", exact: true }).check();
+    await expect(filters.getByRole("searchbox", { name: "Tags", exact: true })).toHaveCount(0);
+    await filters.getByRole("button", { name: "Movies filters", exact: true }).click();
+    await expect(filters.getByRole("checkbox", { name: "Movie genre", exact: true })).toBeChecked();
+    await filters.getByRole("button", { name: "Apply filters", exact: true }).click();
+    await expect(results.getByText("6 titles", { exact: true })).toBeVisible();
+    await expect(results.getByRole("button", { name: "Remove Movies · Genres: Movie genre", exact: true })).toBeVisible();
+    await expect(results.getByRole("button", { name: "Remove Books · Genres: Book genre", exact: true })).toBeVisible();
+    await results.getByRole("button", { name: "Reset filters", exact: true }).click();
     await type.click();
     for (const item of mixedMedia) {
         await expect(page.getByRole("option", { name: new RegExp(`^${item.mediaType}$`, "i") })).toBeVisible();

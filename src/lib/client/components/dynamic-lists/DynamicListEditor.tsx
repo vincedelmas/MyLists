@@ -1,3 +1,5 @@
+import {MediaTagFilters} from "@/lib/client/components/media/browse/MediaTagFilters";
+import {MediaTypeFilterTabs} from "@/lib/client/components/media/browse/MediaTypeFilterTabs";
 import {useQuery} from "@tanstack/react-query";
 import {THEME_ICONS_MAP} from "@/lib/client/theme";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -70,7 +72,7 @@ const DynamicListSelect = ({ id, value, options, onChange }: {
 
 
 const EditorSection = ({ number, title, description, children }: {
-    number: string;
+    number?: string;
     title: string;
     description: string;
     children: React.ReactNode;
@@ -79,7 +81,7 @@ const EditorSection = ({ number, title, description, children }: {
         <CardHeader>
             <CardTitle>
                 <h2 className="flex items-center gap-3">
-                    <span className="text-xs tabular-nums text-muted-foreground">{number}</span>
+                    {number && <span className="text-xs tabular-nums text-muted-foreground">{number}</span>}
                     {title}
                 </h2>
             </CardTitle>
@@ -272,254 +274,261 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                 }
                             </EditorSection>
 
-                            <EditorSection number="02" title="Progress & rating" description="Bring together your plans, ongoing titles or finished favorites.">
-                                <FieldGroup className="grid sm:grid-cols-2">
-                                    {availableFilters.has("status") &&
-                                        <Field>
-                                            <FieldLabel htmlFor={`${fieldId}-status`}>
-                                                Status
-                                            </FieldLabel>
-                                            <DynamicListSelect
-                                                id={`${fieldId}-status`}
-                                                options={DYNAMIC_LIST_STATUS_OPTIONS}
-                                                value={spec.filters.statusGroup ?? "any"}
-                                                onChange={value => updateFilters({
-                                                    statuses: undefined,
-                                                    statusGroup: value === "any" ? undefined : value as DynamicListSpec["filters"]["statusGroup"]
-                                                })}
-                                            />
-                                        </Field>
-                                    }
-                                    {(["favorite", "rated", "hasComment"] as const)
-                                        .filter(key => availableFilters.has(key === "rated" ? "minRating" : key === "hasComment" ? "comment" : key))
-                                        .map(key =>
-                                            <Field key={key}>
-                                                <FieldLabel htmlFor={`${fieldId}-${key}`}>
-                                                    {key === "favorite" ? "Favorites" : key === "rated" ? "Rating state" : "Comments"}
-                                                </FieldLabel>
-                                                <DynamicListSelect
-                                                    id={`${fieldId}-${key}`}
-                                                    value={spec.filters[key] === undefined ? "any" : String(spec.filters[key])}
-                                                    onChange={value => updateFilters({ [key]: value === "any" ? undefined : value === "true" })}
-                                                    options={[
-                                                        { value: "any", label: "All titles" },
-                                                        {
-                                                            value: "true", label: key === "favorite"
-                                                                ? "Favorites only" : key === "rated"
-                                                                    ? "Rated only" : "With a comment"
-                                                        },
-                                                        {
-                                                            value: "false",
-                                                            label: key === "favorite" ? "Exclude favorites" : key === "rated"
-                                                                ? "Unrated only"
-                                                                : "Without a comment"
-                                                        },
-                                                    ]}
-                                                />
-                                            </Field>
-                                        )}
-                                    {availableFilters.has("minRating") && (["minRating", "maxRating"] as const).map((key, idx) =>
-                                        <Field key={key} data-invalid={!!errors[`filters.${key}`]}>
-                                            <FieldLabel htmlFor={`${fieldId}-${key}`}>
-                                                {idx === 0 ? "Minimum rating / 10" : "Maximum rating / 10"}
-                                            </FieldLabel>
-                                            <Input
-                                                id={`${fieldId}-${key}`}
-                                                value={spec.filters[key] ?? ""}
-                                                type="number" min={0} max={10} step={0.5}
-                                                aria-invalid={!!errors[`filters.${key}`]}
-                                                placeholder={idx === 0 ? "No minimum" : "No maximum"}
-                                                onChange={ev => updateFilters({ [key]: ev.target.value === "" ? undefined : Number(ev.target.value) })}
-                                            />
-                                            <FieldError>{errors[`filters.${key}`]}</FieldError>
-                                        </Field>
-                                    )}
-                                </FieldGroup>
-                                {availableFilters.has("status") &&
-                                    <details className="rounded-lg border px-4 py-3" open={!!spec.filters.statuses?.length}>
-                                        <summary className="cursor-pointer text-sm font-medium">
-                                            Choose specific statuses
-                                        </summary>
-                                        <FieldSet className="pt-4">
-                                            <FieldLegend className="sr-only">
-                                                Specific statuses
-                                            </FieldLegend>
-                                            <FieldDescription>
-                                                Match any selected status. Selecting one replaces the status group above.
-                                            </FieldDescription>
-                                            <FieldGroup className="grid grid-cols-2 gap-3">
-                                                {statuses.map((status, index) =>
-                                                    <Field key={status} orientation="horizontal">
-                                                        <Checkbox
-                                                            id={`${fieldId}-status-${index}`}
-                                                            checked={spec.filters.statuses?.includes(status) ?? false}
-                                                            onCheckedChange={checked => handleStatusChange(status, checked)}
-                                                        />
-                                                        <FieldLabel htmlFor={`${fieldId}-status-${index}`}>
-                                                            {status}
+                            <MediaTypeFilterTabs
+                                mediaTypes={filterMediaTypes}
+                                filters={spec.filters.mediaFilters ?? {}}
+                                commonCount={Object.entries(spec.filters).filter(([key, value]) => key !== "mediaFilters" && value !== undefined).length}
+                                common={<FieldGroup>
+                                    <EditorSection number="02" title="Progress & rating" description="Bring together your plans, ongoing titles or finished favorites.">
+                                        <FieldGroup className="grid sm:grid-cols-2">
+                                            {availableFilters.has("status") &&
+                                                <Field>
+                                                    <FieldLabel htmlFor={`${fieldId}-status`}>
+                                                        Status
+                                                    </FieldLabel>
+                                                    <DynamicListSelect
+                                                        id={`${fieldId}-status`}
+                                                        options={DYNAMIC_LIST_STATUS_OPTIONS}
+                                                        value={spec.filters.statusGroup ?? "any"}
+                                                        onChange={value => updateFilters({
+                                                            statuses: undefined,
+                                                            statusGroup: value === "any" ? undefined : value as DynamicListSpec["filters"]["statusGroup"]
+                                                        })}
+                                                    />
+                                                </Field>
+                                            }
+                                            {(["favorite", "rated", "hasComment"] as const)
+                                                .filter(key => availableFilters.has(key === "rated" ? "minRating" : key === "hasComment" ? "comment" : key))
+                                                .map(key =>
+                                                    <Field key={key}>
+                                                        <FieldLabel htmlFor={`${fieldId}-${key}`}>
+                                                            {key === "favorite" ? "Favorites" : key === "rated" ? "Rating state" : "Comments"}
                                                         </FieldLabel>
+                                                        <DynamicListSelect
+                                                            id={`${fieldId}-${key}`}
+                                                            value={spec.filters[key] === undefined ? "any" : String(spec.filters[key])}
+                                                            onChange={value => updateFilters({ [key]: value === "any" ? undefined : value === "true" })}
+                                                            options={[
+                                                                { value: "any", label: "All titles" },
+                                                                {
+                                                                    value: "true", label: key === "favorite"
+                                                                        ? "Favorites only" : key === "rated"
+                                                                            ? "Rated only" : "With a comment"
+                                                                },
+                                                                {
+                                                                    value: "false",
+                                                                    label: key === "favorite" ? "Exclude favorites" : key === "rated"
+                                                                        ? "Unrated only"
+                                                                        : "Without a comment"
+                                                                },
+                                                            ]}
+                                                        />
                                                     </Field>
                                                 )}
-                                            </FieldGroup>
-                                            <FieldError>{errors["filters.statuses"]}</FieldError>
-                                        </FieldSet>
-                                    </details>
-                                }
-                            </EditorSection>
+                                            {availableFilters.has("minRating") && (["minRating", "maxRating"] as const).map((key, idx) =>
+                                                <Field key={key} data-invalid={!!errors[`filters.${key}`]}>
+                                                    <FieldLabel htmlFor={`${fieldId}-${key}`}>
+                                                        {idx === 0 ? "Minimum rating / 10" : "Maximum rating / 10"}
+                                                    </FieldLabel>
+                                                    <Input
+                                                        id={`${fieldId}-${key}`}
+                                                        value={spec.filters[key] ?? ""}
+                                                        type="number" min={0} max={10} step={0.5}
+                                                        aria-invalid={!!errors[`filters.${key}`]}
+                                                        placeholder={idx === 0 ? "No minimum" : "No maximum"}
+                                                        onChange={ev => updateFilters({ [key]: ev.target.value === "" ? undefined : Number(ev.target.value) })}
+                                                    />
+                                                    <FieldError>{errors[`filters.${key}`]}</FieldError>
+                                                </Field>
+                                            )}
+                                        </FieldGroup>
+                                        {availableFilters.has("status") &&
+                                            <details className="rounded-lg border px-4 py-3" open={!!spec.filters.statuses?.length}>
+                                                <summary className="cursor-pointer text-sm font-medium">
+                                                    Choose specific statuses
+                                                </summary>
+                                                <FieldSet className="pt-4">
+                                                    <FieldLegend className="sr-only">
+                                                        Specific statuses
+                                                    </FieldLegend>
+                                                    <FieldDescription>
+                                                        Match any selected status. Selecting one replaces the status group above.
+                                                    </FieldDescription>
+                                                    <FieldGroup className="grid grid-cols-2 gap-3">
+                                                        {statuses.map((status, index) =>
+                                                            <Field key={status} orientation="horizontal">
+                                                                <Checkbox
+                                                                    id={`${fieldId}-status-${index}`}
+                                                                    checked={spec.filters.statuses?.includes(status) ?? false}
+                                                                    onCheckedChange={checked => handleStatusChange(status, checked)}
+                                                                />
+                                                                <FieldLabel htmlFor={`${fieldId}-status-${index}`}>
+                                                                    {status}
+                                                                </FieldLabel>
+                                                            </Field>
+                                                        )}
+                                                    </FieldGroup>
+                                                    <FieldError>{errors["filters.statuses"]}</FieldError>
+                                                </FieldSet>
+                                            </details>
+                                        }
+                                    </EditorSection>
 
-                            <EditorSection number="03" title="Genres & tags" description="Search your library’s labels and select the ones that belong here.">
-                                {availableFilters.has("genres") &&
-                                    <MediaFilterSearch
-                                        label="Genres"
-                                        error={errors["filters.genres"]}
-                                        value={spec.filters.genres ?? []}
-                                        maxSelected={MAX_MEDIA_FILTER_VALUES}
-                                        options={filterOptions.data?.genres ?? []}
-                                        disabled={saveMutation.isPending || filterOptions.isPending}
-                                        onChange={values => updateFilters({ genres: values.length ? values : undefined })}
-                                    />
-                                }
+                                    {(spec.filters.genres?.length || spec.filters.tags?.length || spec.filters.excludeTags?.length) ? <FieldSet className="rounded-xl border p-4">
+                                        <FieldLegend variant="label">Rules across all types</FieldLegend>
+                                        <FieldDescription>These existing genre and tag rules apply to every media type.</FieldDescription>
+                                        {availableFilters.has("genres") &&
+                                            <MediaFilterSearch
+                                                label="Genres"
+                                                error={errors["filters.genres"]}
+                                                value={spec.filters.genres ?? []}
+                                                maxSelected={MAX_MEDIA_FILTER_VALUES}
+                                                options={filterOptions.data?.genres ?? []}
+                                                disabled={saveMutation.isPending || filterOptions.isPending}
+                                                onChange={values => updateFilters({ genres: values.length ? values : undefined })}
+                                            />
+                                        }
 
-                                {availableFilters.has("tags") &&
-                                    <>
-                                        <MediaFilterSearch
-                                            label="Tags"
-                                            error={errors["filters.tags"]}
-                                            value={spec.filters.tags ?? []}
-                                            maxSelected={MAX_MEDIA_FILTER_VALUES}
-                                            options={filterOptions.data?.tags ?? []}
+                                        {availableFilters.has("tags") &&
+                                            <>
+                                                <MediaFilterSearch
+                                                    browseOptions
+                                                    label="Tags"
+                                                    error={errors["filters.tags"]}
+                                                    value={spec.filters.tags ?? []}
+                                                    maxSelected={MAX_MEDIA_FILTER_VALUES}
+                                                    options={filterOptions.data?.tags ?? []}
+                                                    disabled={saveMutation.isPending || filterOptions.isPending}
+                                                    onChange={values => updateFilters({ tags: values.length ? values : undefined })}
+                                                />
+                                                <Field>
+                                                    <FieldLabel id={`${fieldId}-tags-match`}>
+                                                        Tag matching
+                                                    </FieldLabel>
+                                                    <ToggleGroup
+                                                        variant="outline"
+                                                        aria-labelledby={`${fieldId}-tags-match`}
+                                                        value={[spec.filters.tagsMatch ?? "any"]}
+                                                        onValueChange={values => values[0] && updateFilters({ tagsMatch: values[0] as "any" | "all" })}
+                                                    >
+                                                        <ToggleGroupItem value="any">
+                                                            Any included tag
+                                                        </ToggleGroupItem>
+                                                        <ToggleGroupItem value="all">
+                                                            Every included tag
+                                                        </ToggleGroupItem>
+                                                    </ToggleGroup>
+                                                </Field>
+                                                <MediaFilterSearch
+                                                    browseOptions
+                                                    label="Exclude tags"
+                                                    error={errors["filters.excludeTags"]}
+                                                    maxSelected={MAX_MEDIA_FILTER_VALUES}
+                                                    value={spec.filters.excludeTags ?? []}
+                                                    options={filterOptions.data?.tags ?? []}
+                                                    disabled={saveMutation.isPending || filterOptions.isPending}
+                                                    onChange={values => updateFilters({ excludeTags: values.length ? values : undefined })}
+                                                />
+                                            </>
+                                        }
+                                        <FieldDescription>
+                                            Genres match any selected value. Excluded tags always remove matching titles.
+                                        </FieldDescription>
+                                        {filterOptions.isError &&
+                                            <Alert variant="destructive">
+                                                <AlertDescription>
+                                                    We couldn’t load filter options. Your selections are still here.{" "}
+                                                    <Button type="button" variant="ghost" size="sm" onClick={() => void filterOptions.refetch()}>
+                                                        Try again
+                                                    </Button>
+                                                </AlertDescription>
+                                            </Alert>
+                                        }
+                                    </FieldSet> : null}
+
+                                    <EditorSection number="03" title="Dates & time" description="Find older plans, recent additions or titles from a particular era.">
+                                        <FieldGroup className="grid sm:grid-cols-2">
+                                            {([
+                                                { key: "addedBefore", label: "Added more than … months ago" },
+                                                { key: "addedWithin", label: "Added within … months" },
+                                                { key: "updatedBefore", label: "Not updated for … months" },
+                                            ] as const).map(({ key, label }) =>
+                                                <Field key={key} data-invalid={!!(errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`])}>
+                                                    <FieldLabel htmlFor={`${fieldId}-${key}`}>
+                                                        {label}
+                                                    </FieldLabel>
+                                                    <Input
+                                                        placeholder="Any time"
+                                                        id={`${fieldId}-${key}`}
+                                                        type="number" min={1} max={120} step={1}
+                                                        value={spec.filters[key]?.monthsAgo ?? ""}
+                                                        aria-invalid={!!(errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`])}
+                                                        onChange={ev => updateFilters({ [key]: ev.target.value === "" ? undefined : { monthsAgo: Number(ev.target.value) } })}
+                                                    />
+                                                    <FieldError>
+                                                        {errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`]}
+                                                    </FieldError>
+                                                </Field>
+                                            )}
+                                        </FieldGroup>
+                                        <FieldDescription>
+                                            These periods move with the calendar, so a six-month rule stays six months old.
+                                        </FieldDescription>
+                                        <Separator/>
+                                        <FieldGroup className="grid sm:grid-cols-2">
+                                            {(["minReleaseYear", "maxReleaseYear"] as const).map((key, index) =>
+                                                <Field key={key} data-invalid={!!errors[`filters.${key}`]}>
+                                                    <FieldLabel htmlFor={`${fieldId}-${key}`}>
+                                                        {index === 0 ? "First release year" : "Last release year"}
+                                                    </FieldLabel>
+                                                    <Input
+                                                        placeholder="Any year"
+                                                        id={`${fieldId}-${key}`}
+                                                        value={spec.filters[key] ?? ""}
+                                                        type="number" min={1} max={9999} step={1}
+                                                        aria-invalid={!!errors[`filters.${key}`]}
+                                                        onChange={ev => updateFilters({ [key]: ev.target.value === "" ? undefined : Number(ev.target.value) })}
+                                                    />
+                                                    <FieldError>{errors[`filters.${key}`]}</FieldError>
+                                                </Field>
+                                            )}
+                                        </FieldGroup>
+                                    </EditorSection>
+
+                                </FieldGroup>}
+                            >
+                                {mediaType => {
+                                    const filters = spec.filters.mediaFilters?.[mediaType] ?? {};
+                                    const options = filterOptions.data?.mediaFilters[mediaType] ?? {};
+                                    const scopedErrors = Object.fromEntries(Object.entries(errors)
+                                        .filter(([key]) => key.startsWith(`filters.mediaFilters.${mediaType}.`))
+                                        .map(([key, error]) => [key.slice(`filters.mediaFilters.${mediaType}.`.length), error]));
+                                    const update = (next: Partial<typeof filters>) => setSpec(current => ({ ...current, filters: {
+                                        ...current.filters,
+                                        mediaFilters: { ...current.filters.mediaFilters, [mediaType]: { ...current.filters.mediaFilters?.[mediaType], ...next } },
+                                    } }));
+                                    return <FieldSet>
+                                        <FieldLegend variant="label" className="sr-only">{capitalize(mediaType)}</FieldLegend>
+                                        <EditorSection title="Media rules" description="These rules apply only to this media type. Other types keep their own rules.">
+                                        <MediaFilterSearch label="Genres" error={scopedErrors.genres} options={options.genres?.map(item => item.name) ?? []} value={filters.genres ?? []} maxSelected={MAX_MEDIA_FILTER_VALUES} disabled={saveMutation.isPending || filterOptions.isPending} onChange={genres => update({ genres: genres.length ? genres : undefined })}/>
+                                        <MediaTagFilters options={options.tags?.map(item => item.name) ?? []} filters={filters} errors={scopedErrors} disabled={saveMutation.isPending || filterOptions.isPending} onChange={update}/>
+                                        <MediaSpecificFilters
+                                            mediaType={mediaType}
+                                            options={options}
+                                            filters={filters}
                                             disabled={saveMutation.isPending || filterOptions.isPending}
-                                            onChange={values => updateFilters({ tags: values.length ? values : undefined })}
-                                        />
-                                        <Field>
-                                            <FieldLabel id={`${fieldId}-tags-match`}>
-                                                Tag matching
-                                            </FieldLabel>
-                                            <ToggleGroup
-                                                variant="outline"
-                                                aria-labelledby={`${fieldId}-tags-match`}
-                                                value={[spec.filters.tagsMatch ?? "any"]}
-                                                onValueChange={values => values[0] && updateFilters({ tagsMatch: values[0] as "any" | "all" })}
-                                            >
-                                                <ToggleGroupItem value="any">
-                                                    Any included tag
-                                                </ToggleGroupItem>
-                                                <ToggleGroupItem value="all">
-                                                    Every included tag
-                                                </ToggleGroupItem>
-                                            </ToggleGroup>
-                                        </Field>
-                                        <MediaFilterSearch
-                                            label="Exclude tags"
-                                            error={errors["filters.excludeTags"]}
                                             maxSelected={MAX_MEDIA_FILTER_VALUES}
-                                            value={spec.filters.excludeTags ?? []}
-                                            options={filterOptions.data?.tags ?? []}
-                                            disabled={saveMutation.isPending || filterOptions.isPending}
-                                            onChange={values => updateFilters({ excludeTags: values.length ? values : undefined })}
+                                            errors={scopedErrors}
+                                            onChange={update}
                                         />
-                                    </>
-                                }
-                                <FieldDescription>
-                                    Genres match any selected value. Excluded tags always remove matching titles.
-                                </FieldDescription>
-                                {filterOptions.isError &&
-                                    <Alert variant="destructive">
-                                        <AlertDescription>
-                                            We couldn’t load filter options. Your selections are still here.{" "}
-                                            <Button type="button" variant="ghost" size="sm" onClick={() => void filterOptions.refetch()}>
-                                                Try again
-                                            </Button>
-                                        </AlertDescription>
-                                    </Alert>
-                                }
-                            </EditorSection>
+                                        {filterOptions.isError && <Alert variant="destructive"><AlertDescription>We couldn’t load filter options. <Button type="button" variant="ghost" size="sm" onClick={() => void filterOptions.refetch()}>Try again</Button></AlertDescription></Alert>}
+                                    </EditorSection>
+                                    </FieldSet>;
+                                }}
+                            </MediaTypeFilterTabs>
 
                             <EditorSection
                                 number="04"
-                                title="Media details"
-                                description="Each group filters only its own media type. Other selected types still follow your common rules."
-                            >
-                                {filterMediaTypes.map(mediaType =>
-                                    <FieldSet key={mediaType}>
-                                        <FieldLegend variant="label" className="capitalize">
-                                            {mediaType}
-                                        </FieldLegend>
-                                        <MediaSpecificFilters
-                                            mediaType={mediaType}
-                                            maxSelected={MAX_MEDIA_FILTER_VALUES}
-                                            filters={spec.filters.mediaFilters?.[mediaType] ?? {}}
-                                            options={filterOptions.data?.mediaFilters[mediaType] ?? {}}
-                                            disabled={saveMutation.isPending || filterOptions.isPending}
-                                            errors={Object.fromEntries(Object.entries(errors)
-                                                .filter(([key]) => key.startsWith(`filters.mediaFilters.${mediaType}.`))
-                                                .map(([key, error]) => [key.slice(`filters.mediaFilters.${mediaType}.`.length), error]))}
-                                            onChange={next => setSpec(current => ({
-                                                ...current,
-                                                filters: {
-                                                    ...current.filters,
-                                                    mediaFilters: {
-                                                        ...current.filters.mediaFilters,
-                                                        [mediaType]: { ...current.filters.mediaFilters?.[mediaType], ...next },
-                                                    },
-                                                },
-                                            }))}
-                                        />
-                                    </FieldSet>
-                                )}
-                            </EditorSection>
-
-                            <EditorSection number="05" title="Dates & time" description="Find older plans, recent additions or titles from a particular era.">
-                                <FieldGroup className="grid sm:grid-cols-2">
-                                    {([
-                                        { key: "addedBefore", label: "Added more than … months ago" },
-                                        { key: "addedWithin", label: "Added within … months" },
-                                        { key: "updatedBefore", label: "Not updated for … months" },
-                                    ] as const).map(({ key, label }) =>
-                                        <Field key={key} data-invalid={!!(errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`])}>
-                                            <FieldLabel htmlFor={`${fieldId}-${key}`}>
-                                                {label}
-                                            </FieldLabel>
-                                            <Input
-                                                placeholder="Any time"
-                                                id={`${fieldId}-${key}`}
-                                                type="number" min={1} max={120} step={1}
-                                                value={spec.filters[key]?.monthsAgo ?? ""}
-                                                aria-invalid={!!(errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`])}
-                                                onChange={ev => updateFilters({ [key]: ev.target.value === "" ? undefined : { monthsAgo: Number(ev.target.value) } })}
-                                            />
-                                            <FieldError>
-                                                {errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`]}
-                                            </FieldError>
-                                        </Field>
-                                    )}
-                                </FieldGroup>
-                                <FieldDescription>
-                                    These periods move with the calendar, so a six-month rule stays six months old.
-                                </FieldDescription>
-                                <Separator/>
-                                <FieldGroup className="grid sm:grid-cols-2">
-                                    {(["minReleaseYear", "maxReleaseYear"] as const).map((key, index) =>
-                                        <Field key={key} data-invalid={!!errors[`filters.${key}`]}>
-                                            <FieldLabel htmlFor={`${fieldId}-${key}`}>
-                                                {index === 0 ? "First release year" : "Last release year"}
-                                            </FieldLabel>
-                                            <Input
-                                                placeholder="Any year"
-                                                id={`${fieldId}-${key}`}
-                                                value={spec.filters[key] ?? ""}
-                                                type="number" min={1} max={9999} step={1}
-                                                aria-invalid={!!errors[`filters.${key}`]}
-                                                onChange={ev => updateFilters({ [key]: ev.target.value === "" ? undefined : Number(ev.target.value) })}
-                                            />
-                                            <FieldError>{errors[`filters.${key}`]}</FieldError>
-                                        </Field>
-                                    )}
-                                </FieldGroup>
-                            </EditorSection>
-
-                            <EditorSection
-                                number="06"
                                 title="Default presentation"
                                 description="Choose how this list opens. You can always change the display while browsing."
                             >

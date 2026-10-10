@@ -126,6 +126,10 @@ test("finds genres and tags despite typos and saves their canonical names", asyn
     await editor.getByRole("button", { name: "Science Fiction", exact: true }).click();
     await expect(editor.getByRole("button", { name: "Remove Science Fiction filter", exact: true })).toBeVisible();
     await expect(editor.getByRole("searchbox", { name: "Genres", exact: true })).toHaveValue("");
+    await expect(editor.getByText("2 available · 0 selected", { exact: true })).toHaveCount(2);
+    await editor.getByRole("button", { name: "Select tags: Weekend", exact: true }).click();
+    await expect(editor.getByRole("button", { name: "Remove Weekend filter", exact: true })).toBeVisible();
+    await editor.getByRole("button", { name: "Remove Weekend filter", exact: true }).click();
     await editor.getByRole("searchbox", { name: "Tags", exact: true }).fill("Weekned");
     await editor.getByRole("button", { name: "Weekend", exact: true }).click();
     await editor.getByRole("searchbox", { name: "Exclude tags", exact: true }).fill("Aovid");
@@ -156,6 +160,7 @@ test("saves scoped movie metadata, keeps books, and shares temporary filtering w
     await editor.getByLabel("List name", { exact: true }).fill("Cate and my books");
     await editor.getByRole("button", { name: "Movies", exact: true }).click();
     await editor.getByRole("button", { name: "Books", exact: true }).click();
+    await editor.getByRole("button", { name: "Movies filters", exact: true }).click();
     const movieRules = editor.getByRole("group", { name: "Movies", exact: true });
     await movieRules.getByRole("searchbox", { name: "Actors", exact: true }).fill("Cate Blanchtt");
     await movieRules.getByRole("button", { name: "Cate Blanchett", exact: true }).click();
@@ -172,6 +177,7 @@ test("saves scoped movie metadata, keeps books, and shares temporary filtering w
     await (await listAction(page, "Edit dynamic list")).click();
     await expect(page.getByRole("heading", { name: "Edit dynamic list", exact: true })).toBeVisible();
     await page.reload();
+    await editor.getByRole("button", { name: "Movies filters", exact: true }).click();
     await expect(movieRules.getByRole("button", { name: "Remove Cate Blanchett filter", exact: true })).toBeVisible();
     await movieRules.getByRole("button", { name: "Remove Cate Blanchett filter", exact: true }).click();
     await expect(summary.getByText("3 media", { exact: true })).toBeVisible();
@@ -181,6 +187,7 @@ test("saves scoped movie metadata, keeps books, and shares temporary filtering w
     const controls = page.getByRole("group", { name: "Media browsing controls", exact: true });
     await controls.getByRole("button", { name: "Filters", exact: true }).click();
     const filters = page.getByRole("dialog", { name: "Additional filters", exact: true });
+    await filters.getByRole("button", { name: "Movies filters", exact: true }).click();
     const movieFilters = filters.getByRole("group", { name: "Movies", exact: true });
     await movieFilters.getByRole("searchbox", { name: "Actors", exact: true }).fill("Cate Blanchtt");
     await movieFilters.getByRole("button", { name: "Cate Blanchett", exact: true }).click();
@@ -654,6 +661,7 @@ test("browses within saved rules and resets temporary filters without editing th
     await expect(page.getByRole("article")).toHaveCount(2);
     await controls.getByRole("button", { name: "Filters", exact: true }).click();
     const filters = page.getByRole("dialog", { name: "Additional filters", exact: true });
+    await filters.getByRole("button", { name: "Movies filters", exact: true }).click();
     const genres = filters.getByRole("group", { name: "Genres", exact: true });
     const lastGenre = genres.getByRole("checkbox", { name: browseFilterGenres.at(-1)!, exact: true });
     await expect(genres.getByRole("checkbox")).toHaveCount(14);
@@ -664,18 +672,22 @@ test("browses within saved rules and resets temporary filters without editing th
     await expect(lastGenre).toHaveCount(0);
     await genres.getByRole("button", { name: "More", exact: true }).click();
     await expect(lastGenre).toBeChecked();
-    await expect(filters.getByRole("searchbox", { name: "Tags", exact: true })).toHaveCount(0);
-    await filters.getByRole("button", { name: "Tags", exact: true }).click();
+    await expect(filters.getByRole("searchbox", { name: "Tags", exact: true })).toBeVisible();
     await filters.getByRole("searchbox", { name: "Tags", exact: true }).fill("Weekned");
     await filters.getByRole("button", { name: "Weekend", exact: true }).click();
-    await filters.getByRole("button", { name: "Filters", exact: true }).click();
+    await filters.getByRole("button", { name: "Common filters", exact: true }).click();
+    await filters.getByRole("button", { name: "Movies filters", exact: true }).click();
     await genres.getByRole("button", { name: "More", exact: true }).click();
     await expect(lastGenre).toBeChecked();
+    await expect(filters.getByRole("button", { name: "Movies filters", exact: true })).toContainText("2");
     await filters.getByRole("button", { name: "Apply filters", exact: true }).click();
-    await expect(page.getByRole("article")).toHaveCount(1);
-    await expect(page).toHaveURL(url => Boolean(url.searchParams.get("tags")?.includes("Weekend")));
+    await expect(page.getByRole("article")).toHaveCount(2);
+    await expect(page.getByRole("link", { name: "View A long-awaited book", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Remove Movies · Tags: Weekend", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(url => Boolean(url.searchParams.get("mediaFilters")?.includes("Weekend")));
     await expect(page.getByText(movies.private.name, { exact: true })).toBeVisible();
     await controls.getByRole("button", { name: "Filters", exact: true }).click();
+    await filters.getByRole("button", { name: "Movies filters", exact: true }).click();
     await genres.getByRole("button", { name: "More", exact: true }).click();
     await expect(lastGenre).toBeChecked();
     for (const genre of browseFilterGenres.slice(0, 19)) {
@@ -688,7 +700,7 @@ test("browses within saved rules and resets temporary filters without editing th
     await expect(nextGenre).toBeEnabled();
     await filters.getByRole("button", { name: "Clear advanced filters", exact: true }).click();
     await expect(page.getByRole("article")).toHaveCount(2);
-    await expect(page).toHaveURL(url => !url.searchParams.has("genres") && !url.searchParams.has("tags"));
+    await expect(page).toHaveURL(url => !url.searchParams.has("genres") && !url.searchParams.has("tags") && !url.searchParams.has("mediaFilters"));
     await controls.getByRole("combobox", { name: "Filter by status", exact: true }).click();
     await page.getByRole("option", { name: "Completed", exact: true }).click();
     await expect(page.getByRole("article")).toHaveCount(0);

@@ -1,3 +1,4 @@
+import type {ScopedMediaFilterValues} from "@/lib/schemas/media-filters.schema";
 import z from "zod";
 import {useState} from "react";
 import {Status} from "@/lib/utils/enums";
@@ -22,7 +23,7 @@ import {dynamicListOptions} from "@/lib/client/react-query/query-options/dynamic
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {DynamicListActions} from "@/lib/client/components/dynamic-lists/DynamicListActions";
 import {MediaBrowseFiltersSheet} from "@/lib/client/components/media/browse/MediaBrowseFiltersSheet";
-import {ALL_MEDIA_TYPES, type MediaMetadataFilters} from "@/lib/media-definitions/definition.registry";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {createMediaBrowseStatusOptions} from "@/lib/client/components/media/browse/media-browse.config";
 import {dynamicListSearchSchema, type DynamicListRuntimeFilters} from "@/lib/schemas/dynamic-lists.schema";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
@@ -93,7 +94,7 @@ function DynamicListPage() {
         if (key === "search") setLocalSearch("");
 
         if (scope) {
-            const metadata: MediaMetadataFilters | undefined = filters.mediaFilters?.[scope.mediaType];
+            const metadata: ScopedMediaFilterValues | undefined = filters.mediaFilters?.[scope.mediaType];
             const selected = metadata?.[scope.field]?.filter(item => item !== value);
             handleFiltersChange({
                 mediaFilters: {

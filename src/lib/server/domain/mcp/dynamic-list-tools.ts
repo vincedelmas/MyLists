@@ -1,7 +1,8 @@
+import {scopedMediaFiltersSchema} from "@/lib/schemas/media-filters.schema";
 import z from "zod";
 import {clientEnv} from "@/env/client";
 import {DYNAMIC_LIST_PRESETS} from "@/lib/utils/dynamic-lists/presets";
-import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import type {ToolContext} from "@/lib/server/core/mcp/tool-context";
 import {dynamicListPreviewSchema, dynamicListSpecSchema} from "@/lib/schemas/dynamic-lists.schema";
 import {getDynamicLists, postCreateDynamicList, previewDynamicList} from "@/lib/server/functions/dynamic-lists";
@@ -14,10 +15,10 @@ export const registerDynamicListTools = ({ register }: ToolContext) => {
     }, () => ({
         examples: DYNAMIC_LIST_PRESETS,
         schema: z.toJSONSchema(dynamicListSpecSchema, { io: "input" }),
-        supportedMediaFilters: Object.fromEntries(ALL_MEDIA_TYPES.map(mediaType => [mediaType, Object.keys(getMediaDefinition(mediaType).filters.metadata)])),
+        supportedMediaFilters: Object.fromEntries(ALL_MEDIA_TYPES.map(mediaType => [mediaType, Object.keys(scopedMediaFiltersSchema.shape[mediaType].unwrap().shape)])),
         rules: [
             "Dynamic lists include only the connected user's active media lists. All filters are combined with AND; statuses and genres match any supplied value.",
-            "mediaFilters groups metadata rules by media type. Each group applies only to that type: movies.actors does not exclude books from a mixed list. Use supportedMediaFilters to choose valid keys for each type; values match any supplied name.",
+            "mediaFilters groups genres, tags and metadata rules by media type. Each group applies only to that type: movies.actors does not exclude books from a mixed list. Use supportedMediaFilters to choose valid keys for each type; values match any supplied name.",
             "Metadata names use exact catalog values. For series and anime, langs contains origin-country codes. Games platforms filter the user's tracked platform, not catalog availability.",
             "planned groups Plan to Watch, Plan to Play and Plan to Read. in_progress groups Watching, Playing and Reading.",
             "search is a case-insensitive literal substring of the catalog title; percent signs and underscores are not wildcards.",

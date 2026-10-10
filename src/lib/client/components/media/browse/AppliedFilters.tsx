@@ -7,7 +7,7 @@ import {capitalize} from "@/lib/utils/formatting/text";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
-import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
+import type {ScopedMediaArrayFilterKey} from "@/lib/schemas/media-filters.schema";
 import {getMediaFilterDefinitions, getMediaFilterGroups} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
@@ -16,7 +16,7 @@ export type MediaBrowseFilterKey = Exclude<keyof MediaBrowseFilters, "page" | "s
 
 export type MediaBrowseFilterScope = {
     mediaType: MediaType;
-    field: MediaMetadataFilterKey;
+    field: ScopedMediaArrayFilterKey;
 };
 
 
@@ -200,7 +200,7 @@ export const BrowseAppliedFilters = (props: BrowseAppliedFiltersProps) => {
         groups.push({
             key: `${group.mediaType}.${group.field}`,
             label: group.label,
-            alternatives: true,
+            alternatives: !group.matchAll,
             items: group.items.map(item => ({
                 key: item.value,
                 label: item.label,

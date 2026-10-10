@@ -1,3 +1,4 @@
+import type {ScopedMediaFilterValues} from "@/lib/schemas/media-filters.schema";
 import {useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {MediaType, Status} from "@/lib/utils/enums";
@@ -19,7 +20,6 @@ import {collectionBrowseSearchSchema, collectionIdSchema} from "@/lib/schemas";
 import {useQuery, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {ArrowLeft, Copy, Eye, Heart, Layers3, List, ListOrdered, Pin} from "lucide-react";
 import {MediaListResults} from "@/lib/client/components/media/base/MediaListResults";
-import type {MediaMetadataFilters} from "@/lib/media-definitions/definition.registry";
 import {CollectionActions} from "@/lib/client/components/collections/CollectionActions";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
@@ -92,7 +92,7 @@ function CollectionViewer() {
         if (key === "search") searchInput.setLocalSearch("");
 
         if (scope) {
-            const metadata: MediaMetadataFilters | undefined = filters.mediaFilters?.[scope.mediaType];
+            const metadata: ScopedMediaFilterValues | undefined = filters.mediaFilters?.[scope.mediaType];
             const selected = metadata?.[scope.field]?.filter(item => item !== value);
             handleFilterChange({
                 mediaFilters: {
@@ -216,7 +216,7 @@ function CollectionViewer() {
                         searchLabel="Search this collection"
                         searchPlaceholder="Search this collection..."
                         onSearchChange={searchInput.handleInputChange}
-                        onFiltersClick={showTrackingControls ? () => setFiltersOpen(true) : undefined}
+                        onFiltersClick={() => setFiltersOpen(true)}
                         onGridClick={() => navigate({ replace: true, search: prev => ({ ...prev, display: isGrid ? "table" : "grid" }) })}
                         trailing={
                             <QuickActions mediaType={filters.mediaType} username={collection.ownerName}>
@@ -380,9 +380,10 @@ function CollectionViewer() {
                     onChangePage={onChangePage}
                 />
 
-                {filtersOpen && showTrackingControls &&
+                {filtersOpen &&
                     <MediaBrowseFiltersSheet
-                        personal={true}
+                        personal={!isAnonymous}
+                        personalLabel="Your tracking"
                         filters={filters}
                         open={filtersOpen}
                         onApply={handleFilterChange}

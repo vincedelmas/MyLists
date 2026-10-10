@@ -7,7 +7,7 @@ export type EpsPerSeasonType = { season: number, episodes: number };
 
 
 export type MediaMetadataFilterOptions = Partial<Record<MediaMetadataFilterKey, NameObj[]>>;
-export type ScopedMediaFilterOptions = Partial<Record<MediaType, MediaMetadataFilterOptions>>;
+export type ScopedMediaFilterOptions = Partial<Record<MediaType, MediaMetadataFilterOptions & { genres?: NameObj[]; tags?: NameObj[] }>>;
 
 
 export type ExpandedListFilters = {

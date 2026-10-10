@@ -9,7 +9,7 @@ import {user, userMediaSettings} from "@/lib/server/database/schema";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
-import {getMediaCommonFilterConditions, getMediaMetadataFilterConditions, getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
+import {getMediaCommonFilterConditions, getMediaScopedFilterConditions, getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import type {animeList, booksList, gamesList, mangaList, moviesList, seriesList} from "@/lib/server/database/schema";
@@ -99,7 +99,7 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
             ...getMediaCommonFilterConditions(definition, {
                 minRating: filters.minRating, favorite: filters.favorite, genres: filters.genres,
             }, userId),
-            ...getMediaMetadataFilterConditions(definition, filters.mediaFilters?.[mediaType], userId),
+            ...getMediaScopedFilterConditions(definition, filters.mediaFilters?.[mediaType], userId),
         );
 
         if (definition.filters.common.search && filters.search) {
@@ -156,28 +156,9 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
             conditions.push(sql`${releaseYear} <= ${filters.maxReleaseYear}`);
         }
 
-        if (definition.filters.common.tags && filters.tags) {
-            const tags = [...new Set(filters.tags)];
-
-            const matchingTags = sql`
-                SELECT ${tagTable.name} 
-                FROM ${tagTable}
-                WHERE ${tagTable.userId} = ${userId} 
-                    AND ${tagTable.mediaId} = ${listTable.mediaId}
-                    AND ${tagTable.name} IN (${sql.join(tags.map(tag => sql`${tag}`), sql`, `)})`;
-
-            conditions.push(filters.tagsMatch === "all"
-                ? sql`(SELECT COUNT(*) FROM (${matchingTags})) = ${tags.length}`
-                : sql`EXISTS (${matchingTags})`);
-        }
-
-        if (definition.filters.common.tags && filters.excludeTags) {
-            conditions.push(sql`NOT EXISTS (
-                SELECT 1 FROM ${tagTable}
-                WHERE ${tagTable.userId} = ${userId} AND ${tagTable.mediaId} = ${listTable.mediaId}
-                    AND ${tagTable.name} IN (${sql.join(filters.excludeTags.map(tag => sql`${tag}`), sql`, `)})
-            )`);
-        }
+        conditions.push(...getMediaScopedFilterConditions(definition, {
+            tags: filters.tags, tagsMatch: filters.tagsMatch, excludeTags: filters.excludeTags,
+        }, userId));
 
         const selection = sql`
             ${mediaType} AS "mediaType", 
@@ -200,7 +181,7 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
                 status: browseFilters.status ? [browseFilters.status] : undefined,
                 favorite: browseFilters.favorite === true ? true : undefined,
             }, userId),
-            ...getMediaMetadataFilterConditions(definition, browseFilters.mediaFilters?.[mediaType], userId),
+            ...getMediaScopedFilterConditions(definition, browseFilters.mediaFilters?.[mediaType], userId),
         ];
 
         if (browseFilters.hideCommon && viewerId !== userId) {
@@ -279,9 +260,13 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
     if (runtimeFilters || includeFilterOptions) {
         if (includeFilterOptions) {
             for (const source of sources) {
-                filterOptions.mediaFilters[source.mediaType] = getMediaMetadataFilterOptions(source.definition, {
-                    userId, mediaIds: sql`SELECT "mediaId" FROM (${source.baseQuery})`,
-                });
+                filterOptions.mediaFilters[source.mediaType] = {
+                    ...getMediaMetadataFilterOptions(source.definition, {
+                        userId, mediaIds: sql`SELECT "mediaId" FROM (${source.baseQuery})`,
+                    }),
+                    genres: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.genreQuery}) ORDER BY "name" COLLATE NOCASE`),
+                    tags: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.tagQuery}) ORDER BY "name" COLLATE NOCASE`),
+                };
             }
         }
         const tags = sql.join(sources.map(s => s.tagQuery), sql` UNION ALL `);
@@ -402,7 +387,11 @@ export const getDynamicListEditorFilterOptions = (userId: number, selectedTypes:
     });
 
     return {
-        mediaFilters: Object.fromEntries(sources.map(source => [source.mediaType, source.metadata])) as ScopedMediaFilterOptions,
+        mediaFilters: Object.fromEntries(sources.map(source => [source.mediaType, {
+            ...source.metadata,
+            genres: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.genres}) ORDER BY "name" COLLATE NOCASE`),
+            tags: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.tags}) ORDER BY "name" COLLATE NOCASE`),
+        }])) as ScopedMediaFilterOptions,
         genres: db.all<{ name: string }>(sql`
             SELECT DISTINCT "name" 
             FROM (${sql.join(sources.map(source => source.genres), sql` UNION ALL `)})

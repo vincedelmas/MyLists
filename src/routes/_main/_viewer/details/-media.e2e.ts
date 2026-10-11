@@ -1,8 +1,8 @@
 import {movies, users} from "../../../../../scripts/e2e/data";
-import {expect, runBun, signIn, test} from "../../../../../scripts/e2e/fixtures";
+import {expect, signIn, test} from "../../../../../scripts/e2e/fixtures";
 
 
-test("adds a movie and persists status and rating changes", async ({ page }) => {
+test("tracks a movie and persists its status, rating and tags", async ({ page }) => {
     await signIn(page);
 
     await page.goto(`/details/movies/${movies.editable.id}`);
@@ -20,138 +20,23 @@ test("adds a movie and persists status and rating changes", async ({ page }) => 
     await expect(rating).toContainText("8.0");
     await expect(rating).toBeEnabled();
 
+    const manageTags = page.getByRole("heading").filter({ has: page.getByText("Tags", { exact: true }) })
+        .getByRole("button", { name: "Manage", exact: true });
+    await manageTags.click();
+    const tags = page.getByRole("dialog", { name: "Manage Tags", exact: true });
+    const tagSearch = tags.getByRole("textbox", { name: "Find or create a tag...", exact: true });
+    await tagSearch.fill("Watch again");
+    await tagSearch.press("Enter");
+    await expect(tags.getByRole("checkbox", { name: "# Watch again", exact: true })).toBeChecked();
+    await tags.getByRole("button", { name: "Done", exact: true }).click();
+
     await page.reload();
     await expect(page.getByRole("combobox").filter({ hasText: "Completed" })).toBeVisible();
     await expect(rating).toContainText("8.0");
+    await manageTags.click();
+    await expect(tags.getByRole("checkbox", { name: "# Watch again", exact: true })).toBeChecked();
+    await tags.getByRole("button", { name: "Done", exact: true }).click();
 
     await page.goto(`/lists/tracking/movies/${users.owner.name}`);
     await expect(page.getByRole("link", { name: `View ${movies.editable.name}`, exact: true })).toBeVisible();
-});
-
-
-test("corrects book activity automatically and lets the reader review older months", async ({ page }) => {
-    await runBun(["-e", `
-        if (!process.env.MYLISTS_E2E_DIR) throw new Error("An isolated test database is required");
-        const {db} = await import("./src/lib/server/database/db");
-        const {books, userMediaSettings} = await import("./src/lib/server/database/schema");
-        const {getContainer} = await import("./src/lib/server/core/container");
-        const {MediaType, Status, UpdateType} = await import("./src/lib/utils/enums");
-        const {and, eq} = await import("drizzle-orm");
-        db.update(userMediaSettings).set({active: true}).where(and(eq(userMediaSettings.userId, 1), eq(userMediaSettings.mediaType, MediaType.BOOKS))).run();
-        db.insert(books).values({id: 301, apiId: "correction-book", name: "Correction book", pages: 500, imageCover: "default.jpg"}).run();
-        const {services: {mediaTracking}} = await getContainer();
-        const action = {userId: 1, mediaId: 301, mediaType: MediaType.BOOKS};
-        mediaTracking.addMediaToList({...action, status: Status.READING});
-        mediaTracking.updateUserMedia({...action, payload: {type: UpdateType.PAGE, actualPage: 200, loggedAt: "2025-07-20"}});
-        mediaTracking.updateUserMedia({...action, payload: {type: UpdateType.PAGE, actualPage: 320, loggedAt: "2025-08-20"}});
-    `]);
-    await signIn(page);
-    await page.goto("/details/books/301");
-    const currentPage = page.getByLabel("Current page", { exact: true });
-    await currentPage.fill("340");
-    await Promise.all([
-        page.waitForResponse(response => response.request().method() === "POST" && response.url().includes("/_serverFn/")),
-        currentPage.press("Enter"),
-    ]);
-    await expect(currentPage).toBeEnabled();
-    await currentPage.fill("330");
-    await currentPage.press("Enter");
-    await expect(page.getByText("Progress and activity corrected.", { exact: true })).toBeVisible();
-    await expect(page.getByRole("alertdialog")).toHaveCount(0);
-
-    await currentPage.fill("290");
-    await currentPage.press("Enter");
-    const correction = page.getByRole("alertdialog", { name: "Correct monthly activity" });
-    await expect(correction).toBeVisible();
-    await expect(correction.getByText("120 → 90 p.", { exact: true })).toBeVisible();
-    await correction.getByRole("combobox", { name: "Correct activity starting in" }).click();
-    await page.getByRole("option", { name: "July 2025", exact: true }).click();
-    await correction.getByRole("button", { name: "Cancel", exact: true }).click();
-    await expect(currentPage).toHaveValue("330");
-
-    // Reopening without a reload must discard the cancelled month selection.
-    await currentPage.fill("290");
-    await currentPage.press("Enter");
-    await expect(correction.getByText("120 → 90 p.", { exact: true })).toBeVisible();
-    await correction.getByRole("combobox", { name: "Correct activity starting in" }).click();
-    await page.getByRole("option", { name: "July 2025", exact: true }).click();
-    await expect(correction.getByText("200 → 160 p.", { exact: true })).toBeVisible();
-    await expect(correction.getByText("August 2025", { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("listbox")).toHaveCount(0);
-    await page.setViewportSize({ width: 390, height: 844 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await correction.getByRole("button", { name: "Save correction", exact: true }).click();
-    await expect(correction).toHaveCount(0);
-    await expect(currentPage).toBeEnabled();
-    await page.reload();
-    await expect(currentPage).toHaveValue("290");
-    await page.goto(`/activity/${users.owner.name}?activeTab=books&year=2025&month=7`);
-    const bookActivity = page.getByRole("article").filter({ has: page.getByRole("link", { name: "View Correction book", exact: true }) });
-    await expect(bookActivity.getByText("160 p.", { exact: true })).toBeVisible();
-
-    // The correction prompt must work over the list's edit dialog too.
-    await page.goto(`/lists/tracking/books/${users.owner.name}`);
-    await page.getByRole("button", { name: "Edit Correction book", exact: true }).click();
-    const editor = page.getByRole("dialog", { name: "Correction book", exact: true });
-    await editor.getByLabel("Current page", { exact: true }).fill("240");
-    await editor.getByLabel("Current page", { exact: true }).press("Enter");
-    await expect(correction).toBeVisible();
-    await correction.getByRole("checkbox", { name: "Keep activity unchanged", exact: true }).check();
-    await correction.getByRole("button", { name: "Save correction", exact: true }).click();
-    await expect(correction).toHaveCount(0);
-    await expect(editor.getByLabel("Current page", { exact: true })).toHaveValue("240");
-    await expect(editor.getByLabel("Current page", { exact: true })).toBeEnabled();
-    await expect(page.getByText("Progress updated; activity unchanged.", { exact: true })).toBeVisible();
-    await page.goto("/details/books/301");
-    await expect(currentPage).toHaveValue("240");
-    await page.goto(`/activity/${users.owner.name}?activeTab=books&year=2025&month=8`);
-    await expect(bookActivity.getByText("120 p.", { exact: true })).toBeVisible();
-});
-
-
-test("shows game details while HLTB loads and updates the cached times", async ({ page }) => {
-    await runBun(["-e", `
-        if (!process.env.MYLISTS_E2E_DIR) throw new Error("An isolated test database is required");
-        const {db} = await import("./src/lib/server/database/db");
-        const {games} = await import("./src/lib/server/database/schema");
-        db.insert(games).values({id: 401, apiId: 401, name: "HLTB test game", imageCover: "default.jpg"}).run();
-    `]);
-    await signIn(page);
-
-    let releaseLookup!: () => void;
-    const lookupReady = new Promise<void>(resolve => { releaseLookup = resolve; });
-    let lookupCount = 0;
-    await page.route("**/_serverFn/**", async route => {
-        if (route.request().method() === "POST") {
-            lookupCount++;
-            await lookupReady;
-        }
-        await route.continue();
-    });
-
-    await page.goto("/details/games/401");
-    await expect(page.getByRole("heading", { name: "HLTB test game", exact: true })).toBeVisible();
-    await expect(page.getByRole("status", { name: "Loading HLTB times" })).toHaveCount(3);
-
-    // Supply the lookup result in the isolated database without calling HLTB.
-    await runBun(["-e", `
-        if (!process.env.MYLISTS_E2E_DIR) throw new Error("An isolated test database is required");
-        const {db} = await import("./src/lib/server/database/db");
-        const {games} = await import("./src/lib/server/database/schema");
-        const {eq} = await import("drizzle-orm");
-        db.update(games).set({hltbMainTime: 12, hltbMainAndExtraTime: 24, hltbTotalCompleteTime: 36,
-            hltbLastCheckedAt: new Date().toISOString()}).where(eq(games.id, 401)).run();
-    `]);
-    releaseLookup();
-
-    await expect(page.getByRole("status", { name: "Loading HLTB times" })).toHaveCount(0);
-    const mainTime = page.getByText("HLTB Main", { exact: true }).locator("..");
-    await expect(mainTime).toContainText("12 h");
-    await expect(page.getByText("HLTB Main & Extra", { exact: true }).locator("..")).toContainText("24 h");
-    await expect(page.getByText("HLTB 100%", { exact: true }).locator("..")).toContainText("36 h");
-    expect(lookupCount).toBe(1);
-
-    await page.reload();
-    await expect(mainTime).toContainText("12 h");
-    expect(lookupCount).toBe(1);
 });

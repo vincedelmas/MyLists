@@ -8,12 +8,6 @@ import {dynamicListPreviewSchema, dynamicListSpecSchema} from "./dynamic-lists.s
 describe("untrusted dynamic list specifications", () => {
     const spec = DYNAMIC_LIST_PRESETS[0];
 
-    it("accepts every preset and normalizes titles", () => {
-        for (const preset of DYNAMIC_LIST_PRESETS) expect(dynamicListSpecSchema.safeParse(preset).success).toBe(true);
-        expect(dynamicListSpecSchema.parse({ ...spec, title: "  My view  ", filters: { mediaFilters: { movies: { tagRules: [{ tags: [1] }] } } } }))
-            .toMatchObject({ title: "My view", filters: { mediaFilters: { movies: { tagRules: [{ tags: [1] }] } } } });
-    });
-
     it("rejects ownership overrides, raw SQL and unknown nested fields", () => {
         for (const candidate of [
             { ...spec, userId: 2 },

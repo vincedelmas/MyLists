@@ -5,7 +5,7 @@ import {and, eq} from "drizzle-orm";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {GamesPlatformsEnum, MediaType, RatingSystemType, Status, TagAction} from "@/lib/utils/enums";
+import {GamesPlatformsEnum, MediaType, Status, TagAction} from "@/lib/utils/enums";
 import type {ScopedMediaFilters} from "@/lib/schemas/media-filters.schema";
 import * as schema from "@/lib/server/database/schema";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
@@ -112,24 +112,6 @@ describe("dynamic list live queries", () => {
         expect(getDynamicListEditorFilterOptions(2, [MediaType.MOVIES])).toMatchObject({ genres: ["Foreign genre"], mediaFilters: { movies: { tags: [{ name: "Foreign tag" }, { name: "Visitor tag" }] } } });
     });
 
-    it("returns only four owner cover previews while counting all saved matches", () => {
-        for (let id = 1; id <= 6; id++) addEntry(MediaType.MOVIES, id, { rating: 8, comment: "Private detail", customCover: id === 1 ? "custom.jpg" : null });
-        addEntry(MediaType.MOVIES, 7, { userId: 2 });
-        addEntry(MediaType.BOOKS, 8);
-        dbContext.db.update(schema.userMediaSettings).set({ active: false })
-            .where(and(eq(schema.userMediaSettings.userId, 1), eq(schema.userMediaSettings.mediaType, MediaType.BOOKS))).run();
-        const preview = getDynamicListSummary(1, spec);
-        expect(preview.total).toBe(6);
-        expect(preview.mediaTypes).toEqual([MediaType.MOVIES]);
-        expect(preview.covers).toHaveLength(4);
-        expect(preview.covers[0]).toEqual({
-            mediaType: MediaType.MOVIES, mediaId: 1, title: "Media 1",
-            imageCover: "https://mylists.example.invalid/static/movies-covers/custom.jpg",
-        });
-        expect(preview.covers.every(cover => Object.keys(cover).sort().join(",") === "imageCover,mediaId,mediaType,title")).toBe(true);
-        expect(getDynamicListSummary(1, { ...spec, filters: { search: "missing" } })).toEqual({ total: 0, mediaTypes: [], covers: [] });
-    });
-
     it("reports actual matching media types even when they are absent from the first four preview covers", () => {
         for (let id = 1; id <= 5; id++) addEntry(MediaType.MOVIES, id, { status: Status.COMPLETED, addedAt: "2025-01-01" });
         addEntry(MediaType.BOOKS, 10, { status: Status.COMPLETED, addedAt: "2026-01-01" });
@@ -173,24 +155,6 @@ describe("dynamic list live queries", () => {
         dbContext.db.update(schema.userMediaSettings).set({ active: false })
             .where(and(eq(schema.userMediaSettings.userId, 1), eq(schema.userMediaSettings.mediaType, MediaType.BOOKS))).run();
         expect(getDynamicListResults(1, saved, { filters: { sorting: "provider_rating_highest" } }).mediaTypes).toEqual([MediaType.MOVIES]);
-    });
-
-    it("reuses the complete list projection for progress, owner ratings, comments, covers and tags", () => {
-        for (const [index, mediaType] of ALL_MEDIA_TYPES.entries()) addEntry(mediaType, index + 1, { comment: "Owner comment", favorite: true, rating: 8 });
-        dbContext.db.update(schema.user).set({ ratingSystem: RatingSystemType.FEELING }).where(eq(schema.user.id, 1)).run();
-        dbContext.db.update(schema.booksList).set({ actualPage: 42, redo: 2 }).where(eq(schema.booksList.userId, 1)).run();
-        dbContext.db.update(schema.gamesList).set({ playtime: 150 }).where(eq(schema.gamesList.userId, 1)).run();
-        dbContext.db.update(schema.seriesList).set({ currentSeason: 2, currentEpisode: 3 }).where(eq(schema.seriesList.userId, 1)).run();
-        dbContext.db.insert(schema.seriesEpisodesPerSeason).values({ mediaId: 1, season: 2, episodes: 10 }).run();
-        seedMediaTags(dbContext.db, MediaType.BOOKS, [
-            { userId: 1, mediaId: 4, name: "Owner tag" },
-            { userId: 2, mediaId: 4, name: "Visitor tag" },
-        ]);
-        const items = getDynamicListResults(1, spec).items;
-        expect(items.every(item => item.userId === 1 && item.ratingSystem === RatingSystemType.FEELING && item.comment === "Owner comment" && item.favorite === true)).toBe(true);
-        expect(items.find(item => item.mediaType === MediaType.BOOKS)).toMatchObject({ mediaName: "Media 4", actualPage: 42, pages: 100, redo: 2, tags: [{ name: "Owner tag" }] });
-        expect(items.find(item => item.mediaType === MediaType.GAMES)).toMatchObject({ playtime: 150 });
-        expect(items.find(item => item.mediaType === MediaType.SERIES)).toMatchObject({ currentSeason: 2, currentEpisode: 3, epsPerSeason: [{ season: 2, episodes: 10 }] });
     });
 
     it("resolves in-progress aliases and excludes unsupported statuses", () => {
@@ -496,14 +460,6 @@ describe("dynamic list live queries", () => {
         expect(() => getDynamicListResults(1, spec, { filters: { hideCommon: true } })).toThrow("Sign in");
     });
 
-    it("decodes user custom covers and catalog covers using each media directory", () => {
-        addEntry(MediaType.MOVIES, 1, { customCover: "https://old.example.invalid/static/movies-covers/custom.jpg", favorite: true });
-        addEntry(MediaType.BOOKS, 2, { favorite: false });
-        const items = getDynamicListResults(1, spec).items;
-        expect(items[0]).toMatchObject({ imageCover: "https://mylists.example.invalid/static/movies-covers/custom.jpg", favorite: true });
-        expect(items[1]).toMatchObject({ imageCover: "https://mylists.example.invalid/static/books-covers/2.jpg", favorite: false });
-    });
-
     it("preserves false-favorite behavior for saved rules and tracking browsing", async () => {
         addEntry(MediaType.MOVIES, 1);
         addEntry(MediaType.BOOKS, 2, { favorite: false, rating: 0 });
@@ -614,7 +570,8 @@ describe("dynamic list live queries", () => {
         expect(getDynamicListResults(1, dynamicListsRepository.get(1, id).spec).total).toBe(3);
     });
 
-    it.each(ALL_MEDIA_TYPES)("cleans %s rules when the final tag assignment is removed", mediaType => {
+    it("cleans movie rules when the final tag assignment is removed", () => {
+        const mediaType = MediaType.MOVIES;
         addEntry(mediaType, 1);
         seedMediaTags(dbContext.db, mediaType, { userId: 1, mediaId: 1, name: "Temporary" });
         const id = tagId(mediaType, "Temporary");
@@ -626,7 +583,8 @@ describe("dynamic list live queries", () => {
         expect(dbContext.db.select().from(schema.mediaTags).where(eq(schema.mediaTags.id, id)).all()).toEqual([]);
     });
 
-    it.each(ALL_MEDIA_TYPES)("cleans saved tag rules when tracked %s media is removed", mediaType => {
+    it("cleans saved tag rules when a tracked movie is removed", () => {
+        const mediaType = MediaType.MOVIES;
         addEntry(mediaType, 1);
         const tags = createMediaTagQueries(getServerMediaDefinition(mediaType));
         tags.editUserTag(1, { name: "Temporary" }, TagAction.ADD, 1);

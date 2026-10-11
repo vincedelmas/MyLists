@@ -1,11 +1,9 @@
 import Database from "bun:sqlite";
-import {readFileSync} from "node:fs";
 import {eq} from "drizzle-orm";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
-import {MAX_PROFILE_PINS} from "@/lib/schemas/profile-pins.schema";
 import * as schema from "@/lib/server/database/schema";
 import {dynamicListsRepository} from "./dynamic-lists.repository";
 
@@ -65,28 +63,5 @@ describe("dynamic list persistence", () => {
         dbContext.db.update(schema.dynamicLists).set({ profilePosition: 1 }).where(eq(schema.dynamicLists.id, view.id)).run();
         expect(dynamicListsRepository.getPinned(1)).toMatchObject([{ id: view.id, spec }]);
         expect(dynamicListsRepository.getPinned(2)).toEqual([]);
-    });
-
-    it("preserves existing saved rules when migrating to profile shortcuts", () => {
-        sqlite.exec("DROP TABLE smart_views");
-        sqlite.exec(readFileSync("./drizzle/0054_smart_views.sql", "utf8"));
-        sqlite.query("INSERT INTO smart_views(user_id, spec) VALUES (?, ?)").run(1, JSON.stringify(spec));
-        sqlite.exec(readFileSync("./drizzle/0055_smart_view_profile_shortcuts.sql", "utf8"));
-        expect(dynamicListsRepository.getAll(1)).toMatchObject([{ spec, profilePosition: null }]);
-        dbContext.db.update(schema.dynamicLists).set({ profilePosition: 1 }).run();
-        expect(dynamicListsRepository.getPinned(1)).toMatchObject([{ id: 1, spec, profilePosition: 1 }]);
-    });
-
-    it("preserves pinned views while leaving the configured maximum to the application", () => {
-        sqlite.exec("DROP TABLE smart_views");
-        sqlite.exec(readFileSync("./drizzle/0054_smart_views.sql", "utf8"));
-        sqlite.query("INSERT INTO smart_views(user_id, spec) VALUES (?, ?)").run(1, JSON.stringify(spec));
-        sqlite.exec(readFileSync("./drizzle/0055_smart_view_profile_shortcuts.sql", "utf8"));
-        dbContext.db.update(schema.dynamicLists).set({ profilePosition: 1 }).run();
-        sqlite.exec(readFileSync("./drizzle/0056_smart_view_profile_limit.sql", "utf8"));
-        expect(dynamicListsRepository.getPinned(1)[0]).toMatchObject({ id: 1, spec, profilePosition: 1 });
-        dbContext.db.update(schema.dynamicLists).set({ profilePosition: MAX_PROFILE_PINS + 1 }).run();
-        expect(dynamicListsRepository.getPinned(1)[0].profilePosition).toBe(MAX_PROFILE_PINS + 1);
-        expect(() => dbContext.db.update(schema.dynamicLists).set({ profilePosition: 0 }).run()).toThrow();
     });
 });

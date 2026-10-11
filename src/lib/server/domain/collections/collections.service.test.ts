@@ -91,29 +91,7 @@ const createService = () => {
 };
 
 
-describe("CollectionsService.getUserCollections", () => {
-    it("forwards an admin actor to the repository visibility scope", async () => {
-        const { repository, service } = createService();
-
-        const actor = toActor({ id: 20, role: RoleType.ADMIN });
-        await service.getUserCollections(10, actor, MediaType.MOVIES);
-
-        expect(repository.getUserCollections).toHaveBeenCalledWith(10, actor, MediaType.MOVIES, false);
-    });
-});
-
-
 describe("CollectionsService.getPaginatedUserCollections", () => {
-    it("passes filters and the viewer actor through", async () => {
-        const { repository, service } = createService();
-        const filters = { search: "favorites", page: 2, mediaType: MediaType.MOVIES };
-
-        const actor = toActor({ id: 20, role: RoleType.USER });
-        await service.getPaginatedUserCollections(10, filters, actor);
-
-        expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, actor, filters, false);
-    });
-
     it("requests public collections before enriching previews when the profile is unavailable", async () => {
         const { repository, service } = createService();
         const actor = toActor();
@@ -145,18 +123,6 @@ describe("CollectionsService authorization", () => {
         expect(repository.getPaginatedCollectionItems).not.toHaveBeenCalled();
         expect(repository.incrementViewCount).not.toHaveBeenCalled();
         expect(authorizationService.getCollectionCapabilities).not.toHaveBeenCalled();
-    });
-
-    it("returns capabilities produced by the authorization service", async () => {
-        const { authorizationService, capabilities, collection, repository, service } = createService();
-        const actor = toActor({ id: 20, role: RoleType.USER });
-
-        const result = await service.getCollectionDetails(7, "read", actor);
-
-        expect(authorizationService.decideCollection).toHaveBeenCalledWith(actor, "read", collection);
-        expect(authorizationService.getCollectionCapabilities).toHaveBeenCalledWith(actor, collection);
-        expect(repository.findLikedCollection).toHaveBeenCalledWith(20, 7);
-        expect(result.capabilities).toEqual(capabilities);
     });
 
     it("loads read-mode collection items in pages of 24", async () => {

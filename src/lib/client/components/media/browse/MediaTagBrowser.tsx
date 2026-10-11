@@ -106,7 +106,7 @@ export const MediaTagBrowser = ({ label, options, value, onChange, disabled, err
             }
 
             {results.length > 0 ?
-                <div className="max-h-50 overflow-y-auto scrollbar-thin overscroll-contain pr-1" role="region" aria-label={`${label} directory`}>
+                <div className="max-h-65 overflow-y-auto scrollbar-thin overscroll-contain pr-1" role="region" aria-label={`${label} directory`}>
                     <div className="flex flex-col gap-0.5">
                         {results.map(name => {
                             const selected = value.includes(name);

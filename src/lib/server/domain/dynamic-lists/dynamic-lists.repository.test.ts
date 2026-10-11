@@ -68,7 +68,7 @@ describe("dynamic list persistence", () => {
     });
 
     it("preserves existing saved rules when migrating to profile shortcuts", () => {
-        sqlite.exec("DROP TRIGGER media_tags_dynamic_rules_delete; DROP TABLE smart_views");
+        sqlite.exec("DROP TABLE smart_views");
         sqlite.exec(readFileSync("./drizzle/0054_smart_views.sql", "utf8"));
         sqlite.query("INSERT INTO smart_views(user_id, spec) VALUES (?, ?)").run(1, JSON.stringify(spec));
         sqlite.exec(readFileSync("./drizzle/0055_smart_view_profile_shortcuts.sql", "utf8"));
@@ -78,7 +78,7 @@ describe("dynamic list persistence", () => {
     });
 
     it("preserves pinned views while leaving the configured maximum to the application", () => {
-        sqlite.exec("DROP TRIGGER media_tags_dynamic_rules_delete; DROP TABLE smart_views");
+        sqlite.exec("DROP TABLE smart_views");
         sqlite.exec(readFileSync("./drizzle/0054_smart_views.sql", "utf8"));
         sqlite.query("INSERT INTO smart_views(user_id, spec) VALUES (?, ?)").run(1, JSON.stringify(spec));
         sqlite.exec(readFileSync("./drizzle/0055_smart_view_profile_shortcuts.sql", "utf8"));

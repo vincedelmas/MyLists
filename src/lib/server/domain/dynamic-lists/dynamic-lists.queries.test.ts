@@ -1,3 +1,5 @@
+import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
+import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {and, eq} from "drizzle-orm";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
@@ -96,12 +98,12 @@ describe("dynamic list live queries", () => {
         ]).run();
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 2, name: "Drama" }).run();
         dbContext.db.insert(schema.mangaGenre).values({ mediaId: 3, name: "Inactive genre" }).run();
-        dbContext.db.insert(schema.moviesTags).values([
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 1, name: "cozy" }, { userId: 2, mediaId: 1, name: "Visitor tag" },
             { userId: 1, name: "Unused tag" }, { userId: 2, mediaId: 4, name: "Foreign tag" },
-        ]).run();
-        dbContext.db.insert(schema.booksTags).values({ userId: 1, mediaId: 2, name: "learning" }).run();
-        dbContext.db.insert(schema.mangaTags).values({ userId: 1, mediaId: 3, name: "Inactive tag" }).run();
+        ]);
+        seedMediaTags(dbContext.db, MediaType.BOOKS, { userId: 1, mediaId: 2, name: "learning" });
+        seedMediaTags(dbContext.db, MediaType.MANGA, { userId: 1, mediaId: 3, name: "Inactive tag" });
         dbContext.db.update(schema.userMediaSettings).set({ active: false })
             .where(and(eq(schema.userMediaSettings.userId, 1), eq(schema.userMediaSettings.mediaType, MediaType.MANGA))).run();
         expect(getDynamicListEditorFilterOptions(1, "all")).toMatchObject({ genres: ["Comedy", "Drama"], mediaFilters: { movies: { tags: [{ name: "cozy" }, { name: "Unused tag" }] }, books: { tags: [{ name: "learning" }] } } });
@@ -180,10 +182,10 @@ describe("dynamic list live queries", () => {
         dbContext.db.update(schema.gamesList).set({ playtime: 150 }).where(eq(schema.gamesList.userId, 1)).run();
         dbContext.db.update(schema.seriesList).set({ currentSeason: 2, currentEpisode: 3 }).where(eq(schema.seriesList.userId, 1)).run();
         dbContext.db.insert(schema.seriesEpisodesPerSeason).values({ mediaId: 1, season: 2, episodes: 10 }).run();
-        dbContext.db.insert(schema.booksTags).values([
+        seedMediaTags(dbContext.db, MediaType.BOOKS, [
             { userId: 1, mediaId: 4, name: "Owner tag" },
             { userId: 2, mediaId: 4, name: "Visitor tag" },
-        ]).run();
+        ]);
         const items = getDynamicListResults(1, spec).items;
         expect(items.every(item => item.userId === 1 && item.ratingSystem === RatingSystemType.FEELING && item.comment === "Owner comment" && item.favorite === true)).toBe(true);
         expect(items.find(item => item.mediaType === MediaType.BOOKS)).toMatchObject({ mediaName: "Media 4", actualPage: 42, pages: 100, redo: 2, tags: [{ name: "Owner tag" }] });
@@ -339,20 +341,20 @@ describe("dynamic list live queries", () => {
         addEntry(MediaType.GAMES, 3, { rating: 7, favorite: true });
         addEntry(MediaType.MOVIES, 4, { rating: 8, favorite: false });
         addEntry(MediaType.MOVIES, 5, { rating: 8, favorite: true });
-        dbContext.db.insert(schema.moviesTags).values([
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 1, name: "cozy" }, { userId: 1, mediaId: 1, name: "short" },
             { userId: 1, mediaId: 4, name: "cozy" }, { userId: 2, mediaId: 5, name: "cozy" },
             { userId: 1, name: "cozy" },
-        ]).run();
-        dbContext.db.insert(schema.booksTags).values({ userId: 1, mediaId: 2, name: "short" }).run();
-        dbContext.db.insert(schema.gamesTags).values({ userId: 1, mediaId: 3, name: "cozy" }).run();
+        ]);
+        seedMediaTags(dbContext.db, MediaType.BOOKS, { userId: 1, mediaId: 2, name: "short" });
+        seedMediaTags(dbContext.db, MediaType.GAMES, { userId: 1, mediaId: 3, name: "cozy" });
         const querySpec: DynamicListSpec = { ...spec, filters: { statusGroup: "completed", minRating: 8, maxRating: 9, favorite: true, mediaFilters: {
             movies: { tagRules: [{ tags: [tagId(MediaType.MOVIES, "cozy"), tagId(MediaType.MOVIES, "short")] }] },
             books: { tagRules: [{ tags: [tagId(MediaType.BOOKS, "short")] }] },
             games: { tagRules: [{ tags: [tagId(MediaType.GAMES, "cozy")] }] },
         } } };
         expect(getDynamicListResults(1, querySpec).items.map(item => item.mediaId)).toEqual([1, 2]);
-        dbContext.db.insert(schema.moviesTags).values({ userId: 1, name: "' OR 1=1 --" }).run();
+        seedMediaTags(dbContext.db, MediaType.MOVIES, { userId: 1, name: "' OR 1=1 --" });
         expect(getDynamicListResults(1, { ...spec, mediaTypes: [MediaType.MOVIES], filters: {
             mediaFilters: { movies: { tagRules: [{ tags: [tagId(MediaType.MOVIES, "' OR 1=1 --")] }] } },
         } }).total).toBe(0);
@@ -364,11 +366,11 @@ describe("dynamic list live queries", () => {
         addEntry(MediaType.MOVIES, 3, { rating: 10, status: Status.PLAN_TO_WATCH });
         dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 3, name: "Excluded genre" }]).run();
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 2, name: "History" }).run();
-        dbContext.db.insert(schema.moviesTags).values([
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 1, name: "cozy" }, { userId: 2, mediaId: 1, name: "Other user's tag" },
             { userId: 1, mediaId: 3, name: "Excluded tag" },
-        ]).run();
-        dbContext.db.insert(schema.booksTags).values({ userId: 1, mediaId: 2, name: "learning" }).run();
+        ]);
+        seedMediaTags(dbContext.db, MediaType.BOOKS, { userId: 1, mediaId: 2, name: "learning" });
         const saved: DynamicListSpec = { ...spec, filters: { statusGroup: "completed", minRating: 8 } };
         const result = getDynamicListResults(1, saved, { filters: { genres: ["Drama"], tags: ["cozy"], favorite: true } });
         expect(result.items.map(item => item.mediaId)).toEqual([1]);
@@ -384,10 +386,10 @@ describe("dynamic list live queries", () => {
         addEntry(MediaType.BOOKS, 1, { rating: 8 });
         dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 2, name: "Comedy" }]).run();
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 1, name: "History" }).run();
-        dbContext.db.insert(schema.moviesTags).values([
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 1, name: "cozy" }, { userId: 1, mediaId: 1, name: "short" },
             { userId: 2, mediaId: 2, name: "cozy" },
-        ]).run();
+        ]);
         const mediaFilters = { movies: { genres: ["Drama"], tagRules: [{ tags: [tagId(MediaType.MOVIES, "cozy"), tagId(MediaType.MOVIES, "short")], tagsMatch: "all" as const }] } };
         const saved = getDynamicListResults(1, { ...spec, filters: { minRating: 8, mediaFilters } });
         expect(saved.items.map(item => [item.mediaType, item.mediaId])).toEqual([[MediaType.BOOKS, 1], [MediaType.MOVIES, 1]]);
@@ -561,13 +563,13 @@ describe("dynamic list live queries", () => {
 
     it("matches all requested tags and excludes any owner tag while ignoring other users' tags", () => {
         for (let id = 1; id <= 4; id++) addEntry(MediaType.MOVIES, id);
-        dbContext.db.insert(schema.moviesTags).values([
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 1, name: "cozy" }, { userId: 1, mediaId: 1, name: "short" },
             { userId: 1, mediaId: 2, name: "cozy" }, { userId: 2, mediaId: 2, name: "short" },
             { userId: 1, mediaId: 3, name: "cozy" }, { userId: 1, mediaId: 3, name: "short" }, { userId: 1, mediaId: 3, name: "skip" },
             { userId: 2, mediaId: 1, name: "skip" }, { userId: 1, mediaId: 4, name: "short" },
             { userId: 1, name: "skip" },
-        ]).run();
+        ]);
         const tags = [tagId(MediaType.MOVIES, "cozy"), tagId(MediaType.MOVIES, "short")];
         const excludeTags = [tagId(MediaType.MOVIES, "skip")];
         expect(getDynamicListResults(1, { ...spec, filters: { mediaFilters: { movies: { tagRules: [{ tags, tagsMatch: "all" }] } } } }).items.map(item => item.mediaId)).toEqual([1, 3]);
@@ -579,19 +581,19 @@ describe("dynamic list live queries", () => {
         addEntry(MediaType.MOVIES, 1, { rating: 8 });
         addEntry(MediaType.MOVIES, 2, { rating: 9 });
         addEntry(MediaType.BOOKS, 3, { rating: 8 });
-        dbContext.db.insert(schema.moviesTags).values([
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 1, name: "Favorites" },
             { userId: 1, name: "Favorites" },
             { userId: 1, mediaId: 2, name: "Avoid" },
-        ]).run();
-        dbContext.db.insert(schema.booksTags).values({ userId: 1, mediaId: 3, name: "Favorites" }).run();
+        ]);
+        seedMediaTags(dbContext.db, MediaType.BOOKS, { userId: 1, mediaId: 3, name: "Favorites" });
         const favoriteId = tagId(MediaType.MOVIES, "Favorites");
         const avoidId = tagId(MediaType.MOVIES, "Avoid");
         const savedSpec: DynamicListSpec = { ...spec, filters: { minRating: 8, mediaFilters: {
             movies: { tagRules: [{ tags: [favoriteId], tagsMatch: "all", excludeTags: [avoidId] }] },
         } } };
         const { id } = dynamicListsRepository.create(1, savedSpec);
-        const tags = createMediaTagQueries(getServerMediaDefinition(MediaType.MOVIES).repository);
+        const tags = createMediaTagQueries(getServerMediaDefinition(MediaType.MOVIES));
         tags.editUserTag(1, { oldName: "Favorites", name: "Loved" }, TagAction.RENAME);
         expect(tagId(MediaType.MOVIES, "Loved")).toBe(favoriteId);
         expect(dynamicListsRepository.get(1, id)).toMatchObject({ spec: savedSpec, tagNames: { [favoriteId]: "Loved" } });
@@ -614,19 +616,71 @@ describe("dynamic list live queries", () => {
 
     it.each(ALL_MEDIA_TYPES)("cleans %s rules when the final tag assignment is removed", mediaType => {
         addEntry(mediaType, 1);
-        const { tagTable } = getServerMediaDefinition(mediaType).repository.tables;
-        dbContext.db.insert(tagTable).values({ userId: 1, mediaId: 1, name: "Temporary" }).run();
+        seedMediaTags(dbContext.db, mediaType, { userId: 1, mediaId: 1, name: "Temporary" });
         const id = tagId(mediaType, "Temporary");
         const list = dynamicListsRepository.create(1, { ...spec, filters: {
             mediaFilters: { [mediaType]: { tagRules: [{ tags: [id] }] } },
         } });
-        dbContext.db.delete(tagTable).where(eq(tagTable.mediaId, 1)).run();
+        createMediaTagQueries(getServerMediaDefinition(mediaType)).editUserTag(1, { name: "Temporary" }, TagAction.DELETE_ONE, 1);
         expect(dynamicListsRepository.get(1, list.id).spec.filters.mediaFilters?.[mediaType]?.tagRules).toEqual([]);
         expect(dbContext.db.select().from(schema.mediaTags).where(eq(schema.mediaTags.id, id)).all()).toEqual([]);
     });
 
+    it.each(ALL_MEDIA_TYPES)("cleans saved tag rules when tracked %s media is removed", mediaType => {
+        addEntry(mediaType, 1);
+        const tags = createMediaTagQueries(getServerMediaDefinition(mediaType));
+        tags.editUserTag(1, { name: "Temporary" }, TagAction.ADD, 1);
+        const id = tagId(mediaType, "Temporary");
+        const list = dynamicListsRepository.create(1, { ...spec, filters: {
+            mediaFilters: { [mediaType]: { tagRules: [{ excludeTags: [id] }] } },
+        } });
+
+        createMediaQueries(getServerMediaDefinition(mediaType)).removeMediaFromUserList(1, 1);
+
+        expect(dynamicListsRepository.get(1, list.id).spec.filters.mediaFilters?.[mediaType]?.tagRules).toEqual([]);
+        expect(dbContext.db.select().from(schema.mediaTags).where(eq(schema.mediaTags.id, id)).all()).toEqual([]);
+    });
+
+    it("keeps an explicitly created empty tag and its rules after removing its final media assignment", async () => {
+        addEntry(MediaType.MOVIES, 1);
+        const tags = createMediaTagQueries(getServerMediaDefinition(MediaType.MOVIES));
+        tags.editUserTag(1, { name: "Keep" }, TagAction.ADD);
+        tags.editUserTag(1, { name: "Keep" }, TagAction.ADD, 1);
+        const id = tagId(MediaType.MOVIES, "Keep");
+        const saved = dynamicListsRepository.create(1, { ...spec, filters: {
+            mediaFilters: { movies: { tagRules: [{ tags: [id] }] } },
+        } });
+
+        tags.editUserTag(1, { name: "Keep" }, TagAction.DELETE_ONE, 1);
+
+        expect(dynamicListsRepository.get(1, saved.id).spec.filters.mediaFilters?.movies?.tagRules).toEqual([{ tags: [id] }]);
+        expect(tagId(MediaType.MOVIES, "Keep")).toBe(id);
+        expect(await tags.getTagsView(1)).toEqual([{ tagName: "Keep", totalCount: 0 }]);
+        expect(getDynamicListResults(1, dynamicListsRepository.get(1, saved.id).spec).total).toBe(0);
+    });
+
+    it("rolls back tag and tracking deletion if cleaning saved rules fails", () => {
+        addEntry(MediaType.MOVIES, 1);
+        const definition = getServerMediaDefinition(MediaType.MOVIES);
+        const tags = createMediaTagQueries(definition);
+        tags.editUserTag(1, { name: "Keep" }, TagAction.ADD, 1);
+        const id = tagId(MediaType.MOVIES, "Keep");
+        const savedSpec: DynamicListSpec = { ...spec, filters: {
+            mediaFilters: { movies: { tagRules: [{ tags: [id] }] } },
+        } };
+        const saved = dynamicListsRepository.create(1, savedSpec);
+        sqlite.exec("CREATE TRIGGER fail_tag_rule_cleanup BEFORE UPDATE ON smart_views BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END");
+
+        expect(() => tags.editUserTag(1, { name: "Keep" }, TagAction.DELETE_ALL)).toThrow("cleanup failed");
+        expect(() => createMediaQueries(definition).removeMediaFromUserList(1, 1)).toThrow("cleanup failed");
+        expect(tagId(MediaType.MOVIES, "Keep")).toBe(id);
+        expect(dbContext.db.select().from(schema.moviesTags).all()).toHaveLength(1);
+        expect(dbContext.db.select().from(schema.moviesList).all()).toHaveLength(1);
+        expect(dynamicListsRepository.get(1, saved.id).spec).toEqual(savedSpec);
+    });
+
     it("rejects tag IDs owned by another user or a different media type", () => {
-        dbContext.db.insert(schema.moviesTags).values([{ userId: 1, name: "Mine" }, { userId: 2, name: "Other" }]).run();
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [{ userId: 1, name: "Mine" }, { userId: 2, name: "Other" }]);
         for (const mediaFilters of [
             { movies: { tagRules: [{ tags: [tagId(MediaType.MOVIES, "Other", 2)] }] } },
             { books: { tagRules: [{ excludeTags: [tagId(MediaType.MOVIES, "Mine")] }] } },

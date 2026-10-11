@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
+import {mediaTags} from "@/lib/server/database/schema/media-tags.schema";
 import {integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
 import {
     commonGenericCols,
@@ -91,6 +92,10 @@ export const moviesActorsRelations = relations(moviesActors, ({ one }) => ({
 
 
 export const moviesTagsRelations = relations(moviesTags, ({ one }) => ({
+    tag: one(mediaTags, {
+        fields: [moviesTags.tagId],
+        references: [mediaTags.id],
+    }),
     user: one(user, {
         fields: [moviesTags.userId],
         references: [user.id]

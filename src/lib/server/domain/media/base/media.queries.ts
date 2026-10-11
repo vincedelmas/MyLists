@@ -1,5 +1,5 @@
 import {notFound} from "@tanstack/react-router";
-import {user} from "@/lib/server/database/schema";
+import {mediaTags, user} from "@/lib/server/database/schema";
 import {ExportMediaList} from "@/lib/types/media-list.types";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {UpComingMedia} from "@/lib/types/notifications.types";
@@ -12,6 +12,7 @@ import {ReleaseCalendarItem} from "@/lib/types/release-calendar.types";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
 import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
+import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {and, asc, count, desc, eq, exists, getTableColumns, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, SQL, sql} from "drizzle-orm";
@@ -23,6 +24,7 @@ const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 
 export function createMediaQueries<TDef extends AnyServerMediaDefinition>(definition: TDef) {
     const { identity, repository: repoDefinition } = definition;
+    const tagQueries = createMediaTagQueries(definition);
 
     type TListTableInsert = TDef["repository"]["tables"]["listTable"]["$inferInsert"];
     type TListTableSelect = TDef["repository"]["tables"]["listTable"]["$inferSelect"];
@@ -108,15 +110,12 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
     }
 
     function removeMediaFromUserList(userId: number, mediaId: number) {
-        const { listTable, tagTable } = repoDefinition.tables;
-
-        getDbClient()
-            .delete(listTable)
-            .where(and(eq(listTable.userId, userId), eq(listTable.mediaId, mediaId))).run();
-
-        getDbClient()
-            .delete(tagTable)
-            .where(and(eq(tagTable.userId, userId), eq(tagTable.mediaId, mediaId))).run();
+        return withTransaction(() => {
+            const { listTable } = repoDefinition.tables;
+            tagQueries.removeMediaAssignments([mediaId], userId);
+            getDbClient().delete(listTable)
+                .where(and(eq(listTable.userId, userId), eq(listTable.mediaId, mediaId))).run();
+        });
     }
 
     async function findSimilarMedia(mediaId: number) {
@@ -309,10 +308,11 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         }
 
         const associatedTags = getDbClient()
-            .select({ name: sql<string>`${tagTable.name}` })
+            .select({ name: mediaTags.name })
             .from(tagTable)
+            .innerJoin(mediaTags, eq(mediaTags.id, tagTable.tagId))
             .where(and(eq(tagTable.mediaId, mediaId), eq(tagTable.userId, userId)))
-            .orderBy(asc(tagTable.name)).all();
+            .orderBy(asc(mediaTags.name)).all();
 
         if (!associatedTags) {
             return null;

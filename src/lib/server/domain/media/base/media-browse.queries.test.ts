@@ -1,3 +1,4 @@
+import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {and, eq} from "drizzle-orm";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
@@ -68,10 +69,10 @@ describe("collection and job media browsing", () => {
             { userId: 2, mediaId: 1, status: Status.COMPLETED, rating: 3, favorite: false, addedAt: "2026-06-01T00:00:00.000Z" },
             { userId: 2, mediaId: 55, status: Status.DROPPED, rating: 9, favorite: true, addedAt: "2026-01-01 00:00:00", customCover: "custom.jpg" },
         ]).run();
-        dbContext.db.insert(schema.moviesTags).values([
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 55, name: "Owner secret" }, { userId: 2, mediaId: 55, name: "Viewer tag" },
             { userId: 2, mediaId: 56, name: "Outside tag" }, { userId: 2, name: "Unassigned tag" },
-        ]).run();
+        ]);
         collections = new CollectionsService(
             new AuthorizationService({ getFollowingStatus: vi.fn().mockReturnValue(null) } as unknown as SocialService),
             CollectionsRepository,

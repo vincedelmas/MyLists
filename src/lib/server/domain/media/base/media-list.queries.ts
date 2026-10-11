@@ -1,11 +1,11 @@
-import {user} from "@/lib/server/database/schema";
+import {mediaTags, user} from "@/lib/server/database/schema";
 import type {IdNamePair} from "@/lib/types/media-common.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {MediaListArgs} from "@/lib/schemas/media-lists.schema";
 import {and, asc, count, eq, inArray, notInArray, sql} from "drizzle-orm";
+import {getMediaTagNames} from "@/lib/server/domain/media/base/media-tag.queries";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import type {ExpandedListFilters, MediaListData} from "@/lib/types/media-list.types";
-import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import type {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {
     getMediaCommonFilterConditions,
@@ -22,8 +22,8 @@ export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinit
         ...listQuery.selection,
         ratingSystem: user.ratingSystem,
         tags: sql<IdNamePair[]>`COALESCE((
-            SELECT json_group_array(DISTINCT json_object('id', l.id, 'name', l.name))
-            FROM ${tagTable} l
+            SELECT json_group_array(DISTINCT json_object('id', t.id, 'name', t.name))
+            FROM ${tagTable} l INNER JOIN ${mediaTags} t ON t.id = l.tag_id
             WHERE l.media_id = ${listTable.mediaId} AND l.user_id = ${listTable.userId}
         ), json_array())`.mapWith(JSON.parse),
     };
@@ -32,7 +32,6 @@ export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinit
 
 export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
     const { listQuery, tables: { listTable, mediaTable, genreTable } } = definition;
-    const tagQueries = createMediaTagQueries(definition);
 
     return {
         async getListFilters(userId: number): Promise<ExpandedListFilters> {
@@ -46,7 +45,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
                 : [];
 
             const tagsPromise = definition.filters.common.tags
-                ? tagQueries.getTagNames(userId)
+                ? getMediaTagNames(definition.tables.tagTable, userId)
                 : [];
 
             const [genres, tags] = await Promise.all([genresPromise, tagsPromise]);

@@ -1,8 +1,10 @@
+import {MediaType} from "@/lib/utils/enums";
+import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
-import {movies, moviesActors, moviesGenre, moviesList, moviesTags, user} from "@/lib/server/database/schema";
+import {movies, moviesActors, moviesGenre, moviesList, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -138,7 +140,7 @@ describe("Shared media persistence and list queries", () => {
             { userId: 42, mediaId: 100, status: Status.COMPLETED },
             { userId: 42, mediaId: 101, status: Status.COMPLETED },
         ]);
-        await db.insert(moviesTags).values([
+        seedMediaTags(db, MediaType.MOVIES, [
             { userId: 43, mediaId: 100, name: "private-tag" },
             { userId: 42, mediaId: 101, name: "private-tag" },
         ]);

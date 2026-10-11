@@ -212,8 +212,8 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
                 FROM ${genreTable}
                 WHERE ${genreTable.mediaId} IN (SELECT "mediaId" FROM (${baseQuery}))` : sql`SELECT NULL AS "name" WHERE 0`,
 
-            tagQuery: definition.filters.common.tags ? sql`SELECT ${tagTable.name} AS "name" 
-                FROM ${tagTable}
+            tagQuery: definition.filters.common.tags ? sql`SELECT ${mediaTags.name} AS "name"
+                FROM ${tagTable} INNER JOIN ${mediaTags} ON ${mediaTags.id} = ${tagTable.tagId}
                 WHERE ${tagTable.userId} = ${userId} 
                     AND ${tagTable.mediaId} IN (SELECT "mediaId" FROM (${baseQuery}))` : sql`SELECT NULL AS "name" WHERE 0`,
         };

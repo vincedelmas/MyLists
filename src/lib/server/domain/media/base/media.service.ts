@@ -38,7 +38,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
 ) {
     const { identity, ingestion, service: servicePolicy } = definition;
 
-    const tagQueries = createMediaTagQueries(definition.repository);
+    const tagQueries = createMediaTagQueries(definition);
     const communityQueries = createMediaCommunityQueries(definition);
     const listQueries = createMediaListQueries(definition.repository);
 

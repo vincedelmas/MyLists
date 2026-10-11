@@ -1,9 +1,10 @@
-import type {ScopedMediaFilterValues} from "@/lib/schemas/media-filters.schema";
 import type {Status} from "@/lib/utils/enums";
+import {mediaTags} from "@/lib/server/database/schema";
 import {FormattedError} from "@/lib/utils/error-classes";
 import type {NameObj} from "@/lib/types/media-common.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
+import type {ScopedMediaFilterValues} from "@/lib/schemas/media-filters.schema";
 import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import {and, eq, gte, inArray, isNotNull, like, or, type SQL, sql} from "drizzle-orm";
 import type {AnyMediaRepositoryDefinition, BaseMediaTables} from "@/lib/media-definitions/base/media.definition.server";
@@ -30,7 +31,6 @@ type ArrayFilterDefinition = {
     argName: keyof MediaFilterArgs;
     mediaTable: SQLiteTable & { id: SQLiteColumn };
     entityTable?: SQLiteTable & { mediaId: SQLiteColumn };
-    entityScope?: (args: MediaFilterArgs) => SQL | undefined;
     optionsTable?: SQLiteTable & { mediaId: SQLiteColumn; userId: SQLiteColumn };
 };
 
@@ -51,7 +51,7 @@ export const getMediaNameSearchCondition = (mediaTable: BaseMediaTables["mediaTa
 };
 
 
-const createArrayFilter = ({ argName, entityTable, filterColumn, mediaTable, entityScope, optionsTable, splitValues }: ArrayFilterDefinition): FilterDefinition => {
+const createArrayFilter = ({ argName, entityTable, filterColumn, mediaTable, optionsTable, splitValues }: ArrayFilterDefinition): FilterDefinition => {
     return {
         personal: optionsTable !== undefined,
 
@@ -75,7 +75,7 @@ const createArrayFilter = ({ argName, entityTable, filterColumn, mediaTable, ent
             const subQuery = getDbClient()
                 .select({ mediaId: entityTable.mediaId })
                 .from(entityTable)
-                .where(and(inArray(filterColumn, values), entityScope?.(args)));
+                .where(inArray(filterColumn, values));
 
             return inArray(mediaTable.id, subQuery);
         },
@@ -134,14 +134,12 @@ export const defineMediaFilterDefinitions = <const TDef extends Pick<MediaDefini
             getCondition: (args) => gte(listTable.rating, args.minRating!),
         },
         tags: {
-            ...createArrayFilter({
-                mediaTable,
-                argName: "tags",
-                entityTable: tagTable,
-                filterColumn: tagTable.name,
-                entityScope: (args) => eq(tagTable.userId, args.userId!),
-            }),
             personal: true,
+            isActive: (args) => !!args.tags?.length,
+            getCondition: (args) => inArray(mediaTable.id, getDbClient()
+                .select({ mediaId: tagTable.mediaId }).from(tagTable)
+                .innerJoin(mediaTags, eq(mediaTags.id, tagTable.tagId))
+                .where(and(eq(tagTable.userId, args.userId!), inArray(mediaTags.name, args.tags!)))),
         },
         genres: createArrayFilter({
             mediaTable,
@@ -218,19 +216,22 @@ export const getMediaScopedFilterConditions = (definition: AnyMediaRepositoryDef
 
     const { tagTable, mediaTable, listTable } = definition.tables;
     conditions.push(isNotNull(listTable.userId));
+
     if (filters.tags?.length) {
         const tags = [...new Set(filters.tags)];
-        const matching = sql`SELECT DISTINCT ${tagTable.name} FROM ${tagTable}
+        const matching = sql`SELECT DISTINCT ${mediaTags.id} FROM ${tagTable}
+            INNER JOIN ${mediaTags} ON ${mediaTags.id} = ${tagTable.tagId}
             WHERE ${tagTable.userId} = ${userId} AND ${tagTable.mediaId} = ${mediaTable.id}
-                AND ${tagTable.name} IN (${sql.join(tags.map(tag => sql`${tag}`), sql`, `)})`;
+                AND ${mediaTags.name} IN (${sql.join(tags.map(tag => sql`${tag}`), sql`, `)})`;
         conditions.push(filters.tagsMatch === "all"
             ? sql`(SELECT COUNT(*) FROM (${matching})) = ${tags.length}`
             : sql`EXISTS (${matching})`);
     }
     if (filters.excludeTags?.length) {
         conditions.push(sql`NOT EXISTS (SELECT 1 FROM ${tagTable}
+            INNER JOIN ${mediaTags} ON ${mediaTags.id} = ${tagTable.tagId}
             WHERE ${tagTable.userId} = ${userId} AND ${tagTable.mediaId} = ${mediaTable.id}
-                AND ${tagTable.name} IN (${sql.join(filters.excludeTags.map(tag => sql`${tag}`), sql`, `)}))`);
+                AND ${mediaTags.name} IN (${sql.join(filters.excludeTags.map(tag => sql`${tag}`), sql`, `)}))`);
     }
     return conditions;
 };

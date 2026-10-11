@@ -1,9 +1,10 @@
+import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import * as schema from "@/lib/server/database/schema";
-import {movies, moviesActors, moviesGenre, moviesList, moviesTags, user, userMediaSettings} from "@/lib/server/database/schema";
+import {movies, moviesActors, moviesGenre, moviesList, user, userMediaSettings} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {type BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -219,7 +220,7 @@ async function seedStatisticsData(db: BunSQLiteDatabase<typeof schema>) {
         ...[1, 2, 3].map((mediaId) => ({ id: mediaId, mediaId, name: "Shared Actor" })),
         { id: 4, mediaId: 4, name: "Hidden Actor" },
     ]);
-    await db.insert(moviesTags).values([
+    seedMediaTags(db, MediaType.MOVIES, [
         { id: 1, userId: 1, mediaId: 1, name: "favorite" },
         { id: 2, userId: 1, mediaId: 2, name: "favorite" },
         { id: 3, userId: 2, mediaId: 4, name: "hidden" },

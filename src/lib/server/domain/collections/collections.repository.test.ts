@@ -1,3 +1,4 @@
+import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
@@ -426,10 +427,10 @@ describe("collection media references", () => {
         dbContext.db.insert(schema.animeList).values({ ...tracking, currentSeason: 1, currentEpisode: 5, redo: 1 }).run();
         dbContext.db.insert(schema.seriesEpisodesPerSeason).values({ mediaId: 1, season: 1, episodes: 10 }).run();
         dbContext.db.insert(schema.animeEpisodesPerSeason).values({ mediaId: 1, season: 1, episodes: 12 }).run();
-        dbContext.db.insert(schema.booksTags).values([
+        seedMediaTags(dbContext.db, MediaType.BOOKS, [
             { userId: 2, mediaId: 1, name: "Viewer tag" },
             { userId: 1, mediaId: 1, name: "Owner private tag" },
-        ]).run();
+        ]);
         dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.READING, actualPage: 99, comment: "Owner private note" }).run();
 
         const viewer = await service.getCollectionDetails(collectionId, "read", toActor({ id: 2, role: RoleType.USER }));
@@ -479,12 +480,12 @@ describe("collection media references", () => {
         dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 2, name: "Outside collection" }]).run();
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 1, name: "Fantasy" }).run();
         dbContext.db.insert(schema.gamesGenre).values({ mediaId: 1, name: "Untracked genre" }).run();
-        dbContext.db.insert(schema.moviesTags).values([
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 2, mediaId: 1, name: "Watch again" },
             { userId: 2, mediaId: 2, name: "Outside collection" },
             { userId: 1, mediaId: 1, name: "Private tag" },
-        ]).run();
-        dbContext.db.insert(schema.booksTags).values({ userId: 2, mediaId: 1, name: "Bookshelf" }).run();
+        ]);
+        seedMediaTags(dbContext.db, MediaType.BOOKS, { userId: 2, mediaId: 1, name: "Bookshelf" });
         const viewer = toActor({ id: 2, role: RoleType.USER });
         const filtered = await service.getCollectionDetails(collectionId, "read", viewer, {
             library: "in", status: Status.COMPLETED, favorite: true, minRating: 8, tags: ["Watch again"], genres: ["Drama"], sorting: "rating_highest",

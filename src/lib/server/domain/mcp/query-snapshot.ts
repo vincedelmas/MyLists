@@ -217,8 +217,9 @@ export function buildQuerySnapshot(source: Database, userId: number, limits = QU
                     copyRows("entries", `${ownerProfile} SELECT ${Object.keys(querySnapshotTables.entries.columns).map(column => `${projection[column as EntryColumn] ?? "NULL"} AS ${column}`).join(", ")}
                         ${activeLists} JOIN ${type} m ON m.id = l.media_id`);
 
-                    copyRows("labels", `${ownerProfile} SELECT l.user_id AS profile_id, '${type}' AS media_type, l.media_id, t.name
-                        ${activeLists} JOIN ${type}_tags t ON t.user_id = l.user_id AND t.media_id = l.media_id`);
+                    copyRows("labels", `${ownerProfile} SELECT l.user_id AS profile_id, '${type}' AS media_type, l.media_id, tag.name
+                        ${activeLists} JOIN ${type}_tags t ON t.user_id = l.user_id AND t.media_id = l.media_id
+                        JOIN media_tags tag ON tag.id = t.tag_id`);
 
                     copyRows("activity", `${ownerProfile} SELECT a.user_id AS profile_id, a.media_type, a.media_id,
                         (SELECT name FROM ${type} WHERE id = a.media_id) AS title,

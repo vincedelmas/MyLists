@@ -46,17 +46,23 @@ describe("stable dynamic-list tag migration", () => {
             };
             sqlite.query("INSERT INTO smart_views (id, user_id, spec, profile_position) VALUES (7, 1, ?, 2)").run(JSON.stringify(legacy));
             sqlite.transaction(() => {
-                for (const statement of migrations[index].sql) sqlite.exec(statement);
+                for (const migration of migrations.slice(index)) {
+                    for (const statement of migration.sql) sqlite.exec(statement);
+                }
             })();
 
             const saved = dbContext.db.select().from(schema.dynamicLists).where(eq(schema.dynamicLists.id, 7)).get()!;
             expect(dynamicListSpecSchema.safeParse(saved.spec).success).toBe(true);
             expect(saved.profilePosition).toBe(2);
+            expect(sqlite.query("SELECT COUNT(*) AS total FROM movies_tags").get()).toEqual({ total: 5 });
+            expect(sqlite.query("SELECT COUNT(*) AS total FROM books_tags").get()).toEqual({ total: 6 });
+            expect(sqlite.query<{ name: string }, []>("PRAGMA table_info(movies_tags)").all().map(column => column.name)).toEqual(["id", "user_id", "media_id", "tag_id"]);
+            expect(sqlite.query("SELECT name FROM sqlite_schema WHERE type = 'trigger' AND name LIKE '%tags%'").all()).toEqual([]);
             expect(saved.spec.filters.mediaFilters?.movies?.tagRules).toHaveLength(2);
             expect(saved.spec.filters.mediaFilters?.books?.tagRules).toHaveLength(2);
             const results = () => getDynamicListResults(1, saved.spec).items.map(item => [item.mediaType, item.mediaId]);
             expect(results()).toEqual([["books", 1], ["books", 2], ["movies", 1], ["movies", 2]]);
-            sqlite.exec("UPDATE movies_tags SET name = 'Z' WHERE user_id = 1 AND name = 'A'");
+            sqlite.exec("UPDATE media_tags SET name = 'Z' WHERE user_id = 1 AND media_type = 'movies' AND name = 'A'");
             expect(results()).toEqual([["books", 1], ["books", 2], ["movies", 1], ["movies", 2]]);
             expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);
         }

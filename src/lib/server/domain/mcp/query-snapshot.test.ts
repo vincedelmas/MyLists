@@ -38,8 +38,10 @@ describe("MCP query snapshots", () => {
                 const position = type === "series" || type === "anime" ? ", 1, 3" : type === "manga" ? ", 10" : "";
                 for (const id of [1, 2, 3, 4, 5, 6]) {
                     source.run(`INSERT INTO ${type}_list (id, user_id, media_id, status, rating, comment${progress}) VALUES (?, ?, ?, 'Completed', ?, ?${position})`, [id * 100, id, id === 1 || id === 2 ? 10 : 90, id === 1 ? 9 : 7, `comment-user-${id}`]);
-                    source.run(`INSERT INTO ${type}_tags (user_id, media_id, name) VALUES (?, 10, ?)`, [id, `label-user-${id}`]);
-                    source.run(`INSERT INTO ${type}_tags (user_id, name) VALUES (?, ?)`, [id, `unattached-user-${id}`]);
+                    const tag = source.query<{ id: number }, [number, string, string]>("INSERT INTO media_tags (user_id, media_type, name) VALUES (?, ?, ?) RETURNING id").get(id, type, `label-user-${id}`)!;
+                    source.run(`INSERT INTO ${type}_tags (user_id, media_id, tag_id) VALUES (?, 10, ?)`, [id, tag.id]);
+                    const emptyTag = source.query<{ id: number }, [number, string, string]>("INSERT INTO media_tags (user_id, media_type, name) VALUES (?, ?, ?) RETURNING id").get(id, type, `unattached-user-${id}`)!;
+                    source.run(`INSERT INTO ${type}_tags (user_id, tag_id) VALUES (?, ?)`, [id, emptyTag.id]);
                     source.run("INSERT INTO user_media_monthly_activity (user_id, media_type, media_id, month_bucket, progress_gained, redo_gained) VALUES (?, ?, ?, '2026-01', 10, 0)", [id, type, id === 1 || id === 2 ? 10 : 90]);
                 }
                 source.run("INSERT INTO user_media_monthly_activity (user_id, media_type, media_id, month_bucket, progress_gained, hidden) VALUES (1, ?, 10, '2026-02', 20, 1)", [type]);

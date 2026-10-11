@@ -2,6 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {integer, sqliteTable, text} from "drizzle-orm/sqlite-core";
+import {mediaTags} from "@/lib/server/database/schema/media-tags.schema";
 import {
     commonGenericCols,
     commonGenericIndexes,
@@ -82,6 +83,10 @@ export const booksGenreRelations = relations(booksGenre, ({ one }) => ({
 
 
 export const booksTagsRelations = relations(booksTags, ({ one }) => ({
+    tag: one(mediaTags, {
+        fields: [booksTags.tagId],
+        references: [mediaTags.id],
+    }),
     user: one(user, {
         fields: [booksTags.userId],
         references: [user.id]

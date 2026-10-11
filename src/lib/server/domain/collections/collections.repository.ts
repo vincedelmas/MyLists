@@ -15,8 +15,8 @@ import {Actor, profileCollectionVisibilityCondition} from "@/lib/server/authoriz
 import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
-import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
 import {getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
+import {mediaTags, collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
 import {and, asc, count, desc, eq, getTableColumns, inArray, isNotNull, isNull, like, max, or, sql} from "drizzle-orm";
 import {collectionContainsMediaType, getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
 
@@ -260,8 +260,9 @@ export class CollectionsRepository {
                         )),
 
                     tags: db
-                        .select({ name: tagTable.name })
+                        .select({ name: mediaTags.name })
                         .from(tagTable)
+                        .innerJoin(mediaTags, eq(mediaTags.id, tagTable.tagId))
                         .where(and(
                             viewerId === undefined ? sql`FALSE` : eq(tagTable.userId, viewerId),
                             inArray(tagTable.mediaId, sourceMediaIds),

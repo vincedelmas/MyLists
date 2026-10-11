@@ -1,9 +1,10 @@
+import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import {and, eq} from "drizzle-orm";
 import {db} from "@/lib/server/database/db";
 import {MediaType, PrivacyType, Status} from "@/lib/utils/enums";
 import {publicCollection, users} from "../../../../../../scripts/e2e/data";
 import {browseActor, browseDirector, browseFilterGenres, browseMovies, browseNote, communityNavigationCollections} from "./-browse.data";
-import {collectionItems, collections, movies, moviesActors, moviesGenre, moviesList, moviesTags, userMediaSettings} from "@/lib/server/database/schema";
+import {collectionItems, collections, movies, moviesActors, moviesGenre, moviesList, userMediaSettings} from "@/lib/server/database/schema";
 
 
 if (!process.env.MYLISTS_E2E_DIR) throw new Error("Use browse fixtures only with bun run test:e2e.");
@@ -59,10 +60,10 @@ db.transaction(() => {
         addedAt: "2025-03-01T00:00:00.000Z",
         lastUpdated: "2025-04-01T00:00:00.000Z",
     }))).run();
-    db.insert(moviesTags).values([
+    seedMediaTags(db, MediaType.MOVIES, [
         { userId: users.owner.id, mediaId: browseMovies[0].id, name: "owner-only" },
         { userId: users.stranger.id, mediaId: browseMovies.at(-1)!.id, name: "weekend" },
-    ]).run();
+    ]);
     for (const account of [users.owner, users.stranger]) {
         const owner = account.id === users.owner.id;
         db.update(userMediaSettings).set({

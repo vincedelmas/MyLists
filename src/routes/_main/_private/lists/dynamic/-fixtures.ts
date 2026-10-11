@@ -1,8 +1,9 @@
+import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import {and, eq} from "drizzle-orm";
 import {db} from "@/lib/server/database/db";
 import {MediaType, PrivacyType, Status} from "@/lib/utils/enums";
 import {movies, users} from "../../../../../../scripts/e2e/data";
-import {books, booksList, manga, mangaList, movies as moviesTable, moviesActors, moviesGenre, moviesList, moviesTags, dynamicLists, userMediaSettings, user} from "@/lib/server/database/schema";
+import {books, booksList, manga, mangaList, movies as moviesTable, moviesActors, moviesGenre, moviesList, dynamicLists, userMediaSettings, user} from "@/lib/server/database/schema";
 import {DYNAMIC_LIST_PRESETS} from "@/lib/utils/dynamic-lists/presets";
 import {browseFilterGenres} from "../../../_viewer/lists/collections/-browse.data";
 
@@ -39,10 +40,10 @@ db.transaction(() => {
             { mediaId: movies.private.id, name: "Science Fiction" },
             { mediaId: movies.editable.id, name: "Documentary" },
         ]).run();
-        db.insert(moviesTags).values([
+        seedMediaTags(db, MediaType.MOVIES, [
             { userId: users.owner.id, mediaId: movies.private.id, name: "Weekend" },
             { userId: users.owner.id, mediaId: movies.editable.id, name: "Avoid" },
-        ]).run();
+        ]);
     }
     if (process.argv.includes("seed-metadata")) {
         db.insert(moviesActors).values([

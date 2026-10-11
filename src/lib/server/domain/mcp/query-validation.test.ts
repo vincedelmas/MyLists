@@ -1,7 +1,7 @@
 import {Database} from "bun:sqlite";
 import {describe, expect, it} from "vitest";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/core/mcp/config";
+import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/query.config";
 import {validateQuerySql} from "@/lib/server/domain/mcp/query-validation";
 
 

@@ -3,7 +3,7 @@ import {join} from "node:path";
 import {mkdtemp, rm} from "node:fs/promises";
 import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 import {runMyListsQuery} from "./query.service";
-import {QUERY_LIMITS} from "@/lib/server/core/mcp/config";
+import {QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
 import {executeSnapshotQuery, type QueryResult} from "./query-executor";
 import {createQueryTestSource} from "./query-snapshot.fixture";
 

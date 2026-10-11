@@ -6,7 +6,8 @@ import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {toItemKey} from "@/lib/utils/media/item-key";
-import type {MediaListData, ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
+import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
+import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
@@ -16,7 +17,6 @@ import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-
 import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
-import type {animeList, booksList, gamesList, mangaList, moviesList, seriesList} from "@/lib/server/database/schema";
 import {and, asc, count, desc, eq, getTableColumns, inArray, isNotNull, isNull, like, max, or, sql} from "drizzle-orm";
 import {collectionContainsMediaType, getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
 
@@ -49,14 +49,7 @@ const previewItemsSelection = sql`(
 });
 
 
-type CollectionTrackingItem = MediaListData<
-    typeof animeList.$inferSelect
-    | typeof booksList.$inferSelect
-    | typeof gamesList.$inferSelect
-    | typeof mangaList.$inferSelect
-    | typeof moviesList.$inferSelect
-    | typeof seriesList.$inferSelect
->["items"][number];
+type CollectionTrackingItem = MediaListDataByType[MediaType]["items"][number];
 
 
 export class CollectionsRepository {

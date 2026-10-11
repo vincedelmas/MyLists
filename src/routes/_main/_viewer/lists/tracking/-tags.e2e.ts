@@ -9,7 +9,7 @@ test("opens tag management from a list deep link and creates the first empty tag
     const filters = page.getByRole("dialog", { name: "Additional Filters", exact: true });
     await expect(filters.getByRole("button", { name: "Tags", exact: true })).toHaveAttribute("aria-pressed", "true");
     await expect(filters.getByText("No tags created yet.", { exact: true })).toBeVisible();
-    await filters.getByRole("searchbox", { name: "Search tags", exact: true }).fill("First tag");
+    await filters.getByRole("searchbox", { name: "Tags", exact: true }).fill("First tag");
     await filters.getByRole("button", { name: "Create tag", exact: true }).click();
     await expect(filters.getByRole("button", { name: "First tag", exact: true })).toBeVisible();
     await expect(filters.getByRole("button", { name: "First tag", exact: true })).toHaveAttribute("title", "0 media");
@@ -60,7 +60,7 @@ test("keeps filter drafts across the Filters and Tags tabs without changing titl
     await filters.getByRole("checkbox", { name: "Favorites", exact: true }).check();
     await filters.getByRole("button", { name: "Tags", exact: true }).click();
     await filters.getByRole("button", { name: "rewatch", exact: true }).click();
-    const tagSearch = filters.getByRole("searchbox", { name: "Search tags", exact: true });
+    const tagSearch = filters.getByRole("searchbox", { name: "Tags", exact: true });
     await tagSearch.fill("shelf");
     await filters.getByRole("button", { name: "shelf", exact: true }).click();
     await expect(filters.getByRole("button", { name: "rewatch", exact: true })).toHaveCount(0);
@@ -104,7 +104,7 @@ test("creates empty tags and renames or deletes an applied tag inside the filter
     await controls.getByRole("button", { name: "Filters", exact: true }).click();
     const filters = page.getByRole("dialog", { name: "Additional Filters", exact: true });
     await filters.getByRole("button", { name: "Tags", exact: true }).click();
-    const tagSearch = filters.getByRole("searchbox", { name: "Search tags", exact: true });
+    const tagSearch = filters.getByRole("searchbox", { name: "Tags", exact: true });
     await tagSearch.fill("   ");
     await expect(filters.getByRole("button", { name: "Create tag", exact: true })).toHaveCount(0);
     await tagSearch.fill("Browser empty tag");
@@ -166,7 +166,7 @@ test("profile visitors can search and filter tags without owner management contr
     await controls.getByRole("button", { name: "Filters", exact: true }).click();
     const filters = page.getByRole("dialog", { name: "Additional Filters", exact: true });
     await filters.getByRole("button", { name: "Tags", exact: true }).click();
-    const tagSearch = filters.getByRole("searchbox", { name: "Search tags", exact: true });
+    const tagSearch = filters.getByRole("searchbox", { name: "Tags", exact: true });
     await tagSearch.fill("visitor cannot create");
     await expect(filters.getByRole("button", { name: "Create tag", exact: true })).toHaveCount(0);
     await tagSearch.fill("rewatch");
@@ -191,7 +191,7 @@ test("browses over 100 tags without pagination and keeps selections visible duri
     await expect(directory.getByRole("button", { name: "Shelf 100", exact: true })).toHaveCount(1);
     expect(await directory.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
     await directory.getByRole("button", { name: "Shelf 100", exact: true }).click();
-    const search = filters.getByRole("searchbox", { name: "Search tags", exact: true });
+    const search = filters.getByRole("searchbox", { name: "Tags", exact: true });
     await search.fill("rewacth");
     await expect(directory.getByRole("button", { name: "rewatch", exact: true })).toBeVisible();
     await directory.getByRole("button", { name: "rewatch", exact: true }).click();

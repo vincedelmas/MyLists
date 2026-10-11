@@ -138,7 +138,7 @@ test("navigates from the profile hub to each list kind and paginates collections
     await page.getByRole("group", { name: "Media browsing controls", exact: true }).getByRole("button", { name: "Filters", exact: true }).click();
     const filters = page.getByRole("dialog", { name: "Additional Filters", exact: true });
     await filters.getByRole("button", { name: "Tags", exact: true }).click();
-    await expect(filters.getByRole("searchbox", { name: "Search tags", exact: true })).toBeVisible();
+    await expect(filters.getByRole("searchbox", { name: "Tags", exact: true })).toBeVisible();
     await filters.getByRole("button", { name: "Apply Filters", exact: true }).click();
     await page.getByRole("main").getByRole("link", { name: "Lists & collections", exact: true }).click();
     await page.getByRole("article", { name: "Profile list 1", exact: true }).getByRole("link", { name: "Profile list 1", exact: true }).click();

@@ -1,5 +1,5 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/core/mcp/config";
+import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/domain/mcp/query.config";
 import Database, {SQLiteError, type SQLQueryBindings} from "bun:sqlite";
 
 

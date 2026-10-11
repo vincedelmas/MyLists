@@ -1,4 +1,4 @@
-import {QUERY_LIMITS} from "@/lib/server/core/mcp/config";
+import {QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
 import type {ToolContext} from "@/lib/server/core/mcp/tool-context";
 import {QUERY_SCHEMA} from "@/lib/server/domain/mcp/query-snapshot";
 import {runMyListsQuery} from "@/lib/server/domain/mcp/query.service";

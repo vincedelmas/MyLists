@@ -130,9 +130,9 @@ test("finds genres and tags despite typos and saves their canonical names", asyn
     await editor.getByRole("button", { name: "Select tags: Weekend", exact: true }).click();
     await expect(editor.getByRole("button", { name: "Remove Weekend filter", exact: true })).toBeVisible();
     await editor.getByRole("button", { name: "Remove Weekend filter", exact: true }).click();
-    await editor.getByRole("searchbox", { name: "Search tags", exact: true }).fill("Weekned");
+    await editor.getByRole("searchbox", { name: "Tags", exact: true }).fill("Weekned");
     await editor.getByRole("button", { name: "Select tags: Weekend", exact: true }).click();
-    await editor.getByRole("searchbox", { name: "Search exclude tags", exact: true }).fill("Aovid");
+    await editor.getByRole("searchbox", { name: "Exclude tags", exact: true }).fill("Aovid");
     await editor.getByRole("button", { name: "Select exclude tags: Avoid", exact: true }).click();
     await expect(editor.getByRole("complementary", { name: "Preview dynamic list", exact: true }).getByText("1 media", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -146,8 +146,8 @@ test("finds genres and tags despite typos and saves their canonical names", asyn
         await expect(editor.getByRole("button", { name: `Remove ${canonicalName} filter`, exact: true })).toBeVisible();
     }
     await expect(editor.getByRole("searchbox", { name: "Genres", exact: true })).toHaveValue("");
-    await expect(editor.getByRole("searchbox", { name: "Search tags", exact: true })).toHaveValue("");
-    await expect(editor.getByRole("searchbox", { name: "Search exclude tags", exact: true })).toHaveValue("");
+    await expect(editor.getByRole("searchbox", { name: "Tags", exact: true })).toHaveValue("");
+    await expect(editor.getByRole("searchbox", { name: "Exclude tags", exact: true })).toHaveValue("");
 });
 
 
@@ -673,7 +673,7 @@ test("browses within saved rules and resets temporary filters without editing th
     await genres.getByRole("button", { name: "More", exact: true }).click();
     await expect(lastGenre).toBeChecked();
     await expect(filters.getByRole("searchbox", { name: "Tags", exact: true })).toBeVisible();
-    await filters.getByRole("searchbox", { name: "Search tags", exact: true }).fill("Weekned");
+    await filters.getByRole("searchbox", { name: "Tags", exact: true }).fill("Weekned");
     await filters.getByRole("button", { name: "Select tags: Weekend", exact: true }).click();
     await filters.getByRole("button", { name: "Common filters", exact: true }).click();
     await filters.getByRole("button", { name: "Movies filters", exact: true }).click();

@@ -23,7 +23,7 @@ export const MediaFilterSearch = ({ label, options, value, onChange, disabled, e
     const fieldId = useId();
     const { search, setSearch, debouncedSearch, isOpen, setIsOpen, reset, containerRef } = useSearchContainer({ debounceMs: 150 });
     const atLimit = maxSelected !== undefined && value.length >= maxSelected;
-    const query = debouncedSearch.trim().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+    const query = debouncedSearch.trim();
     const results = searchMediaFilterOptions(options.filter(option => !value.includes(option)), debouncedSearch).slice(0, 8);
 
     const selectOption = (option: string) => {

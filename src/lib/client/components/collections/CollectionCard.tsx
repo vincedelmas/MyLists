@@ -36,9 +36,7 @@ export const CollectionCard = ({ collection, communitySearch, showOwner = true }
                 className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
             />
             <ListCoverStrip
-                variant="showcase"
                 covers={collection.previews.map(preview => ({
-                    title: preview.mediaName,
                     mediaId: preview.mediaId,
                     mediaType: preview.mediaType,
                     imageCover: preview.mediaCover,

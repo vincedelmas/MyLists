@@ -7,7 +7,7 @@ import {
     collectionIdSchema,
     collectionMediaItemActionSchema,
     collectionMediaMembershipsSchema,
-    communityCollectionsSchema,
+    collectionsBrowseFiltersSchema,
     createCollectionSchema,
     mediaCommunityCollectionsSchema,
     updateCollectionSchema
@@ -16,7 +16,7 @@ import {
 
 export const getCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(communityCollectionsSchema)
+    .validator(collectionsBrowseFiltersSchema)
     .handler(async ({ data: { search, page, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;

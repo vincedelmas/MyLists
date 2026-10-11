@@ -1,4 +1,3 @@
-import type {ScopedMediaFilterValues} from "@/lib/schemas/media-filters.schema";
 import {useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {MediaType, Status} from "@/lib/utils/enums";
@@ -28,7 +27,8 @@ import {MediaBrowseFiltersSheet} from "@/lib/client/components/media/browse/Medi
 import {collectionDetailsReadOptions, collectionDetailsReadQueryKey} from "@/lib/client/react-query/query-options";
 import {createMediaBrowseStatusOptions, MEDIA_BROWSE_LIBRARY_OPTIONS} from "@/lib/client/components/media/browse/media-browse.config";
 import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
-import {BrowseAppliedFilters, type MediaBrowseFilterKey, type MediaBrowseFilterScope} from "@/lib/client/components/media/browse/AppliedFilters";
+import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
+import {removeMediaBrowseFilter, type MediaBrowseFilterKey, type MediaBrowseFilterScope} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
 export const Route = createFileRoute("/_main/_viewer/lists/collections/$collectionId")({
@@ -91,30 +91,12 @@ function CollectionViewer() {
     const handleRemoveFilter = (key: MediaBrowseFilterKey, value?: string, scope?: MediaBrowseFilterScope) => {
         if (key === "search") searchInput.setLocalSearch("");
 
-        if (scope) {
-            const metadata: ScopedMediaFilterValues | undefined = filters.mediaFilters?.[scope.mediaType];
-            const selected = metadata?.[scope.field]?.filter(item => item !== value);
-            handleFilterChange({
-                mediaFilters: {
-                    ...filters.mediaFilters,
-                    [scope.mediaType]: { ...metadata, [scope.field]: selected?.length ? selected : undefined },
-                },
-            });
-            return;
-        }
-
-        if ((key === "genres" || key === "tags") && value) {
-            const selected = filters[key]?.filter(item => item !== value);
-            handleFilterChange({ [key]: selected?.length ? selected : undefined });
-            return;
-        }
-
         if (key === "library") {
             handleLibraryChange("all");
             return;
         }
 
-        handleFilterChange({ [key]: undefined, ...(key === "mediaType" && { sorting: undefined }) });
+        handleFilterChange({ ...removeMediaBrowseFilter(filters, key, value, scope), ...(key === "mediaType" && { sorting: undefined }) });
     };
 
     const handleLibraryChange = (library: string) => {
@@ -126,7 +108,9 @@ function CollectionViewer() {
             comment: undefined,
             favorite: undefined,
             minRating: undefined,
-            mediaFilters: undefined,
+            mediaFilters: filters.mediaFilters && Object.fromEntries(Object.entries(filters.mediaFilters).map(([type, {
+                tags: _tags, tagsMatch: _tagsMatch, excludeTags: _excludeTags, ...remainingFilters
+            }]) => [type, remainingFilters])),
             library: library === "all" ? undefined : library as typeof filters.library,
             sorting: filters.sorting === "default" || availableSorting.some(option => option.value === filters.sorting)
                 ? filters.sorting

@@ -58,7 +58,8 @@ export const MediaTagFilters = ({ options, filters, disabled, errors, onChange }
                 label="Exclude tags"
                 error={errors?.excludeTags}
                 value={filters.excludeTags ?? []}
-                maxSelected={MAX_MEDIA_FILTER_VALUES} disabled={disabled}
+                maxSelected={MAX_MEDIA_FILTER_VALUES}
+                disabled={disabled}
                 onChange={excludeTags => onChange({ excludeTags: excludeTags.length ? excludeTags : undefined })}
             />
         </FieldGroup>

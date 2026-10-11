@@ -227,6 +227,46 @@ test("browses a ranked collection with shared sorting, preserves notes and tailo
 });
 
 
+test("preserves scoped media rules when changing collection membership filters", async ({ page }) => {
+    await runBun(["src/routes/_main/_viewer/lists/collections/-browse.fixtures.ts"]);
+    await signIn(page, "stranger");
+    const mediaFilters = {
+        movies: {
+            genres: ["Adventure"], actors: [browseActor], directors: [browseDirector],
+            tags: ["weekend"], excludeTags: ["owner-only"], tagsMatch: "all",
+        },
+    };
+    await page.goto(`/lists/collections/${publicCollection.id}?library=in&sorting=rating_highest&mediaFilters=${encodeURIComponent(JSON.stringify(mediaFilters))}`);
+    const controls = page.getByRole("group", { name: "Media browsing controls", exact: true });
+    const results = page.getByRole("group", { name: "Browsing results and filters", exact: true });
+    const library = controls.getByRole("combobox", { name: "Filter by library", exact: true });
+    await expect(results.getByText("1 title", { exact: true })).toBeVisible();
+    await expect(results.getByRole("button", { name: "Remove Movies · Tags: weekend", exact: true })).toBeVisible();
+
+    await results.getByRole("button", { name: "Remove In my list", exact: true }).click();
+    await expect(results.getByText("5 titles", { exact: true })).toBeVisible();
+    await expect(page).toHaveURL(url => !url.searchParams.has("library") && !url.searchParams.has("sorting"));
+    expect(JSON.parse(new URL(page.url()).searchParams.get("mediaFilters")!)).toEqual({
+        movies: { genres: ["Adventure"], actors: [browseActor], directors: [browseDirector] },
+    });
+    await expect(results.getByRole("button", { name: /^Remove Movies · (Tags|Exclude tags):/ })).toHaveCount(0);
+
+    await library.click();
+    await page.getByRole("option", { name: "In my list", exact: true }).click();
+    await expect(results.getByText("2 titles", { exact: true })).toBeVisible();
+    await library.click();
+    await page.getByRole("option", { name: "Not in my list", exact: true }).click();
+    await expect(results.getByText("3 titles", { exact: true })).toBeVisible();
+    await expect(results.getByRole("button", { name: "Remove Movies · Genres: Adventure", exact: true })).toBeVisible();
+    await expect(results.getByRole("button", { name: `Remove Movies · Directors: ${browseDirector}`, exact: true })).toBeVisible();
+
+    await results.getByRole("button", { name: `Remove Movies · Actors: ${browseActor}`, exact: true }).click();
+    await expect(page).toHaveURL(url => !url.searchParams.get("mediaFilters")?.includes(browseActor));
+    await expect(results.getByRole("button", { name: `Remove Movies · Directors: ${browseDirector}`, exact: true })).toBeVisible();
+    await expect(results.getByText("3 titles", { exact: true })).toBeVisible();
+});
+
+
 test("creates, ranks, annotates and copies a collection across every media type with same-ID titles", async ({ page, baseURL }) => {
     await runBun(["src/routes/_main/_viewer/lists/collections/-mixed.fixtures.ts"]);
     await signIn(page);

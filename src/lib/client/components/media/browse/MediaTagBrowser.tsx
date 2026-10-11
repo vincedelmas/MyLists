@@ -24,11 +24,9 @@ interface MediaTagBrowserProps {
 export const MediaTagBrowser = ({ label, options, value, onChange, disabled, error, maxSelected, onCreate, renderChoice }: MediaTagBrowserProps) => {
     const id = useId();
     const [search, setSearch] = useState("");
-    const names = [...new Set(options)].sort((a, b) => a.localeCompare(b));
-
-    const results = searchMediaFilterOptions(names, search);
+    const results = searchMediaFilterOptions(options, search);
     const atLimit = maxSelected !== undefined && value.length >= maxSelected;
-    const canCreate = onCreate && search.trim() && !names.some(name => name.toLowerCase() === search.trim().toLowerCase());
+    const canCreate = onCreate && search.trim() && !options.some(name => name.toLowerCase() === search.trim().toLowerCase());
 
     const create = async () => {
         if (!canCreate || disabled) return;
@@ -52,7 +50,7 @@ export const MediaTagBrowser = ({ label, options, value, onChange, disabled, err
                 </FieldDescription>
             </div>
             {value.length > 0 &&
-                <div className="flex flex-col gap-2 border-l-2 border-brand/40 pl-3" aria-label={`Selected ${label.toLowerCase()}`}>
+                <div className="flex flex-col gap-2 border-l-2 border-brand/40 pl-3" role="group" aria-label={`Selected ${label.toLowerCase()}`}>
                     <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-muted-foreground">
                             Selected

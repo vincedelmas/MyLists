@@ -1,4 +1,3 @@
-import type {ScopedMediaFilterValues} from "@/lib/schemas/media-filters.schema";
 import z from "zod";
 import {useState} from "react";
 import {Status} from "@/lib/utils/enums";
@@ -27,7 +26,8 @@ import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {createMediaBrowseStatusOptions} from "@/lib/client/components/media/browse/media-browse.config";
 import {dynamicListSearchSchema, type DynamicListRuntimeFilters} from "@/lib/schemas/dynamic-lists.schema";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
-import {BrowseAppliedFilters, type MediaBrowseFilterKey, type MediaBrowseFilterScope} from "@/lib/client/components/media/browse/AppliedFilters";
+import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
+import {removeMediaBrowseFilter, type MediaBrowseFilterKey, type MediaBrowseFilterScope} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
 export const Route = createFileRoute("/_main/_viewer/lists/dynamic/$listId")({
@@ -93,21 +93,7 @@ function DynamicListPage() {
     const handleFilterRemove = (key: MediaBrowseFilterKey, value?: string, scope?: MediaBrowseFilterScope) => {
         if (key === "search") setLocalSearch("");
 
-        if (scope) {
-            const metadata: ScopedMediaFilterValues | undefined = filters.mediaFilters?.[scope.mediaType];
-            const selected = metadata?.[scope.field]?.filter(item => item !== value);
-            handleFiltersChange({
-                mediaFilters: {
-                    ...filters.mediaFilters,
-                    [scope.mediaType]: { ...metadata, [scope.field]: selected?.length ? selected : undefined },
-                },
-            });
-            return;
-        }
-
-        handleFiltersChange({
-            [key]: key === "genres" || key === "tags" ? filters[key]?.filter(item => item !== value) : undefined,
-        });
+        handleFiltersChange(removeMediaBrowseFilter(filters, key, value, scope));
     };
 
     const handleDisplayToggle = () => {

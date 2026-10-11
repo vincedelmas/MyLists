@@ -1,5 +1,5 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/core/mcp/config";
+import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/query.config";
 import {parseStmt, traverse, type ParseStmtResult} from "sqlite3-parser";
 
 

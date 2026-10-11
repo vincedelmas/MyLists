@@ -3,7 +3,8 @@ import {and, eq, inArray, notInArray, sql} from "drizzle-orm";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import type {MediaListData, ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
+import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
+import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
 import type {DynamicListRuntimeFilters, DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {user, userMediaSettings} from "@/lib/server/database/schema";
 import {FormattedError} from "@/lib/utils/error-classes";
@@ -12,17 +13,9 @@ import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.q
 import {getMediaCommonFilterConditions, getMediaScopedFilterConditions, getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
-import type {animeList, booksList, gamesList, mangaList, moviesList, seriesList} from "@/lib/server/database/schema";
 
 
-type DynamicListListItem = MediaListData<
-    typeof animeList.$inferSelect
-    | typeof booksList.$inferSelect
-    | typeof gamesList.$inferSelect
-    | typeof mangaList.$inferSelect
-    | typeof moviesList.$inferSelect
-    | typeof seriesList.$inferSelect
->["items"][number];
+type DynamicListListItem = MediaListDataByType[MediaType]["items"][number];
 
 
 type DynamicListItem = DynamicListListItem & {

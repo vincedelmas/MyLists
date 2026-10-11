@@ -1,7 +1,6 @@
 import * as z from "zod";
 import {PrivacyType} from "@/lib/utils/enums";
 import {mediaBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
-import {MEDIA_SORT_KEYS} from "@/lib/media-definitions/base/media-sorting";
 import {
     coercedPositiveIntFieldSchema,
     mediaTypeFieldSchema,
@@ -14,7 +13,7 @@ import {
 
 
 export type CreateCollection = z.infer<typeof createCollectionSchema>;
-export type CommunitySearch = z.infer<typeof communityCollectionsSchema>;
+export type CommunitySearch = z.infer<typeof collectionsBrowseFiltersSchema>;
 export type UserCollectionsSearch = z.infer<typeof userCollectionsSearchSchema>;
 
 
@@ -51,24 +50,19 @@ export const collectionDetailsReadSchema = mediaBrowseFiltersSchema.extend({
     collectionId: coercedPositiveIntFieldSchema,
 });
 
-export const userCollectionsFiltersSchema = paginationSchema.extend({
+export const collectionsBrowseFiltersSchema = paginationSchema.extend({
     search: optionalSearchFieldSchema,
     mediaType: mediaTypeFieldSchema.optional().catch(undefined),
 });
 
-export const userCollectionsSearchSchema = userCollectionsFiltersSchema.extend({
+export const userCollectionsSearchSchema = collectionsBrowseFiltersSchema.extend({
     username: usernameFieldSchema,
-});
-
-export const communityCollectionsSchema = paginationSchema.extend({
-    search: optionalSearchFieldSchema,
-    mediaType: mediaTypeFieldSchema.optional().catch(undefined),
 });
 
 export const collectionBrowseSearchSchema = mediaBrowseFiltersSchema.extend({
     display: z.enum(["grid", "table"]).optional(),
-    sorting: z.enum(["default", ...MEDIA_SORT_KEYS]).optional().catch(undefined),
-    fromCommunity: communityCollectionsSchema.optional(),
+    sorting: mediaBrowseFiltersSchema.shape.sorting.catch(undefined),
+    fromCommunity: collectionsBrowseFiltersSchema.optional(),
 });
 
 export const collectionNavigationSchema = collectionBrowseSearchSchema.pick({ fromCommunity: true });

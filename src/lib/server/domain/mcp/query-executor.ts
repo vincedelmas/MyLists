@@ -1,6 +1,6 @@
 import queryProcessSource from "./query-process.js?raw";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {QUERY_LIMITS} from "@/lib/server/core/mcp/config";
+import {QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
 
 
 export type QueryParameters = Record<string, string | number | null>;

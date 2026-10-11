@@ -22,7 +22,6 @@ import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
-import {MediaTagBrowser} from "@/lib/client/components/media/browse/MediaTagBrowser";
 import {MediaTagFilters} from "@/lib/client/components/media/browse/MediaTagFilters";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
@@ -398,44 +397,13 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                         }
 
                                         {availableFilters.has("tags") &&
-                                            <>
-                                                <MediaTagBrowser
-                                                    label="Tags"
-                                                    error={errors["filters.tags"]}
-                                                    value={spec.filters.tags ?? []}
-                                                    maxSelected={MAX_MEDIA_FILTER_VALUES}
-                                                    options={filterOptions.data?.tags ?? []}
-                                                    disabled={saveMutation.isPending || filterOptions.isPending}
-                                                    onChange={values => updateFilters({ tags: values.length ? values : undefined })}
-                                                />
-                                                <Field>
-                                                    <FieldLabel id={`${fieldId}-tags-match`}>
-                                                        Tag matching
-                                                    </FieldLabel>
-                                                    <ToggleGroup
-                                                        variant="outline"
-                                                        aria-labelledby={`${fieldId}-tags-match`}
-                                                        value={[spec.filters.tagsMatch ?? "any"]}
-                                                        onValueChange={values => values[0] && updateFilters({ tagsMatch: values[0] as "any" | "all" })}
-                                                    >
-                                                        <ToggleGroupItem value="any">
-                                                            Any included tag
-                                                        </ToggleGroupItem>
-                                                        <ToggleGroupItem value="all">
-                                                            Every included tag
-                                                        </ToggleGroupItem>
-                                                    </ToggleGroup>
-                                                </Field>
-                                                <MediaTagBrowser
-                                                    label="Exclude tags"
-                                                    error={errors["filters.excludeTags"]}
-                                                    maxSelected={MAX_MEDIA_FILTER_VALUES}
-                                                    value={spec.filters.excludeTags ?? []}
-                                                    options={filterOptions.data?.tags ?? []}
-                                                    disabled={saveMutation.isPending || filterOptions.isPending}
-                                                    onChange={values => updateFilters({ excludeTags: values.length ? values : undefined })}
-                                                />
-                                            </>
+                                            <MediaTagFilters
+                                                filters={spec.filters}
+                                                options={filterOptions.data?.tags ?? []}
+                                                disabled={saveMutation.isPending || filterOptions.isPending}
+                                                errors={{ tags: errors["filters.tags"], excludeTags: errors["filters.excludeTags"] }}
+                                                onChange={updateFilters}
+                                            />
                                         }
                                         <FieldDescription>
                                             Genres match any selected value. Excluded tags always remove matching titles.

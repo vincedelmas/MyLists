@@ -7,17 +7,7 @@ import {capitalize} from "@/lib/utils/formatting/text";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
-import type {ScopedMediaArrayFilterKey} from "@/lib/schemas/media-filters.schema";
-import {getMediaFilterDefinitions, getMediaFilterGroups} from "@/lib/client/components/media/browse/media-filter.utils";
-
-
-export type MediaBrowseFilterKey = Exclude<keyof MediaBrowseFilters, "page" | "sorting">;
-
-
-export type MediaBrowseFilterScope = {
-    mediaType: MediaType;
-    field: ScopedMediaArrayFilterKey;
-};
+import {getMediaFilterDefinitions, getMediaFilterGroups, type MediaBrowseFilterKey, type MediaBrowseFilterScope} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
 interface AppliedFilterGroup {

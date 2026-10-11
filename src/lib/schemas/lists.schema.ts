@@ -1,9 +1,9 @@
 import z from "zod";
-import {userCollectionsFiltersSchema} from "@/lib/schemas/collections.schema";
+import {collectionsBrowseFiltersSchema} from "@/lib/schemas/collections.schema";
 import {coercedPositiveIntFieldSchema, usernameFieldSchema} from "@/lib/schemas/common.schema";
 
 
-export const listsSearchSchema = userCollectionsFiltersSchema.extend({
+export const listsSearchSchema = collectionsBrowseFiltersSchema.extend({
     kind: z.enum(["presets", "dynamic", "collections"]).optional().catch(undefined),
     dynamicPage: coercedPositiveIntFieldSchema.optional().catch(undefined),
 });

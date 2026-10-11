@@ -2,7 +2,7 @@ import Database from "bun:sqlite";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {createQueryTestSource} from "@/lib/server/domain/mcp/query-snapshot.fixture";
-import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/core/mcp/config";
+import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/domain/mcp/query.config";
 import {buildQuerySnapshot, QUERY_SCHEMA} from "@/lib/server/domain/mcp/query-snapshot";
 
 

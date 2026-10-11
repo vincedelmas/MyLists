@@ -17,7 +17,8 @@ import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrow
 import {MediaBrowseResults} from "@/lib/client/components/media/browse/MediaBrowseResults";
 import {MEDIA_BROWSE_LIBRARY_OPTIONS} from "@/lib/client/components/media/browse/media-browse.config";
 import {mediaCatalogBrowseSearchSchema, type MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
-import {BrowseAppliedFilters, type MediaBrowseFilterKey} from "@/lib/client/components/media/browse/AppliedFilters";
+import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
+import type {MediaBrowseFilterKey} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$name")({
@@ -134,7 +135,6 @@ function JobInfoPage() {
 
                 {apiData.items.length > 0 ?
                     <MediaBrowseResults
-                        personal={false}
                         showMembership={!isAnonymous}
                         display={isGrid ? "grid" : "table"}
                         items={apiData.items.map(item => ({ ...item, mediaType, title: item.mediaName }))}

@@ -13,7 +13,7 @@ import {Pagination} from "@/lib/client/components/general/Pagination";
 import {LibraryBig, ListOrdered, Plus, UsersRound} from "lucide-react";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
-import {communityCollectionsSchema, CommunitySearch} from "@/lib/schemas";
+import {collectionsBrowseFiltersSchema, CommunitySearch} from "@/lib/schemas";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {communityCollectionsOptions} from "@/lib/client/react-query/query-options";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
@@ -21,7 +21,7 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/discover")({
-    validateSearch: communityCollectionsSchema,
+    validateSearch: collectionsBrowseFiltersSchema,
     loaderDeps: ({ search }) => ({ search }),
     context: ({ deps: { search } }) => ({
         communityCollectionsQueryOptions: communityCollectionsOptions(search),

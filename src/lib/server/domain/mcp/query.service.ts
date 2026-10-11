@@ -1,7 +1,7 @@
 import Database from "bun:sqlite";
 import {serverEnv} from "@/env/server";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {QUERY_LIMITS} from "@/lib/server/core/mcp/config";
+import {QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
 import {validateQuerySql} from "@/lib/server/domain/mcp/query-validation";
 import {buildQuerySnapshot} from "@/lib/server/domain/mcp/query-snapshot";
 import {executeSnapshotQuery, type QueryParameters} from "@/lib/server/domain/mcp/query-executor";

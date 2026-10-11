@@ -33,7 +33,6 @@ export const DynamicListCard = ({ view, activeMediaTypes, isOwner = true, previe
                 className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
             />
             <ListCoverStrip
-                variant="showcase"
                 covers={preview?.covers ?? []}
                 className="pointer-events-none h-28 w-full sm:h-auto sm:w-44 sm:self-stretch xl:w-52"
             />

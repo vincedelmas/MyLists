@@ -30,5 +30,5 @@ export const mediaCatalogBrowseFiltersSchema = mediaBrowseFiltersSchema.pick({
 
 export const mediaCatalogBrowseSearchSchema = mediaCatalogBrowseFiltersSchema.extend({
     display: z.enum(["grid", "table"]).optional(),
-    sorting: z.enum(["default", ...MEDIA_CATALOG_SORT_KEYS]).optional().catch(undefined),
+    sorting: mediaCatalogBrowseFiltersSchema.shape.sorting.catch(undefined),
 });

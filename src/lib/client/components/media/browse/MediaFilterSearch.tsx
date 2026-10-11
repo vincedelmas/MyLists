@@ -1,8 +1,6 @@
-import {MediaFilterChoice} from "@/lib/client/components/media/browse/MediaFilterChoice";
-import {useId, useState} from "react";
-import {ChevronDown, ChevronUp} from "lucide-react";
+import {useId} from "react";
 import {Button} from "@/lib/client/components/ui/button";
-import {levenshteinDistance} from "@/lib/utils/levenshtein";
+import {searchMediaFilterOptions} from "@/lib/client/components/media/browse/filter-search";
 import {Field, FieldDescription, FieldError, FieldLabel} from "@/lib/client/components/ui/field";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
@@ -18,34 +16,15 @@ interface MediaFilterSearchProps {
     disabled?: boolean;
     error?: string;
     maxSelected?: number;
-    browseOptions?: boolean;
 }
 
 
-export const MediaFilterSearch = ({ label, options, value, onChange, disabled, error, maxSelected, browseOptions = false }: MediaFilterSearchProps) => {
+export const MediaFilterSearch = ({ label, options, value, onChange, disabled, error, maxSelected }: MediaFilterSearchProps) => {
     const fieldId = useId();
-    const [showAll, setShowAll] = useState(false);
     const { search, setSearch, debouncedSearch, isOpen, setIsOpen, reset, containerRef } = useSearchContainer({ debounceMs: 150 });
     const atLimit = maxSelected !== undefined && value.length >= maxSelected;
     const query = debouncedSearch.trim().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-    const maxDistance = query.length >= 5 ? 2 : 1;
-    const results = options.filter(option => !value.includes(option)).map(option => {
-        const name = option.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-        if (name.startsWith(query)) return { option, score: 0 };
-        if (name.includes(query)) return { option, score: 1 };
-        if (query.length < 3) return { option, score: Infinity };
-
-        const distance = Math.min(...[name, ...name.split(/\s+/)].map(word =>
-            Math.min(levenshteinDistance(query, word), levenshteinDistance(query, word.slice(0, query.length)))
-        ));
-        return { option, score: distance <= maxDistance ? 2 + distance : Infinity };
-    }).filter(result => Number.isFinite(result.score)).sort((a, b) =>
-        a.score - b.score || a.option.localeCompare(b.option)
-    ).slice(0, 8);
-
-    const availableOptions = browseOptions
-        ? [...new Set([...options, ...value])].sort((a, b) => a.localeCompare(b))
-        : [];
+    const results = searchMediaFilterOptions(options.filter(option => !value.includes(option)), debouncedSearch).slice(0, 8);
 
     const selectOption = (option: string) => {
         onChange([...value, option]);
@@ -75,7 +54,7 @@ export const MediaFilterSearch = ({ label, options, value, onChange, disabled, e
                         if (event.key === "Enter") {
                             event.preventDefault();
                             if (isOpen && query.length >= 2 && results.length && search.trim() === debouncedSearch.trim()) {
-                                selectOption(results[0].option);
+                                selectOption(results[0]);
                             }
                         }
                     }}
@@ -89,7 +68,7 @@ export const MediaFilterSearch = ({ label, options, value, onChange, disabled, e
                     emptyMessage={options.length ? `No matching ${label.toLowerCase()} here.` : `No ${label.toLowerCase()} available yet.`}
                 >
                     <div id={`${fieldId}-results`} className="flex max-h-64 flex-col gap-1 overflow-y-auto p-1">
-                        {results.map(({ option }) =>
+                        {results.map(option =>
                             <Button
                                 key={option}
                                 type="button"
@@ -103,36 +82,12 @@ export const MediaFilterSearch = ({ label, options, value, onChange, disabled, e
                     </div>
                 </SearchContainer>
             </div>
-            {browseOptions &&
-                <FieldDescription>{options.length} available · {value.length} selected</FieldDescription>
-            }
-            {browseOptions && !search.trim() && availableOptions.length > 0 &&
-                <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap gap-1.5">
-                        {(showAll ? availableOptions : availableOptions.slice(0, 14)).map(option =>
-                            <MediaFilterChoice
-                                key={option}
-                                label={option}
-                                selected={value.includes(option)}
-                                ariaLabel={value.includes(option) ? `Remove ${option} filter` : `Select ${label.toLowerCase()}: ${option}`}
-                                disabled={disabled || (atLimit && !value.includes(option))}
-                                onSelect={() => value.includes(option) ? onChange(value.filter(selected => selected !== option)) : selectOption(option)}
-                            />
-                        )}
-                    </div>
-                    {availableOptions.length > 14 &&
-                        <Button type="button" variant="ghost" size="xs" className="w-fit" disabled={disabled} onClick={() => setShowAll(current => !current)}>
-                            {showAll ? <>Less <ChevronUp data-icon="inline-end"/></> : <>More ({availableOptions.length - 14}) <ChevronDown data-icon="inline-end"/></>}
-                        </Button>
-                    }
-                </div>
-            }
             {atLimit &&
                 <FieldDescription id={`${fieldId}-limit`}>
                     Choose up to {maxSelected} values. Remove one to select another.
                 </FieldDescription>
             }
-            {value.length > 0 && !browseOptions &&
+            {value.length > 0 &&
                 <div className="flex flex-wrap gap-2">
                     {value.map(option =>
                         <AppliedSearchFilterChip

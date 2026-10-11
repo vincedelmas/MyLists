@@ -1,6 +1,6 @@
 import {queryOptions} from "@tanstack/react-query";
 import {MediaType} from "@/lib/utils/enums";
-import {MediaListArgs, SimpleSearch} from "@/lib/schemas";
+import {MediaListArgs} from "@/lib/schemas";
 import {getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
 import {getMediaListFilters, getMediaListSF, getTagsViewFn, getUserListHeaderSF} from "@/lib/server/functions/media-lists";
 
@@ -17,9 +17,9 @@ export const userListHeaderOption = (mediaType: MediaType, username: string) => 
 });
 
 
-export const tagsViewOptions = (mediaType: MediaType, username: string, search: SimpleSearch = {}) => queryOptions({
-    queryKey: ["tagsView", mediaType, username, search] as const,
-    queryFn: () => getTagsViewFn({ data: { mediaType, username, search } }),
+export const tagsViewOptions = (mediaType: MediaType, username: string) => queryOptions({
+    queryKey: ["tagsView", mediaType, username] as const,
+    queryFn: () => getTagsViewFn({ data: { mediaType, username } }),
 })
 
 

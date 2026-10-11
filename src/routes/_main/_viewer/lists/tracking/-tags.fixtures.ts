@@ -14,6 +14,13 @@ db.transaction(() => {
         { userId: users.owner.id, name: "unassigned" },
     ]).run();
 
+    if (process.argv.includes("many-tags")) {
+        db.insert(moviesTags).values(Array.from({ length: 100 }, (_, index) => ({
+            userId: users.owner.id,
+            name: `Shelf ${String(index + 1).padStart(3, "0")}`,
+        }))).run();
+    }
+
     if (process.argv.includes("public-owner")) {
         db.update(user).set({ privacy: "public" }).where(eq(user.id, users.owner.id)).run();
     }

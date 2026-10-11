@@ -47,7 +47,7 @@ export const MediaFiltersSheet = ({ open, title, description, children, footer, 
                             />
                         </div>
                     }
-                    <FieldGroup className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+                    <FieldGroup className="min-h-0 flex-1 overflow-y-auto scrollbar-thin p-4">
                         {tags && activeTab === "tags" ? tags : children}
                     </FieldGroup>
 

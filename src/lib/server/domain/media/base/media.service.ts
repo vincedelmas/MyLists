@@ -16,7 +16,7 @@ import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/imag
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createMediaCommunityQueries} from "@/lib/server/domain/media/base/media-community.queries";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MediaListArgs, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
+import {MediaListArgs, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
 type MediaServiceRepository<TDef extends AnyServerMediaDefinition> = MediaQueries<TDef> & {
@@ -146,8 +146,8 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         return listQueries.getMediaList(currentUserId, userId, args);
     }
 
-    async function getTagsView(userId: number, search: SimpleSearch) {
-        return tagQueries.getTagsView(userId, search);
+    async function getTagsView(userId: number) {
+        return tagQueries.getTagsView(userId);
     }
 
     function addMediaToUserList(userId: number, mediaId: number, status?: Status) {

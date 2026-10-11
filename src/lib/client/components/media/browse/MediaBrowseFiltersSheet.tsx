@@ -1,3 +1,4 @@
+import {MediaTagBrowser} from "@/lib/client/components/media/browse/MediaTagBrowser";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {MediaTagFilters} from "@/lib/client/components/media/browse/MediaTagFilters";
 import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
@@ -9,7 +10,6 @@ import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {MediaFiltersSheet, type MediaFiltersTab} from "@/lib/client/components/media/browse/MediaFiltersSheet";
-import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
 import {Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {type MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {MediaFilterCheckbox} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
@@ -162,7 +162,7 @@ export const MediaBrowseFiltersSheet = ({ open, onOpenChange, filters, options, 
                                 <FieldLegend variant="label">Rules across all types</FieldLegend>
                                 <FieldDescription>These existing rules apply to every media type.</FieldDescription>
                                 <MediaGenreFilter availableFilters={availableFilters} options={options.genres} selected={draft.genres ?? []} onChange={genres => setDraft(current => ({ ...current, genres: genres.length ? genres : undefined }))}/>
-                                {personal && <MediaFilterSearch browseOptions label="Tags" options={options.tags} value={draft.tags ?? []} onChange={tags => setDraft(current => ({ ...current, tags: tags.length ? tags : undefined }))}/>}
+                                {personal && <MediaTagBrowser label="Tags" options={options.tags} value={draft.tags ?? []} onChange={tags => setDraft(current => ({ ...current, tags: tags.length ? tags : undefined }))}/>}
                             </FieldSet> : null
                         }
                     </FieldGroup> : undefined}

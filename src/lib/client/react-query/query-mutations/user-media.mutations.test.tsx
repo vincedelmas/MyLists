@@ -155,6 +155,38 @@ describe("adding completed media", () => {
 });
 
 describe("list filter freshness", () => {
+    it.each(["details", "userList"] as const)("reloads tag names and counts after removing the last tagged title from %s", async source => {
+        const namesOptions = tagNamesOptions(MediaType.MOVIES, true);
+        const tagsKey = ["tagsView", MediaType.MOVIES, "alice"];
+        const otherUserKey = ["tagsView", MediaType.MOVIES, "bob"];
+        const otherMediaKey = tagNamesOptions(MediaType.BOOKS, true).queryKey;
+        queryClient.setQueryData(namesOptions.queryKey, [{ name: "Favorites" }]);
+        queryClient.setQueryData(tagsKey, [{ tagName: "Favorites", totalCount: 1 }]);
+        for (const key of [otherUserKey, otherMediaKey]) queryClient.setQueryData(key, []);
+        const fetchTags = vi.fn().mockResolvedValue([]);
+        const observer = new QueryObserver(queryClient, { queryKey: tagsKey, queryFn: fetchTags });
+        const unsubscribeTags = observer.subscribe(() => {});
+        const mutationKey = source === "details"
+            ? ["details", MediaType.MOVIES, 3] as const
+            : ["userList", MediaType.MOVIES, "alice", {}] as const;
+        const mutationOptions = { queryKey: mutationKey } as UserMediaQueryOption;
+
+        try {
+            server.remove.mockResolvedValueOnce(undefined);
+            server.tagNames.mockResolvedValueOnce([]);
+            await useRemoveMediaFromListMutation(mutationOptions)
+                .mutateAsync({ data: { mediaType: MediaType.MOVIES, mediaId: 3 } });
+
+            expect(fetchTags).toHaveBeenCalledTimes(1);
+            expect(queryClient.getQueryData(tagsKey)).toEqual([]);
+            expect(await queryClient.fetchQuery(namesOptions)).toEqual([]);
+            expect(server.tagNames).toHaveBeenCalledTimes(1);
+            expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);
+            expect(queryClient.getQueryState(otherMediaKey)?.isInvalidated).toBe(false);
+        }
+        finally { unsubscribeTags(); }
+    });
+
     it.each([TagAction.RENAME, TagAction.DELETE_ALL])("refreshes tracking tags and cached tag names after %s", async action => {
         const listKey = ["userList", MediaType.MOVIES, "alice", {}];
         const detailsKey = ["details", MediaType.MOVIES, 3];
@@ -326,6 +358,7 @@ describe("profile progress refresh", () => {
             ["profile", "recent-feed", "alice"],
             ["profile", "summary", "alice"],
             ["profile", "header", "alice"],
+            ["userList", "header", "alice", MediaType.SERIES],
             ["allUpdates", "alice", {}],
             [...profilePinsOptions("alice").queryKey],
         ];
@@ -335,6 +368,7 @@ describe("profile progress refresh", () => {
             ["profile", "recent-feed", "bob"],
             ["profile", "summary", "bob"],
             ["profile", "header", "bob"],
+            ["userList", "header", "bob", MediaType.SERIES],
             ["continue", "bob"],
             [...profilePinsOptions("bob").queryKey],
         ];

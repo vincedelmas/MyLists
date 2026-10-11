@@ -1,4 +1,5 @@
 import type {ReactNode} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {FieldGroup} from "@/lib/client/components/ui/field";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
@@ -7,15 +8,18 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 interface DynamicListEditorSelectProps {
     id: string;
     value: string;
+    disabled?: boolean;
+    className?: string;
+    "aria-label"?: string;
     onChange: (value: string) => void;
-    options: readonly { value: string; label: string }[];
+    options: readonly { value: string; label: ReactNode }[];
 }
 
 
-export const DynamicListEditorSelect = ({ id, value, options, onChange }: DynamicListEditorSelectProps) => {
+export const DynamicListEditorSelect = ({ id, value, options, onChange, disabled, className, "aria-label": ariaLabel }: DynamicListEditorSelectProps) => {
     return (
-        <Select items={options} value={value} onValueChange={value => value !== null && onChange(value)}>
-            <SelectTrigger id={id} className="w-full">
+        <Select items={options} value={value} disabled={disabled} onValueChange={value => value !== null && onChange(value)}>
+            <SelectTrigger id={id} className={cn("w-full", className)} aria-label={ariaLabel}>
                 <SelectValue/>
             </SelectTrigger>
             <SelectContent>

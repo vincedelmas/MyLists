@@ -1,12 +1,18 @@
-import type {MediaListArgs} from "@/lib/schemas/media-lists.schema";
 import {user} from "@/lib/server/database/schema";
-import {getDbClient} from "@/lib/server/database/async-storage";
 import type {IdNamePair} from "@/lib/types/media-common.types";
+import {getDbClient} from "@/lib/server/database/async-storage";
+import type {MediaListArgs} from "@/lib/schemas/media-lists.schema";
+import {and, asc, count, eq, inArray, notInArray, sql} from "drizzle-orm";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import type {ExpandedListFilters, MediaListData} from "@/lib/types/media-list.types";
+import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import type {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {and, asc, count, eq, inArray, notInArray, sql} from "drizzle-orm";
-import {getMediaCommonFilterConditions, getMediaMetadataFilterConditions, getMediaMetadataFilterOptions, getMediaNameSearchCondition} from "@/lib/server/domain/media/base/media-filters.queries";
+import {
+    getMediaCommonFilterConditions,
+    getMediaMetadataFilterConditions,
+    getMediaMetadataFilterOptions,
+    getMediaNameSearchCondition
+} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
@@ -25,27 +31,32 @@ export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinit
 
 
 export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
-    const { listQuery, tables: { listTable, mediaTable, tagTable, genreTable } } = definition;
+    const { listQuery, tables: { listTable, mediaTable, genreTable } } = definition;
+    const tagQueries = createMediaTagQueries(definition);
 
     return {
         async getListFilters(userId: number): Promise<ExpandedListFilters> {
-            const genresPromise = definition.filters.common.genres ? getDbClient()
-                .selectDistinct({ name: sql<string>`${genreTable.name}` })
-                .from(genreTable)
-                .innerJoin(listTable, eq(listTable.mediaId, genreTable.mediaId))
-                .where(eq(listTable.userId, userId))
-                .orderBy(asc(genreTable.name)) : [];
+            const genresPromise = definition.filters.common.genres
+                ? getDbClient()
+                    .selectDistinct({ name: sql<string>`${genreTable.name}` })
+                    .from(genreTable)
+                    .innerJoin(listTable, eq(listTable.mediaId, genreTable.mediaId))
+                    .where(eq(listTable.userId, userId))
+                    .orderBy(asc(genreTable.name))
+                : [];
 
-            const tagsPromise = definition.filters.common.tags ? getDbClient()
-                .selectDistinct({ name: sql<string>`${tagTable.name}` })
-                .from(tagTable)
-                .where(eq(tagTable.userId, userId))
-                .orderBy(asc(tagTable.name)) : [];
+            const tagsPromise = definition.filters.common.tags
+                ? tagQueries.getTagNames(userId)
+                : [];
 
             const [genres, tags] = await Promise.all([genresPromise, tagsPromise]);
 
-            const mediaIds = getDbClient().select({ mediaId: listTable.mediaId }).from(listTable)
-                .where(eq(listTable.userId, userId)).getSQL();
+            const mediaIds = getDbClient()
+                .select({
+                    mediaId: listTable.mediaId
+                }).from(listTable)
+                .where(eq(listTable.userId, userId))
+                .getSQL();
 
             return {
                 tags,

@@ -1,5 +1,5 @@
 import {MutationMeta, type QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
-import {collectionDetailsEditOptions, CollectionDetailsReadData, collectionDetailsReadQueryKey} from "@/lib/client/react-query/query-options";
+import {collectionDetailsEditOptions, CollectionDetailsReadData, collectionDetailsReadQueryKey} from "@/lib/client/react-query/query-options/collections.options";
 import {
     postAddMediaToCollection,
     postCopyCollection,
@@ -20,10 +20,10 @@ const invalidateCollectionSummaries = (queryClient: QueryClient) => Promise.all(
 ]);
 
 
-const invalidateCollectionItems = (queryClient: QueryClient, collectionId: number) => Promise.all([
+const invalidateCollectionItems = (queryClient: QueryClient, collectionId: number, refetchType: "active" | "none" = "active") => Promise.all([
     invalidateCollectionSummaries(queryClient),
-    queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) }),
-    queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey }),
+    queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId), refetchType }),
+    queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey, refetchType }),
 ]);
 
 
@@ -66,10 +66,7 @@ export const useDeleteCollectionMutation = (collectionId: number, meta?: Mutatio
             successToastMessage: "Collection deleted successfully!",
             ...meta,
         },
-        onSuccess: () => Promise.all([
-            invalidateCollectionSummaries(queryClient),
-            queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) }),
-        ]),
+        onSuccess: () => invalidateCollectionItems(queryClient, collectionId, "none"),
     });
 };
 
@@ -79,15 +76,15 @@ export const useToggleCollectionLikeMutation = (collectionId: number) => {
 
     return useMutation({
         mutationFn: postToggleCollectionLike,
-        onSuccess: () => {
+        onSuccess: ({ isLiked, likeCount }) => {
             queryClient.setQueriesData<CollectionDetailsReadData>({ queryKey: collectionDetailsReadQueryKey(collectionId) }, (oldData) => {
                 if (!oldData) return;
                 return {
                     ...oldData,
-                    isLiked: !oldData.isLiked,
+                    isLiked,
                     collection: {
                         ...oldData.collection,
-                        likeCount: oldData.isLiked ? oldData.collection.likeCount - 1 : oldData.collection.likeCount + 1,
+                        likeCount,
                     }
                 }
             });

@@ -320,7 +320,6 @@ export class CollectionsRepository {
                 id: collections.id,
                 title: collections.title,
                 privacy: collections.privacy,
-                ordered: collections.ordered,
                 itemsCount: collectionSelection.itemsCount,
                 hasMedia: sql<boolean>`CASE WHEN ${matchingItem.id} IS NULL THEN 0 ELSE 1 END`.mapWith(Boolean).as("hasMedia"),
             })
@@ -517,20 +516,22 @@ export class CollectionsRepository {
     }
 
     static incrementLikeCount(collectionId: number) {
-        getDbClient()
+        return getDbClient()
             .update(collections)
             .set({ likeCount: sql`${collections.likeCount} + 1` })
             .where(eq(collections.id, collectionId))
-            .run();
+            .returning({ likeCount: collections.likeCount })
+            .get().likeCount;
     }
 
     static decrementLikeCount(collectionId: number) {
-        getDbClient()
+        return getDbClient()
             .update(collections)
             .set({
                 likeCount: sql`CASE WHEN ${collections.likeCount} > 0 THEN ${collections.likeCount} - 1 ELSE 0 END`,
             }).where(eq(collections.id, collectionId))
-            .run();
+            .returning({ likeCount: collections.likeCount })
+            .get().likeCount;
     }
 
     static incrementCopyCount(collectionId: number) {

@@ -46,7 +46,7 @@ export const MembershipDialogContent = (props: MembershipDialogContentProps) => 
                             </span>
                         </div>
                         :
-                        children.length === 0 ?
+                        children.length === 0 && !error ?
                             <div className="flex flex-col items-center justify-center h-full text-center p-6">
                                 <PlusCircle className="size-8 text-muted-foreground mb-3 opacity-50"/>
                                 <p className="text-sm text-muted-foreground font-medium">

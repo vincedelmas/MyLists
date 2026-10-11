@@ -33,11 +33,13 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
     const removeMutation = useRemoveMediaFromCollectionMutation({ noErrorToast: true });
 
     const isPending = addMutation.isPending || removeMutation.isPending || createMutation.isPending;
-    const { data: collections = [], isLoading } = useQuery(userCollectionMembershipsOptions(mediaId, mediaType, isOpen));
+    const { data: collections = [], isLoading, error: collectionsError } = useQuery(userCollectionMembershipsOptions(mediaId, mediaType, isOpen));
 
     const query = searchQuery.trim().toLowerCase();
     const filteredCollections = collections.filter(collection => collection.title.toLowerCase().includes(query));
-    const showCreateButton = query.length >= 3 && !collections.some(collection => collection.title.toLowerCase() === query);
+
+    const showCreateButton = !collectionsError && !isLoading && query.length >= 3
+        && !collections.some(collection => collection.title.toLowerCase() === query);
 
     const handleCreate = () => {
         createMutation.mutate({
@@ -79,7 +81,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                 title="Manage Collections"
                 emptyTitle="No collection found"
                 description={<>Add this {mediaType} to your own collections.</>}
-                error={addMutation.error ?? removeMutation.error ?? createMutation.error}
+                error={collectionsError ?? addMutation.error ?? removeMutation.error ?? createMutation.error}
                 emptyDescription={searchQuery.trim().length > 0 && searchQuery.trim().length < 3
                     ? "Use at least 3 characters to create a collection."
                     : searchQuery
@@ -91,7 +93,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                         onCreate={handleCreate}
                         onChange={setSearchQuery}
                         canCreate={showCreateButton}
-                        disabled={isLoading || isPending}
+                        disabled={isLoading || isPending || !!collectionsError}
                         isCreating={createMutation.isPending}
                         placeholder="Find or create a collection..."
                     />
@@ -122,13 +124,13 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                         <Field
                             key={collection.id}
                             orientation="horizontal"
-                            data-disabled={isPending}
+                            data-disabled={isPending || !!collectionsError}
                             className={cn("rounded-lg p-3", isActive ? "bg-brand/4 text-brand" : "hover:bg-popover")}
                         >
                             <Checkbox
                                 id={checkboxId}
                                 checked={isActive}
-                                disabled={isPending}
+                                disabled={isPending || !!collectionsError}
                                 onCheckedChange={() => handleToggle(collection)}
                             />
                             <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">

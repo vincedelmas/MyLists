@@ -175,6 +175,8 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
                 queryClient.invalidateQueries({ queryKey: ["userList", variables.data.mediaType] }),
                 queryClient.invalidateQueries({ queryKey: ["listFilters", variables.data.mediaType, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: ["tagsView", variables.data.mediaType, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: tagNamesOptions(variables.data.mediaType, false).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", variables.data.mediaType, variables.data.mediaId] }),
             ]);
         }

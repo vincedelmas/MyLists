@@ -86,7 +86,7 @@ export const MediaTagBrowser = ({ label, options, value, onChange, disabled, err
                         ev.stopPropagation();
                         setSearch("");
                     }
-                    if (ev.key === "Enter") {
+                    if (ev.key === "Enter" && !ev.nativeEvent.isComposing) {
                         ev.preventDefault();
                         if (canCreate) void create();
                     }

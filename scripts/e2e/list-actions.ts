@@ -4,6 +4,7 @@ import {expect} from "./fixtures";
 
 export async function listAction(page: Page, name: string, card?: Locator) {
     if (await page.getByRole("menu").count()) await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toHaveCount(0);
     await (card ?? page).getByRole("button", {
         name: card ? /^Actions for / : "Quick actions",
         exact: true,

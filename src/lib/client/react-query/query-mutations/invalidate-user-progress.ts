@@ -12,6 +12,7 @@ export const invalidateUserProgressQueries = (queryClient: QueryClient, username
 
     // Public header has its own level, including when profile content is hidden
     queryClient.invalidateQueries({ queryKey: profileHeaderOptions(username).queryKey, refetchType: refetchSecondary ? "active" : "none" }),
+    queryClient.invalidateQueries({ queryKey: ["userList", "header", username], refetchType: refetchSecondary ? "active" : "none" }),
 
     queryClient.invalidateQueries({ queryKey: ["allUpdates", username], refetchType: refetchSecondary ? "active" : "none" }),
     queryClient.invalidateQueries({ queryKey: profileSummaryOptions(username).queryKey, refetchType: refetchSecondary ? "active" : "none" }),

@@ -241,13 +241,21 @@ export class CollectionsService {
             if (!decision.allowed) throw new UnauthorizedError("private");
 
             const existingLike = this.repository.findLikedCollection(actor.id, collectionId);
+
             if (existingLike) {
                 this.repository.deleteLike(existingLike.id);
-                this.repository.decrementLikeCount(collectionId);
+
+                return {
+                    isLiked: false,
+                    likeCount: this.repository.decrementLikeCount(collectionId),
+                };
             }
             else {
                 this.repository.insertLike(actor.id, collectionId);
-                this.repository.incrementLikeCount(collectionId);
+                return {
+                    isLiked: true,
+                    likeCount: this.repository.incrementLikeCount(collectionId),
+                };
             }
         });
     }
@@ -310,7 +318,7 @@ export class CollectionsService {
 
         const mediaLookup = await this._getMediaLookup(collections.flatMap(collection => collection.previewItems));
 
-        return collections.map((collection) => {
+        return collections.map(({ previewItems, ...collection }) => {
             const policyCapabilities = collectionPolicy.capabilities(actor, collection);
 
             return {
@@ -319,7 +327,7 @@ export class CollectionsService {
                     edit: policyCapabilities.edit,
                     delete: policyCapabilities.delete,
                 },
-                previews: collection.previewItems.map((item) => {
+                previews: previewItems.map((item) => {
                     const media = mediaLookup.get(toItemKey(item));
                     if (!media) return null;
 

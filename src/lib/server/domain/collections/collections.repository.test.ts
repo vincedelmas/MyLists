@@ -147,6 +147,18 @@ describe("collection media references", () => {
         expect(createCollectionSchema.safeParse({ ...copiedCollection, items }).success).toBe(true);
     });
 
+    it("returns the saved like state and total after each user's toggle", () => {
+        const collectionId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
+        const viewer = toActor({ id: 2, role: RoleType.USER });
+
+        expect(service.toggleLike(collectionId, actor)).toEqual({ isLiked: true, likeCount: 1 });
+        expect(service.toggleLike(collectionId, viewer)).toEqual({ isLiked: true, likeCount: 2 });
+        expect(service.toggleLike(collectionId, actor)).toEqual({ isLiked: false, likeCount: 1 });
+        expect(CollectionsRepository.getCollectionById(collectionId)!.likeCount).toBe(1);
+        expect(CollectionsRepository.findLikedCollection(1, collectionId)).toBeUndefined();
+        expect(CollectionsRepository.findLikedCollection(2, collectionId)).toBeDefined();
+    });
+
     it("keeps valid items readable and editable while preserving deduplication, ordering, and annotations", async () => {
         const collectionId = service.createCollection({
             ...collectionData,

@@ -31,12 +31,12 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const mutation = useEditTagMutation(mediaType, mediaId, { noErrorToast: true });
-    const { data: allTags = [], isLoading } = useQuery(tagNamesOptions(mediaType, isOpen));
+    const { data: allTags = [], isLoading, error } = useQuery(tagNamesOptions(mediaType, isOpen));
 
     const query = searchQuery.trim().toLowerCase();
     const activeNames = new Set(tags.map(tag => tag.name));
     const filteredTags = allTags.filter(tag => tag.name.toLowerCase().includes(query));
-    const showCreateButton = query.length > 0 && !allTags.some(tag => tag.name.toLowerCase() === query);
+    const showCreateButton = !error && !isLoading && query.length > 0 && !allTags.some(tag => tag.name.toLowerCase() === query);
 
     const handleAction = (tag: Tag, action: TagAction) => {
         mutation.mutate({ tag, action }, {
@@ -69,8 +69,8 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
             <MembershipDialogContent
                 title="Manage Tags"
                 isLoading={isLoading}
-                error={mutation.error}
                 emptyTitle="No tag found"
+                error={error ?? mutation.error}
                 description={<>Add this {mediaType} to your tags to organize your list.</>}
                 emptyDescription={searchQuery
                     ? `Click 'create' to create '${searchQuery.trim()}' tag.`
@@ -82,7 +82,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                         canCreate={showCreateButton}
                         isCreating={mutation.isPending}
                         placeholder="Find or create a tag..."
-                        disabled={isLoading || mutation.isPending}
+                        disabled={isLoading || !!error || mutation.isPending}
                         onCreate={() => handleAction({ name: searchQuery.trim() }, TagAction.ADD)}
                     />
                 }
@@ -112,13 +112,13 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                         <Field
                             key={tag.name}
                             orientation="horizontal"
-                            data-disabled={mutation.isPending}
+                            data-disabled={!!error || mutation.isPending}
                             className={cn("p-3 rounded-lg", isActive ? "bg-brand/4 text-brand" : "hover:bg-popover")}
                         >
                             <Checkbox
                                 id={checkboxId}
                                 checked={isActive}
-                                disabled={mutation.isPending}
+                                disabled={!!error || mutation.isPending}
                                 onCheckedChange={() => handleAction(tag, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
                             />
                             <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">

@@ -45,7 +45,7 @@ export const MediaFilterTagRow = ({ tag, checked, isOwner, disabled, onSelect, o
                 aria-label="New tag name"
                 onChange={ev => setEditName(ev.target.value)}
                 onKeyDown={ev => {
-                    if (ev.key === "Enter") {
+                    if (ev.key === "Enter" && !ev.nativeEvent.isComposing) {
                         ev.preventDefault();
                         void handleRename();
                     }

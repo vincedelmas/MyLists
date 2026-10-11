@@ -8,10 +8,7 @@ export type CollectionItemInput = {
 };
 
 
-export type DraftItem = {
-    mediaId: number;
+export type DraftItem = CollectionItemInput & {
     mediaName: string;
     mediaCover: string;
-    mediaType: MediaType;
-    annotation?: string | null;
 };

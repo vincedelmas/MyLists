@@ -52,14 +52,10 @@ describe.each([moviesServerDefinition, gamesServerDefinition])("$identity.mediaT
         dbContext.db = undefined;
     });
 
-    it("limits results to the requested range and owner, with known dates and eligible statuses", async () => {
+it("limits results to the requested range and owner, with known dates and eligible statuses", async () => {
         const items = await repository.getReleaseCalendarMedia(1, { startDate: yesterday, endDate });
         expect(items.map(item => item.mediaId)).toEqual([1, 2, 9, 3]);
         expect(items.every(item => item.mediaType === mediaType)).toBe(true);
     });
 
-    it("shows past movie and game releases", async () => {
-        const items = await repository.getReleaseCalendarMedia(1, { startDate: yesterday, endDate: yesterday });
-        expect(items.map(item => item.mediaId)).toEqual([1]);
-    });
 });

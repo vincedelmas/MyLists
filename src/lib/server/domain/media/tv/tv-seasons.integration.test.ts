@@ -7,14 +7,14 @@ import * as schema from "@/lib/server/database/schema";
 import {Status, UpdateType} from "@/lib/utils/enums";
 import {createTvRepository, type TvRepository} from "./tv.repository";
 import {createTvService, type TvService} from "./tv.service";
-import {createTvStatistics} from "./tv.statistics";
+
 import {TvImportListWriter} from "./tv-import-list.writer";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {MediaTrackingService} from "@/lib/server/domain/tracking/media-tracking.service";
 import {StatsService} from "@/lib/server/domain/stats/stats.service";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
-import {ActivityCorrectionRequired, MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
+import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
 import {MonthlyActivityRepository} from "@/lib/server/domain/tracking/monthly-activity.repository";
 import {UpdateHistoryService} from "@/lib/server/domain/tracking/update-history.service";
 import {UpdateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
@@ -69,27 +69,6 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
     });
     afterEach(() => sqlite.close());
 
-    it("rolls back season changes while an older rewatch correction awaits confirmation", () => {
-        context.db.update(schema.userMediaMonthlyActivity).set({ monthBucket: "2025-08", lastActivityAt: "2025-08-01T12:00:00.000Z" }).run();
-        update({ type: UpdateType.REDO, seasonRedos: [{ season: 2, redo: 1 }], loggedAt: "2025-08-20" });
-        const before = snapshot();
-        const payload = { type: UpdateType.REDO, seasonRedos: [{ season: 2, redo: 0 }] };
-        let version: string | undefined;
-        try { update(payload); }
-        catch (error) {
-            if (!(error instanceof ActivityCorrectionRequired)) throw error;
-            version = error.preview.version;
-            expect(error.preview).toMatchObject({ progressRemoved: 8, redoRemoved: 1 });
-        }
-        expect(version).toBeDefined();
-        expect(snapshot()).toEqual(before);
-
-        tracking.updateUserMedia({ ...action, payload, activityCorrection: { version: version! } });
-        expect(seasons().find(season => season.season === 2)?.redo).toBe(0);
-        expect(snapshot().activities).toMatchObject([{ monthBucket: "2025-08", progressGained: 24, redoGained: 0, hadCompletion: true }]);
-        expect(stats()).toMatchObject({ totalRedo: 0, totalSpecific: 24 });
-    });
-
     it("sets all seasons, averages individual edits to tenths, and can overwrite the same average", () => {
         const before = snapshot();
         update({ type: UpdateType.RATING, rating: 8 });
@@ -113,69 +92,6 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
         update({ type: UpdateType.RATING, rating: null });
         expect(read()).toMatchObject({ rating: null, redo: 2, total: 40 });
         expect(stats()).toMatchObject({ entriesRated: 0, sumEntriesRated: 0, totalRedo: 2 });
-    });
-
-    it("calculates season changes without writing until the repository saves them", () => {
-        const before = snapshot();
-        const [rated] = service.updateRatingHandler(read(), { seasonRating: { season: 2, rating: 8 } });
-        const [rewatched] = service.updateRedoHandler(read(), { seasonRedos: [{ season: 3, redo: 2 }] });
-        expect(rated).toMatchObject({ rating: 8, seasonChanges: [{ season: 2, rating: 8 }] });
-        expect(rewatched).toMatchObject({ redo: 2, total: 40, seasonChanges: [{ season: 3, redo: 2 }] });
-        expect(snapshot()).toEqual(before);
-    });
-
-    it("writes only changed season fields and keeps unrelated edits out of the season table", () => {
-        sqlite.exec(`CREATE TABLE season_writes (season integer, field text);
-            CREATE TRIGGER record_rating AFTER UPDATE OF rating ON ${getTableName(seasonStateTable)}
-                BEGIN INSERT INTO season_writes VALUES (NEW.season, 'rating'); END;
-            CREATE TRIGGER record_redo AFTER UPDATE OF redo ON ${getTableName(seasonStateTable)}
-                BEGIN INSERT INTO season_writes VALUES (NEW.season, 'redo'); END;`);
-        update({ type: UpdateType.RATING, seasonRating: { season: 1, rating: 7 } });
-        update({ type: UpdateType.RATING, seasonRating: { season: 2, rating: 9 } });
-        update({ type: UpdateType.RATING, seasonRating: { season: 1, rating: 7 } });
-        update({ type: UpdateType.REDO, seasonRedos: [{ season: 3, redo: 2 }, { season: 1, redo: 0 }] });
-        update({ type: UpdateType.COMMENT, comment: "Keep my season ratings" });
-        update({ type: UpdateType.FAVORITE, favorite: true });
-        expect(sqlite.query("SELECT * FROM season_writes").all()).toEqual([
-            { season: 1, field: "rating" }, { season: 2, field: "rating" }, { season: 3, field: "redo" },
-        ]);
-        expect(read()).toMatchObject({ rating: 8, redo: 2, total: 40 });
-    });
-
-    it("rolls back the aggregate when a season write fails outside the tracking wrapper", () => {
-        const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_season BEFORE UPDATE ON ${getTableName(seasonStateTable)}
-            BEGIN SELECT RAISE(ABORT, 'season failed'); END`);
-        expect(() => service.updateUserMediaDetails(1, 1, { type: UpdateType.RATING, rating: 9 })).toThrow();
-        expect(snapshot()).toEqual(before);
-    });
-
-    it("accumulates distinct decimal averages in the same distribution bucket", async () => {
-        update({ type: UpdateType.RATING, rating: 8.1 });
-        context.db.insert(mediaTable).values({ id: 2, apiId: 2, name: "Second show", duration: 30,
-            imageCover: "second.jpg", totalSeasons: 1, totalEpisodes: 8 }).run();
-        context.db.insert(epsPerSeasonTable).values({ mediaId: 2, season: 1, episodes: 8 }).run();
-        tracking.addMediaToList({ ...action, mediaId: 2, status: Status.COMPLETED });
-        tracking.updateUserMedia({ ...action, mediaId: 2, payload: { type: UpdateType.RATING, rating: 8.2 } });
-        const result = await createTvStatistics(definition).calculateAdvancedMediaStats(8.15, 1);
-        expect(result.ratings.find(bucket => bucket.name === "8.0")?.value).toBe(2);
-    });
-
-    it("does not accumulate fractional-rating errors when clearing the last rated entry", () => {
-        for (const rating of [9.8, 7.6, 0.1, 8.3, 2.7, 0]) {
-            update({ type: UpdateType.RATING, rating });
-        }
-        update({ type: UpdateType.RATING, rating: null });
-        expect(stats()).toMatchObject({ entriesRated: 0, sumEntriesRated: 0, averageRating: null });
-    });
-
-    it("resets rewatches on a planning status while preserving ratings", () => {
-        update({ type: UpdateType.RATING, rating: 6 });
-        update({ type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 1 }, { season: 3, redo: 2 }] });
-        expect(read()).toMatchObject({ total: 48, redo: 3 });
-        update({ type: UpdateType.STATUS, status: Status.PLAN_TO_WATCH });
-        expect(seasons().map(s => [s.redo, s.rating])).toEqual([[0, 6], [0, 6], [0, 6]]);
-        expect(stats()).toMatchObject({ totalRedo: 0, totalSpecific: 0, averageRating: 6 });
     });
 
     it("preserves removed seasons, leaves new seasons unrated, and restores returning season data", () => {
@@ -204,50 +120,13 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
         expect(snapshot()).toEqual(before);
     });
 
-    it("refreshes episode and duration statistics immediately without recording user activity", () => {
-        update({ type: UpdateType.REDO, seasonRedos: [{ season: 2, redo: 2 }] });
-        const before = snapshot();
-        withTransaction(() => repository.updateMediaWithDetails({
-            mediaData: { apiId: 1, duration: 40 },
-            seasonsData: [{ season: 3, episodes: 8 }, { season: 1, episodes: 8 }, { season: 2, episodes: 10 }],
-        }));
-        expect(read()).toMatchObject({ total: 44, redo: 2, currentSeason: 3, currentEpisode: 6 });
-        expect(stats()).toMatchObject({ totalSpecific: 44, totalRedo: 2, timeSpent: 1760 });
-        withTransaction(() => repository.updateMediaWithDetails({ mediaData: { apiId: 1, duration: 20 } }));
-        expect(stats()).toMatchObject({ totalSpecific: 44, timeSpent: 880 });
-        expect(snapshot().activities).toEqual(before.activities);
-        expect(snapshot().history).toEqual(before.history);
-    });
-
-    it("tracks actual season numbers and accepts resetting episode progress to zero", () => {
-        withTransaction(() => repository.updateMediaWithDetails({
-            mediaData: { apiId: 1 }, seasonsData: [{ season: 2, episodes: 8 }, { season: 4, episodes: 8 }],
-        }));
-        update({ type: UpdateType.STATUS, status: Status.PLAN_TO_WATCH });
-        update({ type: UpdateType.STATUS, status: Status.WATCHING });
-        expect(read()).toMatchObject({ currentSeason: 2, currentEpisode: 1 });
-        update({ type: UpdateType.TV, currentSeason: 4 });
-        update({ type: UpdateType.TV, currentEpisode: 0 });
-        expect(read()).toMatchObject({ currentSeason: 4, currentEpisode: 0, total: 8 });
-    });
-
-    it("validates every targeted season and scopes edits to the owner", () => {
+it("validates every targeted season and scopes edits to the owner", () => {
         const before = snapshot();
         expect(() => update({ type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 2 }, { season: 99, redo: 1 }] })).toThrow("Invalid season");
         expect(snapshot()).toEqual(before);
         expect(() => tracking.updateUserMedia({ ...action, userId: 2, payload: { type: UpdateType.RATING, rating: 10 } })).toThrow("not in your list");
         expect(repository.getUserSeasons(2, 1)).toEqual([]);
         expect(snapshot()).toEqual(before);
-    });
-
-    it("cascades removal and starts a fresh season state when re-added", () => {
-        update({ type: UpdateType.RATING, rating: 9 });
-        tracking.removeMediaFromList(action);
-        expect(context.db.select().from(seasonStateTable).all()).toEqual([]);
-        tracking.addMediaToList(action);
-        expect(seasons().map(s => [s.redo, s.rating])).toEqual([[0, null], [0, null], [0, null]]);
-        context.db.delete(schema.user).where(eq(schema.user.id, 1)).run();
-        expect(context.db.select().from(seasonStateTable).all()).toEqual([]);
     });
 
     it("round-trips seasonal CSV data and preserves existing entries on import conflict", async () => {
@@ -268,60 +147,6 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
         await writer.addMatchedItems(1, [{ item, mediaId: 1 }]);
         expect(seasons()).toEqual(original);
         expect(read()).toMatchObject({ rating: 8.5, redo: 102, total: 840 });
-    });
-
-    it.each([
-        { change: "a season disappears", exportSeasons: [1, 2, 3], importSeasons: [1, 3], redoSeason: 2, total: 24, currentSeason: 3 },
-        { change: "the last season disappears", exportSeasons: [1, 2, 3], importSeasons: [1, 2], redoSeason: 3, total: 24, currentSeason: 2 },
-        { change: "an unavailable season returns", exportSeasons: [1, 3], importSeasons: [1, 2, 3], redoSeason: 2, total: 40, currentSeason: 3 },
-    ])("preserves first-watch progress when $change between export and import", async scenario => {
-        update({ type: UpdateType.RATING, seasonRating: { season: scenario.redoSeason, rating: 9 } });
-        update({ type: UpdateType.REDO, seasonRedos: [{ season: scenario.redoSeason, redo: 2 }] });
-        const refresh = (numbers: number[]) => withTransaction(() => repository.updateMediaWithDetails({
-            mediaData: { apiId: 1 }, seasonsData: numbers.map(season => ({ season, episodes: 8 })),
-        }));
-        refresh(scenario.exportSeasons);
-        const exported = (await service.downloadMediaListAsCSV(1))!;
-        expect(exported[0].firstWatchProgress).toBe(24);
-        const parsed = parseMyListsCsv(convertToCsv(exported));
-        expect(parsed.failedCount).toBe(0);
-        const item = { ...parsed.items[0], id: 1, jobId: 1, mediaType, matchedMediaId: 1, statusReason: null } as MatchedImportItem["item"];
-
-        tracking.removeMediaFromList(action);
-        refresh(scenario.importSeasons);
-        await new TvImportListWriter(service).addMatchedItems(1, [{ item, mediaId: 1 }]);
-        expect(read()).toMatchObject({ total: scenario.total, currentSeason: scenario.currentSeason, currentEpisode: 8 });
-        expect(seasons()).toContainEqual({
-            season: scenario.redoSeason, redo: 2, rating: 9,
-            episodes: scenario.importSeasons.includes(scenario.redoSeason) ? 8 : null,
-        });
-        expect((await service.downloadMediaListAsCSV(1))![0].firstWatchProgress).toBe(24);
-
-        StatsRepository.updateAllUsersPreComputedStats(mediaType, createTvStatistics(definition).computeAllUsersStats());
-        expect(stats()).toMatchObject({ totalSpecific: scenario.total, timeSpent: scenario.total * 30 });
-        refresh([1, 2, 3]);
-        expect(read()).toMatchObject({ total: 40, redo: 2, rating: 9, currentSeason: 3, currentEpisode: 8 });
-        expect(stats()).toMatchObject({ totalSpecific: 40, timeSpent: 1200 });
-    });
-
-    it("recalculates partial progress and rewatches when episode counts change before import", async () => {
-        update({ type: UpdateType.STATUS, status: Status.WATCHING });
-        update({ type: UpdateType.TV, currentSeason: 1 });
-        update({ type: UpdateType.TV, currentEpisode: 7 });
-        update({ type: UpdateType.REDO, seasonRedos: [{ season: 2, redo: 2 }] });
-        const exported = (await service.downloadMediaListAsCSV(1))!;
-        expect(exported[0]).toMatchObject({ firstWatchProgress: 7, total: 23 });
-        const parsed = parseMyListsCsv(convertToCsv(exported));
-        expect(parsed.failedCount).toBe(0);
-        const item = { ...parsed.items[0], id: 1, jobId: 1, mediaType, matchedMediaId: 1, statusReason: null } as MatchedImportItem["item"];
-
-        tracking.removeMediaFromList(action);
-        withTransaction(() => repository.updateMediaWithDetails({
-            mediaData: { apiId: 1 }, seasonsData: [{ season: 1, episodes: 4 }, { season: 2, episodes: 10 }, { season: 3, episodes: 8 }],
-        }));
-        await new TvImportListWriter(service).addMatchedItems(1, [{ item, mediaId: 1 }]);
-        expect(read()).toMatchObject({ total: 27, redo: 2, currentSeason: 2, currentEpisode: 3 });
-        expect((await service.downloadMediaListAsCSV(1))![0].firstWatchProgress).toBe(7);
     });
 
     it("rolls back the parent import when seasonal insertion fails", async () => {

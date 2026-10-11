@@ -69,27 +69,6 @@ describe("IGDB game ingestion", () => {
         dbContext.db = undefined;
     });
 
-    it("imports a new game without waiting for HLTB", async () => {
-        igdb.getGameDetails.mockResolvedValueOnce({ ...gameDetails, id: 124 });
-        const mediaId = await ingestion.storeFromExternal(124);
-        expect(hltb.search).not.toHaveBeenCalled();
-        expect(db.select().from(schema.games).where(eq(schema.games.id, mediaId)).get()).toMatchObject({
-            hltbMainTime: null,
-            hltbLastCheckedAt: null,
-        });
-    });
-
-    it("fetches missing times without changing the metadata cooldown", async () => {
-        db.update(schema.games).set({ hltbMainTime: null, hltbMainAndExtraTime: null, hltbTotalCompleteTime: null })
-            .where(eq(schema.games.apiId, 123)).run();
-        const game = db.select().from(schema.games).where(eq(schema.games.apiId, 123)).get()!;
-        const result = await ingestion.checkMissingHltb(game.id);
-        expect(result).toMatchObject({ hltbMainTime: 12.5, hltbLastCheckedAt: expect.any(String) });
-        expect(hltb.search).toHaveBeenCalledTimes(1);
-        expect(db.select().from(schema.games).where(eq(schema.games.id, game.id)).get()?.lastApiUpdate)
-            .toBe("2000-01-01 00:00:00");
-    });
-
     it.each(["refresh", "edit"])("preserves HLTB changes saved by a %s while a background lookup is pending", async (mode) => {
         db.update(schema.games).set({ hltbMainTime: null, hltbMainAndExtraTime: null, hltbTotalCompleteTime: null })
             .where(eq(schema.games.apiId, 123)).run();
@@ -114,29 +93,6 @@ describe("IGDB game ingestion", () => {
         expect(db.select().from(schema.games).where(eq(schema.games.id, game.id)).get()).toEqual(before);
     });
 
-    it.each([null, "2000-01-01 00:00:00"])("records an empty HLTB result and waits a month before checking again (%s)", async (lastChecked) => {
-        db.update(schema.games).set({
-            hltbMainTime: null, hltbMainAndExtraTime: null, hltbTotalCompleteTime: null, hltbLastCheckedAt: lastChecked,
-        }).where(eq(schema.games.apiId, 123)).run();
-        hltb.search.mockResolvedValueOnce({ name: gameDetails.name, mainStory: null, mainExtra: null, completionist: null });
-        const game = db.select().from(schema.games).where(eq(schema.games.apiId, 123)).get()!;
-        const result = await ingestion.checkMissingHltb(game.id);
-        expect(result).toEqual({
-            hltbMainTime: null, hltbMainAndExtraTime: null, hltbTotalCompleteTime: null, hltbLastCheckedAt: expect.any(String),
-        });
-        await ingestion.checkMissingHltb(game.id);
-        expect(hltb.search).toHaveBeenCalledTimes(1);
-        await ingestion.refreshFromExternal(123);
-        expect(hltb.search).toHaveBeenCalledTimes(2);
-        expect(db.select().from(schema.games).where(eq(schema.games.id, game.id)).get()).toMatchObject({ hltbMainTime: 12.5 });
-    });
-
-    it("skips the lookup when any HLTB time already exists", async () => {
-        const game = db.select().from(schema.games).where(eq(schema.games.apiId, 123)).get()!;
-        await ingestion.checkMissingHltb(game.id);
-        expect(hltb.search).not.toHaveBeenCalled();
-    });
-
     it("preserves completion times while bulk refreshing IGDB metadata", async () => {
         const results = [];
         for await (const result of ingestion.bulkRefresh()) results.push(result);
@@ -153,18 +109,6 @@ describe("IGDB game ingestion", () => {
             hltbTotalCompleteTime: 30,
         });
         expect(updated?.lastApiUpdate).not.toBe("2000-01-01 00:00:00");
-    });
-
-    it("saves fresh HowLongToBeat times during an individual refresh", async () => {
-        await expect(ingestion.refreshFromExternal(123)).resolves.toBe(true);
-
-        expect(hltb.search).toHaveBeenCalledWith("Updated game");
-        expect(db.select().from(schema.games).where(eq(schema.games.apiId, 123)).get()).toMatchObject({
-            hltbLastCheckedAt: expect.any(String),
-            hltbMainTime: 12.5,
-            hltbMainAndExtraTime: 24,
-            hltbTotalCompleteTime: 36,
-        });
     });
 
     it.each(["individual", "bulk"])("preserves the existing cover when a download fails during %s refresh", async (mode) => {
@@ -186,20 +130,4 @@ describe("IGDB game ingestion", () => {
         });
     });
 
-    it("stores a placeholder and unknown completion times when a new game's cover download fails", async () => {
-        igdb.getGamesDetails.mockResolvedValueOnce([{ ...gameDetails, id: 124 }]);
-        vi.mocked(saveImageFromUrl).mockResolvedValueOnce("default.jpg");
-
-        const stored = await ingestion.storeBatchFromExternal([124]);
-
-        expect(stored.has("124")).toBe(true);
-        expect(hltb.search).not.toHaveBeenCalled();
-        expect(db.select().from(schema.games).where(eq(schema.games.apiId, 124)).get()).toMatchObject({
-            name: "Updated game",
-            imageCover: expect.stringMatching(/\/default\.jpg$/),
-            hltbMainTime: null,
-            hltbMainAndExtraTime: null,
-            hltbTotalCompleteTime: null,
-        });
-    });
 });

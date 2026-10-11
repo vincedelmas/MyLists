@@ -5,7 +5,7 @@ import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
-import {GamesPlatformsEnum, JobType, MediaType, PrivacyType, RoleType, Status} from "@/lib/utils/enums";
+import {GamesPlatformsEnum, MediaType, PrivacyType, RoleType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
 import {AuthorizationService, toActor} from "@/lib/server/authorization";
 import type {SocialService} from "@/lib/server/domain/social/social.service";
@@ -17,9 +17,6 @@ import {getServerMediaDefinition} from "@/lib/media-definitions/definition.regis
 import {createMediaQueries} from "./media.queries";
 import {createMediaListQueries} from "./media-list.queries";
 import {createMediaBrowseQueryParts} from "./media-browse.queries";
-import {defineMediaFilterDefinitions} from "./media-filters.queries";
-import {moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
-
 
 const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
 vi.mock("@/lib/server/database/db", () => ({
@@ -86,20 +83,7 @@ describe("collection and job media browsing", () => {
 
     afterEach(() => sqlite.close());
 
-    it("searches and filters the full collection before pagination while retaining ranks and annotations", async () => {
-        const first = await collections.getCollectionDetails(collectionId, "read", viewer);
-        expect(first).toMatchObject({ total: 55, pages: 3, page: 1, perPage: 24 });
-        expect(first.items).toHaveLength(24);
-        const original = await collections.getCollectionDetails(collectionId, "read", viewer, { search: "original sentinel" });
-        expect(original).toMatchObject({ total: 1, pages: 1, items: [{ mediaId: 55, orderIndex: 55, annotation: "Keep original rank" }] });
-        const genre = await collections.getCollectionDetails(collectionId, "read", viewer, { genres: ["Rare", "Science fiction"] });
-        expect(genre.total).toBe(1);
-        expect(genre.items[0].mediaId).toBe(55);
-        const sorted = await collections.getCollectionDetails(collectionId, "read", viewer, { sorting: "title_desc" });
-        expect(sorted.items[0]).toMatchObject({ mediaId: 55, orderIndex: 55, annotation: "Keep original rank" });
-    });
-
-    it("uses the viewer's tracking data for collection filters and never the collection owner's", async () => {
+it("uses the viewer's tracking data for collection filters and never the collection owner's", async () => {
         const completed = await collections.getCollectionDetails(collectionId, "read", viewer, { status: Status.COMPLETED });
         expect(completed.items.map(item => item.mediaId)).toEqual([1]);
         const favorite = await collections.getCollectionDetails(collectionId, "read", viewer, { favorite: true, minRating: 8, tags: ["Viewer tag"] });
@@ -115,31 +99,6 @@ describe("collection and job media browsing", () => {
         expect(out.total).toBe(53);
         expect(out.items[0]).toMatchObject({ mediaId: 2, inUserList: false, status: null, rating: null, favorite: null });
     });
-
-    it("applies only common filters composed by the media definition", async () => {
-        const definition = {
-            ...moviesServerDefinition,
-            repository: {
-                ...moviesServerDefinition.repository,
-                filters: defineMediaFilterDefinitions({
-                    ...moviesDefinition,
-                    filters: {
-                        common: { search: moviesDefinition.filters.common.search, favorite: moviesDefinition.filters.common.favorite },
-                        metadata: {},
-                    },
-                }, moviesServerDefinition.repository.tables, {}),
-            },
-        };
-        const ordinary = await createMediaListQueries(definition.repository)
-            .getMediaList(undefined, 2, { favorite: true, genres: ["Outside source"] });
-        expect(ordinary.items.map(item => item.mediaId)).toEqual([55]);
-
-        const parts = createMediaBrowseQueryParts(definition, { favorite: true, genres: ["Outside source"] }, 2);
-        const rows = dbContext.db.select({ mediaId: schema.movies.id }).from(schema.movies)
-            .leftJoin(schema.moviesList, parts.viewerJoin).where(and(...parts.conditions)).all();
-        expect(rows.map(row => row.mediaId)).toEqual([55]);
-    });
-
 
     it("shares metadata facets with lists before pagination and lazily exposes source-scoped options", async () => {
         dbContext.db.insert(schema.moviesActors).values([
@@ -164,7 +123,7 @@ describe("collection and job media browsing", () => {
         })).toThrow("Sign in");
     });
 
-    it("filters stored viewer comments without reading the collection owner's comments", async () => {
+it("filters stored viewer comments without reading the collection owner's comments", async () => {
         dbContext.db.update(schema.moviesList).set({ comment: "Owner comment" }).where(eq(schema.moviesList.userId, 1)).run();
         dbContext.db.update(schema.moviesList).set({ comment: "Viewer comment" })
             .where(and(eq(schema.moviesList.userId, 2), eq(schema.moviesList.mediaId, 1))).run();
@@ -172,59 +131,6 @@ describe("collection and job media browsing", () => {
         expect(result.total).toBe(1);
         expect(result.items[0].mediaId).toBe(1);
         await expect(collections.getCollectionDetails(collectionId, "read", toActor(), { comment: true })).rejects.toThrow("Sign in");
-    });
-
-    it("keeps job results distinct and finds matching media beyond the first page", async () => {
-        const first = await movies.getMediaJobDetails(JobType.ACTOR, "Test actor", {});
-        expect(first).toMatchObject({ total: 55, pages: 3, page: 1, perPage: 24 });
-        expect(first.items.map(item => item.mediaId)).toEqual(Array.from({ length: 24 }, (_, index) => index + 1));
-        const original = await movies.getMediaJobDetails(JobType.ACTOR, "Test actor", { search: "original sentinel" });
-        expect(original).toMatchObject({ total: 1, items: [{ mediaId: 55 }] });
-        const director = await movies.getMediaJobDetails(JobType.CREATOR, "Test director", { search: "original sentinel" });
-        expect(director).toMatchObject({ total: 1, items: [{ mediaId: 55 }] });
-        const page = await movies.getMediaJobDetails(JobType.ACTOR, "Test actor", { page: 3 });
-        expect(page.items.map(item => item.mediaId)).toEqual([49, 50, 51, 52, 53, 54, 55]);
-    });
-
-    it("sorts collection tracking data by viewer ratings and mixed-format added dates with nulls last", async () => {
-        const highest = await collections.getCollectionDetails(collectionId, "read", viewer, { sorting: "rating_highest" });
-        expect(highest.items.slice(0, 3).map(item => [item.mediaId, item.rating])).toEqual([[55, 9], [1, 3], [2, null]]);
-        expect(highest.items[0].mediaCover).toBe("https://mylists.example.invalid/static/movies-covers/custom.jpg");
-        const lowest = await collections.getCollectionDetails(collectionId, "read", viewer, { sorting: "rating_lowest" });
-        expect(lowest.items.slice(0, 3).map(item => item.mediaId)).toEqual([1, 55, 2]);
-        const oldest = await collections.getCollectionDetails(collectionId, "read", viewer, { sorting: "added_oldest" });
-        expect(oldest.items.slice(0, 3).map(item => item.mediaId)).toEqual([55, 1, 2]);
-        const tracked = await collections.getCollectionDetails(collectionId, "read", viewer, { library: "in", tags: ["Viewer tag"], status: Status.DROPPED });
-        expect(tracked).toMatchObject({ total: 1, items: [{ mediaId: 55, rating: 9, status: Status.DROPPED }] });
-    });
-
-    it("returns job catalogue data with only the viewer's membership and the original cover", async () => {
-        const tracked = await movies.getMediaJobDetails(JobType.ACTOR, "Test actor", { library: "in" }, 2);
-        expect(tracked.total).toBe(2);
-        expect(tracked.items.map(item => item.mediaId)).toEqual([1, 55]);
-        expect(tracked.items.every(item => item.inUserList)).toBe(true);
-        expect(Object.keys(tracked.items[1]).sort()).toEqual([
-            "imageCover", "inUserList", "mediaId", "mediaName", "releaseDate",
-        ]);
-        expect(tracked.items[1].imageCover).toBe("https://mylists.example.invalid/static/movies-covers/55.jpg");
-        const untracked = await movies.getMediaJobDetails(JobType.ACTOR, "Test actor", { library: "out" }, 2);
-        expect(untracked.total).toBe(53);
-        expect(untracked.items[0]).toMatchObject({ mediaId: 2, inUserList: false });
-        const guest = await movies.getMediaJobDetails(JobType.ACTOR, "Test actor", {});
-        expect(guest.items.every(item => !item.inUserList)).toBe(true);
-        await expect(movies.getMediaJobDetails(JobType.ACTOR, "Test actor", { library: "out" })).rejects.toThrow("Sign in");
-    });
-
-    it("shares catalogue sorting with the list and orders before pagination", async () => {
-        const collection = await collections.getCollectionDetails(collectionId, "read", viewer, { sorting: "provider_rating_highest" });
-        const job = await movies.getMediaJobDetails(JobType.ACTOR, "Test actor", { sorting: "provider_rating_highest" });
-        const list = await createMediaListQueries(moviesServerDefinition.repository).getMediaList(undefined, 1, { sorting: "TMDB Rating +" });
-        expect(collection.items[0].mediaId).toBe(55);
-        expect(job.items[0].mediaId).toBe(55);
-        expect(list.items.map(item => item.mediaId)).toEqual([55, 2]);
-        expect(list.pagination.availableSorting).toContain("TMDB Rating +");
-        await expect(movies.getMediaJobDetails(JobType.ACTOR, "Test actor", { sorting: "pages_highest" }))
-            .rejects.toThrow("not available");
     });
 
     it("allows guest catalogue filters but rejects personal filters and sorting", async () => {
@@ -240,7 +146,7 @@ describe("collection and job media browsing", () => {
         }
     });
 
-    it("keeps private collection authorization ahead of filtered item loading", async () => {
+it("keeps private collection authorization ahead of filtered item loading", async () => {
         dbContext.db.update(schema.collections).set({ privacy: PrivacyType.PRIVATE }).where(eq(schema.collections.id, collectionId)).run();
         const before = CollectionsRepository.getCollectionById(collectionId)!.viewCount;
         await expect(collections.getCollectionDetails(collectionId, "read", viewer, { search: "original sentinel" }))

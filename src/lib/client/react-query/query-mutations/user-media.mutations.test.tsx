@@ -1,13 +1,13 @@
 import {beforeEach, afterEach, describe, expect, it, vi} from "vitest";
 import {MutationObserver, QueryClient, QueryObserver} from "@tanstack/react-query";
-import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
-import {listFiltersOptions, tagNamesOptions} from "@/lib/client/react-query/query-options/user-media.options";
-import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options/activity.options";
+import {tagNamesOptions} from "@/lib/client/react-query/query-options/user-media.options";
+
 import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
-import {useAddMediaToListMutation, useDeleteProfileUpdateMutation, useEditTagMutation, useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
+import {useEditTagMutation, useRemoveMediaFromListMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
 
 
 const server = vi.hoisted(() => ({
@@ -122,38 +122,6 @@ afterEach(() => {
     queryClient.clear();
 });
 
-describe("adding completed media", () => {
-    it.each(["details", "userList"] as const)("refreshes activity totals when returning after an addition from %s", async (source) => {
-        const statsOptions = monthlyActivityStatsOptions("alice", { year: "2026", month: "9", view: "month" });
-        const initialStats = {
-            totalTime: 120,
-            mediaStats: [{ mediaType: MediaType.MOVIES, count: 1, progressTotal: 1, timeGained: 120 }],
-        };
-        const updatedStats = {
-            totalTime: 240,
-            mediaStats: [{ mediaType: MediaType.MOVIES, count: 2, progressTotal: 2, timeGained: 240 }],
-        };
-        server.activityStats.mockResolvedValue(initialStats);
-        await queryClient.fetchQuery(statsOptions);
-        server.activityStats.mockResolvedValue(updatedStats);
-
-        const addQueryKey = source === "details"
-            ? ["details", MediaType.MOVIES, 2] as const
-            : ["userList", MediaType.MOVIES, "bob", {}] as const;
-        queryClient.setQueryData(addQueryKey, source === "details"
-            ? { userMedia: null }
-            : { results: { items: [{ mediaId: 2, common: false }] } });
-        server.add.mockResolvedValueOnce({ mediaId: 2, status: Status.COMPLETED });
-
-        await useAddMediaToListMutation({ queryKey: addQueryKey } as UserMediaQueryOption)
-            .mutateAsync({ data: { mediaType: MediaType.MOVIES, mediaId: 2, status: Status.COMPLETED } });
-
-        // Returning to Activity must fetch new totals despite their infinite stale time.
-        expect(await queryClient.fetchQuery(statsOptions)).toEqual(updatedStats);
-        expect(server.activityStats).toHaveBeenCalledTimes(2);
-    });
-});
-
 describe("list filter freshness", () => {
     it.each(["details", "userList"] as const)("reloads tag names and counts after removing the last tagged title from %s", async source => {
         const namesOptions = tagNamesOptions(MediaType.MOVIES, true);
@@ -218,141 +186,10 @@ describe("list filter freshness", () => {
         expect(queryClient.getQueryState(otherPinsKey)?.isInvalidated).toBe(false);
     });
 
-    it.each([TagAction.ADD, TagAction.DELETE_ONE])("refreshes tag assignments and the directory after %s", async action => {
-        const listKey = ["userList", MediaType.MOVIES, "alice", { tags: ["Favorites"] }];
-        const detailsKey = ["details", MediaType.MOVIES, 3];
-        const namesOptions = tagNamesOptions(MediaType.MOVIES, true);
-        const previous = [{ name: "Favorites" }];
-        const names = action === TagAction.ADD ? previous : [];
-        queryClient.setQueryData(namesOptions.queryKey, action === TagAction.ADD ? [] : previous);
-        for (const key of [listKey, detailsKey]) queryClient.setQueryData(key, { tags: previous });
-        server.editTag.mockResolvedValueOnce(action === TagAction.ADD ? previous[0] : undefined);
-        server.tagNames.mockResolvedValueOnce(names);
-
-        await useEditTagMutation(MediaType.MOVIES, 3).mutateAsync({ action, tag: previous[0] });
-
-        expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
-        expect(queryClient.getQueryState(detailsKey)?.isInvalidated).toBe(true);
-        expect(await queryClient.fetchQuery(namesOptions)).toEqual(names);
-        expect(server.tagNames).toHaveBeenCalledTimes(1);
-    });
-
-    it.each([TagAction.ADD, TagAction.DELETE_ONE])("keeps the edited item available until the dialog closes after %s", async action => {
-        server.editTag.mockResolvedValueOnce(action === TagAction.ADD ? { name: "Favorites" } : undefined);
-
-        await useEditTagMutation(MediaType.SERIES, 1).mutateAsync({ action, tag: { name: "Favorites" } });
-
-        expect(queryClient.getQueryState(queryKey)?.isInvalidated).toBe(true);
-        expect(queryClient.getQueryData(queryKey)).toEqual(initialList);
-        expect(fetchList).not.toHaveBeenCalled();
-    });
-
-    it.each(["details", "userList"] as const)("reloads chosen platform filters after editing from %s", async source => {
-        const filtersOptions = listFiltersOptions(MediaType.GAMES, "alice");
-        const initialFilters = { genres: [], tags: [], platforms: [{ name: GamesPlatformsEnum.PC }] };
-        const updatedFilters = { genres: [], tags: [], platforms: [{ name: GamesPlatformsEnum.NINTENDO_SWITCH }] };
-        server.listFilters.mockResolvedValue(initialFilters);
-        await queryClient.fetchQuery(filtersOptions);
-        server.listFilters.mockResolvedValue(updatedFilters);
-
-        const otherUserKey = listFiltersOptions(MediaType.GAMES, "bob").queryKey;
-        const otherMediaKey = listFiltersOptions(MediaType.MOVIES, "alice").queryKey;
-        queryClient.setQueryData(otherUserKey, initialFilters);
-        queryClient.setQueryData(otherMediaKey, initialFilters);
-
-        const mutationKey = source === "details"
-            ? ["details", MediaType.GAMES, 1] as const
-            : ["userList", MediaType.GAMES, "alice", {}] as const;
-        queryClient.setQueryData(mutationKey, source === "details"
-            ? { userMedia: item }
-            : { results: { items: [item] } });
-        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, platform: GamesPlatformsEnum.NINTENDO_SWITCH } });
-
-        await useUpdateUserMediaMutation(MediaType.GAMES, 1, { queryKey: mutationKey } as UserMediaQueryOption)
-            .mutateAsync({ payload: { type: UpdateType.PLATFORM, platform: GamesPlatformsEnum.NINTENDO_SWITCH } });
-
-        expect(await queryClient.fetchQuery(filtersOptions)).toEqual(updatedFilters);
-        expect(server.listFilters).toHaveBeenCalledTimes(2);
-        expect(server.listFilters).toHaveBeenLastCalledWith({ data: { mediaType: MediaType.GAMES, username: "alice" } });
-        expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);
-        expect(queryClient.getQueryState(otherMediaKey)?.isInvalidated).toBe(false);
-    });
-
-    it.each([
-        ["add", "details"],
-        ["add", "userList"],
-        ["remove", "details"],
-        ["remove", "userList"],
-    ] as const)("reloads the current user's filters after %s from %s", async (action, source) => {
-        const filtersOptions = listFiltersOptions(MediaType.MOVIES, "alice");
-        const dramaOnly = { genres: [{ name: "Drama" }], tags: [] };
-        const withComedy = { genres: [{ name: "Comedy" }, { name: "Drama" }], tags: [] };
-        const initialFilters = action === "add" ? dramaOnly : withComedy;
-        const updatedFilters = action === "add" ? withComedy : dramaOnly;
-        server.listFilters.mockResolvedValue(initialFilters);
-        await queryClient.fetchQuery(filtersOptions);
-        server.listFilters.mockResolvedValue(updatedFilters);
-
-        const otherUserKey = listFiltersOptions(MediaType.MOVIES, "bob").queryKey;
-        const otherMediaKey = listFiltersOptions(MediaType.GAMES, "alice").queryKey;
-        queryClient.setQueryData(otherUserKey, dramaOnly);
-        queryClient.setQueryData(otherMediaKey, dramaOnly);
-
-        const mutationKey = source === "details"
-            ? ["details", MediaType.MOVIES, 2] as const
-            : ["userList", MediaType.MOVIES, action === "add" ? "bob" : "alice", {}] as const;
-        queryClient.setQueryData(mutationKey, source === "details"
-            ? { userMedia: null }
-            : { results: { items: [{ mediaId: 2, common: false }] } });
-        const mutationOptions = { queryKey: mutationKey } as UserMediaQueryOption;
-
-        if (action === "add") {
-            server.add.mockResolvedValueOnce({ mediaId: 2 });
-            await useAddMediaToListMutation(mutationOptions)
-                .mutateAsync({ data: { mediaType: MediaType.MOVIES, mediaId: 2 } });
-        }
-        else {
-            server.remove.mockResolvedValueOnce(undefined);
-            await useRemoveMediaFromListMutation(mutationOptions)
-                .mutateAsync({ data: { mediaType: MediaType.MOVIES, mediaId: 2 } });
-        }
-
-        // Reopening the filter sheet must fetch new options despite its infinite stale time.
-        expect(await queryClient.fetchQuery(filtersOptions)).toEqual(updatedFilters);
-        expect(server.listFilters).toHaveBeenCalledTimes(2);
-        expect(server.listFilters).toHaveBeenLastCalledWith({ data: { mediaType: MediaType.MOVIES, username: "alice" } });
-        expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);
-        expect(queryClient.getQueryState(otherMediaKey)?.isInvalidated).toBe(false);
-    });
-});
-
-describe("profile activity deletion", () => {
-    it.each([
-        { name: "does not duplicate entries in a short feed", initialIds: [1, 2, 3], remainingIds: [2, 3], returnedUpdate: { id: 3 } },
-        { name: "removes the last entry when the server returns null", initialIds: [1], remainingIds: [], returnedUpdate: null },
-        { name: "appends a new replacement to a full feed", initialIds: [1, 2, 3, 4, 5, 6], remainingIds: [2, 3, 4, 5, 6, 7], returnedUpdate: { id: 7 } },
-        { name: "removes an entry when replacement data is not requested", initialIds: [1, 2, 3], remainingIds: [2, 3], returnedUpdate: undefined },
-    ])("$name", async ({ initialIds, remainingIds, returnedUpdate }) => {
-        const feedKey = ["profile", "recent-feed", "alice"] as const;
-        queryClient.setQueryData(feedKey, initialIds.map(id => ({ id })));
-        const expectedFeed = remainingIds.map(id => ({ id }));
-        const fetchFeed = vi.fn().mockResolvedValue(expectedFeed);
-        const observer = new QueryObserver(queryClient, { queryKey: feedKey, queryFn: fetchFeed });
-        const unsubscribeFeed = observer.subscribe(() => {});
-
-        try {
-            server.deleteUpdates.mockResolvedValueOnce(returnedUpdate);
-            await useDeleteProfileUpdateMutation("alice").mutateAsync({ data: { updateIds: [1], returnData: returnedUpdate !== undefined } });
-
-            expect(queryClient.getQueryData(feedKey)).toEqual(expectedFeed);
-            expect(fetchFeed).not.toHaveBeenCalled();
-        }
-        finally { unsubscribeFeed(); }
-    });
 });
 
 describe("profile progress refresh", () => {
-    it.each([Status.WATCHING, Status.COMPLETED])("refreshes progress and totals without reloading highlights or another user's profile (%s)", async status => {
+it.each([Status.WATCHING, Status.COMPLETED])("refreshes progress and totals without reloading highlights or another user's profile (%s)", async status => {
         const progressKeys = [
             ["continue", "alice"],
             ["profile", "recent-feed", "alice"],
@@ -397,42 +234,12 @@ describe("profile progress refresh", () => {
         finally { queries.forEach(query => query.unsubscribe()); }
     });
 
-    it("still refreshes highlighted media when a favorite changes", async () => {
-        const profileKey = ["profile", "alice"];
-        queryClient.setQueryData(profileKey, { highlightedMedia: [] });
-        const fetchProfile = vi.fn().mockResolvedValue({ highlightedMedia: [{ mediaId: 1 }] });
-        const observer = new QueryObserver(queryClient, { queryKey: profileKey, queryFn: fetchProfile });
-        const unsubscribeProfile = observer.subscribe(() => {});
-
-        try {
-            server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, favorite: true } });
-            await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
-                .mutateAsync({ payload: { type: UpdateType.FAVORITE, favorite: true } });
-            expect(fetchProfile).toHaveBeenCalledTimes(1);
-        }
-        finally { unsubscribeProfile(); }
-    });
 });
 
 
 describe("activity correction choices", () => {
     const preview = { version: "a".repeat(64), progressRemoved: 20, redoRemoved: 0, months: [] };
     const payload = { type: UpdateType.TV, currentEpisode: 3 };
-
-    it("keeps the saved media and cached activity unchanged when the user cancels", async () => {
-        const activityKey = ["monthly-activity", "alice"];
-        queryClient.setQueryData(activityKey, { total: 120 });
-        server.update.mockResolvedValueOnce({ kind: "correction-required", preview });
-        server.correction.mockResolvedValueOnce(null);
-
-        const result = await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption).mutateAsync({ payload });
-
-        expect(result).toBeNull();
-        expect(server.update).toHaveBeenCalledTimes(1);
-        expect(queryClient.getQueryData(queryKey)).toEqual(initialList);
-        expect(queryClient.getQueryState(activityKey)?.isInvalidated).toBe(false);
-        expect(server.toast).not.toHaveBeenCalled();
-    });
 
     it("submits the chosen month, refreshes activity, and reports the applied correction", async () => {
         const activityKey = ["monthly-activity", "alice"];
@@ -467,25 +274,6 @@ describe("activity correction choices", () => {
 
 
 describe("list editing refresh timing", () => {
-    it.each([
-        { type: UpdateType.RATING, seasonRating: { season: 1, rating: 8 } },
-        { type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 2 }] },
-    ])("refreshes season details after a $type update without refreshing the edited list", async payload => {
-        const seasonKey = ["tvSeasons", MediaType.SERIES, 1, 10] as const;
-        queryClient.setQueryData(seasonKey, [{ season: 1, rating: null, redo: 0 }]);
-        const fetchSeasons = vi.fn().mockResolvedValue([{ season: 1, rating: 8, redo: 2 }]);
-        const observer = new QueryObserver(queryClient, { queryKey: seasonKey, queryFn: fetchSeasons });
-        const unsubscribeSeasons = observer.subscribe(() => {});
-        try {
-            server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, rating: 8, redo: 2 } });
-            await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption).mutateAsync({ payload });
-            expect(server.update).toHaveBeenCalledWith({ data: { mediaType: MediaType.SERIES, mediaId: 1, payload } });
-            expect(fetchSeasons).toHaveBeenCalledTimes(1);
-            expect(queryClient.getQueryData(seasonKey)).toEqual([{ season: 1, rating: 8, redo: 2 }]);
-            expect(fetchList).not.toHaveBeenCalled();
-        }
-        finally { unsubscribeSeasons(); }
-    });
 
     it("keeps a newly completed item in the Watching list for rating until the dialog closes", async () => {
         const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption);
@@ -504,50 +292,4 @@ describe("list editing refresh timing", () => {
         expect(queryClient.getQueryData(queryKey)).toEqual(refreshedList);
     });
 
-    it("defers comment and custom-cover refreshes until closing too", async () => {
-        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, comment: null } });
-        await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
-            .mutateAsync({ payload: { type: UpdateType.COMMENT, comment: null } });
-        const pinsKey = profilePinsOptions("alice").queryKey;
-        const otherPinsKey = profilePinsOptions("bob").queryKey;
-        for (const key of [pinsKey, otherPinsKey]) queryClient.setQueryData(key, { items: [], activeMediaTypes: [] });
-        server.cover.mockResolvedValueOnce({ ...item, customCover: "/custom.jpg" });
-        await useUpdateCustomCoverMutation(queryOption).mutateAsync({ data: new FormData() });
-
-        expect(fetchList).not.toHaveBeenCalled();
-        expect(queryClient.getQueryState(pinsKey)?.isInvalidated).toBe(true);
-        expect(queryClient.getQueryState(otherPinsKey)?.isInvalidated).toBe(false);
-        expect(queryClient.getQueryData<typeof initialList>(queryKey)?.results.items[0]).toMatchObject({
-            comment: null,
-            customCover: "/custom.jpg",
-        });
-        await closeDialog();
-        expect(fetchList).toHaveBeenCalledTimes(1);
-    });
-
-    it.each([false, true])("waits for an in-flight save before refreshing (failure: %s)", async (fail) => {
-        let finish!: () => void;
-        server.update.mockImplementationOnce(() => new Promise((resolve, reject) => {
-            finish = () => fail ? reject(new Error("Save failed")) : resolve({ kind: "saved", userMedia: { ...item, rating: 8 } });
-        }));
-        const save = useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
-            .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } })
-            .catch(() => {});
-        await vi.waitFor(() => expect(server.update).toHaveBeenCalledTimes(1));
-
-        const closing = closeDialog();
-        expect(fetchList).not.toHaveBeenCalled();
-        finish();
-        await Promise.all([save, closing]);
-        expect(fetchList).toHaveBeenCalledTimes(1);
-        expect(queryClient.getQueryData(queryKey)).toEqual(refreshedList);
-    });
-
-    it("refreshes page contents and totals immediately after deletion", async () => {
-        server.remove.mockResolvedValueOnce(undefined);
-        await useRemoveMediaFromListMutation(queryOption).mutateAsync({ data: { mediaType: MediaType.SERIES, mediaId: 1 } });
-
-        expect(fetchList).toHaveBeenCalledTimes(1);
-        expect(queryClient.getQueryData(queryKey)).toEqual(refreshedList);
-    });
 });

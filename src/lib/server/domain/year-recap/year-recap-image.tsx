@@ -86,7 +86,7 @@ const fontSources: (Omit<FontDetails, "data"> & { file: string })[] = [
 ];
 
 
-export const yearRecapImageRenderer = Promise.all(fontSources.map(async ({ file, ...font }) => {
+const yearRecapImageRenderer = Promise.all(fontSources.map(async ({ file, ...font }) => {
     return {
         ...font,
         data: await Bun.file(resolveDependency(file)).arrayBuffer(),

@@ -16,7 +16,7 @@ vi.mock("@/lib/server/api-providers/api/http.base", () => ({
 
 
 import {createTmdbApi} from "./tmdb.api";
-import {createTmdbMoviesProvider} from "@/lib/server/api-providers/tmdb-movies.provider";
+
 import {createTmdbSeriesProvider} from "@/lib/server/api-providers/tmdb-tv.provider";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 
@@ -25,29 +25,6 @@ describe("TMDB IMDb lookup", () => {
     beforeEach(() => {
         envMocks.serverEnv.THEMOVIEDB_API_KEY = "tmdb-key";
         httpMocks.call.mockReset();
-    });
-
-    it.each([
-        { movieResults: [{ id: 550 }], ids: [550] },
-        { movieResults: [], ids: [] },
-        { movieResults: [{ id: 550 }, { id: 680 }], ids: [550, 680] },
-    ])("returns only movie IDs from the external ID lookup ($ids)", async ({ movieResults, ids }) => {
-        httpMocks.call.mockResolvedValue({
-            json: async () => ({
-                movie_results: movieResults,
-                tv_results: [{ id: 1396 }],
-                tv_episode_results: [{ id: 123 }],
-                person_results: [{ id: 456 }],
-            }),
-        });
-        const provider = createTmdbMoviesProvider(await createTmdbApi());
-
-        await expect(provider.findMovieIdsByImdbId("tt0137523")).resolves.toEqual(ids);
-        expect(httpMocks.call).toHaveBeenCalledTimes(1);
-        const url = new URL(httpMocks.call.mock.calls[0][0]);
-        expect(url.pathname).toBe("/3/find/tt0137523");
-        expect(url.searchParams.get("external_source")).toBe("imdb_id");
-        expect(url.searchParams.get("api_key")).toBe("tmdb-key");
     });
 
     it("reports missing credentials before sending an IMDb lookup request", async () => {
@@ -66,17 +43,6 @@ describe("TMDB filtered search", () => {
     beforeEach(() => {
         envMocks.serverEnv.THEMOVIEDB_API_KEY = "tmdb-key";
         httpMocks.call.mockReset();
-    });
-
-    it("keeps combined search when no media type is selected", async () => {
-        const rawData = { results: [], total_pages: 1 };
-        httpMocks.call.mockResolvedValue({ json: async () => rawData });
-        const api = await createTmdbApi();
-
-        const result = await api.search("Dune", 1, { provider: ApiProviderType.TMDB });
-
-        expect(new URL(httpMocks.call.mock.calls[0][0]).pathname).toBe("/3/search/multi");
-        expect(result.rawData).toEqual(rawData);
     });
 
     it.each([

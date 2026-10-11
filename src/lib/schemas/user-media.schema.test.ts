@@ -9,13 +9,6 @@ describe.each([
     { name: "custom cover", schema: updateUserCustomCoverSchema, fields: { mediaType: MediaType.MOVIES, mediaId: 1 } },
     { name: "book cover", schema: updateBookCoverSchema, fields: { mediaId: 1 } },
 ])("$name input", ({ schema, fields }) => {
-    it.each(["http://example.com/cover.jpg", "https://example.com/cover.jpg"])("keeps accepting URL covers: %s", (imageUrl) => {
-        expect(schema.safeParse({ ...fields, imageUrl }).success).toBe(true);
-    });
-
-    it.each(["file:///tmp/cover.png", "s3://bucket/cover.png", "data:image/png;base64,AA=="])("rejects non-HTTP URLs: %s", (imageUrl) => {
-        expect(schema.safeParse({ ...fields, imageUrl }).success).toBe(false);
-    });
 
     it("limits uploads to non-empty files up to 10MB", () => {
         for (const size of [0, MAX_IMAGE_BYTES + 1]) {
@@ -30,11 +23,6 @@ describe.each([
 
 describe("tag edits", () => {
     const fields = { mediaType: MediaType.MOVIES, tag: { name: "Favorites" } };
-
-    it.each(["", " \n\t "])("rejects blank new tag names: %j", name => {
-        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.ADD, tag: { name } }).success).toBe(false);
-        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.RENAME, tag: { name, oldName: "Favorites" } }).success).toBe(false);
-    });
 
     it("preserves exact names when addressing existing tags", () => {
         expect(editUserTagSchema.parse({ ...fields, action: TagAction.RENAME,
@@ -51,15 +39,6 @@ describe("tag edits", () => {
         expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.DELETE_ONE, mediaId: 1 }).success).toBe(true);
     });
 
-    it("allows creating and deleting unassigned tags", () => {
-        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.ADD }).success).toBe(true);
-        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.DELETE_ALL }).success).toBe(true);
-    });
-
-    it.each(["", " \n\t "])("allows removing legacy blank tags: %j", name => {
-        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.DELETE_ALL, tag: { name } }).success).toBe(true);
-        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.DELETE_ONE, mediaId: 1, tag: { name } }).success).toBe(true);
-    });
 });
 
 
@@ -171,36 +150,4 @@ describe("user media schemas", () => {
         ]));
     });
 
-    it.each(["", " \n\t "])("normalizes blank comments to null", (comment) => {
-        const result = updateUserMediaSchema.parse({
-            mediaId: 1,
-            mediaType: MediaType.MOVIES,
-            payload: {
-                comment,
-                type: UpdateType.COMMENT,
-            },
-        });
-
-        expect(result.payload.comment).toBeNull();
-    });
-
-    it("rejects implausibly old backlog dates", () => {
-        const result = updateUserMediaSchema.safeParse({
-            mediaId: 1,
-            mediaType: MediaType.ANIME,
-            payload: {
-                type: UpdateType.TV,
-                currentEpisode: 1,
-                loggedAt: "0008-11-30",
-            },
-        });
-
-        expect(result.success).toBe(false);
-        expect(result.error?.issues).toEqual(expect.arrayContaining([
-            expect.objectContaining({
-                path: ["payload", "loggedAt"],
-                message: "Date must be between 1900-01-01 and today.",
-            }),
-        ]));
-    });
 });

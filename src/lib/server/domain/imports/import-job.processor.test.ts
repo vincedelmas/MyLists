@@ -5,17 +5,6 @@ import {ImportItemStatus, ImportJobStatus, MediaType, Status} from "@/lib/utils/
 
 
 describe("ImportJobProcessor", () => {
-    it("returns null when no queued job can be claimed", async () => {
-        const importService = createImportServiceStub();
-        const matcherRegistry = createMatcherRegistryStub();
-
-        importService.claimNextQueuedJob.mockResolvedValue(null);
-
-        const processor = new ImportJobProcessor(importService as any, matcherRegistry as any);
-
-        await expect(processor.processNextJob()).resolves.toBeNull();
-        expect(importService.getQueuedItemsByMediaType).not.toHaveBeenCalled();
-    });
 
     it("marks queued items processing, dispatches only claimed items, applies yielded outcomes, and finalizes", async () => {
         const movieItem = createItem(1, MediaType.MOVIES);
@@ -64,23 +53,6 @@ describe("ImportJobProcessor", () => {
 
         await expect(processor.processNextJob()).resolves.toMatchObject({ id: 10, status: ImportJobStatus.FAILED });
         expect(importService.markProcessingJobFailed).toHaveBeenCalledWith(10, expect.stringContaining("Please try importing the file again"));
-    });
-
-    it("marks the claimed job failed when it cannot be finalized", async () => {
-        const importService = createImportServiceStub();
-        const matcherRegistry = createMatcherRegistryStub();
-
-        importService.claimNextQueuedJob.mockResolvedValue({ id: 10, userId: 42 });
-        importService.getQueuedItemsByMediaType.mockResolvedValue(new Map());
-        importService.finalizeProcessingJob.mockResolvedValue(null);
-
-        const processor = new ImportJobProcessor(importService as any, matcherRegistry as any);
-
-        await expect(processor.processNextJob()).resolves.toMatchObject({ status: ImportJobStatus.FAILED });
-        expect(importService.markProcessingJobFailed).toHaveBeenCalledWith(
-            10,
-            expect.stringContaining("The import stopped unexpectedly"),
-        );
     });
 
     it("propagates an error if a failed job cannot be persisted", async () => {

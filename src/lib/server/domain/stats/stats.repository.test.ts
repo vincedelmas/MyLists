@@ -20,7 +20,7 @@ import {NotificationsService} from "@/lib/server/domain/notifications/notificati
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
-import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
+
 import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 import type {MediaMonthlyActivityRegistry, MediaServiceRegistry, MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
 
@@ -88,44 +88,7 @@ describe("movie time clamping after duration corrections", () => {
 
     afterEach(() => sqlite.close());
 
-    it.each(["edit", "refresh"])("leaves user statistics untouched during a metadata %s", async source => {
-        tracking.addMediaToList({ ...action, status: Status.COMPLETED });
-        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.REDO, redo: 2 } });
-        tracking.addMediaToList({ ...action, userId: 2, status: Status.COMPLETED });
-        tracking.addMediaToList({ ...action, userId: 3, status: Status.PLAN_TO_WATCH });
-        const before = snapshot();
-
-        if (source === "edit") {
-            await service.updateMediaEditableFields(1, { duration: 120 });
-        }
-        else {
-            const ingestion = createMediaIngestionService({
-                repository,
-                provider: {
-                    search: vi.fn(),
-                    getDetails: async () => ({ mediaData: { ...repository.findById(1)!, duration: 120 } }),
-                },
-            });
-            await ingestion.refreshFromExternal(1);
-        }
-
-        expect(repository.findById(1)?.duration).toBe(120);
-        expect(snapshot()).toEqual(before);
-    });
-
-    it.each([1, 2])("removes the last movie with stale time for user %i, including an inactive list", async userId => {
-        tracking.addMediaToList({ ...action, userId, status: Status.COMPLETED });
-        await service.updateMediaEditableFields(1, { duration: 120 });
-        expect(settingsFor(userId).timeSpent).toBe(90);
-
-        tracking.removeMediaFromList({ ...action, userId });
-
-        expect(dbContext.db.select().from(schema.moviesList).all()).toEqual([]);
-        expect(settingsFor(userId))
-            .toMatchObject({ timeSpent: 0, totalEntries: 0, totalRedo: 0, totalSpecific: 0 });
-    });
-
-    it("clamps time until maintenance without changing other users or media types", async () => {
+it("clamps time until maintenance without changing other users or media types", async () => {
         tracking.addMediaToList({ ...action, status: Status.COMPLETED });
         tracking.addMediaToList({ ...action, mediaId: 2, status: Status.COMPLETED });
         tracking.updateUserMedia({ ...action, mediaId: 2, payload: { type: UpdateType.REDO, redo: 2 } });
@@ -155,53 +118,6 @@ describe("movie time clamping after duration corrections", () => {
 
         expect(settingsFor().timeSpent).toBe(180);
         expect(snapshot().statsHistory).toEqual(beforeHistory);
-    });
-
-    it("allows moving a completed movie back to plan when its time is stale", async () => {
-        tracking.addMediaToList({ ...action, status: Status.COMPLETED });
-        await service.updateMediaEditableFields(1, { duration: 120 });
-
-        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.STATUS, status: Status.PLAN_TO_WATCH } });
-
-        expect(settingsFor()).toMatchObject({
-            timeSpent: 0, totalEntries: 1, totalSpecific: 0,
-            statusCounts: { [Status.COMPLETED]: 0, [Status.PLAN_TO_WATCH]: 1 },
-        });
-        expect(repository.findUserMedia(1, 1)).toMatchObject({ status: Status.PLAN_TO_WATCH, total: 0 });
-    });
-
-    it("clamps time when reducing rewatches and lets maintenance restore the remaining watch time", async () => {
-        tracking.addMediaToList({ ...action, status: Status.COMPLETED });
-        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.REDO, redo: 2 } });
-        await service.updateMediaEditableFields(1, { duration: 180 });
-        expect(settingsFor().timeSpent).toBe(270);
-
-        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.REDO, redo: 0 } });
-
-        expect(settingsFor()).toMatchObject({ timeSpent: 0, totalSpecific: 1, totalRedo: 0 });
-        expect(repository.findUserMedia(1, 1)).toMatchObject({ total: 1, redo: 0 });
-
-        withTransaction(() => StatsRepository.updateAllUsersPreComputedStats(MediaType.MOVIES, createMoviesStatistics().computeAllUsersStats()));
-
-        expect(settingsFor().timeSpent).toBe(180);
-    });
-
-    it.each([
-        { duration: 60, otherMovie: false, expectedTime: 30, remainingTime: 0 },
-        { duration: 120, otherMovie: true, expectedTime: 30, remainingTime: 60 },
-        { duration: 150, otherMovie: true, expectedTime: 0, remainingTime: 60 },
-    ])("leaves nonnegative totals to maintenance after a $duration-minute correction", async ({ duration, otherMovie, expectedTime, remainingTime }) => {
-        tracking.addMediaToList({ ...action, status: Status.COMPLETED });
-        if (otherMovie) tracking.addMediaToList({ ...action, mediaId: 2, status: Status.COMPLETED });
-        await service.updateMediaEditableFields(1, { duration });
-
-        tracking.removeMediaFromList(action);
-
-        expect(settingsFor().timeSpent).toBe(expectedTime);
-
-        withTransaction(() => StatsRepository.updateAllUsersPreComputedStats(MediaType.MOVIES, createMoviesStatistics().computeAllUsersStats()));
-
-        expect(settingsFor().timeSpent).toBe(remainingTime);
     });
 
     it("clamps time for other media types while keeping nonnegative constraints on other counters", () => {

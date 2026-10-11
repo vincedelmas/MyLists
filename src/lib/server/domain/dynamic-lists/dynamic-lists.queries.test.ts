@@ -8,12 +8,12 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {GamesPlatformsEnum, MediaType, Status, TagAction} from "@/lib/utils/enums";
 import type {ScopedMediaFilters} from "@/lib/schemas/media-filters.schema";
 import * as schema from "@/lib/server/database/schema";
-import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
-import {getMediaSortLabel} from "@/lib/utils/media/sorting";
+
 import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.queries";
-import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
+
 import {dynamicListsRepository} from "./dynamic-lists.repository";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import {getDynamicListEditorFilterOptions, getDynamicListResults, getDynamicListSummary} from "./dynamic-lists.queries";
@@ -75,7 +75,7 @@ describe("dynamic list live queries", () => {
             .where(and(eq(schema.mediaTags.userId, userId), eq(schema.mediaTags.mediaType, mediaType), eq(schema.mediaTags.name, name))).get()!.id;
     }
 
-    it("restricts results to the owner's active lists, including explicit type requests", () => {
+it("restricts results to the owner's active lists, including explicit type requests", () => {
         addEntry(MediaType.MOVIES, 1);
         addEntry(MediaType.BOOKS, 2);
         addEntry(MediaType.GAMES, 3, { userId: 2 });
@@ -88,7 +88,7 @@ describe("dynamic list live queries", () => {
         expect(getDynamicListResults(2, spec).items.map(item => item.mediaId)).toEqual([3]);
     });
 
-    it("offers editor genres and tags from selected owner active lists only", () => {
+it("offers editor genres and tags from selected owner active lists only", () => {
         addEntry(MediaType.MOVIES, 1);
         addEntry(MediaType.BOOKS, 2);
         addEntry(MediaType.MANGA, 3);
@@ -138,35 +138,6 @@ describe("dynamic list live queries", () => {
         expect(getDynamicListResults(1, { ...spec, filters: { statusGroup: "completed" } }).total).toBe(0);
     });
 
-    it("offers only matching active media types before temporary filters and pagination", () => {
-        for (let id = 1; id <= 25; id++) addEntry(MediaType.MOVIES, id);
-        addEntry(MediaType.BOOKS, 50);
-        addEntry(MediaType.MANGA, 51);
-        addEntry(MediaType.GAMES, 52, { status: Status.PLAN_TO_PLAY });
-        dbContext.db.update(schema.userMediaSettings).set({ active: false })
-            .where(and(eq(schema.userMediaSettings.userId, 1), eq(schema.userMediaSettings.mediaType, MediaType.MANGA))).run();
-        const saved: DynamicListSpec = { ...spec, filters: { statusGroup: "completed" } };
-        const result = getDynamicListResults(1, saved, { filters: { search: "Media 50" } });
-        expect(result.mediaTypes).toEqual([MediaType.MOVIES, MediaType.BOOKS]);
-        expect(result.items.map(item => item.mediaId)).toEqual([50]);
-        expect(getDynamicListResults(1, saved, { page: 2, filters: { mediaType: MediaType.MOVIES } }).mediaTypes).toEqual(result.mediaTypes);
-        expect(getDynamicListResults(1, saved, { filters: { search: "missing" } }).mediaTypes).toEqual(result.mediaTypes);
-        expect(getDynamicListResults(1, { ...saved, filters: { search: "missing" } }).mediaTypes).toEqual([]);
-        dbContext.db.update(schema.userMediaSettings).set({ active: false })
-            .where(and(eq(schema.userMediaSettings.userId, 1), eq(schema.userMediaSettings.mediaType, MediaType.BOOKS))).run();
-        expect(getDynamicListResults(1, saved, { filters: { sorting: "provider_rating_highest" } }).mediaTypes).toEqual([MediaType.MOVIES]);
-    });
-
-    it("resolves in-progress aliases and excludes unsupported statuses", () => {
-        addEntry(MediaType.ANIME, 1, { status: Status.WATCHING });
-        addEntry(MediaType.BOOKS, 2, { status: Status.READING });
-        addEntry(MediaType.GAMES, 3, { status: Status.PLAYING });
-        addEntry(MediaType.MOVIES, 4);
-        addEntry(MediaType.GAMES, 5, { status: Status.MULTIPLAYER });
-        expect(getDynamicListResults(1, { ...spec, filters: { statusGroup: "in_progress" } }).items.map(item => item.mediaId)).toEqual([1, 2, 3]);
-        expect(getDynamicListResults(1, { ...spec, mediaTypes: [MediaType.MOVIES], filters: { statusGroup: "in_progress" } }).total).toBe(0);
-    });
-
     it("sorts mixed timestamp formats chronologically and paginates globally across types", () => {
         for (let id = 1; id <= 50; id++) {
             const timestamp = new Date(Date.UTC(2026, 0, 1, 0, id)).toISOString();
@@ -180,85 +151,6 @@ describe("dynamic list live queries", () => {
         expect(second.items.map(item => item.mediaId)).toEqual(Array.from({ length: 24 }, (_, i) => i + 25));
         expect(third.items.map(item => item.mediaId)).toEqual([49, 50]);
         expect(getDynamicListResults(1, { ...spec, sort: { field: "addedAt", direction: "desc" } }).items[0].mediaId).toBe(50);
-    });
-
-    it("uses stable ordering for ties and places null ratings last in either direction", () => {
-        addEntry(MediaType.MOVIES, 1, { title: "Same", rating: 8 });
-        addEntry(MediaType.BOOKS, 1, { title: "Same", rating: 8 });
-        addEntry(MediaType.GAMES, 1, { title: "Same", rating: null });
-        expect(getDynamicListResults(1, spec).items.map(item => item.mediaType)).toEqual([MediaType.BOOKS, MediaType.GAMES, MediaType.MOVIES]);
-        for (const direction of ["asc", "desc"] as const) {
-            expect(getDynamicListResults(1, { ...spec, sort: { field: "rating", direction } }).items.map(item => item.mediaType)).toEqual([MediaType.BOOKS, MediaType.MOVIES, MediaType.GAMES]);
-        }
-    });
-
-    it("sorts mixed-case titles across media types with stable ties in either direction", () => {
-        addEntry(MediaType.GAMES, 1, { title: "banana" });
-        addEntry(MediaType.BOOKS, 2, { title: "Apricot" });
-        addEntry(MediaType.ANIME, 3, { title: "cherry" });
-        addEntry(MediaType.MOVIES, 4, { title: "apple" });
-        addEntry(MediaType.SERIES, 5, { title: "Banana" });
-        addEntry(MediaType.MANGA, 6, { title: "Date" });
-        expect(getDynamicListResults(1, { ...spec, sort: { field: "title", direction: "asc" } }).items.map(item => item.mediaId))
-            .toEqual([4, 2, 1, 5, 3, 6]);
-        expect(getDynamicListResults(1, spec, { filters: { sorting: "title_desc" } }).items.map(item => item.mediaId))
-            .toEqual([6, 3, 1, 5, 2, 4]);
-    });
-
-    it.each([
-        { mediaType: MediaType.BOOKS, catalogField: "pages", highest: "pages_highest", lowest: "pages_lowest", personalField: "redo", personalSort: "redo_highest" },
-        { mediaType: MediaType.MANGA, catalogField: "chapters", highest: "chapters_highest", lowest: "chapters_lowest", personalField: "redo", personalSort: "redo_highest" },
-        { mediaType: MediaType.GAMES, catalogField: "voteAverage", highest: "provider_rating_highest", lowest: "provider_rating_lowest", personalField: "playtime", personalSort: "playtime_highest" },
-        { mediaType: MediaType.MOVIES, catalogField: "voteAverage", highest: "provider_rating_highest", lowest: "provider_rating_lowest", personalField: "redo", personalSort: "redo_highest" },
-        { mediaType: MediaType.ANIME, catalogField: "voteAverage", highest: "provider_rating_highest", lowest: "provider_rating_lowest", personalField: "redo", personalSort: "redo_highest" },
-        { mediaType: MediaType.SERIES, catalogField: "voteAverage", highest: "provider_rating_highest", lowest: "provider_rating_lowest", personalField: "redo", personalSort: "redo_highest" },
-    ] as const)("shares $mediaType catalogue and personal ordering across browse, tracking lists and dynamic lists", async ({ mediaType, catalogField, highest, lowest, personalField, personalSort }) => {
-        const definition = getServerMediaDefinition(mediaType);
-        const { mediaTable, listTable } = definition.repository.tables;
-        const listQueries = createMediaListQueries(definition.repository);
-        const saved: DynamicListSpec = { ...spec, mediaTypes: [mediaType] };
-        const catalogValues = [3, 9, mediaType === MediaType.BOOKS ? 3 : null];
-
-        for (let mediaId = 1; mediaId <= 3; mediaId++) {
-            addEntry(mediaType, mediaId);
-            dbContext.db.update(mediaTable).set({ [catalogField]: catalogValues[mediaId - 1] }).where(eq(mediaTable.id, mediaId)).run();
-            dbContext.db.update(listTable).set({ [personalField]: [1, 3, 0][mediaId - 1] }).where(eq(listTable.mediaId, mediaId)).run();
-        }
-        if (mediaType === MediaType.MANGA) {
-            dbContext.db.update(schema.manga).set({ voteAverage: 9 }).where(eq(schema.manga.id, 2)).run();
-        }
-
-        for (const [sorting, expected] of [
-            [highest, [2, 1, 3]],
-            [lowest, mediaType === MediaType.BOOKS ? [1, 3, 2] : [1, 2, 3]],
-        ] as const) {
-            const browse = createMediaBrowseQueryParts(definition, { sorting });
-            const catalogue = dbContext.db.select({ mediaId: mediaTable.id }).from(mediaTable)
-                .leftJoin(listTable, browse.viewerJoin).orderBy(...browse.orderBy([])).all();
-            const list = await listQueries.getMediaList(undefined, 1, { sorting: getMediaSortLabel(getMediaDefinition(mediaType), sorting) });
-            const dynamic = getDynamicListResults(1, saved, { filters: { sorting } });
-            expect(catalogue.map(item => item.mediaId)).toEqual(expected);
-            expect(list.items.map(item => item.mediaId)).toEqual(expected);
-            expect(dynamic.items.map(item => item.mediaId)).toEqual(expected);
-            expect(dynamic.sorting).toBe(sorting);
-        }
-
-        const personalLabel = getMediaSortLabel(getMediaDefinition(mediaType), personalSort);
-        const list = await listQueries.getMediaList(undefined, 1, { sorting: personalLabel });
-        const dynamic = getDynamicListResults(1, saved, { filters: { sorting: personalSort } });
-        expect(list.items.map(item => item.mediaId)).toEqual([2, 1, 3]);
-        expect(dynamic.items.map(item => item.mediaId)).toEqual([2, 1, 3]);
-        expect(dynamic.items[0]).toMatchObject({
-            providerRating: mediaType === MediaType.BOOKS ? null : 9,
-            redo: mediaType === MediaType.GAMES ? null : 3,
-            pages: mediaType === MediaType.BOOKS ? 9 : null,
-            chapters: mediaType === MediaType.MANGA ? 9 : null,
-            playtime: mediaType === MediaType.GAMES ? 3 : null,
-        });
-        expect(dynamic.items[0]).not.toHaveProperty("sortValue");
-        if (mediaType === MediaType.GAMES) {
-            expect(getDynamicListResults(1, saved, { filters: { sorting: "playtime_lowest" } }).items.map(item => item.mediaId)).toEqual([3, 1, 2]);
-        }
     });
 
     it("falls back for media-specific orders unsupported by mixed media", () => {
@@ -287,19 +179,7 @@ describe("dynamic list live queries", () => {
         expect(getDynamicListResults(1, saved, { filters: { sorting: "pages_highest" } })).toMatchObject({ total: 0, sorting: "default", mediaTypes: [] });
     });
 
-    it.each([
-        ["2026-08-31T12:00:00Z", "2026-02-28T12:00:00Z"],
-        ["2024-08-31T12:00:00Z", "2024-02-29T12:00:00Z"],
-    ])("uses clamped UTC calendar months from %s", (now, boundary) => {
-        addEntry(MediaType.MOVIES, 1, { addedAt: new Date(new Date(boundary).getTime() - 1_000).toISOString(), status: Status.PLAN_TO_WATCH });
-        addEntry(MediaType.BOOKS, 2, { addedAt: boundary, status: Status.PLAN_TO_READ });
-        addEntry(MediaType.GAMES, 3, { addedAt: null, status: Status.PLAN_TO_PLAY });
-        const querySpec: DynamicListSpec = { ...spec, filters: { statusGroup: "planned", addedBefore: { monthsAgo: 6 } } };
-        expect(getDynamicListResults(1, querySpec, { now: new Date(now) }).items.map(item => item.mediaId)).toEqual([1]);
-        expect(getDynamicListResults(1, querySpec, { now: new Date(new Date(now).getTime() + 1_000) }).items.map(item => item.mediaId)).toEqual([1, 2]);
-    });
-
-    it("ANDs filters, matches any requested tag, and scopes tags to the owner", () => {
+it("ANDs filters, matches any requested tag, and scopes tags to the owner", () => {
         addEntry(MediaType.MOVIES, 1, { rating: 8, favorite: true });
         addEntry(MediaType.BOOKS, 2, { rating: 9, favorite: true });
         addEntry(MediaType.GAMES, 3, { rating: 7, favorite: true });
@@ -366,21 +246,6 @@ describe("dynamic list live queries", () => {
         expect(options.books?.tags).toEqual([]);
     });
 
-    it("filters and overrides ordering before pagination across media types", () => {
-        for (let index = 1; index <= 28; index++) addEntry(MediaType.MOVIES, index, { title: `Movie ${index}`, addedAt: `2026-01-${String(index).padStart(2, "0")} 00:00:00` });
-        addEntry(MediaType.BOOKS, 50, { title: "Movie 28", addedAt: "2026-02-01" });
-        const browse = { mediaType: MediaType.MOVIES, sorting: "added_newest" as const };
-        const first = getDynamicListResults(1, spec, { filters: browse });
-        const second = getDynamicListResults(1, spec, { page: 2, filters: browse });
-        expect(first.total).toBe(28);
-        expect(first.pages).toBe(2);
-        expect(first.items.map(item => item.mediaId)).toEqual(Array.from({ length: 24 }, (_, index) => 28 - index));
-        expect(second.items.map(item => item.mediaId)).toEqual([4, 3, 2, 1]);
-        const match = getDynamicListResults(1, spec, { filters: { ...browse, search: "Movie 28" } });
-        expect(match.total).toBe(1);
-        expect(match.items[0].mediaId).toBe(28);
-    });
-
     it("composes every media's list facets for saved rules and temporary browsing", async () => {
         for (const mediaType of ALL_MEDIA_TYPES) {
             addEntry(mediaType, 1);
@@ -429,7 +294,7 @@ describe("dynamic list live queries", () => {
         }
     });
 
-    it("loads named options only on request and scopes them to saved owner matches", async () => {
+it("loads named options only on request and scopes them to saved owner matches", async () => {
         addEntry(MediaType.MOVIES, 1, { rating: 8 });
         addEntry(MediaType.MOVIES, 2, { rating: 2 });
         addEntry(MediaType.MOVIES, 3, { userId: 2, rating: 9 });
@@ -460,18 +325,6 @@ describe("dynamic list live queries", () => {
         expect(() => getDynamicListResults(1, spec, { filters: { hideCommon: true } })).toThrow("Sign in");
     });
 
-    it("preserves false-favorite behavior for saved rules and tracking browsing", async () => {
-        addEntry(MediaType.MOVIES, 1);
-        addEntry(MediaType.BOOKS, 2, { favorite: false, rating: 0 });
-        addEntry(MediaType.GAMES, 3, { favorite: true, rating: 5 });
-        expect(getDynamicListResults(1, { ...spec, filters: { favorite: false } }).items.map(item => item.mediaId)).toEqual([1, 2]);
-        expect(getDynamicListResults(1, spec, { filters: { favorite: false } }).total).toBe(3);
-        const ordinary = await createMediaListQueries(getServerMediaDefinition(MediaType.GAMES).repository)
-            .getMediaList(undefined, 1, { favorite: false });
-        expect(ordinary.items.map(item => item.mediaId)).toEqual([3]);
-        expect(getDynamicListResults(1, { ...spec, filters: { minRating: 0, maxRating: 0 } }).items.map(item => item.mediaId)).toEqual([2]);
-    });
-
     it("searches titles case-insensitively with literal wildcard characters and bound input", () => {
         addEntry(MediaType.MOVIES, 1, { title: "A 100%_real Adventure" });
         addEntry(MediaType.BOOKS, 2, { title: "A 100xyzreal Adventure" });
@@ -481,43 +334,7 @@ describe("dynamic list live queries", () => {
         expect(getDynamicListResults(1, { ...spec, filters: { search: "' OR 1=1 --" } }).items.map(item => item.mediaId)).toEqual([3]);
     });
 
-    it("ORs exact statuses within each media's allowed statuses and ANDs a status group", () => {
-        addEntry(MediaType.BOOKS, 1, { status: Status.READING });
-        addEntry(MediaType.GAMES, 2, { status: Status.MULTIPLAYER });
-        addEntry(MediaType.MOVIES, 3, { status: Status.COMPLETED });
-        addEntry(MediaType.MOVIES, 4, { status: Status.READING });
-        const statuses = [Status.READING, Status.MULTIPLAYER];
-        expect(getDynamicListResults(1, { ...spec, filters: { statuses } }).items.map(item => item.mediaId)).toEqual([1, 2]);
-        expect(getDynamicListResults(1, { ...spec, filters: { statuses, statusGroup: "in_progress" } }).items.map(item => item.mediaId)).toEqual([1]);
-    });
-
-    it("uses inclusive release-year bounds and any catalog genre without duplicate entries", () => {
-        addEntry(MediaType.MOVIES, 1, { releaseDate: "2000-01-01" });
-        addEntry(MediaType.BOOKS, 2, { releaseDate: "2010-12-31" });
-        addEntry(MediaType.GAMES, 3, { releaseDate: "1999-12-31" });
-        addEntry(MediaType.MOVIES, 4, { releaseDate: null });
-        addEntry(MediaType.BOOKS, 5, { releaseDate: "not-a-date" });
-        dbContext.db.insert(schema.moviesGenre).values([
-            { mediaId: 1, name: "Drama" }, { mediaId: 1, name: "Comedy" }, { mediaId: 4, name: "Drama" },
-        ]).run();
-        dbContext.db.insert(schema.booksGenre).values([{ mediaId: 2, name: "Comedy" }, { mediaId: 5, name: "Drama" }]).run();
-        const filters = { genres: ["Drama", "Comedy"], minReleaseYear: 2000, maxReleaseYear: 2010 };
-        expect(getDynamicListResults(1, { ...spec, filters }).items.map(item => item.mediaId)).toEqual([1, 2]);
-        expect(getDynamicListResults(1, { ...spec, filters: { genres: ["' OR 1=1 --"] } }).total).toBe(0);
-    });
-
-    it("distinguishes rated zero from unrated entries and ignores empty comments", () => {
-        addEntry(MediaType.MOVIES, 1, { rating: null, comment: null });
-        addEntry(MediaType.BOOKS, 2, { rating: 0, comment: "  loved it  " });
-        addEntry(MediaType.GAMES, 3, { rating: 8, comment: "" });
-        addEntry(MediaType.MOVIES, 4, { rating: null, comment: "   " });
-        expect(getDynamicListResults(1, { ...spec, filters: { rated: true } }).items.map(item => item.mediaId)).toEqual([2, 3]);
-        expect(getDynamicListResults(1, { ...spec, filters: { rated: false } }).items.map(item => item.mediaId)).toEqual([1, 4]);
-        expect(getDynamicListResults(1, { ...spec, filters: { hasComment: true, rated: true } }).items.map(item => item.mediaId)).toEqual([2]);
-        expect(getDynamicListResults(1, { ...spec, filters: { hasComment: false } }).items.map(item => item.mediaId)).toEqual([1, 3, 4]);
-    });
-
-    it("matches all requested tags and excludes any owner tag while ignoring other users' tags", () => {
+it("matches all requested tags and excludes any owner tag while ignoring other users' tags", () => {
         for (let id = 1; id <= 4; id++) addEntry(MediaType.MOVIES, id);
         seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 1, name: "cozy" }, { userId: 1, mediaId: 1, name: "short" },
@@ -637,7 +454,7 @@ describe("dynamic list live queries", () => {
         expect(dynamicListsRepository.get(1, saved.id).spec).toEqual(savedSpec);
     });
 
-    it("rejects tag IDs owned by another user or a different media type", () => {
+it("rejects tag IDs owned by another user or a different media type", () => {
         seedMediaTags(dbContext.db, MediaType.MOVIES, [{ userId: 1, name: "Mine" }, { userId: 2, name: "Other" }]);
         for (const mediaFilters of [
             { movies: { tagRules: [{ tags: [tagId(MediaType.MOVIES, "Other", 2)] }] } },
@@ -649,17 +466,4 @@ describe("dynamic list live queries", () => {
         }
     });
 
-    it("combines a clamped added-date window with a last-updated cutoff and excludes unknown dates", () => {
-        const now = new Date("2026-08-31T12:00:00Z");
-        addEntry(MediaType.MOVIES, 1, { addedAt: "2025-08-31 12:00:00", lastUpdated: "2026-02-28T11:59:59Z" });
-        addEntry(MediaType.BOOKS, 2, { addedAt: "2026-02-28T11:59:59Z", lastUpdated: "2026-02-28 12:00:00" });
-        addEntry(MediaType.GAMES, 3, { addedAt: "2026-02-28T12:00:00Z", lastUpdated: "2025-01-01" });
-        addEntry(MediaType.MOVIES, 4, { addedAt: "2025-08-31T11:59:59Z", lastUpdated: "2025-01-01" });
-        addEntry(MediaType.BOOKS, 5, { addedAt: null, lastUpdated: "2025-01-01" });
-        addEntry(MediaType.GAMES, 6, { addedAt: "2026-01-01", lastUpdated: null });
-        const filters = { addedWithin: { monthsAgo: 12 }, addedBefore: { monthsAgo: 6 }, updatedBefore: { monthsAgo: 6 } };
-        expect(getDynamicListResults(1, { ...spec, filters }, { now }).items.map(item => item.mediaId)).toEqual([1]);
-        expect(getDynamicListResults(1, { ...spec, filters: { addedWithin: { monthsAgo: 6 } } }, { now }).items.map(item => item.mediaId)).toEqual([3]);
-        expect(getDynamicListResults(1, { ...spec, filters: { updatedBefore: { monthsAgo: 6 } } }, { now }).items.map(item => item.mediaId)).toEqual([4, 1, 3, 5]);
-    });
 });

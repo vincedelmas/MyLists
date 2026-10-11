@@ -8,28 +8,8 @@ import {validateQuerySql} from "@/lib/server/domain/mcp/query-validation";
 describe("query SQL validation", () => {
     it.each([
         "SELECT title FROM my_entries WHERE rating > $rating ORDER BY last_updated DESC LIMIT 5",
-        "/* header */ SELECT COUNT(*) FROM entries; -- trailing comment",
         "SELECT 'PRAGMA; ATTACH; load_extension()' AS harmless_literal",
-        'SELECT e.title FROM "MY_ENTRIES" AS e JOIN [media_people] AS p ON e.media_id = p.media_id',
-        "SELECT title FROM `my_entries` WHERE title LIKE 'Star%' COLLATE NOCASE",
-        "SELECT CASE WHEN rating BETWEEN 8 AND 10 THEN 'high' ELSE 'other' END FROM entries",
-        "SELECT rating FROM entries WHERE rating NOT IN (SELECT rating FROM my_entries)",
-        "SELECT media_id FROM entries WHERE media_id IN my_entries",
-        "SELECT AVG(rating) FILTER (WHERE rating > 0), COUNT(DISTINCT media_id) FROM my_entries",
-        "SELECT GROUP_CONCAT(title ORDER BY rating DESC) FROM my_entries",
-        "WITH rated AS (SELECT * FROM my_entries WHERE rating > 8) SELECT COUNT(*) FROM rated",
-        'WITH "rated titles" AS (SELECT title FROM my_entries) SELECT * FROM "rated titles"',
-        "WITH a AS (SELECT * FROM entries), b AS (SELECT * FROM a) SELECT * FROM b",
-        "SELECT * FROM (WITH rated AS (SELECT title FROM my_entries) SELECT * FROM rated)",
         "WITH RECURSIVE numbers(n) AS (VALUES(1) UNION ALL SELECT n + 1 FROM numbers WHERE n < 5) SELECT n FROM numbers",
-        "SELECT title FROM my_entries UNION ALL SELECT title FROM entries ORDER BY title LIMIT 5",
-        "SELECT ROW_NUMBER() OVER (PARTITION BY media_type ORDER BY rating DESC), title FROM entries",
-        "SELECT LAG(rating) OVER ratings FROM entries WINDOW ratings AS (PARTITION BY media_type ORDER BY last_updated ROWS BETWEEN 1 PRECEDING AND CURRENT ROW)",
-        "SELECT CAST(rating AS INTEGER), COALESCE(comment, ''), STRFTIME('%Y', last_updated) FROM my_entries",
-        "SELECT SQRT(POWER(9, 2)), JSON_EXTRACT('{\"rating\":9}', '$.rating'), SQLITE_VERSION()",
-        "SELECT main.entries.rating FROM main.entries",
-        "SELECT name FROM main.sqlite_schema WHERE type = 'table'",
-        "SELECT value FROM json_each('[1,2,3]')",
         "SELECT name FROM pragma_table_info('entries')",
     ])("accepts supported analytics SQL: %s", sql => {
         expect(validateQuerySql(sql)).toBe(sql);

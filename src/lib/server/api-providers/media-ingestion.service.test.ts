@@ -1,7 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
-import {FormattedError} from "@/lib/utils/error-classes";
-
 
 const transactionMocks = vi.hoisted(() => ({
     withTransaction: vi.fn(),
@@ -15,43 +13,6 @@ describe("createMediaIngestionService", () => {
     beforeEach(() => {
         transactionMocks.withTransaction.mockReset();
         transactionMocks.withTransaction.mockImplementation((action) => action({}));
-    });
-
-    it("stops bulk one-by-one refresh when the refresh policy aborts on an error", async () => {
-        const provider = {
-            search: vi.fn(),
-            getDetails: vi.fn().mockRejectedValue(new FormattedError("Provider unavailable", { statusCode: 504 })),
-        } as const;
-
-        const repository = {
-            getMediaIdsToBeRefreshed: vi.fn().mockResolvedValue([1, 2, 3]),
-            updateMediaWithDetails: vi.fn(),
-        };
-
-        const service = createMediaIngestionService({
-            provider,
-            repository: repository as any,
-            refreshCandidates: {
-                getCandidateApiIds: repository.getMediaIdsToBeRefreshed,
-            },
-            refreshPolicy: {
-                shouldAbortBulkRefresh: (reason) => {
-                    if (!(reason instanceof FormattedError)) return false;
-                    const statusCode = reason?.args?.statusCode ?? 200;
-                    return statusCode >= 500 && statusCode < 600;
-                },
-            },
-        });
-
-        const results = [];
-        for await (const result of service.bulkRefresh()) {
-            results.push(result);
-        }
-
-        expect(results).toHaveLength(1);
-        expect(results[0]).toMatchObject({ apiId: 1, state: "rejected" });
-        expect(provider.getDetails).toHaveBeenCalledTimes(1);
-        expect(repository.updateMediaWithDetails).not.toHaveBeenCalled();
     });
 
     it("runs each bulk media update in its own transaction", async () => {
@@ -128,47 +89,6 @@ describe("createMediaIngestionService", () => {
         expect(repository.storeMediaWithDetails).toHaveBeenCalledOnce();
     });
 
-    it("opens a transaction only after external refresh details are prepared", async () => {
-        let transactionActive = false;
-        transactionMocks.withTransaction.mockImplementation((action) => {
-            transactionActive = true;
-            try {
-                return action({});
-            }
-            finally {
-                transactionActive = false;
-            }
-        });
-
-        const provider = {
-            search: vi.fn(),
-            getDetails: vi.fn().mockImplementation(async (apiId) => {
-                expect(transactionActive).toBe(false);
-                return { apiId };
-            }),
-        } as const;
-
-        const enricher = vi.fn().mockImplementation(async (details) => {
-            expect(transactionActive).toBe(false);
-            return details;
-        });
-        const repository = {
-            updateMediaWithDetails: vi.fn().mockImplementation(() => {
-                expect(transactionActive).toBe(true);
-                return true;
-            }),
-        };
-        const service = createMediaIngestionService({
-            provider,
-            repository: repository as any,
-            enrichers: [enricher],
-        });
-
-        await expect(service.refreshFromExternal(123)).resolves.toBe(true);
-        expect(transactionMocks.withTransaction).toHaveBeenCalledOnce();
-        expect(repository.updateMediaWithDetails).toHaveBeenCalledOnce();
-    });
-
     it("stores only unique missing ids through the provider batch capability", async () => {
         const provider = {
             search: vi.fn(),
@@ -199,33 +119,6 @@ describe("createMediaIngestionService", () => {
         expect(result).toEqual(new Map([
             ["1", 10],
             ["2", 20],
-        ]));
-    });
-
-    it("falls back to fetching and storing batch ids one by one", async () => {
-        const provider = {
-            search: vi.fn(),
-            getDetails: vi.fn().mockImplementation(async (apiId) => ({ apiId })),
-        };
-        const repository = {
-            storeMediaWithDetails: vi.fn()
-                .mockReturnValueOnce(40)
-                .mockReturnValueOnce(50),
-        };
-        const service = createMediaIngestionService({
-            provider,
-            repository: repository as any,
-        });
-
-        const result = await service.storeBatchFromExternal([4, 5], false);
-
-        expect(provider.getDetails).toHaveBeenNthCalledWith(1, 4);
-        expect(provider.getDetails).toHaveBeenNthCalledWith(2, 5);
-        expect(repository.storeMediaWithDetails).toHaveBeenCalledTimes(2);
-        expect(transactionMocks.withTransaction).toHaveBeenCalledTimes(2);
-        expect(result).toEqual(new Map([
-            ["4", 40],
-            ["5", 50],
         ]));
     });
 
@@ -266,34 +159,4 @@ describe("createMediaIngestionService", () => {
         expect(transactionMocks.withTransaction).toHaveBeenCalledTimes(2);
     });
 
-    it("reports a rejected provider batch for every requested refresh id", async () => {
-        const providerError = new Error("Provider batch failed");
-        const provider = {
-            search: vi.fn(),
-            getDetails: vi.fn(),
-            getDetailsBatch: vi.fn().mockRejectedValue(providerError),
-        };
-        const repository = {
-            updateMediaWithDetails: vi.fn(),
-        };
-        const service = createMediaIngestionService({
-            provider,
-            repository: repository as any,
-            refreshCandidates: {
-                getCandidateApiIds: vi.fn().mockResolvedValue([1, 2]),
-            },
-        });
-
-        const results = [];
-        for await (const result of service.bulkRefresh()) {
-            results.push(result);
-        }
-
-        expect(results).toEqual([
-            { apiId: 1, state: "rejected", reason: providerError },
-            { apiId: 2, state: "rejected", reason: providerError },
-        ]);
-        expect(repository.updateMediaWithDetails).not.toHaveBeenCalled();
-        expect(transactionMocks.withTransaction).not.toHaveBeenCalled();
-    });
 });

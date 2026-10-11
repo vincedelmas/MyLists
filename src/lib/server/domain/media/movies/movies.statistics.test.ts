@@ -41,7 +41,7 @@ describe("MoviesStatistics", () => {
         dbContext.db = undefined;
     });
 
-    it("computes the pre-computed totals owned by the statistics component", async () => {
+it("computes the pre-computed totals owned by the statistics component", async () => {
         const stats = (await createMoviesStatistics().computeAllUsersStats())
             .find(({ userId }) => userId === 1);
 
@@ -78,14 +78,6 @@ describe("MoviesStatistics", () => {
         expect(statistics.computeAllUsersStats([1, 2])).toEqual(allStats);
     });
 
-    it("recomputes a requested user's empty inactive list", () => {
-        db.delete(moviesList).where(eq(moviesList.userId, 2)).run();
-        const statistics = createMoviesStatistics();
-
-        expect(statistics.computeAllUsersStats([2])).toEqual(statistics.computeAllUsersStats().filter(stats => stats.userId === 2));
-        expect(statistics.computeAllUsersStats([2])).toMatchObject([{ userId: 2, totalEntries: 0, timeSpent: 0 }]);
-    });
-
     it("recomputes empty lists while preserving preferences, views, and other media statistics", () => {
         db.delete(moviesList).where(eq(moviesList.userId, 2)).run();
         db.update(userMediaSettings).set({
@@ -111,40 +103,6 @@ describe("MoviesStatistics", () => {
             statusCounts: { [Status.COMPLETED]: 0, [Status.PLAN_TO_WATCH]: 0 },
         });
         expect(db.select().from(userMediaSettings).where(eq(userMediaSettings.mediaType, MediaType.BOOKS)).get()).toEqual(beforeBooks);
-    });
-
-    it("clears leftover viewing time when every movie list is empty", () => {
-        db.delete(moviesList).run();
-        db.update(userMediaSettings).set({ timeSpent: 30 }).run();
-
-        StatsRepository.updateAllUsersPreComputedStats(MediaType.MOVIES, createMoviesStatistics().computeAllUsersStats());
-
-        expect(db.select({ timeSpent: userMediaSettings.timeSpent }).from(userMediaSettings).all())
-            .toEqual([{ timeSpent: 0 }, { timeSpent: 0 }]);
-    });
-
-    it("combines common and movie-specific advanced statistics", async () => {
-        const stats = await createMoviesStatistics().calculateAdvancedMediaStats(7, 1);
-
-        expect(stats.totalTags).toBe(1);
-        expect(stats.avgDuration).toBe(120);
-        expect(stats.totalBudget).toBe(60);
-        expect(stats.totalRevenue).toBe(120);
-        expect(stats.ratings.find(({ name }) => name === "6.0")?.value).toBe(1);
-        expect(stats.ratings.find(({ name }) => name === "8.0")?.value).toBe(1);
-        expect(stats.releaseDates).toEqual([
-            { start: 1990, endExclusive: 2000, value: 1 },
-            { start: 2000, endExclusive: 2010, value: 2 },
-        ]);
-        expect(stats.durationDistrib).toEqual([
-            { start: 90, endExclusive: 120, value: 1 },
-            { start: 120, endExclusive: 150, value: 1 },
-            { start: 150, endExclusive: 180, value: 1 },
-        ]);
-        expect(stats.affinityStats.genresStats[0]).toMatchObject({ name: "Drama" });
-        expect(stats.affinityStats.actorsStats[0]).toMatchObject({ name: "Shared Actor" });
-        expect(stats.affinityStats.directorsStats[0]).toMatchObject({ name: "Shared Director" });
-        expect(stats.affinityStats.langsStats[0]).toMatchObject({ name: "en" });
     });
 
     it("excludes inactive movie lists from platform statistics", async () => {

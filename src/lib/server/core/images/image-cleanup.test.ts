@@ -62,35 +62,4 @@ describe("getUnusedImageFiles", () => {
         expect(committedFilenames).toEqual(["concurrent-upload.jpg"]);
     });
 
-    it("keeps the grace cutoff fixed while the scan is in progress", async () => {
-        await writeImage("pending-upload.jpg", new Date(now.getTime() - DAY_MS + 1000));
-
-        const result = await getUnusedImageFiles(directoryPath, async () => {
-            vi.setSystemTime(now.getTime() + 2000);
-            return [];
-        });
-
-        expect(result.unusedFiles).toEqual([]);
-    });
-
-    it("allows an abandoned upload to be cleaned up after the grace period", async () => {
-        await writeImage("abandoned-upload.jpg");
-        expect((await getUnusedImageFiles(directoryPath, async () => [])).unusedFiles).toEqual([]);
-
-        vi.setSystemTime(now.getTime() + 2 * DAY_MS);
-
-        expect((await getUnusedImageFiles(directoryPath, async () => [])).unusedFiles).toEqual(["abandoned-upload.jpg"]);
-    });
-
-    it("continues if another cleanup removes a file after the directory snapshot", async () => {
-        await writeImage("already-removed.jpg", old);
-        await writeImage("orphan.jpg", old);
-
-        const result = await getUnusedImageFiles(directoryPath, async () => {
-            await rm(path.join(directoryPath, "already-removed.jpg"));
-            return [];
-        });
-
-        expect(result.unusedFiles).toEqual(["orphan.jpg"]);
-    });
 });

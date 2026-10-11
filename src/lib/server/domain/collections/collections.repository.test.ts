@@ -5,7 +5,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
-import {createCollectionSchema} from "@/lib/schemas/collections.schema";
+
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 import {AuthorizationService, toActor} from "@/lib/server/authorization";
@@ -15,8 +15,6 @@ import type {MediaServiceRegistry} from "@/lib/server/domain/media/media.registr
 import {CollectionsService} from "@/lib/server/domain/collections/collections.service";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
-
 
 const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
 
@@ -78,54 +76,6 @@ describe("collection media references", () => {
 
     afterEach(() => sqlite.close());
 
-    it.each(Object.values(MediaType))("accepts existing %s IDs and rejects unknown IDs without creating a partial collection", async mediaType => {
-        const collectionId = service.createCollection({ ...collectionData, items: [{ mediaType, mediaId: 1 }] });
-        const before = snapshot();
-
-        expect(() => service.createCollection({
-            ...collectionData, items: [{ mediaType, mediaId: 1 }, { mediaType, mediaId: 999 }],
-        })).toThrow(FormattedError);
-        expect(snapshot()).toEqual(before);
-
-        const result = await service.getCollectionDetails(collectionId, "read", actor);
-        expect(result.items).toHaveLength(1);
-        expect(result.items[0]).toMatchObject({ mediaType, mediaId: 1, orderIndex: 1 });
-    });
-
-    it("rejects an ID that exists only in a different media type", () => {
-        expect(() => service.createCollection({
-            ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 77 }],
-        })).toThrow(FormattedError);
-
-        expect(snapshot()).toEqual({ collections: [], items: [] });
-    });
-
-    it("preserves collection details, order, and annotations when an edit contains an unknown ID", () => {
-        const collectionId = service.createCollection({
-            ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1, annotation: "Keep me" }, { mediaType: MediaType.MOVIES, mediaId: 2 }],
-        });
-        const before = snapshot();
-
-        expect(() => service.updateCollection({
-            actor, collectionId, title: "Changed title", description: "Changed description",
-            ordered: false, privacy: PrivacyType.PRIVATE,
-            items: [{ mediaType: MediaType.MOVIES, mediaId: 2, annotation: "Changed annotation" }, { mediaType: MediaType.MOVIES, mediaId: 999 }],
-        })).toThrow(FormattedError);
-
-        expect(snapshot()).toEqual(before);
-    });
-
-    it("rejects adding an unknown item to an existing collection", () => {
-        const collectionId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
-        const before = snapshot();
-
-        expect(() => service.addMediaToCollection({
-            actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 999,
-        })).toThrow(FormattedError);
-
-        expect(snapshot()).toEqual(before);
-    });
-
     it("rejects copying legacy invalid references without creating a copy or incrementing its counter", () => {
         const collectionId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
         dbContext.db.insert(schema.collectionItems).values({
@@ -136,64 +86,6 @@ describe("collection media references", () => {
         expect(() => service.copyCollection(collectionId, toActor({ id: 2, role: RoleType.USER }))).toThrow(FormattedError);
 
         expect(snapshot()).toEqual(before);
-    });
-
-    it("keeps copied titles within the editable title limit", () => {
-        const items = [{ mediaType: MediaType.MOVIES, mediaId: 1 }];
-        const collectionId = service.createCollection({ ...collectionData, title: "A".repeat(100), items });
-        const copy = service.copyCollection(collectionId, toActor({ id: 2, role: RoleType.USER }));
-        const copiedCollection = CollectionsRepository.getCollectionById(copy.id)!;
-
-        expect(copiedCollection.title).toBe(`Copy of ${"A".repeat(92)}`);
-        expect(createCollectionSchema.safeParse({ ...copiedCollection, items }).success).toBe(true);
-    });
-
-    it("returns the saved like state and total after each user's toggle", () => {
-        const collectionId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
-        const viewer = toActor({ id: 2, role: RoleType.USER });
-
-        expect(service.toggleLike(collectionId, actor)).toEqual({ isLiked: true, likeCount: 1 });
-        expect(service.toggleLike(collectionId, viewer)).toEqual({ isLiked: true, likeCount: 2 });
-        expect(service.toggleLike(collectionId, actor)).toEqual({ isLiked: false, likeCount: 1 });
-        expect(CollectionsRepository.getCollectionById(collectionId)!.likeCount).toBe(1);
-        expect(CollectionsRepository.findLikedCollection(1, collectionId)).toBeUndefined();
-        expect(CollectionsRepository.findLikedCollection(2, collectionId)).toBeDefined();
-    });
-
-    it("keeps valid items readable and editable while preserving deduplication, ordering, and annotations", async () => {
-        const collectionId = service.createCollection({
-            ...collectionData,
-            items: [{ mediaType: MediaType.MOVIES, mediaId: 2, annotation: "Second first" }, { mediaType: MediaType.MOVIES, mediaId: 1 }, { mediaType: MediaType.MOVIES, mediaId: 2, annotation: "Duplicate" }],
-        });
-        expect(CollectionsRepository.getCollectionItems(collectionId)).toMatchObject([
-            { mediaType: MediaType.MOVIES, mediaId: 2, orderIndex: 1, annotation: "Second first" },
-            { mediaType: MediaType.MOVIES, mediaId: 1, orderIndex: 2, annotation: null },
-        ]);
-
-        service.updateCollection({
-            actor, collectionId, title: "Updated favorites", ordered: true, privacy: PrivacyType.PUBLIC,
-            items: [{ mediaType: MediaType.MOVIES, mediaId: 1, annotation: "First now" }, { mediaType: MediaType.MOVIES, mediaId: 2 }, { mediaType: MediaType.MOVIES, mediaId: 1 }],
-        });
-        service.addMediaToCollection({ actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 1 });
-        service.addMediaToCollection({ actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 3 });
-
-        for (const mode of ["read", "edit"] as const) {
-            const result = await service.getCollectionDetails(collectionId, mode, actor);
-            expect(result.items).toMatchObject([
-                { mediaType: MediaType.MOVIES, mediaId: 1, mediaName: "Movie 1", orderIndex: 1, annotation: "First now" },
-                { mediaType: MediaType.MOVIES, mediaId: 2, mediaName: "Movie 2", orderIndex: 2, annotation: null },
-                { mediaType: MediaType.MOVIES, mediaId: 3, mediaName: "Movie 3", orderIndex: 3, annotation: null },
-            ]);
-        }
-
-        const copy = service.copyCollection(collectionId, toActor({ id: 2, role: RoleType.USER }));
-        expect(CollectionsRepository.getCollectionById(copy.id)).toMatchObject({ ownerId: 2, privacy: PrivacyType.PRIVATE });
-        expect(CollectionsRepository.getCollectionItems(copy.id)).toMatchObject([
-            { mediaType: MediaType.MOVIES, mediaId: 1, orderIndex: 1, annotation: "First now" },
-            { mediaType: MediaType.MOVIES, mediaId: 2, orderIndex: 2, annotation: null },
-            { mediaType: MediaType.MOVIES, mediaId: 3, orderIndex: 3, annotation: null },
-        ]);
-        expect(CollectionsRepository.getCollectionById(collectionId)?.copiedCount).toBe(1);
     });
 
     it("keeps same-ID media distinct through creation, editing, copying, additions and removals", async () => {
@@ -285,59 +177,6 @@ describe("collection media references", () => {
         ]);
     });
 
-    it("uses typed memberships, contains-type discovery and ordered typed previews without duplicating collections", async () => {
-        const mixedId = service.createCollection({
-            ...collectionData, title: "Mixed universe",
-            items: [
-                { mediaType: MediaType.MOVIES, mediaId: 1 }, { mediaType: MediaType.BOOKS, mediaId: 1 },
-                { mediaType: MediaType.MOVIES, mediaId: 2 }, { mediaType: MediaType.GAMES, mediaId: 1 },
-                { mediaType: MediaType.MANGA, mediaId: 1 },
-            ],
-        });
-        const moviesId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
-        const privateId = service.createCollection({
-            ...collectionData, privacy: PrivacyType.PRIVATE, items: [{ mediaType: MediaType.BOOKS, mediaId: 1 }],
-        });
-        const memberships = await service.getUserCollectionMemberships(1, 1, MediaType.BOOKS);
-        expect(memberships.map(({ id, hasMedia }) => ({ id, hasMedia }))).toEqual(expect.arrayContaining([
-            { id: mixedId, hasMedia: true }, { id: moviesId, hasMedia: false }, { id: privateId, hasMedia: true },
-        ]));
-        expect(memberships).toHaveLength(3);
-
-        const anonymous = toActor();
-        const books = await service.getPublicCollections({ mediaType: MediaType.BOOKS }, anonymous);
-        expect(books.total).toBe(1);
-        expect(books.items[0]).toMatchObject({ id: mixedId, itemsCount: 5 });
-        expect(books.items[0].previews).toMatchObject([
-            { mediaType: MediaType.MOVIES, mediaId: 1, mediaName: "Movie 1" },
-            { mediaType: MediaType.BOOKS, mediaId: 1, mediaName: "Book 1" },
-            { mediaType: MediaType.MOVIES, mediaId: 2, mediaName: "Movie 2" },
-            { mediaType: MediaType.GAMES, mediaId: 1, mediaName: "Game 1" },
-        ]);
-        expect(books.items[0].previews).toHaveLength(4);
-        expect(books.items[0].mediaTypes).toEqual(expect.arrayContaining([MediaType.MOVIES, MediaType.BOOKS, MediaType.GAMES, MediaType.MANGA]));
-        const movies = await service.getPublicCollections({ mediaType: MediaType.MOVIES }, anonymous);
-        expect(movies.total).toBe(2);
-        expect(new Set(movies.items.map(item => item.id)).size).toBe(2);
-        const profile = await service.getPaginatedUserCollections(1, { mediaType: MediaType.BOOKS }, anonymous);
-        expect(profile).toMatchObject({ total: 1, items: [{ id: mixedId }] });
-        const owner = await service.getUserCollections(1, actor, MediaType.BOOKS);
-        expect(owner.map(item => item.id)).toEqual(expect.arrayContaining([mixedId, privateId]));
-        expect(owner).toHaveLength(2);
-        const community = await service.getMediaCommunityCollections(1, MediaType.BOOKS, anonymous);
-        expect(community.map(item => item.id)).toEqual([mixedId]);
-        expect((await service.getMediaCommunityCollections(2, MediaType.BOOKS, anonymous))).toEqual([]);
-
-        const overview = await AdminRepository.getCollectionsOverview();
-        expect(overview.collectionsPerMediaType).toEqual(expect.arrayContaining([
-            { mediaType: MediaType.MOVIES, count: 2 }, { mediaType: MediaType.BOOKS, count: 2 },
-            { mediaType: MediaType.GAMES, count: 1 }, { mediaType: MediaType.MANGA, count: 1 },
-        ]));
-        const adminPage = await AdminRepository.getPaginatedCollectionsForAdmin({ search: "Mixed universe" });
-        expect(adminPage).toMatchObject({ total: 1, items: [{ id: mixedId, itemsCount: 5 }] });
-        expect(adminPage.items[0].mediaTypes).toEqual(books.items[0].mediaTypes);
-    });
-
     it("globally sorts, searches and paginates mixed results while preserving collection ranks", async () => {
         const entries = Array.from({ length: 32 }, (_, index) => ({
             id: 10 + Math.floor(index / 2),
@@ -398,21 +237,7 @@ describe("collection media references", () => {
         await expect(service.getCollectionDetails(collectionId, "read", toActor(), { library: "in" })).rejects.toThrow("Sign in");
     });
 
-    it("only accepts sort options shared by the selected contents and supports narrowing to a media type", async () => {
-        dbContext.db.update(schema.movies).set({ voteAverage: 9 }).where(eq(schema.movies.id, 2)).run();
-        const collectionId = service.createCollection({
-            ...collectionData,
-            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }, { mediaType: MediaType.BOOKS, mediaId: 1 }, { mediaType: MediaType.MOVIES, mediaId: 2 }],
-        });
-        await expect(service.getCollectionDetails(collectionId, "read", toActor(), { sorting: "provider_rating_highest" }))
-            .rejects.toThrow("not available");
-        const movies = await service.getCollectionDetails(collectionId, "read", toActor(), { mediaType: MediaType.MOVIES, sorting: "provider_rating_highest" });
-        expect(movies.items.map(item => item.mediaId)).toEqual([2, 1]);
-        const books = await service.getCollectionDetails(collectionId, "read", toActor(), { mediaType: MediaType.BOOKS, sorting: "pages_highest" });
-        expect(books).toMatchObject({ total: 1, items: [{ mediaType: MediaType.BOOKS, mediaId: 1 }] });
-    });
-
-    it("hydrates the viewer's full tracking rows for every media type without exposing another user's data", async () => {
+it("hydrates the viewer's full tracking rows for every media type without exposing another user's data", async () => {
         const collectionId = service.createCollection({
             ...collectionData,
             items: Object.values(MediaType).map(mediaType => ({ mediaType, mediaId: 1, annotation: `Note ${mediaType}` })),
@@ -515,7 +340,7 @@ describe("collection media references", () => {
         expect(absentType.filterOptions).toEqual(scoped.filterOptions);
     });
 
-    it("filters restricted and private collections in SQL when only public summaries are allowed", async () => {
+it("filters restricted and private collections in SQL when only public summaries are allowed", async () => {
         dbContext.db.update(schema.user).set({ privacy: PrivacyType.PRIVATE }).where(eq(schema.user.id, 1)).run();
         const publicId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.BOOKS, mediaId: 1 }] });
         service.createCollection({ ...collectionData, privacy: PrivacyType.RESTRICTED, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });

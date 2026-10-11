@@ -1,3 +1,4 @@
+import {MediaFilterChoice} from "@/lib/client/components/media/browse/MediaFilterChoice";
 import {useId, useState} from "react";
 import {ChevronDown, ChevronUp} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
@@ -43,7 +44,7 @@ export const MediaFilterSearch = ({ label, options, value, onChange, disabled, e
     ).slice(0, 8);
 
     const availableOptions = browseOptions
-        ? options.filter(option => !value.includes(option)).sort((a, b) => a.localeCompare(b))
+        ? [...new Set([...options, ...value])].sort((a, b) => a.localeCompare(b))
         : [];
 
     const selectOption = (option: string) => {
@@ -109,9 +110,14 @@ export const MediaFilterSearch = ({ label, options, value, onChange, disabled, e
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-wrap gap-1.5">
                         {(showAll ? availableOptions : availableOptions.slice(0, 14)).map(option =>
-                            <Button key={option} type="button" variant="outline" size="xs" aria-label={`Select ${label.toLowerCase()}: ${option}`} className="h-auto max-w-full whitespace-normal text-left" disabled={disabled || atLimit} onClick={() => selectOption(option)}>
-                                {option}
-                            </Button>
+                            <MediaFilterChoice
+                                key={option}
+                                label={option}
+                                selected={value.includes(option)}
+                                ariaLabel={value.includes(option) ? `Remove ${option} filter` : `Select ${label.toLowerCase()}: ${option}`}
+                                disabled={disabled || (atLimit && !value.includes(option))}
+                                onSelect={() => value.includes(option) ? onChange(value.filter(selected => selected !== option)) : selectOption(option)}
+                            />
                         )}
                     </div>
                     {availableOptions.length > 14 &&
@@ -126,7 +132,7 @@ export const MediaFilterSearch = ({ label, options, value, onChange, disabled, e
                     Choose up to {maxSelected} values. Remove one to select another.
                 </FieldDescription>
             }
-            {value.length > 0 &&
+            {value.length > 0 && !browseOptions &&
                 <div className="flex flex-wrap gap-2">
                     {value.map(option =>
                         <AppliedSearchFilterChip

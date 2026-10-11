@@ -11,8 +11,9 @@ test("opens tag management from a list deep link and creates the first empty tag
     await expect(filters.getByText("No tags created yet.", { exact: true })).toBeVisible();
     await filters.getByRole("searchbox", { name: "Search tags", exact: true }).fill("First tag");
     await filters.getByRole("button", { name: "Create tag", exact: true }).click();
-    await expect(filters.getByRole("checkbox", { name: "First tag", exact: true })).toBeVisible();
-    await expect(filters.getByText("0 media", { exact: true })).toBeVisible();
+    await expect(filters.getByRole("button", { name: "First tag", exact: true })).toBeVisible();
+    await expect(filters.getByRole("button", { name: "First tag", exact: true })).toHaveAttribute("title", "0 media");
+    await expect(filters.locator("img")).toHaveCount(0);
     await filters.getByRole("button", { name: "Close", exact: true }).click();
     await expect(filters).toHaveCount(0);
     await expect(page).toHaveURL(url => !url.searchParams.has("filtersTab") && !url.searchParams.has("search"));
@@ -28,7 +29,7 @@ test("opens tag management from a list deep link and creates the first empty tag
     });
     await page.goto(`/lists/tracking/movies/${users.owner.name}?${search}`);
     await expect(filters.getByRole("button", { name: "Tags", exact: true })).toHaveAttribute("aria-pressed", "true");
-    await filters.getByRole("checkbox", { name: "rewatch", exact: true }).check();
+    await filters.getByRole("button", { name: "rewatch", exact: true }).click();
     await filters.getByRole("button", { name: "Apply Filters", exact: true }).click();
     await expect(filters).toHaveCount(0);
     await expect(page).toHaveURL(url => !url.searchParams.has("filtersTab")
@@ -58,11 +59,11 @@ test("keeps filter drafts across the Filters and Tags tabs without changing titl
         .getByRole("checkbox", { name: browseFilterGenres[0], exact: true }).check();
     await filters.getByRole("checkbox", { name: "Favorites", exact: true }).check();
     await filters.getByRole("button", { name: "Tags", exact: true }).click();
-    await filters.getByRole("checkbox", { name: "rewatch", exact: true }).check();
+    await filters.getByRole("button", { name: "rewatch", exact: true }).click();
     const tagSearch = filters.getByRole("searchbox", { name: "Search tags", exact: true });
     await tagSearch.fill("shelf");
-    await filters.getByRole("checkbox", { name: "shelf", exact: true }).check();
-    await expect(filters.getByRole("checkbox", { name: "rewatch", exact: true })).toHaveCount(0);
+    await filters.getByRole("button", { name: "shelf", exact: true }).click();
+    await expect(filters.getByRole("button", { name: "rewatch", exact: true })).toHaveCount(0);
     await expect(titleSearch).toHaveValue(browseGem);
     await expect(page).toHaveURL(url => url.searchParams.get("search") === browseGem && !url.searchParams.has("tags"));
     await tagSearch.fill("");
@@ -71,8 +72,8 @@ test("keeps filter drafts across the Filters and Tags tabs without changing titl
     await expect(filters.getByRole("group", { name: "Genres", exact: true })
         .getByRole("checkbox", { name: browseFilterGenres[0], exact: true })).toBeChecked();
     await filters.getByRole("button", { name: "Tags", exact: true }).click();
-    await expect(filters.getByRole("checkbox", { name: "rewatch", exact: true })).toBeChecked();
-    await expect(filters.getByRole("checkbox", { name: "shelf", exact: true })).toBeChecked();
+    await expect(filters.getByRole("button", { name: "rewatch", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(filters.getByRole("button", { name: "shelf", exact: true })).toHaveAttribute("aria-pressed", "true");
     await filters.getByRole("button", { name: "Apply Filters", exact: true }).click();
     await expect(filters).toHaveCount(0);
     await expect(page).toHaveURL(url => url.searchParams.get("search") === browseGem
@@ -84,7 +85,7 @@ test("keeps filter drafts across the Filters and Tags tabs without changing titl
     const appliedUrl = page.url();
     await controls.getByRole("button", { name: "Filters", exact: true }).click();
     await filters.getByRole("button", { name: "Tags", exact: true }).click();
-    await expect(filters.getByRole("checkbox", { name: "rewatch", exact: true })).toBeChecked();
+    await expect(filters.getByRole("button", { name: "rewatch", exact: true })).toHaveAttribute("aria-pressed", "true");
     await filters.getByRole("button", { name: "Apply Filters", exact: true }).click();
     await expect(filters).toHaveCount(0);
     await expect(page).toHaveURL(appliedUrl);
@@ -108,17 +109,13 @@ test("creates empty tags and renames or deletes an applied tag inside the filter
     await expect(filters.getByRole("button", { name: "Create tag", exact: true })).toHaveCount(0);
     await tagSearch.fill("Browser empty tag");
     await filters.getByRole("button", { name: "Create tag", exact: true }).click();
-    await expect(filters.getByRole("checkbox", { name: "Browser empty tag", exact: true })).toBeVisible();
-    await expect(filters.getByRole("checkbox", { name: "Browser empty tag", exact: true })).not.toBeChecked();
-    await expect(filters.getByRole("group").filter({
-        has: page.getByRole("button", { name: "Rename Browser empty tag", exact: true }),
-    }).getByText("0 media", { exact: true })).toBeVisible();
+    await expect(filters.getByRole("button", { name: "Browser empty tag", exact: true })).toBeVisible();
+    await expect(filters.getByRole("button", { name: "Browser empty tag", exact: true })).toHaveAttribute("aria-pressed", "false");
+    await expect(filters.getByRole("button", { name: "Browser empty tag", exact: true })).toHaveAttribute("title", "0 media");
     await expect(filters.getByRole("button", { name: "Rename Browser empty tag", exact: true })).toBeVisible();
     await tagSearch.fill("");
-    await expect(filters.getByRole("group").filter({
-        has: page.getByRole("button", { name: "Rename rewatch", exact: true }),
-    }).getByText("1 media", { exact: true })).toBeVisible();
-    await filters.getByRole("checkbox", { name: "rewatch", exact: true }).check();
+    await expect(filters.getByRole("button", { name: "rewatch", exact: true })).toHaveAttribute("title", "1 media");
+    await filters.getByRole("button", { name: "rewatch", exact: true }).click();
     await filters.getByRole("button", { name: "Apply Filters", exact: true }).click();
     const results = page.getByRole("group", { name: "Browsing results and filters", exact: true });
     await expect(results.getByRole("button", { name: "Remove rewatch filter", exact: true })).toBeVisible();
@@ -127,8 +124,8 @@ test("creates empty tags and renames or deletes an applied tag inside the filter
     await filters.getByRole("button", { name: "Rename rewatch", exact: true }).click();
     await filters.getByRole("textbox", { name: "New tag name", exact: true }).fill("rewatched");
     await filters.getByRole("button", { name: "Save tag name", exact: true }).click();
-    await expect(filters.getByRole("checkbox", { name: "rewatched", exact: true })).toBeChecked();
-    await expect(filters.getByRole("checkbox", { name: "rewatch", exact: true })).toHaveCount(0);
+    await expect(filters.getByRole("button", { name: "rewatched", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(filters.getByRole("button", { name: "rewatch", exact: true })).toHaveCount(0);
     await filters.getByRole("button", { name: "Apply Filters", exact: true }).click();
     await expect(results.getByRole("button", { name: "Remove rewatched filter", exact: true })).toBeVisible();
     await expect(results.getByRole("button", { name: "Remove rewatch filter", exact: true })).toHaveCount(0);
@@ -140,10 +137,10 @@ test("creates empty tags and renames or deletes an applied tag inside the filter
     await filters.getByRole("button", { name: "Delete rewatched", exact: true }).click();
     const confirm = page.getByRole("alertdialog", { name: 'Delete "rewatched"?', exact: true });
     await confirm.getByRole("button", { name: "Cancel", exact: true }).click();
-    await expect(filters.getByRole("checkbox", { name: "rewatched", exact: true })).toBeChecked();
+    await expect(filters.getByRole("button", { name: "rewatched", exact: true })).toHaveAttribute("aria-pressed", "true");
     await filters.getByRole("button", { name: "Delete rewatched", exact: true }).click();
     await confirm.getByRole("button", { name: "Delete tag", exact: true }).click();
-    await expect(filters.getByRole("checkbox", { name: "rewatched", exact: true })).toHaveCount(0);
+    await expect(filters.getByRole("button", { name: "rewatched", exact: true })).toHaveCount(0);
     await expect(filters).toBeVisible();
     await filters.getByRole("button", { name: "Apply Filters", exact: true }).click();
     await expect(page).toHaveURL(url => url.searchParams.get("search") === browseGem && !url.searchParams.has("tags"));
@@ -151,8 +148,8 @@ test("creates empty tags and renames or deletes an applied tag inside the filter
     await page.reload();
     await controls.getByRole("button", { name: "Filters", exact: true }).click();
     await filters.getByRole("button", { name: "Tags", exact: true }).click();
-    await expect(filters.getByRole("checkbox", { name: "Browser empty tag", exact: true })).toBeVisible();
-    await expect(filters.getByRole("checkbox", { name: "rewatched", exact: true })).toHaveCount(0);
+    await expect(filters.getByRole("button", { name: "Browser empty tag", exact: true })).toBeVisible();
+    await expect(filters.getByRole("button", { name: "rewatched", exact: true })).toHaveCount(0);
 });
 
 
@@ -170,10 +167,10 @@ test("profile visitors can search and filter tags without owner management contr
     await tagSearch.fill("visitor cannot create");
     await expect(filters.getByRole("button", { name: "Create tag", exact: true })).toHaveCount(0);
     await tagSearch.fill("rewatch");
-    await expect(filters.getByRole("checkbox", { name: "rewatch", exact: true })).toBeVisible();
+    await expect(filters.getByRole("button", { name: "rewatch", exact: true })).toBeVisible();
     await expect(filters.getByRole("button", { name: /^Rename / })).toHaveCount(0);
     await expect(filters.getByRole("button", { name: /^Delete / })).toHaveCount(0);
-    await filters.getByRole("checkbox", { name: "rewatch", exact: true }).check();
+    await filters.getByRole("button", { name: "rewatch", exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await filters.getByRole("button", { name: "Apply Filters", exact: true }).click();
     await expect(page).toHaveURL(url => Boolean(url.searchParams.get("tags")?.includes("rewatch")));

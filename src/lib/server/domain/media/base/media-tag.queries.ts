@@ -4,12 +4,12 @@ import type {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
-import {and, asc, countDistinct, desc, eq, like, lte, sql} from "drizzle-orm";
+import {and, asc, count, countDistinct, eq, like, sql} from "drizzle-orm";
 import type {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
 
 
 export const createMediaTagQueries = (definition: AnyMediaRepositoryDefinition) => {
-    const { listTable, mediaTable, tagTable } = definition.tables;
+    const { tagTable } = definition.tables;
 
     return {
         async getTagNames(userId: number) {
@@ -71,32 +71,6 @@ export const createMediaTagQueries = (definition: AnyMediaRepositoryDefinition) 
             const pagination = resolvePagination({ page: search.page, perPage: 16, maxPerPage: 16 });
             const searchCondition = search.search ? like(tagTable.name, `%${search.search}%`) : undefined;
 
-            const rankedSq = getDbClient()
-                .$with("ranked_data")
-                .as(getDbClient()
-                    .select({
-                        tagId: tagTable.id,
-                        mediaId: listTable.mediaId,
-                        mediaCover: mediaTable.imageCover,
-                        tagName: sql<string>`${tagTable.name}`.as("tag_name"),
-                        mediaName: sql<string>`${mediaTable.name}`.as("media_name"),
-                        rowNumber: sql<number>`row_number() over (
-                            partition by ${tagTable.name}
-                            order by ${listTable.lastUpdated} desc
-                        )`.as("row_number"),
-                        totalCount: sql<number>`count(${tagTable.mediaId}) over (
-                            partition by ${tagTable.name}
-                        )`.as("total_count"),
-                        tagLastActivity: sql<number>`max(${listTable.lastUpdated}) over (
-                            partition by ${tagTable.name}
-                        )`.as("tags_last_activity"),
-                    })
-                    .from(tagTable)
-                    .leftJoin(mediaTable, eq(tagTable.mediaId, mediaTable.id))
-                    .leftJoin(listTable, and(eq(tagTable.mediaId, listTable.mediaId), eq(listTable.userId, userId)))
-                    .where(and(eq(tagTable.userId, userId), searchCondition))
-                );
-
             const [{ total, exactMatch }, items] = await Promise.all([
                 getDbClient()
                     .select({
@@ -109,28 +83,14 @@ export const createMediaTagQueries = (definition: AnyMediaRepositoryDefinition) 
                     .where(and(eq(tagTable.userId, userId), searchCondition))
                     .then(([result]) => result),
                 getDbClient()
-                    .with(rankedSq)
                     .select({
-                        tagId: rankedSq.tagId,
-                        tagName: rankedSq.tagName,
-                        totalCount: rankedSq.totalCount,
-                        medias: sql<{ mediaId: number; mediaName: string; mediaCover: string }[]>`
-                            json_group_array(json_object(
-                                'mediaId', ${rankedSq.mediaId},
-                                'mediaName', ${rankedSq.mediaName},
-                                'mediaCover', ${rankedSq.mediaCover}
-                            ))`.mapWith((rawString) => {
-                            const parsedArray = JSON.parse(rawString);
-                            return parsedArray.filter((item: any) => item.mediaId !== null).map((item: any) => ({
-                                ...item,
-                                mediaCover: mediaTable.imageCover.mapFromDriverValue(item.mediaCover),
-                            }))
-                        }),
+                        tagName: sql<string>`${tagTable.name}`,
+                        totalCount: count(tagTable.mediaId),
                     })
-                    .from(rankedSq)
-                    .where(lte(rankedSq.rowNumber, 3))
-                    .groupBy(sql`${rankedSq.tagName}`)
-                    .orderBy(desc(rankedSq.tagLastActivity))
+                    .from(tagTable)
+                    .where(and(eq(tagTable.userId, userId), searchCondition))
+                    .groupBy(tagTable.name)
+                    .orderBy(sql`${tagTable.name} COLLATE NOCASE`, asc(tagTable.name))
                     .limit(pagination.limit)
                     .offset(pagination.offset),
             ]);

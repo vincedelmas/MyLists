@@ -93,26 +93,16 @@ export const dynamicListRules = (spec: DynamicListSpec, tagNames: Record<number,
 };
 
 
-const dynamicListSortLabel = (spec: DynamicListSpec) => {
-    const mediaTypes = spec.mediaTypes === "all"
-        ? ALL_MEDIA_TYPES
-        : spec.mediaTypes;
-
-    return getMediaSortOptions(mediaTypes, true).find(option => {
-        const sort = MEDIA_SORT_DEFINITIONS[option.value];
-        return sort.field === spec.sort.field && sort.direction === spec.sort.direction;
-    })!.label;
-};
-
-
 export const dynamicListBadgeLabels = (spec: DynamicListSpec, tagNames: Record<number, string>, sortLabel?: string) => {
     const mediaTypesLabels = spec.mediaTypes === "all"
         ? ["All media"]
         : spec.mediaTypes.map(type => capitalize(type));
 
-    if (sortLabel === undefined) {
-        sortLabel = dynamicListSortLabel(spec);
-    }
+    const sortingLabel = sortLabel ?? getMediaSortOptions(spec.mediaTypes === "all" ? ALL_MEDIA_TYPES : spec.mediaTypes, true)
+        .find(option => {
+            const sort = MEDIA_SORT_DEFINITIONS[option.value];
+            return sort.field === spec.sort.field && sort.direction === spec.sort.direction;
+        })!.label;
 
-    return [...mediaTypesLabels, ...dynamicListRules(spec, tagNames), sortLabel];
+    return [...mediaTypesLabels, ...dynamicListRules(spec, tagNames), sortingLabel];
 }

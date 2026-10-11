@@ -1,14 +1,15 @@
 import {Link} from "@tanstack/react-router";
 import type {CommunitySearch} from "@/lib/schemas";
+import {List, ListOrdered, Pin} from "lucide-react";
 import {formatNumber} from "@/lib/utils/formatting/number";
-import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ActionsMenu} from "@/lib/client/components/general/ActionsMenu";
-import {ListCoverStrip} from "@/lib/client/components/lists/ListCoverStrip";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import type {CollectionSummaryData} from "@/lib/client/react-query/query-options";
+import {ListCoverStrip} from "@/lib/client/components/lists/ListCoverStrip";
 import {OverflowBadges} from "@/lib/client/components/general/OverflowBadges";
+import type {CollectionSummaryData} from "@/lib/client/react-query/query-options";
+import {CollectionStats} from "@/lib/client/components/collections/CollectionStats";
+import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {CollectionActions} from "@/lib/client/components/collections/CollectionActions";
-import {Copy, Eye, Heart, List, ListOrdered, Pin} from "lucide-react";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
 
@@ -96,23 +97,9 @@ export const CollectionCard = ({ collection, communitySearch, showOwner = true }
                                 <span className="truncate">{collection.ownerName}</span>
                             </Link>
                         }
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1.5" title="Likes">
-                                <Heart className="size-3.5 text-brand" aria-hidden="true"/>
-                                <span className="tabular-nums">{formatNumber(collection.likeCount)}</span>
-                                <span className="sr-only"> likes</span>
-                            </span>
-                            <span className="flex items-center gap-1.5" title="Views">
-                                <Eye className="size-3.5 text-brand" aria-hidden="true"/>
-                                <span className="tabular-nums">{formatNumber(collection.viewCount)}</span>
-                                <span className="sr-only"> views</span>
-                            </span>
-                            <span className="flex items-center gap-1.5" title="Copies">
-                                <Copy className="size-3.5 text-brand" aria-hidden="true"/>
-                                <span className="tabular-nums">{formatNumber(collection.copiedCount)}</span>
-                                <span className="sr-only"> copies</span>
-                            </span>
-                        </div>
+                        <CollectionStats
+                            collection={collection}
+                        />
                     </div>
                 </CardContent>
             </div>

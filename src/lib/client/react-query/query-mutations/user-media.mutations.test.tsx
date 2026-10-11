@@ -4,7 +4,7 @@ import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/li
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
-import {listFiltersOptions} from "@/lib/client/react-query/query-options/user-media.options";
+import {listFiltersOptions, tagNamesOptions} from "@/lib/client/react-query/query-options/user-media.options";
 import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options/activity.options";
 import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
 import {useAddMediaToListMutation, useDeleteProfileUpdateMutation, useEditTagMutation, useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
@@ -19,6 +19,7 @@ const server = vi.hoisted(() => ({
     activityStats: vi.fn(),
     listFilters: vi.fn(),
     editTag: vi.fn(),
+    tagNames: vi.fn(),
     correction: vi.fn(),
     toast: vi.fn(),
 }));
@@ -47,6 +48,7 @@ vi.mock("@/lib/server/functions/user-media", () => ({
     postUpdateUserCustomCover: server.cover,
     postDeleteUserUpdates: server.deleteUpdates,
     postEditUserTag: server.editTag,
+    getUserTagNames: server.tagNames,
 }));
 vi.mock("@/lib/server/functions/user-monthly-activity", () => ({
     getMonthlyActivityStats: server.activityStats,
@@ -173,13 +175,44 @@ describe("list filter freshness", () => {
             tag: action === TagAction.RENAME ? { name: "New name", oldName: "Old name" } : { name: "Old name" },
         });
 
-        expect(queryClient.getQueryData(namesKey)).toEqual(tags);
+        expect(queryClient.getQueryState(namesKey)?.isInvalidated).toBe(true);
+        server.tagNames.mockResolvedValueOnce(tags);
+        expect(await queryClient.fetchQuery(tagNamesOptions(MediaType.MOVIES, true))).toEqual(tags);
         expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
         expect(queryClient.getQueryState(detailsKey)?.isInvalidated).toBe(true);
         expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);
         expect(queryClient.getQueryState(otherMediaKey)?.isInvalidated).toBe(false);
         expect(queryClient.getQueryState(pinsKey)?.isInvalidated).toBe(true);
         expect(queryClient.getQueryState(otherPinsKey)?.isInvalidated).toBe(false);
+    });
+
+    it.each([TagAction.ADD, TagAction.DELETE_ONE])("refreshes tag assignments and the directory after %s", async action => {
+        const listKey = ["userList", MediaType.MOVIES, "alice", { tags: ["Favorites"] }];
+        const detailsKey = ["details", MediaType.MOVIES, 3];
+        const namesOptions = tagNamesOptions(MediaType.MOVIES, true);
+        const previous = [{ name: "Favorites" }];
+        const names = action === TagAction.ADD ? previous : [];
+        queryClient.setQueryData(namesOptions.queryKey, action === TagAction.ADD ? [] : previous);
+        for (const key of [listKey, detailsKey]) queryClient.setQueryData(key, { tags: previous });
+        server.editTag.mockResolvedValueOnce(action === TagAction.ADD ? previous[0] : undefined);
+        server.tagNames.mockResolvedValueOnce(names);
+
+        await useEditTagMutation(MediaType.MOVIES, 3).mutateAsync({ action, tag: previous[0] });
+
+        expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
+        expect(queryClient.getQueryState(detailsKey)?.isInvalidated).toBe(true);
+        expect(await queryClient.fetchQuery(namesOptions)).toEqual(names);
+        expect(server.tagNames).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([TagAction.ADD, TagAction.DELETE_ONE])("keeps the edited item available until the dialog closes after %s", async action => {
+        server.editTag.mockResolvedValueOnce(action === TagAction.ADD ? { name: "Favorites" } : undefined);
+
+        await useEditTagMutation(MediaType.SERIES, 1).mutateAsync({ action, tag: { name: "Favorites" } });
+
+        expect(queryClient.getQueryState(queryKey)?.isInvalidated).toBe(true);
+        expect(queryClient.getQueryData(queryKey)).toEqual(initialList);
+        expect(fetchList).not.toHaveBeenCalled();
     });
 
     it.each(["details", "userList"] as const)("reloads chosen platform filters after editing from %s", async source => {

@@ -10,7 +10,6 @@ import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
 import {MCP_READ_SCOPE, MCP_WRITE_SCOPE} from "@/lib/server/core/mcp/config";
 import type {ToolAnnotations, CallToolResult} from "@modelcontextprotocol/sdk/types.js";
-import {ActivityCorrectionRequired} from "@/lib/server/domain/tracking/monthly-activity.service";
 
 
 export type McpAccess = {
@@ -46,10 +45,6 @@ const toolErrorMessage = (error: unknown) => {
 
     if (isNotFound(error)) {
         return "Media not found.";
-    }
-
-    if (error instanceof ActivityCorrectionRequired) {
-        return "This change needs an activity correction. Review it on MyLists.";
     }
 };
 

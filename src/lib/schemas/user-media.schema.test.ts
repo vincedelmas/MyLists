@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
-import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import {addMediaToListSchema, updateUserCustomCoverSchema, updateUserMediaSchema} from "@/lib/schemas/user-media.schema";
+import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {addMediaToListSchema, editUserTagSchema, updateUserCustomCoverSchema, updateUserMediaSchema} from "@/lib/schemas/user-media.schema";
 import {updateBookCoverSchema} from "@/lib/schemas/media-details.schema";
 import {MAX_IMAGE_BYTES} from "@/lib/utils/constants";
 
@@ -24,6 +24,41 @@ describe.each([
         }
         const imageFile = new File([new Uint8Array(MAX_IMAGE_BYTES)], "cover.png");
         expect(schema.safeParse({ ...fields, imageFile }).success).toBe(true);
+    });
+});
+
+
+describe("tag edits", () => {
+    const fields = { mediaType: MediaType.MOVIES, tag: { name: "Favorites" } };
+
+    it.each(["", " \n\t "])("rejects blank new tag names: %j", name => {
+        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.ADD, tag: { name } }).success).toBe(false);
+        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.RENAME, tag: { name, oldName: "Favorites" } }).success).toBe(false);
+    });
+
+    it("preserves exact names when addressing existing tags", () => {
+        expect(editUserTagSchema.parse({ ...fields, action: TagAction.RENAME,
+            tag: { name: "Favorites", oldName: "  Old name  " },
+        }).tag).toEqual({ name: "Favorites", oldName: "  Old name  " });
+        expect(editUserTagSchema.parse({ ...fields, action: TagAction.DELETE_ALL,
+            tag: { name: "  Old name  " },
+        }).tag.name).toBe("  Old name  ");
+    });
+
+    it("requires the rename source and the media assignment to delete", () => {
+        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.RENAME }).success).toBe(false);
+        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.DELETE_ONE }).success).toBe(false);
+        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.DELETE_ONE, mediaId: 1 }).success).toBe(true);
+    });
+
+    it("allows creating and deleting unassigned tags", () => {
+        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.ADD }).success).toBe(true);
+        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.DELETE_ALL }).success).toBe(true);
+    });
+
+    it.each(["", " \n\t "])("allows removing legacy blank tags: %j", name => {
+        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.DELETE_ALL, tag: { name } }).success).toBe(true);
+        expect(editUserTagSchema.safeParse({ ...fields, action: TagAction.DELETE_ONE, mediaId: 1, tag: { name } }).success).toBe(true);
     });
 });
 

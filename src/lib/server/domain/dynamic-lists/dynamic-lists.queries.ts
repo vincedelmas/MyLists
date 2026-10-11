@@ -1,20 +1,20 @@
 import {MediaType, Status} from "@/lib/utils/enums";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {and, eq, inArray, notInArray, sql} from "drizzle-orm";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
-import {getDbClient} from "@/lib/server/database/async-storage";
 import type {IdNamePair} from "@/lib/types/media-common.types";
-import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
-import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
-import type {DynamicListRuntimeFilters, DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
-import {mediaTags, user, userMediaSettings} from "@/lib/server/database/schema";
-import {FormattedError} from "@/lib/utils/error-classes";
-import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
-import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
-import {getMediaCommonFilterConditions, getMediaScopedFilterConditions, getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
-import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
+import {getDbClient} from "@/lib/server/database/async-storage";
 import {getDynamicListTagNames} from "./dynamic-list-tags.queries";
+import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
+import {mediaTags, user, userMediaSettings} from "@/lib/server/database/schema";
+import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
+import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
+import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import type {DynamicListRuntimeFilters, DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
+import {getMediaCommonFilterConditions, getMediaScopedFilterConditions, getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 type DynamicListListItem = MediaListDataByType[MediaType]["items"][number];
@@ -23,8 +23,8 @@ type DynamicListListItem = MediaListDataByType[MediaType]["items"][number];
 type DynamicListItem = DynamicListListItem & {
     title: string;
     mediaType: MediaType;
-    providerRating: number | null;
     releaseDate: string | null;
+    providerRating: number | null;
 };
 
 
@@ -102,18 +102,15 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
             conditions.push(sql`INSTR(LOWER(${mediaTable.name}), LOWER(${filters.search})) > 0`);
         }
 
-        if (definition.filters.common.status && filters.statusGroup) {
-            const statuses = statusGroups[filters.statusGroup].filter(s => allowedStatuses.includes(s));
-            conditions.push(statuses.length
-                ? sql`${listTable.status} IN (${sql.join(statuses.map(status => sql`${status}`), sql`, `)})`
-                : sql`0`);
-        }
+        if (definition.filters.common.status) {
+            for (const selected of [filters.statusGroup ? statusGroups[filters.statusGroup] : undefined, filters.statuses]) {
+                if (!selected) continue;
 
-        if (definition.filters.common.status && filters.statuses) {
-            const statuses = filters.statuses.filter(s => allowedStatuses.includes(s));
-            conditions.push(statuses.length
-                ? sql`${listTable.status} IN (${sql.join(statuses.map(status => sql`${status}`), sql`, `)})`
-                : sql`0`);
+                const statuses = selected.filter(status => allowedStatuses.includes(status));
+                conditions.push(statuses.length
+                    ? sql`${listTable.status} IN (${sql.join(statuses.map(status => sql`${status}`), sql`, `)})`
+                    : sql`0`);
+            }
         }
 
         if (cutoffs.addedBefore) {

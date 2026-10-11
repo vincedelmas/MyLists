@@ -224,8 +224,10 @@ export class CollectionsRepository {
             tags: [], genres: [], mediaTypes, mediaFilters: {},
         };
 
-        if (selectedTypes.length) {
-            const sources = (includeFilterOptions ? mediaTypes : selectedTypes).map(mediaType => {
+        const filterMediaTypes = includeFilterOptions ? mediaTypes : selectedTypes;
+
+        if (filterMediaTypes.length) {
+            const sources = filterMediaTypes.map(mediaType => {
                 const definition = getServerMediaDefinition(mediaType).repository;
                 const { listTable, tagTable, genreTable } = definition.tables;
 
@@ -358,6 +360,18 @@ export class CollectionsRepository {
                 eq(collectionItems.mediaType, mediaType),
                 eq(collectionItems.collectionId, collectionId),
             )).run();
+
+        // Move ranks down in order so the unique order index never collides.
+        for (const [index, item] of this.getCollectionItems(collectionId).entries()) {
+            const orderIndex = index + 1;
+            if (item.orderIndex === orderIndex) continue;
+
+            getDbClient()
+                .update(collectionItems)
+                .set({ orderIndex })
+                .where(eq(collectionItems.id, item.id))
+                .run();
+        }
     }
 
     static async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType, pinnedOnly = false) {

@@ -10,7 +10,6 @@ import type {CallToolResult} from "@modelcontextprotocol/sdk/types.js";
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
 vi.mock("@/lib/server/core/logger", () => ({ logger: { error: vi.fn() } }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: vi.fn() }));
-vi.mock("@/lib/server/domain/tracking/monthly-activity.service", () => ({ ActivityCorrectionRequired: class extends Error {} }));
 
 
 const createRegistry = (scopes = [MCP_READ_SCOPE, MCP_WRITE_SCOPE]) => {

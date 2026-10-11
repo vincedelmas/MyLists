@@ -15,15 +15,12 @@ import {useConfirmBlocker} from "@/lib/client/hooks/use-confirm-blocker";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
-import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
-import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
 import {DynamicListPreview} from "@/lib/client/components/dynamic-lists/DynamicListPreview";
 import {MediaTypeFilterTabs} from "@/lib/client/components/media/browse/MediaTypeFilterTabs";
-import {MediaSpecificFilters} from "@/lib/client/components/media/browse/MediaSpecificFilters";
 import {dynamicListSpecSchema, type DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {getMediaCommonFilterKeys} from "@/lib/client/components/media/browse/media-filter.utils";
-import {DynamicListTagFilters} from "@/lib/client/components/dynamic-lists/DynamicListTagFilters";
+import {DynamicListMediaFilters} from "@/lib/client/components/dynamic-lists/DynamicListMediaFilters";
 import {DYNAMIC_LIST_SORT_OPTIONS} from "@/lib/client/components/dynamic-lists/dynamic-list.config";
 import {DynamicListCommonFilters} from "@/lib/client/components/dynamic-lists/DynamicListCommonFilters";
 import {useSaveDynamicListMutation} from "@/lib/client/react-query/query-mutations/dynamic-lists.mutations";
@@ -231,81 +228,28 @@ export const DynamicListEditor = ({ listId, initialSpec, initialTagNames = {}, o
                                     />
                                 }
                             >
-                                {mediaType => {
-                                    const filters = spec.filters.mediaFilters?.[mediaType] ?? {};
-                                    const options = filterOptions.data?.mediaFilters[mediaType];
-
-                                    const scopedErrors = Object.fromEntries(Object.entries(errors)
-                                        .filter(([k]) => k.startsWith(`filters.mediaFilters.${mediaType}.`))
-                                        .map(([k, err]) => [k.slice(`filters.mediaFilters.${mediaType}.`.length), err]));
-
-                                    const update = (next: Partial<typeof filters>) => setSpec(current => ({
-                                        ...current, filters: {
-                                            ...current.filters,
-                                            mediaFilters: {
-                                                ...current.filters.mediaFilters,
-                                                [mediaType]: {
-                                                    ...current.filters.mediaFilters?.[mediaType],
-                                                    ...next,
-                                                }
+                                {mediaType =>
+                                    <DynamicListMediaFilters
+                                        errors={errors}
+                                        tagNames={tagNames}
+                                        mediaType={mediaType}
+                                        optionsError={filterOptions.isError}
+                                        options={filterOptions.data?.mediaFilters[mediaType]}
+                                        filters={spec.filters.mediaFilters?.[mediaType] ?? {}}
+                                        disabled={saveMutation.isPending || filterOptions.isPending}
+                                        onRetryOptions={() => void filterOptions.refetch()}
+                                        onChange={next => setSpec(current => ({
+                                            ...current,
+                                            filters: {
+                                                ...current.filters,
+                                                mediaFilters: {
+                                                    ...current.filters.mediaFilters,
+                                                    [mediaType]: { ...current.filters.mediaFilters?.[mediaType], ...next },
+                                                },
                                             },
-                                        }
-                                    }));
-
-                                    return <FieldSet>
-                                        <FieldLegend variant="label" className="sr-only capitalize">
-                                            {mediaType}
-                                        </FieldLegend>
-                                        <DynamicListEditorSection
-                                            title="Media rules"
-                                            description="These rules apply only to this media type. Other types keep their own rules."
-                                        >
-                                            <MediaFilterSearch
-                                                label="Genres"
-                                                error={scopedErrors.genres}
-                                                value={filters.genres ?? []}
-                                                maxSelected={MAX_MEDIA_FILTER_VALUES}
-                                                options={options?.genres?.map(item => item.name) ?? []}
-                                                disabled={saveMutation.isPending || filterOptions.isPending}
-                                                onChange={genres => update({ genres: genres.length ? genres : undefined })}
-                                            />
-
-                                            <DynamicListTagFilters
-                                                tagNames={tagNames}
-                                                errors={scopedErrors}
-                                                options={options?.tags ?? []}
-                                                onChange={tagRules => update({ tagRules })}
-                                                disabled={saveMutation.isPending || filterOptions.isPending}
-                                                rules={filters.tagRules?.length ? filters.tagRules : undefined}
-                                            />
-
-                                            <MediaSpecificFilters
-                                                filters={filters}
-                                                onChange={update}
-                                                errors={scopedErrors}
-                                                mediaType={mediaType}
-                                                options={options ?? {}}
-                                                maxSelected={MAX_MEDIA_FILTER_VALUES}
-                                                disabled={saveMutation.isPending || filterOptions.isPending}
-                                            />
-
-                                            {filterOptions.isError &&
-                                                <Alert variant="destructive">
-                                                    <AlertDescription>We couldn’t load filter options.
-                                                        <Button
-                                                            size="sm"
-                                                            type="button"
-                                                            variant="ghost"
-                                                            onClick={() => void filterOptions.refetch()}
-                                                        >
-                                                            Try again
-                                                        </Button>
-                                                    </AlertDescription>
-                                                </Alert>
-                                            }
-                                        </DynamicListEditorSection>
-                                    </FieldSet>;
-                                }}
+                                        }))}
+                                    />
+                                }
                             </MediaTypeFilterTabs>
 
                             <DynamicListEditorSection

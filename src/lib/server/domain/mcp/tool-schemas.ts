@@ -25,7 +25,7 @@ export const mediaSearchInputSchema = navbarSearchSchema.safeExtend({
 
 
 // Limit tag edits to one list entry, global rename/deletion remain website operations.
-export const editMediaTagInputSchema = editUserTagSchema.extend({
+export const editMediaTagInputSchema = editUserTagSchema.safeExtend({
     mediaId: editUserTagSchema.shape.mediaId.unwrap(),
     action: z.enum([TagAction.ADD, TagAction.DELETE_ONE]),
     tag: editUserTagSchema.shape.tag.omit({ oldName: true }).strict(),

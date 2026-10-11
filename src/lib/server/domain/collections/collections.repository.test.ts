@@ -241,6 +241,37 @@ describe("collection media references", () => {
         expect(snapshot()).toEqual(before);
     });
 
+    it("keeps ranks consecutive after removing items without changing their order or annotations", async () => {
+        const collectionId = service.createCollection({
+            ...collectionData,
+            items: [
+                { mediaType: MediaType.MOVIES, mediaId: 2 },
+                { mediaType: MediaType.BOOKS, mediaId: 1, annotation: "Keep this note" },
+                { mediaType: MediaType.MOVIES, mediaId: 1 },
+                { mediaType: MediaType.GAMES, mediaId: 77 },
+                { mediaType: MediaType.MANGA, mediaId: 1 },
+            ],
+        });
+
+        for (const [mediaType, mediaId] of [
+            [MediaType.MOVIES, 1],
+            [MediaType.MOVIES, 2],
+            [MediaType.MANGA, 1],
+        ] as const) {
+            service.removeMediaFromCollection({ actor, collectionId, mediaType, mediaId });
+            const items = CollectionsRepository.getCollectionItems(collectionId);
+            expect(items.map(item => item.orderIndex)).toEqual(items.map((_, index) => index + 1));
+        }
+
+        service.addMediaToCollection({ actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 1 });
+        const result = await service.getCollectionDetails(collectionId, "read", actor);
+        expect(result.items).toMatchObject([
+            { mediaType: MediaType.BOOKS, mediaId: 1, orderIndex: 1, annotation: "Keep this note" },
+            { mediaType: MediaType.GAMES, mediaId: 77, orderIndex: 2 },
+            { mediaType: MediaType.MOVIES, mediaId: 1, orderIndex: 3 },
+        ]);
+    });
+
     it("uses typed memberships, contains-type discovery and ordered typed previews without duplicating collections", async () => {
         const mixedId = service.createCollection({
             ...collectionData, title: "Mixed universe",
@@ -464,7 +495,11 @@ describe("collection media references", () => {
             page: 1, mediaFilters: { books: { genres: ["Missing"] } },
         });
         expect(guest.items.map(item => item.mediaType).sort()).toEqual([MediaType.GAMES, MediaType.MOVIES]);
-
+        const absentType = await service.getCollectionDetails(collectionId, "read", viewer, {
+            mediaType: MediaType.MANGA,
+        }, true);
+        expect(absentType).toMatchObject({ total: 0, items: [] });
+        expect(absentType.filterOptions).toEqual(scoped.filterOptions);
     });
 
     it("filters restricted and private collections in SQL when only public summaries are allowed", async () => {

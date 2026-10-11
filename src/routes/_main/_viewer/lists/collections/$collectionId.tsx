@@ -17,9 +17,11 @@ import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {collectionBrowseSearchSchema, collectionIdSchema} from "@/lib/schemas";
 import {useQuery, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
-import {ArrowLeft, Copy, Eye, Heart, Layers3, List, ListOrdered, Pin} from "lucide-react";
+import {CollectionStats} from "@/lib/client/components/collections/CollectionStats";
 import {MediaListResults} from "@/lib/client/components/media/base/MediaListResults";
+import {ArrowLeft, Copy, Heart, Layers3, List, ListOrdered, Pin} from "lucide-react";
 import {CollectionActions} from "@/lib/client/components/collections/CollectionActions";
+import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
 import {CollectionMediaTypes} from "@/lib/client/components/collections/CollectionMediaTypes";
@@ -27,7 +29,6 @@ import {MediaBrowseFiltersSheet} from "@/lib/client/components/media/browse/Medi
 import {collectionDetailsReadOptions, collectionDetailsReadQueryKey} from "@/lib/client/react-query/query-options";
 import {createMediaBrowseStatusOptions, MEDIA_BROWSE_LIBRARY_OPTIONS} from "@/lib/client/components/media/browse/media-browse.config";
 import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
-import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {removeMediaBrowseFilter, type MediaBrowseFilterKey, type MediaBrowseFilterScope} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
@@ -283,18 +284,9 @@ function CollectionViewer() {
 
                             <span className="h-4 border-l max-sm:hidden" aria-hidden="true"/>
 
-                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="Likes">
-                                <Heart className="size-3.5 text-brand" aria-hidden="true"/>
-                                <span className="tabular-nums">{formatNumber(collection.likeCount)}</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="Views">
-                                <Eye className="size-3.5 text-brand" aria-hidden="true"/>
-                                <span className="tabular-nums">{formatNumber(collection.viewCount)}</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="Copies">
-                                <Copy className="size-3.5 text-brand" aria-hidden="true"/>
-                                <span className="tabular-nums">{formatNumber(collection.copiedCount)}</span>
-                            </span>
+                            <CollectionStats
+                                collection={collection}
+                            />
                         </div>
 
                         {hasActions &&

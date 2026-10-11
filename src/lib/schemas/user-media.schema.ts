@@ -169,6 +169,12 @@ export const editUserTagSchema = z.object({
     mediaId: coercedPositiveIntFieldSchema.optional(),
     tag: z.object({
         name: z.string(),
-        oldName: z.string().optional(),
+        oldName: z.string().min(1).optional(),
     }),
+}).refine(data => data.action === TagAction.DELETE_ONE || data.action === TagAction.DELETE_ALL || data.tag.name.trim().length > 0, {
+    message: "Tag name is required.", path: ["tag", "name"],
+}).refine(data => data.action !== TagAction.RENAME || data.tag.oldName !== undefined, {
+    message: "The original tag name is required to rename a tag.", path: ["tag", "oldName"],
+}).refine(data => data.action !== TagAction.DELETE_ONE || data.mediaId !== undefined, {
+    message: "A media ID is required to remove a tag assignment.", path: ["mediaId"],
 });

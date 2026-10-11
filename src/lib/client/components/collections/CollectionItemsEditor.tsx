@@ -1,17 +1,15 @@
 import {useId, useRef} from "react";
+import {List, ListOrdered} from "lucide-react";
 import type {CreateCollection} from "@/lib/schemas";
 import {toast} from "@/lib/client/components/ui/toast";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {Input} from "@/lib/client/components/ui/input";
-import {Button} from "@/lib/client/components/ui/button";
 import type {DraftItem} from "@/lib/types/collections.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {Controller, useFieldArray, useFormContext, useWatch} from "react-hook-form";
 import {CollectionSearch} from "@/lib/client/components/collections/CollectionSearch";
-import {ArrowDown, ArrowUp, GripVertical, List, ListOrdered, Trash2} from "lucide-react";
 import {CollectionMediaTypes} from "@/lib/client/components/collections/CollectionMediaTypes";
+import {CollectionItemEditor} from "@/lib/client/components/collections/CollectionItemEditor";
 import {Field, FieldDescription, FieldError, FieldTitle} from "@/lib/client/components/ui/field";
 
 
@@ -24,6 +22,7 @@ export const CollectionItemsEditor = ({ disabled }: CollectionItemsEditorProps) 
     const fieldId = useId();
     const form = useFormContext<CreateCollection>();
     const dragIndex = useRef<number | null>(null);
+
     const ordered = useWatch({ control: form.control, name: "ordered" });
     const { fields, append, remove, move } = useFieldArray({ control: form.control, name: "items" });
 
@@ -99,85 +98,15 @@ export const CollectionItemsEditor = ({ disabled }: CollectionItemsEditorProps) 
                                         if (ordered) dragIndex.current = idx;
                                     }}
                                 >
-                                    {ordered &&
-                                        <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                                            <span className="w-6 text-center text-xs font-semibold">
-                                                #{idx + 1}
-                                            </span>
-                                            <GripVertical className="size-4 cursor-grab"/>
-                                        </div>
-                                    }
-
-                                    <div className="h-16 w-11 shrink-0 overflow-hidden rounded-md bg-muted">
-                                        <img
-                                            loading="lazy"
-                                            alt={field.mediaName}
-                                            src={field.mediaCover}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                                        <div className="flex min-w-0 items-center gap-2">
-                                            <MainThemeIcon
-                                                type={field.mediaType}
-                                                className="size-3.5 shrink-0 text-muted-foreground"
-                                            />
-                                            <span className="truncate text-sm font-semibold">
-                                                {field.mediaName}
-                                            </span>
-                                        </div>
-                                        <Controller
-                                            control={form.control}
-                                            name={`items.${idx}.annotation`}
-                                            render={({ field: annotationField, fieldState }) =>
-                                                <Field data-invalid={fieldState.invalid} data-disabled={disabled}>
-                                                    <Input
-                                                        {...annotationField}
-                                                        placeholder="Add annotation..."
-                                                        aria-invalid={fieldState.invalid}
-                                                        value={annotationField.value ?? ""}
-                                                        aria-label={`Annotation for ${field.mediaName}`}
-                                                    />
-                                                    <FieldError errors={[fieldState.error]}/>
-                                                </Field>
-                                            }
-                                        />
-                                    </div>
-                                    <div className="flex shrink-0 flex-col items-center gap-1 sm:flex-row">
-                                        {ordered &&
-                                            <div className="flex flex-col gap-1">
-                                                <Button
-                                                    type="button"
-                                                    size="icon-xs"
-                                                    variant="ghost"
-                                                    disabled={idx === 0}
-                                                    onClick={() => move(idx, idx - 1)}
-                                                    aria-label={`Move ${field.mediaName} up`}
-                                                >
-                                                    <ArrowUp/>
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    size="icon-xs"
-                                                    variant="ghost"
-                                                    disabled={idx === fields.length - 1}
-                                                    onClick={() => move(idx, idx + 1)}
-                                                    aria-label={`Move ${field.mediaName} down`}
-                                                >
-                                                    <ArrowDown/>
-                                                </Button>
-                                            </div>
-                                        }
-                                        <Button
-                                            type="button"
-                                            size="icon-sm"
-                                            variant="destructiveGhost"
-                                            onClick={() => remove(idx)}
-                                            aria-label={`Remove ${field.mediaName}`}
-                                        >
-                                            <Trash2/>
-                                        </Button>
-                                    </div>
+                                    <CollectionItemEditor
+                                        index={idx}
+                                        item={field}
+                                        onMove={move}
+                                        onRemove={remove}
+                                        ordered={ordered}
+                                        disabled={disabled}
+                                        isLast={idx === fields.length - 1}
+                                    />
                                 </div>
                             )}
                         </div>

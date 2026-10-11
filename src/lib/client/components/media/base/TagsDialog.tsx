@@ -2,21 +2,19 @@ import {useId, useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
+import {ChevronRight, Tags} from "lucide-react";
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {DialogRootChangeEventDetails} from "@base-ui/react";
-import {ChevronRight, PlusCircle, Tags} from "lucide-react";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
-import {displayContainerError} from "@/lib/client/error-display";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {Dialog, DialogTrigger} from "@/lib/client/components/ui/dialog";
 import {MembershipSearchInput} from "@/lib/client/components/media/base/MembershipSearchInput";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
+import {MembershipDialogContent} from "@/lib/client/components/media/base/MembershipDialogContent";
 
 
 interface TagsDialogProps {
@@ -68,17 +66,16 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
             <DialogTrigger render={<Button type="button" size="bare" variant="ghost" className="text-xs text-muted-foreground"/>}>
                 Manage
             </DialogTrigger>
-            <DialogContent className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full">
-                <div className="p-6 pb-4">
-                    <DialogHeader className="p-0 mb-6 mt-2">
-                        <DialogTitle>
-                            Manage Tags
-                        </DialogTitle>
-                        <DialogDescription>
-                            Add this {mediaType} to your tags to organize your list.
-                        </DialogDescription>
-                    </DialogHeader>
-
+            <MembershipDialogContent
+                title="Manage Tags"
+                isLoading={isLoading}
+                error={mutation.error}
+                emptyTitle="No tag found"
+                description={<>Add this {mediaType} to your tags to organize your list.</>}
+                emptyDescription={searchQuery
+                    ? `Click 'create' to create '${searchQuery.trim()}' tag.`
+                    : "Start typing to create your first tag."}
+                search={
                     <MembershipSearchInput
                         value={searchQuery}
                         onChange={setSearchQuery}
@@ -88,69 +85,9 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                         disabled={isLoading || mutation.isPending}
                         onCreate={() => handleAction({ name: searchQuery.trim() }, TagAction.ADD)}
                     />
-                </div>
-
-                <div className="flex flex-col border-t bg-accent/20">
-                    <div className="h-70 overflow-y-auto p-2 scrollbar-thin">
-                        {isLoading ?
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-                                <Spinner className="size-6" aria-hidden="true"/>
-                                <span className="text-xs font-medium">
-                                    Syncing...
-                                </span>
-                            </div>
-                            :
-                            filteredTags.length === 0 ?
-                                <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                                    <PlusCircle className="size-8 text-muted-foreground mb-3 opacity-50"/>
-                                    <p className="text-sm text-muted-foreground font-medium">
-                                        No tag found
-                                    </p>
-                                    <p className="text-xs text-muted-foreground/70 mt-1">
-                                        {searchQuery
-                                            ? `Click 'create' to create '${searchQuery.trim()}' tags.`
-                                            : "Start typing to create your first tag."
-                                        }
-                                    </p>
-                                </div>
-                                :
-                                <div className="grid gap-0.5">
-                                    {filteredTags.map((tag, idx) => {
-                                        const checkboxId = `${fieldId}-${idx}`;
-                                        const isActive = activeNames.has(tag.name);
-
-                                        return (
-                                            <Field
-                                                key={tag.name}
-                                                orientation="horizontal"
-                                                data-disabled={mutation.isPending}
-                                                className={cn("p-3 rounded-lg", isActive ? "bg-brand/4 text-brand" : "hover:bg-popover")}
-                                            >
-                                                <Checkbox
-                                                    id={checkboxId}
-                                                    checked={isActive}
-                                                    disabled={mutation.isPending}
-                                                    onCheckedChange={() => handleAction(tag, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
-                                                />
-                                                <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">
-                                                    # {tag.name}
-                                                </FieldLabel>
-                                            </Field>
-                                        );
-                                    })}
-                                </div>
-                        }
-                    </div>
-
-                    {mutation.isError &&
-                        <div className="mb-3 mt-1 px-2">
-                            <InlineErrorContainer>
-                                {displayContainerError({ error: mutation.error })}
-                            </InlineErrorContainer>
-                        </div>
-                    }
-
-                    <div className="p-4 border-t flex items-center justify-between bg-popover">
+                }
+                footer={
+                    <>
                         <Link
                             search={{ filtersTab: "tags" }}
                             to="/lists/tracking/$mediaType/$username"
@@ -164,9 +101,33 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                         <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
                             Done
                         </Button>
-                    </div>
-                </div>
-            </DialogContent>
+                    </>
+                }
+            >
+                {filteredTags.map((tag, idx) => {
+                    const checkboxId = `${fieldId}-${idx}`;
+                    const isActive = activeNames.has(tag.name);
+
+                    return (
+                        <Field
+                            key={tag.name}
+                            orientation="horizontal"
+                            data-disabled={mutation.isPending}
+                            className={cn("p-3 rounded-lg", isActive ? "bg-brand/4 text-brand" : "hover:bg-popover")}
+                        >
+                            <Checkbox
+                                id={checkboxId}
+                                checked={isActive}
+                                disabled={mutation.isPending}
+                                onCheckedChange={() => handleAction(tag, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
+                            />
+                            <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">
+                                # {tag.name}
+                            </FieldLabel>
+                        </Field>
+                    );
+                })}
+            </MembershipDialogContent>
         </Dialog>
     );
 };

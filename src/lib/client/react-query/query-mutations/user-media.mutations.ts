@@ -340,37 +340,22 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
             return postEditUserTag({ data: { mediaType, mediaId, tag, action } });
         },
         meta: { ...meta },
-        onSuccess: async (data, { action, tag }) => {
+        onSuccess: async (_data, { action }) => {
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: tagNamesOptions(mediaType, false).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists"], refetchType: "none" }),
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }),
 
-                ...(action === TagAction.RENAME || action === TagAction.DELETE_ALL ? [
-                    queryClient.invalidateQueries({ queryKey: ["userList", mediaType, currentUser!.name] }),
-                    queryClient.invalidateQueries({ queryKey: ["details", mediaType] }),
-                ] : []),
+                // Per-entry edits refresh when the media dialog closes, keeping the item available to edit.
+                queryClient.invalidateQueries({
+                    queryKey: ["userList", mediaType, currentUser!.name],
+                    refetchType: action === TagAction.ADD || action === TagAction.DELETE_ONE ? "none" : "active",
+                }),
+                queryClient.invalidateQueries({ queryKey: ["details", mediaType] }),
             ]);
-
-            queryClient.setQueryData(tagNamesOptions(mediaType, false).queryKey, (oldData) => {
-                if (!oldData) return;
-
-                if (action === TagAction.DELETE_ALL) {
-                    return oldData.filter(item => item.name !== tag.name);
-                }
-
-                if (!data) {
-                    return oldData;
-                }
-
-                if (action === TagAction.RENAME) {
-                    return oldData.map(item => item.name === tag.oldName ? data : item);
-                }
-
-                return oldData.some(item => item.name === data.name) ? oldData : [...oldData, data];
-            });
         }
     })
 };

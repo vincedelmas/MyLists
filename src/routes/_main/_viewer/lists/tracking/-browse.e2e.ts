@@ -63,3 +63,18 @@ test("keeps normal list search, status, sorting and advanced filters with the sh
     await expectActionsBesideDisplay(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+
+test("uses the requested page size for tracking table pagination", async ({ page }) => {
+    await runBun(["src/routes/_main/_viewer/lists/collections/-browse.fixtures.ts"]);
+    await signIn(page);
+    await page.goto(`/lists/tracking/movies/${users.owner.name}?view=list&perPage=10`);
+
+    const rows = page.getByRole("table").getByRole("row");
+    await expect(rows).toHaveCount(11);
+    await expect(page.getByText("Page 1 of 4", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Go to next page", exact: true }).click();
+    await expect(page).toHaveURL(url => url.searchParams.get("page") === "2" && url.searchParams.get("perPage") === "10");
+    await expect(rows).toHaveCount(11);
+    await expect(page.getByText("Page 2 of 4", { exact: true })).toBeVisible();
+});

@@ -23,7 +23,7 @@ type MediaProjection = {
 };
 
 
-export type QuerySnapshot = {
+type QuerySnapshot = {
     data: Uint8Array;
     rowCount: number;
     snapshotAt: string;

@@ -17,7 +17,7 @@ vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "https://mylists.ex
 vi.mock("@/env/server", () => ({ serverEnv: { UPLOADS_DIR_NAME: "static" } }));
 
 const spec = {
-    version: 1 as const, title: "Dynamic list", mediaTypes: "all" as const, filters: {},
+    version: 2 as const, title: "Dynamic list", mediaTypes: "all" as const, filters: {},
     sort: { field: "addedAt" as const, direction: "asc" as const }, display: "grid" as const,
 };
 

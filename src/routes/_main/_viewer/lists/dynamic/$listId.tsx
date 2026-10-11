@@ -170,6 +170,7 @@ function DynamicListPage() {
 
                     <DynamicListBadges
                         spec={view.spec}
+                        tagNames={view.tagNames}
                         sortLabel={sortLabel}
                         activeMediaTypes={activeMediaTypes}
                     />

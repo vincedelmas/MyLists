@@ -9,12 +9,13 @@ interface DynamicListBadgesProps {
     className?: string;
     sortLabel?: string;
     spec: DynamicListSpec;
+    tagNames: Record<number, string>;
     activeMediaTypes: readonly MediaType[];
 }
 
 
-export const DynamicListBadges = ({ spec, activeMediaTypes, className, sortLabel }: DynamicListBadgesProps) => {
-    const badges = dynamicListBadgeLabels(spec, sortLabel).map((label, index) => {
+export const DynamicListBadges = ({ spec, tagNames, activeMediaTypes, className, sortLabel }: DynamicListBadgesProps) => {
+    const badges = dynamicListBadgeLabels(spec, tagNames, sortLabel).map((label, index) => {
         const mediaTypes = spec.mediaTypes === "all"
             ? index === 0 ? activeMediaTypes : []
             : index < spec.mediaTypes.length ? [spec.mediaTypes[index]] : [];

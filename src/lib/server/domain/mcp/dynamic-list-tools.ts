@@ -1,11 +1,10 @@
-import {scopedMediaFiltersSchema} from "@/lib/schemas/media-filters.schema";
 import z from "zod";
 import {clientEnv} from "@/env/client";
 import {DYNAMIC_LIST_PRESETS} from "@/lib/utils/dynamic-lists/presets";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import type {ToolContext} from "@/lib/server/core/mcp/tool-context";
-import {dynamicListPreviewSchema, dynamicListSpecSchema} from "@/lib/schemas/dynamic-lists.schema";
-import {getDynamicLists, postCreateDynamicList, previewDynamicList} from "@/lib/server/functions/dynamic-lists";
+import {dynamicListMediaFiltersSchema, dynamicListPreviewSchema, dynamicListSpecSchema} from "@/lib/schemas/dynamic-lists.schema";
+import {getDynamicLists, getDynamicListEditorFilters, postCreateDynamicList, previewDynamicList} from "@/lib/server/functions/dynamic-lists";
 
 
 export const registerDynamicListTools = ({ register }: ToolContext) => {
@@ -15,21 +14,26 @@ export const registerDynamicListTools = ({ register }: ToolContext) => {
     }, () => ({
         examples: DYNAMIC_LIST_PRESETS,
         schema: z.toJSONSchema(dynamicListSpecSchema, { io: "input" }),
-        supportedMediaFilters: Object.fromEntries(ALL_MEDIA_TYPES.map(mediaType => [mediaType, Object.keys(scopedMediaFiltersSchema.shape[mediaType].unwrap().shape)])),
+        supportedMediaFilters: Object.fromEntries(ALL_MEDIA_TYPES.map(mediaType => [mediaType, Object.keys(dynamicListMediaFiltersSchema.shape[mediaType].unwrap().shape)])),
         rules: [
             "Dynamic lists include only the connected user's active media lists. All filters are combined with AND; statuses and genres match any supplied value.",
-            "mediaFilters groups genres, tags and metadata rules by media type. Each group applies only to that type: movies.actors does not exclude books from a mixed list. Use supportedMediaFilters to choose valid keys for each type; values match any supplied name.",
+            "mediaFilters groups genres, tags and metadata rules by media type. Each group applies only to that type: movies.actors does not exclude books from a mixed list. Use supportedMediaFilters to choose valid keys for each type; metadata values match any supplied name.",
             "Metadata names use exact catalog values. For series and anime, langs contains origin-country codes. Games platforms filter the user's tracked platform, not catalog availability.",
             "planned groups Plan to Watch, Plan to Play and Plan to Read. in_progress groups Watching, Playing and Reading.",
             "search is a case-insensitive literal substring of the catalog title; percent signs and underscores are not wildcards.",
             "addedBefore.monthsAgo and updatedBefore.monthsAgo match dates older than a rolling UTC calendar-month cutoff, with month ends clamped. addedWithin.monthsAgo matches added dates at or after that cutoff. Unknown dates are excluded.",
             "Age uses the date an entry was added, not how long it has continuously held its current status.",
             "Ratings use the user's 0–10 scores; rated checks whether a score is set, including zero. hasComment checks for nonblank user comments. Release-year bounds are inclusive and exclude unknown release dates.",
-            "Tags match any supplied name by default, or every name with tagsMatch: all. excludeTags removes entries with any of those tags. Tags are always scoped to the connected user; genres use exact catalog names.",
+            "mediaFilters.<type>.tagRules contains independent tag conditions combined with AND. tags and excludeTags contain stable numeric tag IDs from dynamic_list_filter_options, never names. Each condition matches any included ID by default, or every included ID with tagsMatch: all. Deleted tags are automatically removed from saved rules. Genres use exact catalog names.",
             "Saved lists refresh from current data without another model call.",
             "Preview the specification before saving. Unsupported requests require clarification; use only fields defined in this schema.",
         ],
     }));
+
+    register("dynamic_list_filter_options", {
+        inputSchema: dynamicListSpecSchema.pick({ mediaTypes: true }),
+        description: "Read your available per-media filters, including stable tag IDs and their current names. Call before using tags in a dynamic list.",
+    }, data => getDynamicListEditorFilters({ data }));
 
     register("preview_dynamic_list", {
         inputSchema: dynamicListPreviewSchema,

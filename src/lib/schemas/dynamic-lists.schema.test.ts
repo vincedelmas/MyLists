@@ -8,10 +8,10 @@ import {dynamicListPreviewSchema, dynamicListSpecSchema} from "./dynamic-lists.s
 describe("untrusted dynamic list specifications", () => {
     const spec = DYNAMIC_LIST_PRESETS[0];
 
-    it("accepts every preset and normalizes titles and tags", () => {
+    it("accepts every preset and normalizes titles", () => {
         for (const preset of DYNAMIC_LIST_PRESETS) expect(dynamicListSpecSchema.safeParse(preset).success).toBe(true);
-        expect(dynamicListSpecSchema.parse({ ...spec, title: "  My view  ", filters: { tags: ["  cozy  "] } }))
-            .toMatchObject({ title: "My view", filters: { tags: ["cozy"] } });
+        expect(dynamicListSpecSchema.parse({ ...spec, title: "  My view  ", filters: { mediaFilters: { movies: { tagRules: [{ tags: [1] }] } } } }))
+            .toMatchObject({ title: "My view", filters: { mediaFilters: { movies: { tagRules: [{ tags: [1] }] } } } });
     });
 
     it("rejects ownership overrides, raw SQL and unknown nested fields", () => {
@@ -27,7 +27,7 @@ describe("untrusted dynamic list specifications", () => {
 
     it("accepts only supported media, statuses, sort fields, display modes and spec versions", () => {
         for (const candidate of [
-            { ...spec, version: 2 },
+            { ...spec, version: 1 },
             { ...spec, mediaTypes: [] },
             { ...spec, mediaTypes: [MediaType.MOVIES, MediaType.MOVIES] },
             { ...spec, mediaTypes: ["movies; DROP TABLE user"] },
@@ -53,12 +53,12 @@ describe("untrusted dynamic list specifications", () => {
         } } } });
     });
 
-    it("bounds title and tag input sizes and rejects blank values", () => {
+    it("bounds titles and accepts only distinct positive tag IDs", () => {
         for (const title of ["", "  ", "x".repeat(101)]) {
             expect(dynamicListSpecSchema.safeParse({ ...spec, title }).success).toBe(false);
         }
-        for (const tags of [[], ["  "], ["x".repeat(101)], Array.from({ length: 21 }, (_, i) => `tag${i}`)]) {
-            expect(dynamicListSpecSchema.safeParse({ ...spec, filters: { tags } }).success).toBe(false);
+        for (const tags of [[0], [-1], [1.5], ["cozy"], [1, 1], Array.from({ length: 21 }, (_, i) => i + 1)]) {
+            expect(dynamicListSpecSchema.safeParse({ ...spec, filters: { mediaFilters: { movies: { tagRules: [{ tags }] } } } }).success).toBe(false);
         }
     });
 
@@ -85,10 +85,10 @@ describe("untrusted dynamic list specifications", () => {
             search: "  space  ", statuses: [Status.COMPLETED, Status.PLAN_TO_WATCH],
             addedWithin: { monthsAgo: 12 }, addedBefore: { monthsAgo: 6 }, updatedBefore: { monthsAgo: 3 },
             minReleaseYear: 1990, maxReleaseYear: 2026, rated: false, hasComment: true,
-            genres: ["  Science Fiction  "], tags: ["cozy"], tagsMatch: "all", excludeTags: ["  skip  "],
+            genres: ["  Science Fiction  "], mediaFilters: { movies: { tagRules: [{ tags: [1], tagsMatch: "all", excludeTags: [2] }] } },
         };
         expect(dynamicListSpecSchema.parse({ ...spec, filters })).toMatchObject({ filters: {
-            ...filters, search: "space", genres: ["Science Fiction"], excludeTags: ["skip"],
+            ...filters, search: "space", genres: ["Science Fiction"],
         } });
         expect(dynamicListSpecSchema.parse(spec)).toEqual(spec);
         for (const invalid of [

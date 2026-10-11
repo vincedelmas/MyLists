@@ -1,9 +1,9 @@
 import * as z from "zod";
 import {MediaType} from "@/lib/utils/enums";
 import {mediaBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
-import {scopedMediaFiltersSchema, mediaTagMatchingSchema} from "@/lib/schemas/media-filters.schema";
-import {mediaRatingFilterSchema} from "@/lib/media-definitions/base/media-filters";
-import {mediaCommonFilterSchemas} from "@/lib/media-definitions/definition.registry";
+import {mediaTagMatchingSchema} from "@/lib/schemas/media-filters.schema";
+import {createMediaFiltersSchema, MAX_MEDIA_FILTER_VALUES, mediaRatingFilterSchema} from "@/lib/media-definitions/base/media-filters";
+import {ALL_MEDIA_TYPES, getMediaDefinition, mediaCommonFilterSchemas} from "@/lib/media-definitions/definition.registry";
 
 
 export type DynamicListSpec = z.infer<typeof dynamicListSpecSchema>;
@@ -13,11 +13,36 @@ export type DynamicListRuntimeFilters = z.infer<typeof dynamicListRuntimeFilters
 export const dynamicListIdSchema = z.strictObject({ id: z.number().int().positive() });
 const dynamicListStatusGroupSchema = z.enum(["planned", "in_progress", "completed", "on_hold", "dropped"]);
 const relativeMonthsSchema = z.strictObject({ monthsAgo: z.number().int().min(1).max(120) });
-const filterNamesSchema = mediaCommonFilterSchemas.tags.min(1);
+const tagIdsSchema = z.array(z.number().int().positive()).max(MAX_MEDIA_FILTER_VALUES)
+    .refine(ids => new Set(ids).size === ids.length, "Choose each tag once.");
+
+const dynamicListTagRuleSchema = z.strictObject({
+    tags: tagIdsSchema.optional(),
+    tagsMatch: mediaTagMatchingSchema.optional(),
+    excludeTags: tagIdsSchema.optional(),
+});
+
+export type DynamicListTagRule = z.infer<typeof dynamicListTagRuleSchema>;
+
+const createDynamicListMediaFiltersSchema = <Type extends MediaType>(mediaType: Type) => {
+    const { common, metadata } = getMediaDefinition(mediaType).filters;
+    return createMediaFiltersSchema(metadata).extend(createMediaFiltersSchema({
+        genres: common.genres,
+        // Migrated lists can have both global and media-specific tag conditions.
+        tagRules: z.array(dynamicListTagRuleSchema).max(2),
+    }).shape);
+};
+
+
+export const dynamicListMediaFiltersSchema = z.strictObject(Object.fromEntries(
+    ALL_MEDIA_TYPES.map(mediaType => [mediaType, createDynamicListMediaFiltersSchema(mediaType).optional()]),
+) as {
+    [Type in MediaType]: z.ZodOptional<ReturnType<typeof createDynamicListMediaFiltersSchema<Type>>>;
+});
 
 
 export const dynamicListSpecSchema = z.strictObject({
-    version: z.literal(1),
+    version: z.literal(2),
     display: z.enum(["grid", "list"]),
     title: z.string().trim().min(1).max(100),
     mediaTypes: z.union([
@@ -31,15 +56,12 @@ export const dynamicListSpecSchema = z.strictObject({
     }),
     filters: z.strictObject({
         rated: z.boolean().optional(),
-        tags: filterNamesSchema.optional(),
-        excludeTags: filterNamesSchema.optional(),
-        tagsMatch: mediaTagMatchingSchema.optional(),
         addedBefore: relativeMonthsSchema.optional(),
         addedWithin: relativeMonthsSchema.optional(),
         minRating: mediaRatingFilterSchema.optional(),
         maxRating: mediaRatingFilterSchema.optional(),
         updatedBefore: relativeMonthsSchema.optional(),
-        mediaFilters: scopedMediaFiltersSchema.optional(),
+        mediaFilters: dynamicListMediaFiltersSchema.optional(),
         statusGroup: dynamicListStatusGroupSchema.optional(),
         favorite: mediaCommonFilterSchemas.favorite.optional(),
         hasComment: mediaCommonFilterSchemas.comment.optional(),

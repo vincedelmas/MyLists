@@ -22,7 +22,7 @@ import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
-import {MediaTagFilters} from "@/lib/client/components/media/browse/MediaTagFilters";
+import {DynamicListTagFilters} from "@/lib/client/components/dynamic-lists/DynamicListTagFilters";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
 import {dynamicListRules} from "@/lib/client/components/dynamic-lists/dynamic-list.utils";
@@ -43,6 +43,7 @@ interface DynamicListEditorProps {
     listId?: number;
     onCancel: () => void;
     initialSpec: DynamicListSpec;
+    initialTagNames?: Record<number, string>;
     onSaved: (listId: number) => void;
     startingPoint?: (disabled: boolean, id: string) => React.ReactNode;
 }
@@ -94,7 +95,7 @@ const EditorSection = ({ number, title, description, children }: {
 );
 
 
-export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, startingPoint }: DynamicListEditorProps) => {
+export const DynamicListEditor = ({ listId, initialSpec, initialTagNames = {}, onSaved, onCancel, startingPoint }: DynamicListEditorProps) => {
     const fieldId = useId();
     const { currentUser } = useAuth();
     const [spec, setSpec] = useState(initialSpec);
@@ -110,7 +111,7 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
     });
 
     const countSpec = useMemo<DynamicListSpec>(() => ({
-        version: 1,
+        version: 2,
         display: "grid",
         title: "Dynamic list",
         filters: spec.filters,
@@ -131,7 +132,13 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
         enabled: spec.mediaTypes === "all" || spec.mediaTypes.length > 0,
     });
 
-    const rules = dynamicListRules(spec);
+    const tagNames = {
+        ...initialTagNames,
+        ...Object.fromEntries(Object.values(filterOptions.data?.mediaFilters ?? {}).flatMap(options =>
+            (options.tags ?? []).map(tag => [tag.id, tag.name]),
+        )),
+    };
+    const rules = dynamicListRules(spec, tagNames);
     const validation = dynamicListSpecSchema.safeParse(spec);
     const activeMediaTypes = getActiveMediaTypes(currentUser!.settings);
     const filterMediaTypes = spec.mediaTypes === "all" ? activeMediaTypes : spec.mediaTypes;
@@ -381,9 +388,9 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                         }
                                     </EditorSection>
 
-                                    {(spec.filters.genres?.length || spec.filters.tags?.length || spec.filters.excludeTags?.length) ? <FieldSet className="rounded-xl border p-4">
+                                    {spec.filters.genres?.length ? <FieldSet className="rounded-xl border p-4">
                                         <FieldLegend variant="label">Rules across all types</FieldLegend>
-                                        <FieldDescription>These existing genre and tag rules apply to every media type.</FieldDescription>
+                                        <FieldDescription>These existing genre rules apply to every media type.</FieldDescription>
                                         {availableFilters.has("genres") &&
                                             <MediaFilterSearch
                                                 label="Genres"
@@ -396,18 +403,6 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                             />
                                         }
 
-                                        {availableFilters.has("tags") &&
-                                            <MediaTagFilters
-                                                filters={spec.filters}
-                                                options={filterOptions.data?.tags ?? []}
-                                                disabled={saveMutation.isPending || filterOptions.isPending}
-                                                errors={{ tags: errors["filters.tags"], excludeTags: errors["filters.excludeTags"] }}
-                                                onChange={updateFilters}
-                                            />
-                                        }
-                                        <FieldDescription>
-                                            Genres match any selected value. Excluded tags always remove matching titles.
-                                        </FieldDescription>
                                         {filterOptions.isError &&
                                             <Alert variant="destructive">
                                                 <AlertDescription>
@@ -473,7 +468,7 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                             >
                                 {mediaType => {
                                     const filters = spec.filters.mediaFilters?.[mediaType] ?? {};
-                                    const options = filterOptions.data?.mediaFilters[mediaType] ?? {};
+                                    const options = filterOptions.data?.mediaFilters[mediaType];
                                     const scopedErrors = Object.fromEntries(Object.entries(errors)
                                         .filter(([key]) => key.startsWith(`filters.mediaFilters.${mediaType}.`))
                                         .map(([key, error]) => [key.slice(`filters.mediaFilters.${mediaType}.`.length), error]));
@@ -486,15 +481,21 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                     return <FieldSet>
                                         <FieldLegend variant="label" className="sr-only">{capitalize(mediaType)}</FieldLegend>
                                         <EditorSection title="Media rules" description="These rules apply only to this media type. Other types keep their own rules.">
-                                            <MediaFilterSearch label="Genres" error={scopedErrors.genres} options={options.genres?.map(item => item.name) ?? []}
+                                            <MediaFilterSearch label="Genres" error={scopedErrors.genres} options={options?.genres?.map(item => item.name) ?? []}
                                                                value={filters.genres ?? []} maxSelected={MAX_MEDIA_FILTER_VALUES}
                                                                disabled={saveMutation.isPending || filterOptions.isPending}
                                                                onChange={genres => update({ genres: genres.length ? genres : undefined })}/>
-                                            <MediaTagFilters options={options.tags?.map(item => item.name) ?? []} filters={filters} errors={scopedErrors}
-                                                             disabled={saveMutation.isPending || filterOptions.isPending} onChange={update}/>
+                                            <DynamicListTagFilters
+                                                rules={filters.tagRules?.length ? filters.tagRules : undefined}
+                                                options={options?.tags ?? []}
+                                                tagNames={tagNames}
+                                                errors={scopedErrors}
+                                                disabled={saveMutation.isPending || filterOptions.isPending}
+                                                onChange={tagRules => update({ tagRules })}
+                                            />
                                             <MediaSpecificFilters
                                                 mediaType={mediaType}
-                                                options={options}
+                                                options={options ?? {}}
                                                 filters={filters}
                                                 disabled={saveMutation.isPending || filterOptions.isPending}
                                                 maxSelected={MAX_MEDIA_FILTER_VALUES}

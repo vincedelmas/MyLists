@@ -28,7 +28,7 @@ function DynamicListCreatePage() {
     const { currentUser } = useAuth();
     const { preset } = Route.useSearch();
     const initialSpec: DynamicListSpec = preset === undefined ? {
-        version: 1,
+        version: 2,
         filters: {},
         display: "grid",
         mediaTypes: "all",

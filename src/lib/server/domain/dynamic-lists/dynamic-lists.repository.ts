@@ -1,8 +1,9 @@
+import {getDynamicListTagNames} from "./dynamic-list-tags.queries";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {dynamicLists, user, userMediaSettings} from "@/lib/server/database/schema";
 import {and, asc, desc, eq, isNotNull} from "drizzle-orm";
 import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
-import {getDbClient} from "@/lib/server/database/async-storage";
+import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
 
 
 const selection = {
@@ -42,12 +43,14 @@ export const dynamicListsRepository = {
     },
 
     getAll(userId: number) {
-        return getDbClient()
+        const views = getDbClient()
             .select(selection)
             .from(dynamicLists)
             .where(eq(dynamicLists.userId, userId))
             .orderBy(desc(dynamicLists.createdAt), desc(dynamicLists.id))
             .all();
+        const tagNames = getDynamicListTagNames(userId, views.map(view => view.spec));
+        return views.map(view => ({ ...view, tagNames }));
     },
 
     get(userId: number, id: number) {
@@ -61,33 +64,39 @@ export const dynamicListsRepository = {
             throw new FormattedError("Dynamic list not found.");
         }
 
-        return view;
+        return { ...view, tagNames: getDynamicListTagNames(userId, [view.spec]) };
     },
 
     create(userId: number, spec: DynamicListSpec) {
-        return getDbClient()
-            .insert(dynamicLists)
-            .values({ userId, spec })
-            .returning({ id: dynamicLists.id })
-            .get();
+        return withTransaction(() => {
+            getDynamicListTagNames(userId, [spec]);
+            return getDbClient()
+                .insert(dynamicLists)
+                .values({ userId, spec })
+                .returning({ id: dynamicLists.id })
+                .get();
+        });
     },
 
     update(userId: number, id: number, spec: DynamicListSpec) {
-        const result = getDbClient()
-            .update(dynamicLists)
-            .set({
-                spec,
-                updatedAt: new Date().toISOString(),
-            })
-            .where(and(eq(dynamicLists.userId, userId), eq(dynamicLists.id, id)))
-            .returning({ id: dynamicLists.id })
-            .get();
+        return withTransaction(() => {
+            getDynamicListTagNames(userId, [spec]);
+            const result = getDbClient()
+                .update(dynamicLists)
+                .set({
+                    spec,
+                    updatedAt: new Date().toISOString(),
+                })
+                .where(and(eq(dynamicLists.userId, userId), eq(dynamicLists.id, id)))
+                .returning({ id: dynamicLists.id })
+                .get();
 
-        if (!result) {
-            throw new FormattedError("Dynamic list not found.");
-        }
+            if (!result) {
+                throw new FormattedError("Dynamic list not found.");
+            }
 
-        return result;
+            return result;
+        });
     },
 
     delete(userId: number, id: number) {
@@ -103,11 +112,13 @@ export const dynamicListsRepository = {
     },
 
     getPinned(userId: number) {
-        return getDbClient()
+        const views = getDbClient()
             .select(selection)
             .from(dynamicLists)
             .where(and(eq(dynamicLists.userId, userId), isNotNull(dynamicLists.profilePosition)))
             .orderBy(asc(dynamicLists.profilePosition))
             .all();
+        const tagNames = getDynamicListTagNames(userId, views.map(view => view.spec));
+        return views.map(view => ({ ...view, tagNames }));
     },
 };

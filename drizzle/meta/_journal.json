@@ -414,6 +414,13 @@
       "when": 1791538978048,
       "tag": "0058_collection_profile_pins",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1791715725144,
+      "tag": "0059_stable_dynamic_list_tags",
+      "breakpoints": true
     }
   ]
 }

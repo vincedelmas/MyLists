@@ -27,7 +27,7 @@ export const getDynamicListEditor = createServerFn({ method: "GET" })
 
 
 export const getDynamicListEditorFilters = createServerFn({ method: "GET" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([requiredMediaReadMiddleware])
     .validator(dynamicListSpecSchema.pick({ mediaTypes: true }))
     .handler(({ data: { mediaTypes }, context: { currentUser } }) => {
         return getDynamicListEditorFilterOptions(currentUser.id, mediaTypes);

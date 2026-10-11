@@ -7,12 +7,12 @@ import {getMediaFilterGroups} from "@/lib/client/components/media/browse/media-f
 import {DYNAMIC_LIST_STATUS_OPTIONS} from "@/lib/client/components/dynamic-lists/dynamic-list.config";
 
 
-export const dynamicListRules = (spec: DynamicListSpec) => {
+export const dynamicListRules = (spec: DynamicListSpec, tagNames: Record<number, string>) => {
     const rules: string[] = [];
 
     const {
         search, statuses, statusGroup, addedBefore, addedWithin, updatedBefore, minRating, maxRating,
-        rated, favorite, hasComment, minReleaseYear, maxReleaseYear, genres, tags, tagsMatch, excludeTags,
+        rated, favorite, hasComment, minReleaseYear, maxReleaseYear, genres,
     } = spec.filters;
 
     if (search) {
@@ -75,15 +75,17 @@ export const dynamicListRules = (spec: DynamicListSpec) => {
         rules.push(favorite ? "Favorites only" : "Excluding favorites");
     }
 
-    if (tags?.length) {
-        rules.push(`Tagged ${tags.join(tagsMatch === "all" ? " and " : " or ")}`);
-    }
-
-    if (excludeTags?.length) {
-        rules.push(`Exclude tags: ${excludeTags.join(", ")}`);
-    }
-
-    for (const group of getMediaFilterGroups(spec.filters.mediaFilters)) {
+    const groups = [
+        ...getMediaFilterGroups(spec.filters.mediaFilters),
+        ...Object.entries(spec.filters.mediaFilters ?? {}).flatMap(([mediaType, filters]) =>
+            (filters.tagRules ?? []).flatMap(rule => getMediaFilterGroups({ [mediaType]: {
+                tags: rule.tags?.map(id => tagNames[id]),
+                tagsMatch: rule.tagsMatch,
+                excludeTags: rule.excludeTags?.map(id => tagNames[id]),
+            } })),
+        ),
+    ];
+    for (const group of groups) {
         rules.push(`${group.label}: ${group.items.map(item => item.label).join(group.matchAll ? " and " : " or ")}`);
     }
 
@@ -103,7 +105,7 @@ const dynamicListSortLabel = (spec: DynamicListSpec) => {
 };
 
 
-export const dynamicListBadgeLabels = (spec: DynamicListSpec, sortLabel?: string) => {
+export const dynamicListBadgeLabels = (spec: DynamicListSpec, tagNames: Record<number, string>, sortLabel?: string) => {
     const mediaTypesLabels = spec.mediaTypes === "all"
         ? ["All media"]
         : spec.mediaTypes.map(type => capitalize(type));
@@ -112,5 +114,5 @@ export const dynamicListBadgeLabels = (spec: DynamicListSpec, sortLabel?: string
         sortLabel = dynamicListSortLabel(spec);
     }
 
-    return [...mediaTypesLabels, ...dynamicListRules(spec), sortLabel];
+    return [...mediaTypesLabels, ...dynamicListRules(spec, tagNames), sortLabel];
 }

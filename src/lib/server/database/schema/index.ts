@@ -17,3 +17,4 @@ export * from "./feature-votes.schema";
 export * from "./collections.schema";
 export * from "./imports.schema";
 export * from "./dynamic-lists.schema";
+export * from "./media-tags.schema";

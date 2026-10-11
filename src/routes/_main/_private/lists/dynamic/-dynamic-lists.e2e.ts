@@ -109,7 +109,7 @@ test("combines the expanded filters in a live view", async ({ page }) => {
 });
 
 
-test("finds genres and tags despite typos and saves their canonical names", async ({ page }) => {
+test("finds genres and tags despite typos and preserves their selections", async ({ page }) => {
     await runBun(["src/routes/_main/_private/lists/dynamic/-fixtures.ts", "seed-search"]);
     await signIn(page);
     await page.setViewportSize({ width: 390, height: 844 });
@@ -836,4 +836,48 @@ test("filters hub dynamic lists by actual matches and opens the full mixed list"
     await expect(page.getByText("No matching dynamic lists", { exact: true })).toBeVisible();
     await page.goto("/lists/dynamic/521");
     await expect(page.getByRole("heading", { name: "Empty movie rules", exact: true })).toBeVisible();
+});
+
+
+test("keeps saved tag rules through renames and grows the list when a tag is deleted", async ({ page }) => {
+    await runBun(["src/routes/_main/_private/lists/dynamic/-fixtures.ts", "seed-search"]);
+    await signIn(page);
+    await page.goto("/lists/dynamic/create");
+    const editor = page.getByRole("form", { name: "Dynamic list editor", exact: true });
+    await editor.getByLabel("List name", { exact: true }).fill("Stable tag list");
+    await editor.getByRole("button", { name: "Movies", exact: true }).click();
+    await editor.getByRole("button", { name: "Select tags: Weekend", exact: true }).click();
+    await editor.getByRole("button", { name: "Create dynamic list", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Stable tag list", exact: true })).toBeVisible();
+    const listUrl = page.url();
+    await expect(page.getByText(movies.private.name, { exact: true })).toBeVisible();
+    await expect(page.getByText(movies.editable.name, { exact: true })).toHaveCount(0);
+
+    await page.goto(`/lists/tracking/movies/${users.owner.name}`);
+    await page.getByRole("button", { name: "Filters", exact: true }).click();
+    const filters = page.getByRole("dialog", { name: "Additional Filters", exact: true });
+    await filters.getByRole("button", { name: "Tags", exact: true }).click();
+    await filters.getByRole("button", { name: "Actions for Weekend", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Rename Weekend", exact: true }).click();
+    await filters.getByRole("textbox", { name: "New tag name", exact: true }).fill("Renamed weekend");
+    await filters.getByRole("button", { name: "Save tag name", exact: true }).click();
+    await expect(filters.getByRole("button", { name: "Renamed weekend", exact: true })).toBeVisible();
+    await page.goto(listUrl);
+    await expect(page.getByText(movies.private.name, { exact: true })).toBeVisible();
+    await expect(page.getByText(movies.editable.name, { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Movies · Tags: Renamed weekend", { exact: true }).filter({ visible: true })).toBeVisible();
+    await (await listAction(page, "Edit dynamic list")).click();
+    await expect(editor.getByRole("button", { name: "Remove Renamed weekend filter", exact: true })).toBeVisible();
+
+    await page.goto(`/lists/tracking/movies/${users.owner.name}`);
+    await page.getByRole("button", { name: "Filters", exact: true }).click();
+    await filters.getByRole("button", { name: "Tags", exact: true }).click();
+    await filters.getByRole("button", { name: "Actions for Renamed weekend", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Delete Renamed weekend", exact: true }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Delete tag", exact: true }).click();
+    await expect(filters.getByRole("button", { name: "Renamed weekend", exact: true })).toHaveCount(0);
+    await page.goto(listUrl);
+    await expect(page.getByText(movies.private.name, { exact: true })).toBeVisible();
+    await expect(page.getByText(movies.editable.name, { exact: true })).toBeVisible();
+    await expect(page.getByText("Movies · Tags: Renamed weekend", { exact: true })).toHaveCount(0);
 });

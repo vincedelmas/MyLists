@@ -57,6 +57,7 @@ export const DynamicListCard = ({ view, activeMediaTypes, isOwner = true, previe
                 <CardContent className="min-w-0">
                     <DynamicListBadges
                         spec={view.spec}
+                        tagNames={view.tagNames}
                         activeMediaTypes={activeMediaTypes}
                     />
                 </CardContent>

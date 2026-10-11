@@ -29,6 +29,7 @@ function DynamicListEditPage() {
         key={listId}
         listId={listId}
         initialSpec={view.spec}
+        initialTagNames={view.tagNames}
         onCancel={() => void navigate({ to: "/lists/dynamic/$listId", params: { listId }, search })}
         onSaved={savedId => void navigate({ to: "/lists/dynamic/$listId", params: { listId: savedId }, search: { page: 1 } })}
     />;

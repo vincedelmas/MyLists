@@ -7,7 +7,7 @@ import {movies, password, users} from "../../../../../scripts/e2e/data";
 const readToolNames = [
     "media_details", "tv_seasons", "game_platforms", "media_history",
     "search_catalog", "game_search_options", "search_my_list", "my_list_filters",
-    "search_my_list_filters", "my_tags", "query_mylists", "dynamic_list_schema", "preview_dynamic_list", "list_dynamic_lists",
+    "search_my_list_filters", "my_tags", "query_mylists", "dynamic_list_schema", "dynamic_list_filter_options", "preview_dynamic_list", "list_dynamic_lists",
 ];
 
 const writeToolNames = [
@@ -142,14 +142,16 @@ test("read-only consent exposes read tools and rejects write calls", async ({ pa
     const result = await callTool(request, connection.access_token, "media_details", { mediaType: "movies", mediaId: movies.editable.id });
     expect(result.userMedia).toBeNull();
     const listSchema = await callTool(request, connection.access_token, "dynamic_list_schema", {});
-    expect(listSchema.schema.properties.version.const).toBe(1);
-    expect(listSchema.supportedMediaFilters.movies).toEqual(["actors", "directors", "langs"]);
-    expect(listSchema.supportedMediaFilters.books).toEqual(["authors", "langs"]);
+    expect(listSchema.schema.properties.version.const).toBe(2);
+    expect(listSchema.supportedMediaFilters.movies).toEqual(["actors", "directors", "langs", "genres", "tagRules"]);
+    expect(listSchema.supportedMediaFilters.books).toEqual(["authors", "langs", "genres", "tagRules"]);
     const metadataSchema = listSchema.schema.properties.filters.properties.mediaFilters;
-    expect(Object.keys(metadataSchema.properties.books.properties)).toEqual(["authors", "langs"]);
+    expect(Object.keys(metadataSchema.properties.books.properties)).toEqual(["authors", "langs", "genres", "tagRules"]);
     expect(metadataSchema.properties.books.additionalProperties).toBe(false);
     expect(metadataSchema.properties.books.required).toBeUndefined();
     expect(metadataSchema.properties.movies.properties.actors).toMatchObject({ type: "array", maxItems: 20 });
+    const options = await callTool(request, connection.access_token, "dynamic_list_filter_options", { mediaTypes: "all" });
+    expect(Array.isArray(options.mediaFilters.movies.tags)).toBe(true);
     const spec = listSchema.examples[0];
     const preview = await callTool(request, connection.access_token, "preview_dynamic_list", { spec });
     expect(preview.total).toBe(0);
@@ -170,11 +172,16 @@ test("read-only consent exposes read tools and rejects write calls", async ({ pa
 
 
 test("an assistant saves a live dynamic list across media types without leaking other users' entries", async ({ page, request, baseURL }) => {
-    await runBun(["src/routes/_main/_private/lists/dynamic/-fixtures.ts"]);
+    await runBun(["src/routes/_main/_private/lists/dynamic/-fixtures.ts", "seed-search"]);
     const connection = await connectAssistant(page, request, baseURL!);
     const token = connection.access_token;
     const { examples } = await callTool(request, token, "dynamic_list_schema", {});
-    const spec = { ...examples[0], title: "My forgotten plans" };
+    const options = await callTool(request, token, "dynamic_list_filter_options", { mediaTypes: ["movies", "books"] });
+    const tag = options.mediaFilters.movies.tags.find((tag: { name: string }) => tag.name === "Weekend");
+    expect(tag).toMatchObject({ id: expect.any(Number), name: "Weekend" });
+    const spec = { ...examples[0], title: "My forgotten plans", filters: {
+        ...examples[0].filters, mediaFilters: { movies: { tagRules: [{ tags: [tag.id] }] } },
+    } };
     const preview = await callTool(request, token, "preview_dynamic_list", { spec });
     expect(preview.total).toBe(2);
     expect(preview.items.map((item: { mediaType: string; mediaId: number }) => [item.mediaType, item.mediaId]))
@@ -194,6 +201,9 @@ test("an assistant saves a live dynamic list across media types without leaking 
     await expect(page.getByText("A long-awaited book", { exact: true })).toBeVisible();
     await expect(page.getByText(movies.editable.name, { exact: true })).toHaveCount(0);
 
+    await callTool(request, token, "edit_media_tag", { mediaType: "movies", mediaId: movies.private.id, action: "deleteOne", tag: { name: "Weekend" } });
+    const updated = (await callTool(request, token, "list_dynamic_lists", {}))[0];
+    expect(updated.spec.filters.mediaFilters.movies.tagRules).toEqual([]);
     await callTool(request, token, "update_media", { mediaType: "movies", mediaId: movies.private.id, payload: { type: "status", status: "Completed" } });
     await page.reload();
     await expect(page.getByText(movies.private.name, { exact: true })).toHaveCount(0);

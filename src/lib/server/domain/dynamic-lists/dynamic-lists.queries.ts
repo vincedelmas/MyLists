@@ -3,15 +3,17 @@ import {and, eq, inArray, notInArray, sql} from "drizzle-orm";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import type {IdNamePair} from "@/lib/types/media-common.types";
 import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
 import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
 import type {DynamicListRuntimeFilters, DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
-import {user, userMediaSettings} from "@/lib/server/database/schema";
+import {mediaTags, user, userMediaSettings} from "@/lib/server/database/schema";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {getMediaCommonFilterConditions, getMediaScopedFilterConditions, getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
+import {getDynamicListTagNames} from "./dynamic-list-tags.queries";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 
 
@@ -53,6 +55,7 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
     includeFilterOptions = false,
 }: DynamicListQueryOptions & { perPage?: number } = {}) => {
     const { filters } = spec;
+    const tagNames = getDynamicListTagNames(userId, [spec]);
     const browseFilters = runtimeFilters ?? {};
 
     const mediaTypes = spec.mediaTypes === "all" ? ALL_MEDIA_TYPES : spec.mediaTypes;
@@ -149,9 +152,13 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
             conditions.push(sql`${releaseYear} <= ${filters.maxReleaseYear}`);
         }
 
-        conditions.push(...getMediaScopedFilterConditions(definition, {
-            tags: filters.tags, tagsMatch: filters.tagsMatch, excludeTags: filters.excludeTags,
-        }, userId));
+        for (const rule of filters.mediaFilters?.[mediaType]?.tagRules ?? []) {
+            conditions.push(...getMediaScopedFilterConditions(definition, {
+                tags: rule.tags?.map(id => tagNames[id]),
+                tagsMatch: rule.tagsMatch,
+                excludeTags: rule.excludeTags?.map(id => tagNames[id]),
+            }, userId));
+        }
 
         const selection = sql`
             ${mediaType} AS "mediaType", 
@@ -354,7 +361,7 @@ export const getDynamicListEditorFilterOptions = (userId: number, selectedTypes:
 
     const sources = mediaTypes.map(mediaType => {
         const definition = getServerMediaDefinition(mediaType).repository;
-        const { listTable, tagTable, genreTable } = definition.tables;
+        const { listTable, genreTable } = definition.tables;
 
         const ownedActiveList = sql`
             SELECT ${listTable.mediaId} 
@@ -373,9 +380,12 @@ export const getDynamicListEditorFilterOptions = (userId: number, selectedTypes:
                 WHERE ${genreTable.mediaId} IN (${ownedActiveList})` : sql`SELECT NULL AS "name" WHERE 0`,
 
             tags: definition.filters.common.tags ? sql`
-                SELECT ${tagTable.name} AS "name" 
-                FROM ${tagTable}
-                WHERE ${tagTable.userId} = ${userId} AND ${tagTable.mediaId} IN (${ownedActiveList})` : sql`SELECT NULL AS "name" WHERE 0`,
+                SELECT ${mediaTags.id} AS "id", ${mediaTags.name} AS "name"
+                FROM ${mediaTags}
+                WHERE ${mediaTags.userId} = ${userId} AND ${mediaTags.mediaType} = ${mediaType}
+                    AND EXISTS (SELECT 1 FROM ${userMediaSettings}
+                        WHERE ${userMediaSettings.userId} = ${userId} AND ${userMediaSettings.mediaType} = ${mediaType}
+                            AND ${userMediaSettings.active} = 1)` : sql`SELECT NULL AS "id", NULL AS "name" WHERE 0`,
         };
     });
 
@@ -383,17 +393,11 @@ export const getDynamicListEditorFilterOptions = (userId: number, selectedTypes:
         mediaFilters: Object.fromEntries(sources.map(source => [source.mediaType, {
             ...source.metadata,
             genres: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.genres}) ORDER BY "name" COLLATE NOCASE`),
-            tags: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.tags}) ORDER BY "name" COLLATE NOCASE`),
-        }])) as ScopedMediaFilterOptions,
+            tags: db.all<{ id: number; name: string }>(sql`SELECT "id", "name" FROM (${source.tags}) ORDER BY "name" COLLATE NOCASE`),
+        }])) as ScopedMediaFilterOptions<IdNamePair>,
         genres: db.all<{ name: string }>(sql`
             SELECT DISTINCT "name" 
             FROM (${sql.join(sources.map(source => source.genres), sql` UNION ALL `)})
-            ORDER BY "name" COLLATE NOCASE
-        `).map(row => row.name),
-
-        tags: db.all<{ name: string }>(sql`
-            SELECT DISTINCT "name" 
-            FROM (${sql.join(sources.map(source => source.tags), sql` UNION ALL `)})
             ORDER BY "name" COLLATE NOCASE
         `).map(row => row.name),
     };

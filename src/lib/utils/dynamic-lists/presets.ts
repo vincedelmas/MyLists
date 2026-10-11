@@ -4,7 +4,7 @@ import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 
 export const DYNAMIC_LIST_PRESETS = [
     {
-        version: 1,
+        version: 2,
         display: "grid",
         mediaTypes: "all",
         title: "Plans older than six months",
@@ -12,7 +12,7 @@ export const DYNAMIC_LIST_PRESETS = [
         filters: { statusGroup: "planned", addedBefore: { monthsAgo: 6 } },
     },
     {
-        version: 1,
+        version: 2,
         display: "grid",
         mediaTypes: "all",
         filters: { favorite: true },
@@ -20,7 +20,7 @@ export const DYNAMIC_LIST_PRESETS = [
         sort: { field: "rating", direction: "desc" },
     },
     {
-        version: 1,
+        version: 2,
         display: "grid",
         mediaTypes: "all",
         title: "Finished and loved",
@@ -28,7 +28,7 @@ export const DYNAMIC_LIST_PRESETS = [
         filters: { statusGroup: "completed", minRating: 8 },
     },
     {
-        version: 1,
+        version: 2,
         display: "grid",
         mediaTypes: "all",
         title: "In progress",
@@ -36,7 +36,7 @@ export const DYNAMIC_LIST_PRESETS = [
         sort: { field: "lastUpdated", direction: "desc" },
     },
     {
-        version: 1,
+        version: 2,
         display: "grid",
         mediaTypes: "all",
         title: "Recently added",
@@ -44,7 +44,7 @@ export const DYNAMIC_LIST_PRESETS = [
         sort: { field: "addedAt", direction: "desc" },
     },
     {
-        version: 1,
+        version: 2,
         display: "list",
         mediaTypes: "all",
         title: "Waiting for your rating",
@@ -52,7 +52,7 @@ export const DYNAMIC_LIST_PRESETS = [
         filters: { statusGroup: "completed", rated: false },
     },
     {
-        version: 1,
+        version: 2,
         display: "list",
         mediaTypes: "all",
         title: "Paused for a while",
@@ -60,7 +60,7 @@ export const DYNAMIC_LIST_PRESETS = [
         filters: { statusGroup: "on_hold", updatedBefore: { monthsAgo: 3 } },
     },
     {
-        version: 1,
+        version: 2,
         display: "grid",
         title: "Your reading queue",
         filters: { statusGroup: "planned" },
@@ -68,7 +68,7 @@ export const DYNAMIC_LIST_PRESETS = [
         mediaTypes: [MediaType.BOOKS, MediaType.MANGA],
     },
     {
-        version: 1,
+        version: 2,
         display: "list",
         mediaTypes: "all",
         filters: { hasComment: true },

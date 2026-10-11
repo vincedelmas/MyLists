@@ -4,6 +4,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
+import {createCollectionSchema} from "@/lib/schemas/collections.schema";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 import {AuthorizationService, toActor} from "@/lib/server/authorization";
@@ -134,6 +135,16 @@ describe("collection media references", () => {
         expect(() => service.copyCollection(collectionId, toActor({ id: 2, role: RoleType.USER }))).toThrow(FormattedError);
 
         expect(snapshot()).toEqual(before);
+    });
+
+    it("keeps copied titles within the editable title limit", () => {
+        const items = [{ mediaType: MediaType.MOVIES, mediaId: 1 }];
+        const collectionId = service.createCollection({ ...collectionData, title: "A".repeat(100), items });
+        const copy = service.copyCollection(collectionId, toActor({ id: 2, role: RoleType.USER }));
+        const copiedCollection = CollectionsRepository.getCollectionById(copy.id)!;
+
+        expect(copiedCollection.title).toBe(`Copy of ${"A".repeat(92)}`);
+        expect(createCollectionSchema.safeParse({ ...copiedCollection, items }).success).toBe(true);
     });
 
     it("keeps valid items readable and editable while preserving deduplication, ordering, and annotations", async () => {

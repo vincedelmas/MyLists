@@ -5,7 +5,6 @@ import type {MediaInfo} from "@/lib/types/media-common.types";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {CollectionItemInput} from "@/lib/types/collections.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import {DenialReason, MediaType, PrivacyType} from "@/lib/utils/enums";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
@@ -13,6 +12,7 @@ import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {Actor, AuthorizationService, CollectionAction, collectionPolicy} from "@/lib/server/authorization";
+import {type CommunitySearch, createCollectionSchema, type UserCollectionsSearch} from "@/lib/schemas/collections.schema";
 
 
 export class CollectionsService {
@@ -36,7 +36,7 @@ export class CollectionsService {
         const [isLiked, capabilities] = await Promise.all([
             actor.kind === "user" ? this.repository.findLikedCollection(actor.id, collectionId) : Promise.resolve(null),
             this.authorizationService.getCollectionCapabilities(actor, collection),
-            includeFilterOptions ? undefined : this.repository.incrementViewCount(collectionId),
+            mode === "read" && !includeFilterOptions ? this.repository.incrementViewCount(collectionId) : undefined,
         ]);
 
         if (mode === "read") {
@@ -267,7 +267,7 @@ export class CollectionsService {
                 ordered: collection.ordered,
                 privacy: PrivacyType.PRIVATE,
                 description: collection.description,
-                title: `Copy of ${collection.title}`,
+                title: `Copy of ${collection.title}`.slice(0, createCollectionSchema.shape.title.maxLength!),
             });
 
             if (items.length > 0) {

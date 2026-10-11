@@ -20,6 +20,13 @@ const invalidateCollectionSummaries = (queryClient: QueryClient) => Promise.all(
 ]);
 
 
+const invalidateCollectionItems = (queryClient: QueryClient, collectionId: number) => Promise.all([
+    invalidateCollectionSummaries(queryClient),
+    queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) }),
+    queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey }),
+]);
+
+
 export const useCreateCollectionMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
@@ -43,11 +50,9 @@ export const useUpdateCollectionMutation = (collectionId: number, meta?: Mutatio
             successToastMessage: "Collection updated successfully!",
             ...meta,
         },
-        onSuccess: () => Promise.all([
-            invalidateCollectionSummaries(queryClient),
-            queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) }),
-            queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey }),
-        ]),
+        onSuccess: () => {
+            return invalidateCollectionItems(queryClient, collectionId);
+        },
     });
 };
 
@@ -114,12 +119,7 @@ export const useAddMediaToCollectionMutation = (meta?: MutationMeta) => {
         mutationFn: postAddMediaToCollection,
         meta: { ...meta },
         onSuccess: (_data, variables) => {
-            const collectionId = Number(variables.data.collectionId);
-            return Promise.all([
-                invalidateCollectionSummaries(queryClient),
-                queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) }),
-                queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey }),
-            ]);
+            return invalidateCollectionItems(queryClient, Number(variables.data.collectionId));
         },
     });
 };
@@ -132,12 +132,7 @@ export const useRemoveMediaFromCollectionMutation = (meta?: MutationMeta) => {
         mutationFn: postRemoveMediaFromCollection,
         meta: { ...meta },
         onSuccess: (_data, variables) => {
-            const collectionId = Number(variables.data.collectionId);
-            return Promise.all([
-                invalidateCollectionSummaries(queryClient),
-                queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) }),
-                queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey }),
-            ]);
+            return invalidateCollectionItems(queryClient, Number(variables.data.collectionId));
         },
     });
 };

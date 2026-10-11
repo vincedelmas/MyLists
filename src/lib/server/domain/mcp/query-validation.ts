@@ -1,12 +1,9 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/query.config";
 import {parseStmt, traverse, type ParseStmtResult} from "sqlite3-parser";
+import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/query.config";
 
 
-const QUERY_BLOCKED_FUNCTIONS = ["load_extension", "readfile", "writefile"] as const;
-
-
-const blockedFunctions = new Set<string>(QUERY_BLOCKED_FUNCTIONS);
+const blockedFunctions = new Set(["load_extension", "readfile", "writefile"]);
 
 
 const rejectFileAccess = (name: string) => {

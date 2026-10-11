@@ -1,7 +1,5 @@
 import type z from "zod";
-import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
-import {capitalize} from "@/lib/utils/formatting/text";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {listsSearchSchema} from "@/lib/schemas/lists.schema";
@@ -9,17 +7,16 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
-import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {Pagination} from "@/lib/client/components/general/Pagination";
+import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
+import {Layers3, LibraryBig, ListOrdered, LockKeyhole, Plus} from "lucide-react";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {DynamicListCard} from "@/lib/client/components/dynamic-lists/DynamicListCard";
+import {TrackingListsSection} from "@/lib/client/components/lists/TrackingListsSection";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
-import {ArrowUpRight, Layers3, LibraryBig, ListOrdered, LockKeyhole, Play, Plus} from "lucide-react";
-import {Card, CardAction, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
 import {listsCollectionsOptions, userListViewsOptions} from "@/lib/client/react-query/query-options/lists.options";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
@@ -171,55 +168,12 @@ function ListsPage() {
                 </Empty>}
 
                 {showPresets && (visiblePresets.length > 0 || showContinue) &&
-                    <section aria-labelledby="tracking-lists-title" className="flex flex-col gap-4">
-                        <h2 id="tracking-lists-title" className="flex items-center gap-2 text-lg font-semibold">
-                            <LibraryBig className="size-5 text-brand"/> Tracking lists
-                        </h2>
-                        <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
-                            {visiblePresets.map(preset =>
-                                <Card key={preset.mediaType} size="sm" className="relative transition-shadow hover:ring-brand hover:shadow-sm">
-                                    <Link
-                                        to="/lists/tracking/$mediaType/$username"
-                                        params={{ username, mediaType: preset.mediaType }}
-                                        aria-label={`${capitalize(preset.mediaType)} list`}
-                                        className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                    />
-                                    <CardHeader className="pointer-events-none">
-                                        <CardTitle className="flex items-center gap-2">
-                                            <MainThemeIcon type={preset.mediaType}/>{capitalize(preset.mediaType)}
-                                        </CardTitle>
-                                        <CardDescription>
-                                            {formatNumber(preset.totalEntries)} media
-                                        </CardDescription>
-                                        <CardAction>
-                                            <ArrowUpRight className="size-4 text-muted-foreground"/>
-                                        </CardAction>
-                                    </CardHeader>
-                                </Card>
-                            )}
-                            {showContinue &&
-                                <Card size="sm" className="relative transition-shadow hover:ring-brand hover:shadow-sm">
-                                    <Link
-                                        aria-label="Continue list"
-                                        to="/lists/continue/$username" params={{ username }}
-                                        search={{ activeTab: filters.mediaType === MediaType.MOVIES ? undefined : filters.mediaType }}
-                                        className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                    />
-                                    <CardHeader className="pointer-events-none">
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Play className="size-4 text-brand"/>Continue
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Media on going
-                                        </CardDescription>
-                                        <CardAction>
-                                            <ArrowUpRight className="size-4 text-muted-foreground"/>
-                                        </CardAction>
-                                    </CardHeader>
-                                </Card>
-                            }
-                        </div>
-                    </section>
+                    <TrackingListsSection
+                        username={username}
+                        presets={visiblePresets}
+                        showContinue={showContinue}
+                        mediaType={filters.mediaType}
+                    />
                 }
 
                 {showDynamicSection &&
@@ -314,7 +268,7 @@ function ListsPage() {
                                     </span>
                                 }
                                 {isOwner &&
-                                    <Link to="/lists/collections/create" className={cn(buttonVariants({ variant: "default", size: "sm" }))}>
+                                    <Link to="/lists/collections/create" className={buttonVariants({ size: "sm" })}>
                                         <Plus data-icon="inline-start"/>
                                         Create collection
                                     </Link>

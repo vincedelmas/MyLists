@@ -3,7 +3,8 @@ import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {createQueryTestSource} from "@/lib/server/domain/mcp/query-snapshot.fixture";
 import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/domain/mcp/query.config";
-import {buildQuerySnapshot, QUERY_SCHEMA} from "@/lib/server/domain/mcp/query-snapshot";
+import {QUERY_SCHEMA} from "@/lib/server/domain/mcp/query-schema";
+import {buildQuerySnapshot} from "@/lib/server/domain/mcp/query-snapshot";
 
 
 const mediaTypes = ["movies", "series", "anime", "games", "books", "manga"];

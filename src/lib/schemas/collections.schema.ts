@@ -25,19 +25,17 @@ const collectionItemSchema = z.object({
     annotation: z.string().trim().max(500).optional().nullable(),
 });
 
-const collectionBaseSchema = z.object({
+export const createCollectionSchema = z.object({
     ordered: z.boolean(),
     privacy: z.enum(PrivacyType),
     items: z.array(collectionItemSchema).min(1, "Collection must contain at least 1 item."),
+    description: z.string().trim().max(400, "Description cannot exceed 400 characters").optional().nullable(),
     title: z.string().trim()
         .min(3, "Title must be at least 3 characters long")
         .max(100, "Title is too long (max 100 characters)"),
-    description: z.string().trim().max(400, "Description cannot exceed 400 characters").optional().nullable(),
 });
 
-export const createCollectionSchema = collectionBaseSchema;
-
-export const updateCollectionSchema = collectionBaseSchema.extend({
+export const updateCollectionSchema = createCollectionSchema.extend({
     collectionId: coercedPositiveIntFieldSchema,
 });
 
@@ -67,10 +65,6 @@ export const collectionBrowseSearchSchema = mediaBrowseFiltersSchema.extend({
 
 export const collectionNavigationSchema = collectionBrowseSearchSchema.pick({ fromCommunity: true });
 
-export const mediaCommunityCollectionsSchema = mediaTypeMediaIdSchema;
-
-export const collectionMediaMembershipsSchema = mediaTypeMediaIdSchema;
-
-export const collectionMediaItemActionSchema = collectionMediaMembershipsSchema.extend({
+export const collectionMediaItemActionSchema = mediaTypeMediaIdSchema.extend({
     collectionId: coercedPositiveIntFieldSchema,
 });

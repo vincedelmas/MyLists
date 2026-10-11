@@ -347,6 +347,7 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }),
+
                 ...(action === TagAction.RENAME || action === TagAction.DELETE_ALL ? [
                     queryClient.invalidateQueries({ queryKey: ["userList", mediaType, currentUser!.name] }),
                     queryClient.invalidateQueries({ queryKey: ["details", mediaType] }),
@@ -355,10 +356,20 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
 
             queryClient.setQueryData(tagNamesOptions(mediaType, false).queryKey, (oldData) => {
                 if (!oldData) return;
-                if (action === TagAction.DELETE_ALL) return oldData.filter(item => item.name !== tag.name);
-                if (!data) return oldData;
-                if (action === TagAction.RENAME) return oldData.map(item => item.name === tag.oldName ? data : item);
-                return oldData.map((c) => c?.name).includes(data?.name ?? "") ? oldData : [...oldData, data];
+
+                if (action === TagAction.DELETE_ALL) {
+                    return oldData.filter(item => item.name !== tag.name);
+                }
+
+                if (!data) {
+                    return oldData;
+                }
+
+                if (action === TagAction.RENAME) {
+                    return oldData.map(item => item.name === tag.oldName ? data : item);
+                }
+
+                return oldData.some(item => item.name === data.name) ? oldData : [...oldData, data];
             });
         }
     })

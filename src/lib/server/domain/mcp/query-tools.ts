@@ -1,6 +1,6 @@
 import {QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
+import {QUERY_SCHEMA} from "@/lib/server/domain/mcp/query-schema";
 import type {ToolContext} from "@/lib/server/core/mcp/tool-context";
-import {QUERY_SCHEMA} from "@/lib/server/domain/mcp/query-snapshot";
 import {runMyListsQuery} from "@/lib/server/domain/mcp/query.service";
 import {myListsQueryInputSchema} from "@/lib/server/domain/mcp/tool-schemas";
 
@@ -15,7 +15,7 @@ export const registerQueryTools = ({ register, userId }: ToolContext) => {
     ].join(", ");
 
     register("query_mylists", {
-        description: description,
+        description,
         inputSchema: myListsQueryInputSchema,
     }, ({ action, sql, parameters, maxRows }) => {
         if (action === "schema") {

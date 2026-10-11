@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import type {McpAccess} from "@/lib/server/core/mcp/tool-context";
+import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import type {SocialService} from "@/lib/server/domain/social/social.service";
 import {AuthorizationService} from "@/lib/server/authorization/authorization.service";
 import {MediaType, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
@@ -90,9 +91,9 @@ const view = {
     createdAt: "2026-01-01",
     updatedAt: "2026-01-01",
     spec: {
-        version: 1, title: "Weekend plans", mediaTypes: "all", filters: {},
+        version: 2, title: "Weekend plans", mediaTypes: "all", filters: {},
         sort: { field: "addedAt", direction: "asc" }, display: "grid",
-    },
+    } satisfies DynamicListSpec,
 };
 const preview = { total: 7, mediaTypes: [MediaType.MOVIES, MediaType.BOOKS], covers: [] };
 const collectionResults = { items: [], total: 0, page: 1, pages: 0, perPage: 12 };

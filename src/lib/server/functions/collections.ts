@@ -6,10 +6,9 @@ import {
     collectionDetailsReadSchema,
     collectionIdSchema,
     collectionMediaItemActionSchema,
-    collectionMediaMembershipsSchema,
     collectionsBrowseFiltersSchema,
     createCollectionSchema,
-    mediaCommunityCollectionsSchema,
+    mediaTypeMediaIdSchema,
     updateCollectionSchema
 } from "@/lib/schemas";
 
@@ -26,7 +25,7 @@ export const getCommunityCollections = createServerFn({ method: "GET" })
 
 export const getMediaCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(mediaCommunityCollectionsSchema)
+    .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaId, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -46,7 +45,7 @@ export const getReadCollectionDetails = createServerFn({ method: "GET" })
 
 export const getUserCollectionMemberships = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .validator(collectionMediaMembershipsSchema)
+    .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaId, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;

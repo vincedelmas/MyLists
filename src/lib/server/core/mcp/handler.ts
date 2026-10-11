@@ -6,17 +6,15 @@ import {registerMediaTools} from "@/lib/server/domain/mcp/media-tools";
 import {registerQueryTools} from "@/lib/server/domain/mcp/query-tools";
 import {registerDynamicListTools} from "@/lib/server/domain/mcp/dynamic-list-tools";
 import {MCP_READ_SCOPE, MCP_RESOURCE, MCP_SCOPES} from "@/lib/server/core/mcp/config";
-import {createToolContext, mcpRequestContext, McpAccess} from "@/lib/server/core/mcp/tool-context";
+import {createToolContext, mcpRequestContext, type McpAccess} from "@/lib/server/core/mcp/tool-context";
 import {WebStandardStreamableHTTPServerTransport} from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
 
 const createMyListsMcpServer = (access: McpAccess) => {
-    const serverName = {
+    const server = new McpServer({
         name: "MyLists",
         version: "1.0.0",
-    }
-
-    const server = new McpServer(serverName, {
+    }, {
         instructions: [
             "Read and update the connected user's own media lists.",
             "Use query_mylists for SQL analysis.",

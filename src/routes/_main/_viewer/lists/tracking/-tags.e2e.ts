@@ -1,6 +1,47 @@
-import {users} from "../../../../../../scripts/e2e/data";
+import {movies, users} from "../../../../../../scripts/e2e/data";
 import {expect, runBun, signIn, test} from "../../../../../../scripts/e2e/fixtures";
 import {browseFilterGenres, browseGem} from "../collections/-browse.data";
+
+
+test("creates a media tag once while its request is pending and keeps the assignment after reload", async ({ page }) => {
+    await signIn(page);
+    await page.goto(`/details/movies/${movies.editable.id}`);
+    await page.getByRole("button", { name: "Add to List", exact: true }).click();
+    const manageTags = page.getByRole("heading").filter({ has: page.getByText("Tags", { exact: true }) })
+        .getByRole("button", { name: "Manage", exact: true });
+    await manageTags.click();
+    const dialog = page.getByRole("dialog", { name: "Manage Tags", exact: true });
+    const search = dialog.getByRole("textbox", { name: "Find or create a tag...", exact: true });
+    await search.fill("Pending tag");
+
+    let releaseRequest!: () => void;
+    const requestReady = new Promise<void>(resolve => { releaseRequest = resolve; });
+    let requests = 0;
+    await page.route("**/_serverFn/**", async route => {
+        if (route.request().method() === "POST") {
+            requests++;
+            await requestReady;
+        }
+        await route.continue();
+    });
+
+    try {
+        await search.press("Enter");
+        await expect(search).toBeDisabled();
+        await expect(dialog.getByRole("button", { name: "Creating...", exact: true })).toBeDisabled();
+        await page.keyboard.press("Enter");
+        await expect.poll(() => requests).toBe(1);
+    }
+    finally {
+        releaseRequest();
+    }
+
+    await expect(dialog.getByRole("checkbox", { name: "# Pending tag", exact: true })).toBeChecked();
+    await dialog.getByRole("button", { name: "Done", exact: true }).click();
+    await page.reload();
+    await manageTags.click();
+    await expect(dialog.getByRole("checkbox", { name: "# Pending tag", exact: true })).toBeChecked();
+});
 
 
 test("opens tag management from a list deep link and creates the first empty tag", async ({ page }) => {

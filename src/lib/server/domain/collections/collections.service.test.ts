@@ -188,7 +188,7 @@ describe("CollectionsService authorization", () => {
         expect(repository.incrementViewCount).not.toHaveBeenCalled();
     });
 
-    it("keeps all items available in edit mode", async () => {
+    it("keeps all items available in edit mode without counting a page view", async () => {
         const { repository, service } = createService();
         const actor = toActor({ id: 10, role: RoleType.USER });
 
@@ -196,6 +196,7 @@ describe("CollectionsService authorization", () => {
 
         expect(repository.getCollectionItems).toHaveBeenCalledWith(7);
         expect(repository.getPaginatedCollectionItems).not.toHaveBeenCalled();
+        expect(repository.incrementViewCount).not.toHaveBeenCalled();
     });
 
     it("rejects collection updates before any write for unauthorized viewers", async () => {

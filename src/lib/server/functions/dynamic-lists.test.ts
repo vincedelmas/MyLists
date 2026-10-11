@@ -4,6 +4,7 @@ import type {SocialService} from "@/lib/server/domain/social/social.service";
 import type {McpAccess} from "@/lib/server/core/mcp/tool-context";
 import {PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
+import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {getDynamicList, getDynamicListEditor, getDynamicListEditorFilters, previewDynamicListSummary} from "./dynamic-lists";
 
 
@@ -89,7 +90,7 @@ vi.mock("@/lib/server/domain/dynamic-lists/dynamic-lists.queries", () => ({
 
 const view = {
     id: 30, profilePosition: 1 as number | null, createdAt: "2026-01-01", updatedAt: "2026-01-01",
-    spec: { version: 1, title: "A shared dynamic list", mediaTypes: "all", filters: {}, sort: { field: "addedAt", direction: "asc" }, display: "grid" },
+    spec: { version: 2, title: "A shared dynamic list", mediaTypes: "all", filters: {}, sort: { field: "addedAt", direction: "asc" }, display: "grid" } satisfies DynamicListSpec,
 };
 
 beforeEach(() => {
@@ -162,7 +163,7 @@ describe("canonical dynamic list access", () => {
         mocks.currentUser = { id: 20, role: RoleType.USER };
         const preview = { total: 0, mediaTypes: [], covers: [] };
         mocks.getSummary.mockReturnValue(preview);
-        await expect(previewDynamicListSummary({ data: view.spec } as Parameters<typeof previewDynamicListSummary>[0])).resolves.toEqual(preview);
+        await expect(previewDynamicListSummary({ data: view.spec })).resolves.toEqual(preview);
         expect(mocks.getSummary).toHaveBeenCalledWith(20, view.spec);
         expect(mocks.getResults).not.toHaveBeenCalled();
         await expect(previewDynamicListSummary({ data: { ...view.spec, userId: 10 } } as Parameters<typeof previewDynamicListSummary>[0])).rejects.toThrow();

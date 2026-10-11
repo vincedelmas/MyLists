@@ -317,7 +317,12 @@ test("creates, ranks, annotates and copies a collection across every media type 
     await form.getByRole("textbox", { name: "Title", exact: true }).fill(title);
     await form.getByRole("radio", { name: "Public", exact: true }).check();
     await form.getByRole("switch", { name: "Ranked list", exact: true }).check();
-    await form.getByRole("textbox", { name: `Annotation for ${mixedMedia[1].name}`, exact: true }).fill(note);
+    const annotation = form.getByRole("textbox", { name: `Annotation for ${mixedMedia[1].name}`, exact: true });
+    await annotation.fill("x".repeat(501));
+    await form.getByRole("button", { name: "Create collection", exact: true }).click();
+    await expect(annotation).toHaveAttribute("aria-invalid", "true");
+    await expect(annotation.locator("..").getByText(/500/)).toBeVisible();
+    await annotation.fill(note);
     await form.getByRole("button", { name: `Move ${mixedMedia[1].name} up`, exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await form.getByRole("button", { name: "Create collection", exact: true }).click();

@@ -21,7 +21,7 @@ export const DynamicListBadges = ({ spec, tagNames, activeMediaTypes, className,
             : index < spec.mediaTypes.length ? [spec.mediaTypes[index]] : [];
 
         return {
-            key: label,
+            key: `${index}-${label}`,
             content: <>
                 {mediaTypes.map(mediaType => <MainThemeIcon key={mediaType} type={mediaType}/>)}
                 <span>{label}</span>
@@ -29,5 +29,13 @@ export const DynamicListBadges = ({ spec, tagNames, activeMediaTypes, className,
         };
     });
 
-    return <OverflowBadges badges={badges} label="List rules" itemLabel="list rule" overflowTitle="More list rules" className={className}/>;
+    return (
+        <OverflowBadges
+            badges={badges}
+            label="List rules"
+            itemLabel="list rule"
+            className={className}
+            overflowTitle="More list rules"
+        />
+    );
 };

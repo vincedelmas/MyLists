@@ -1,9 +1,8 @@
+import {useId, useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
-import React, {useId, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
@@ -15,6 +14,7 @@ import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {MembershipSearchInput} from "@/lib/client/components/media/base/MembershipSearchInput";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 import {useAddMediaToCollectionMutation, useCreateCollectionMutation, useRemoveMediaFromCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
@@ -37,11 +37,9 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
     const isPending = addMutation.isPending || removeMutation.isPending || createMutation.isPending;
     const { data: collections = [], isLoading } = useQuery(userCollectionMembershipsOptions(mediaId, mediaType, isOpen));
 
-    const activeIds = new Set(collections.filter((col) => col.hasMedia).map((col) => col.id));
-    const filteredCollections = collections.filter((col) => col.title.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    const showCreateButton = searchQuery.trim().length >= 3
-        && !collections.some((col) => col.title.toLowerCase() === searchQuery.trim().toLowerCase());
+    const query = searchQuery.trim().toLowerCase();
+    const filteredCollections = collections.filter(collection => collection.title.toLowerCase().includes(query));
+    const showCreateButton = query.length >= 3 && !collections.some(collection => collection.title.toLowerCase() === query);
 
     const handleCreate = () => {
         createMutation.mutate({
@@ -60,14 +58,8 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
     };
 
     const handleToggle = (collection: NonNullable<typeof collections>[number]) => {
-        const selectedMutation = activeIds.has(collection.id) ? removeMutation : addMutation;
+        const selectedMutation = collection.hasMedia ? removeMutation : addMutation;
         selectedMutation.mutate({ data: { mediaId, mediaType, collectionId: collection.id } });
-    };
-
-    const onSearchKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
-        if (ev.key === "Enter" && showCreateButton) {
-            handleCreate();
-        }
     };
 
     const onOpenChange = (open: boolean, ev: DialogRootChangeEventDetails) => {
@@ -95,33 +87,15 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="relative group">
-                        <Input
-                            autoFocus
-                            value={searchQuery}
-                            disabled={isLoading}
-                            onKeyDown={onSearchKeyDown}
-                            className="h-9 bg-popover/50"
-                            placeholder="Find or create a collection..."
-                            onChange={(ev) => setSearchQuery(ev.target.value)}
-                        />
-                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 flex items-center">
-                            {showCreateButton ?
-                                <Button
-                                    size="sm"
-                                    disabled={isPending}
-                                    onClick={handleCreate}
-                                    className="text-[10px]"
-                                >
-                                    {createMutation.isPending ? "..." : "CREATE"}
-                                </Button>
-                                :
-                                <div className="px-2 py-1 rounded bg-popover/50 border text-[10px] text-muted-foreground font-mono tracking-tighter">
-                                    ESC
-                                </div>
-                            }
-                        </div>
-                    </div>
+                    <MembershipSearchInput
+                        value={searchQuery}
+                        onCreate={handleCreate}
+                        onChange={setSearchQuery}
+                        canCreate={showCreateButton}
+                        disabled={isLoading || isPending}
+                        isCreating={createMutation.isPending}
+                        placeholder="Find or create a collection..."
+                    />
                 </div>
 
                 <div className="flex flex-col border-t bg-accent/20">
@@ -150,7 +124,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                                 <div className="grid gap-0.5">
                                     {filteredCollections.map((collection, idx) => {
                                         const checkboxId = `${fieldId}-${idx}`;
-                                        const isActive = activeIds.has(collection.id);
+                                        const isActive = collection.hasMedia;
 
                                         return (
                                             <Field
@@ -166,7 +140,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                                                     onCheckedChange={() => handleToggle(collection)}
                                                 />
                                                 <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">
-                                                    <div className="min-w-0 space-y-1">
+                                                    <div className="flex min-w-0 flex-col gap-1">
                                                         <span className="font-medium line-clamp-2" title={collection.title}>
                                                             {collection.title}
                                                         </span>

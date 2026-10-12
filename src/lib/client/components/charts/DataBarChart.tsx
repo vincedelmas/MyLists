@@ -190,7 +190,7 @@ export function DataBarChart<TDatum>(props: DataBarChartProps<TDatum>) {
                 const title = points[0] ? tooltipTitleFormatter(points[0].xValue) : "";
 
                 return (
-                    <div className="min-w-24 text-sm text-popover-foreground">
+                    <div className="min-w-24 rounded-lg border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
                         <p className={cn("font-medium", visiblePoints.length > 1 && "mb-2")}>
                             {title}
                         </p>

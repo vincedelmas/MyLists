@@ -117,35 +117,37 @@ export function DataBarChart<TDatum>(props: DataBarChartProps<TDatum>) {
                                 : undefined,
                     }),
                 ],
-                x: {
-                    grid: false,
-                    scale: () => scaleBand<string | number>().padding(0.12),
-                    axis: {
-                        ...chartAxisStyle,
-                        ticks: {
-                            ...chartAxisStyle.ticks,
-                            format: xFormatter,
-                        },
-                        tickLabels: {
-                            ...chartAxisStyle.tickLabels,
-                            fontSize: xTickFontSize,
-                            thin: {
-                                minGap: xTickGap,
-                                priority: "ends",
+                scales: {
+                    x: {
+                        grid: false,
+                        scale: () => scaleBand<string | number>().padding(0.12),
+                        axis: {
+                            ...chartAxisStyle,
+                            ticks: {
+                                ...chartAxisStyle.ticks,
+                                format: xFormatter,
+                            },
+                            tickLabels: {
+                                ...chartAxisStyle.tickLabels,
+                                fontSize: xTickFontSize,
+                                thin: {
+                                    minGap: xTickGap,
+                                    priority: "ends",
+                                },
                             },
                         },
                     },
-                },
-                y: {
-                    nice: true,
-                    grid: showGrid,
-                    scale: scaleLinear,
-                    axis: {
-                        ...chartAxisStyle,
-                        ticks: {
-                            ...chartAxisStyle.ticks,
-                            format: yFormatter,
-                            values: yTickValues,
+                    y: {
+                        nice: true,
+                        grid: showGrid,
+                        scale: scaleLinear,
+                        axis: {
+                            ...chartAxisStyle,
+                            ticks: {
+                                ...chartAxisStyle.ticks,
+                                format: yFormatter,
+                                values: yTickValues,
+                            },
                         },
                     },
                 },

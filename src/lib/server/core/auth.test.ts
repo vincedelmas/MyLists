@@ -4,7 +4,6 @@ import {eq, ne} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {Readable} from "node:stream";
 import {EventEmitter} from "node:events";
-import {createLocalAccountIssuer} from "better-auth/db";
 import {mkdtemp, readFile, rm} from "node:fs/promises";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
@@ -70,7 +69,6 @@ describe("authentication", () => {
             userId: user.id,
             accountId: user.id,
             providerId: "credential",
-            issuer: createLocalAccountIssuer("credential"),
             password: await context.password.hash("test-password"),
         });
 

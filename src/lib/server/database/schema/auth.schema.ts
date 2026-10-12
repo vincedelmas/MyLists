@@ -42,7 +42,6 @@ export const session = sqliteTable("session", {
 
 export const account = sqliteTable("account", {
     id: integer("id").$type<number>().primaryKey(),
-    issuer: text("issuer").notNull(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -57,7 +56,6 @@ export const account = sqliteTable("account", {
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull()
 }, (table) => [
     index("account_user_id_idx").on(table.userId),
-    uniqueIndex("account_issuer_account_id_unique").on(table.issuer, table.accountId),
 ]);
 
 

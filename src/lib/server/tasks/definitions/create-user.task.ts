@@ -2,7 +2,6 @@ import {z} from "zod";
 import {RoleType} from "@/lib/utils/enums";
 import {auth} from "@/lib/server/core/auth";
 import type {UserWithRole} from "better-auth/plugins";
-import {createLocalAccountIssuer} from "better-auth/db";
 import {defineTask} from "@/lib/server/tasks/define-task";
 import {usernameSchema} from "@/lib/schemas/common.schema";
 
@@ -48,7 +47,6 @@ export const createUserTask = defineTask({
                 accountId: user.id,
                 providerId: "credential",
                 password: hashedPassword,
-                issuer: createLocalAccountIssuer("credential"),
             });
 
             ctx.metric("userId", user.id);

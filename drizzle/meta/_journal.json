@@ -428,6 +428,13 @@
       "when": 1791734184625,
       "tag": "0060_normalized_tag_assignments",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1791802071248,
+      "tag": "0061_better_auth_remove_issuer",
+      "breakpoints": true
     }
   ]
 }

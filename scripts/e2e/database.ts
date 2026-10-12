@@ -4,7 +4,6 @@ import {drizzle} from "drizzle-orm/bun-sqlite";
 import {hashPassword} from "better-auth/crypto";
 import {MediaType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
-import {createLocalAccountIssuer} from "better-auth/db";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
@@ -60,7 +59,6 @@ db.transaction(() => {
                 providerId: "credential",
                 password: hashedPassword,
                 accountId: String(user.id),
-                issuer: createLocalAccountIssuer("credential"),
             }).run();
 
         for (const mediaType of Object.values(MediaType)) {

@@ -1,5 +1,5 @@
 import * as z from "zod";
-import {usernameSchema} from "@/lib/schemas/common.schema";
+import {usernameFieldSchema} from "@/lib/schemas/common.schema";
 
 
 export const MAX_PROFILE_PINS = 4;
@@ -15,4 +15,4 @@ export const profilePinSchema = z.strictObject({
 export type ProfilePinItem = Pick<z.infer<typeof profilePinSchema>, "kind" | "id">;
 
 
-export const profilePinsSchema = z.strictObject({ username: usernameSchema });
+export const profilePinsSchema = z.strictObject({ username: usernameFieldSchema });

@@ -162,7 +162,7 @@ function ListsPage() {
                             Tracking lists are private
                         </EmptyTitle>
                         <EmptyDescription>
-                            This profile limits access to its tracking lists. You can browse any public collections from this profile.
+                            This profile limits access to its tracking lists. You can browse any <b>public</b> collections from this profile.
                         </EmptyDescription>
                     </EmptyHeader>
                 </Empty>}

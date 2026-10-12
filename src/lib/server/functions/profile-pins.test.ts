@@ -46,6 +46,15 @@ beforeEach(() => {
 
 
 describe("profile pins endpoints", () => {
+    it("loads pins for an existing username containing spaces and emoji", async () => {
+        await expect(getProfilePins({ data: { username: "k 🍿" } })).resolves.toEqual({
+            activeMediaTypes: [MediaType.MOVIES],
+            items: [],
+        });
+        expect(mocks.getCollections).toHaveBeenCalledWith(10, { kind: "user", id: 20, role: RoleType.USER }, undefined, true);
+        expect(mocks.getPinned).toHaveBeenCalledWith(10);
+    });
+
     it("loads accessible pinned collections and dynamic counts for the authorized profile, in their shared order", async () => {
         const view = { id: 1, profilePosition: 3, spec: { version: 1, title: "Dynamic", mediaTypes: "all", filters: {}, sort: { field: "addedAt", direction: "asc" }, display: "grid" } };
         const collection = { id: 2, title: "Public collection", privacy: PrivacyType.PUBLIC, profilePosition: 1, itemsCount: 2, previews: [] };

@@ -177,6 +177,24 @@ describe("collection media references", () => {
         ]);
     });
 
+    it("orders community collections by likes, then views, with stable pagination", async () => {
+        const ids = [
+            service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] }),
+            service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] }),
+            service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] }),
+        ];
+        dbContext.db.update(schema.collections).set({ likeCount: 2, viewCount: 1 }).where(eq(schema.collections.id, ids[0]!)).run();
+        dbContext.db.update(schema.collections).set({ likeCount: 1, viewCount: 100 }).where(eq(schema.collections.id, ids[1]!)).run();
+        dbContext.db.update(schema.collections).set({ likeCount: 1, viewCount: 50 }).where(eq(schema.collections.id, ids[2]!)).run();
+        const directory = await CollectionsRepository.getPublicCollections({ page: 1 });
+        expect(directory.items.map(item => item.id)).toEqual(ids);
+        const mediaCollections = await CollectionsRepository.getMediaCommunityCollections(1, MediaType.MOVIES);
+        expect(mediaCollections.map(item => item.id)).toEqual(ids);
+        dbContext.db.update(schema.collections).set({ viewCount: 100 }).where(eq(schema.collections.id, ids[2]!)).run();
+        expect((await CollectionsRepository.getPublicCollections({ page: 1 })).items.map(item => item.id))
+            .toEqual([ids[0], ids[2], ids[1]]);
+    });
+
     it("globally sorts, searches and paginates mixed results while preserving collection ranks", async () => {
         const entries = Array.from({ length: 32 }, (_, index) => ({
             id: 10 + Math.floor(index / 2),

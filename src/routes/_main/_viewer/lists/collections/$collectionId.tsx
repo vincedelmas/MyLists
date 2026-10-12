@@ -1,5 +1,6 @@
-import {useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {postRecordCollectionView} from "@/lib/server/functions/collections";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
@@ -16,7 +17,7 @@ import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {collectionBrowseSearchSchema, collectionIdSchema} from "@/lib/schemas";
-import {useQuery, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {CollectionStats} from "@/lib/client/components/collections/CollectionStats";
 import {MediaListResults} from "@/lib/client/components/media/base/MediaListResults";
 import {ArrowLeft, Copy, Heart, Layers3, List, ListOrdered, Pin} from "lucide-react";
@@ -55,6 +56,15 @@ function CollectionViewer() {
     const navigate = Route.useNavigate();
     const queryClient = useQueryClient();
     const { collectionId } = Route.useParams();
+    const countedCollection = useRef<number | null>(null);
+    const { mutate: recordView } = useMutation({ mutationFn: postRecordCollectionView, meta: { noErrorToast: true } });
+
+    useEffect(() => {
+        if (countedCollection.current === collectionId) return;
+        countedCollection.current = collectionId;
+        recordView({ data: { collectionId } });
+    }, [collectionId, recordView]);
+
     const { isAnonymous, currentUser } = useAuth();
     const { fromCommunity, ...filters } = Route.useSearch();
     const copyMutation = useCopyCollectionMutation(collectionId);

@@ -43,6 +43,15 @@ export const getReadCollectionDetails = createServerFn({ method: "GET" })
     });
 
 
+export const postRecordCollectionView = createServerFn({ method: "POST" })
+    .middleware([publicAuthMiddleware])
+    .validator(collectionIdSchema)
+    .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
+        const container = await getContainer();
+        return container.services.collections.recordCollectionView(collectionId, toActor(currentUser));
+    });
+
+
 export const getUserCollectionMemberships = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(mediaTypeMediaIdSchema)

@@ -1,5 +1,4 @@
 import {JSX} from "react";
-import {clientEnv} from "@/env/client";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {addSeo, addSeoLinks} from "@/lib/client/seo";
 import {Button} from "@/lib/client/components/ui/button";
@@ -24,10 +23,14 @@ import {
     ImageUp,
     Import,
     LayoutList,
+    Layers3,
+    LibraryBig,
+    ListFilter,
     ListOrdered,
     LucideIcon,
     Monitor,
     Newspaper,
+    Plug,
     Repeat,
     Search,
     Shield,
@@ -198,69 +201,104 @@ const AREA_DESCRIPTIONS: Record<FeatureArea, string> = {
 
 
 const LATEST_RELEASE: ReleaseData = {
-    icon: Star,
+    icon: Layers3,
     type: "New",
-    date: "September 2026",
-    title: "Season Ratings & CSV Imports",
-    summary: (
-        <span>
-            Rate each season of your series and anime, and bring your lists over with CSV imports.
-            The import system is in beta, so don’t hesitate to{" "}
-            <a href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`} className="font-medium text-brand hover:text-brand/80">
-                contact me
-            </a>{" "}
-            if you have any problems with it.
-        </span>
-    ),
+    date: "October 2026",
+    title: "Lists, collections & an MCP connection",
+    summary: "Quite a few things added in this update: " +
+        "a new page for your lists, " +
+        "collections can now mix media types, " +
+        "and lists that update themselves (based on filters). " +
+        "I have also added an MCP, if you’d like to use an AI assistant with MyLists.",
     items: [
         {
-            icon: Star,
-            type: "New",
+            icon: LibraryBig,
+            type: "Revamped",
             area: "Lists & Tracking",
-            name: "Ratings per Season",
-            description: (
-                <span>
-                    Give each season of a series or anime its own rating.
-                    Your overall rating is the average of the current seasons you have rated.
-                </span>
-            ),
+            name: "Lists & collections",
+            description: "Your tracking lists, Continue, dynamic lists and collections now share a page in MyMedia. " +
+                "You can also pin up to 4 dynamic lists or collections to your profile as a shortcut or to display to others.",
         },
         {
-            icon: Import,
+            icon: ListFilter,
+            type: "New",
+            name: "Dynamic lists",
+            area: "Lists & Tracking",
+            description: "You can now pick filters and save these as a dynamic list. " +
+                "You can mix the media types, tags, ratings, etc. and let the list update itself as your tracking changes. " +
+                "For example: a dynamic list of all your media you didn't rate yet.",
+        },
+        {
+            icon: ListOrdered,
+            type: "Improved",
+            area: "Lists & Tracking",
+            name: "Mix types in collections",
+            description: "A book and its movie adaptation can finally be in the same collection. " +
+                "Mix any media you like, rank it, add a few notes, and keep it private or share it. "
+        },
+        {
+            icon: Plug,
             type: "New",
             area: "Lists & Tracking",
-            name: "Letterboxd & IMDb Imports (Beta)",
+            name: "Ask your assistant (MCP)",
             description: (
                 <span>
-                    Bring your movies from Letterboxd ratings, watched, and watchlist CSVs,
-                    or IMDb ratings and watchlist CSVs. Get started in{" "}
-                    <Link to="/settings/imports" className="font-medium text-brand hover:text-brand/80">
-                        Settings → Imports
+                    You can now ask a compatible AI assistant about your lists, have it create a dynamic list,
+                    update your progress or ask for personalized stats about your lists. You can access it here{" "}
+                    <Link to="/settings/connected-apps" className="font-medium text-brand hover:text-brand/80">
+                        Settings → Connected apps
                     </Link>.
                 </span>
             ),
         },
-        {
-            icon: Import,
-            type: "New",
-            area: "Lists & Tracking",
-            name: "MyLists Imports (Beta)",
-            description: (
-                <span>
-                    Import current MyLists CSV exports for movies, series, anime, games, books, and manga.
-                    Get started in{" "}
-                    <Link to="/settings/imports/mylists" className="font-medium text-brand hover:text-brand/80">
-                        Settings → Imports
-                    </Link>.
-                </span>
-            ),
-        },
-    ]
+    ],
 };
 
 
 const FEATURES_DATA: FeatureData[] = [
     ...LATEST_RELEASE.items,
+    {
+        icon: Star,
+        type: "Existing",
+        area: "Lists & Tracking",
+        name: "Ratings per Season",
+        description: (
+            <span>
+                Give each season of a series or anime its own rating.
+                Your overall rating is the average of the current seasons you have rated.
+            </span>
+        ),
+    },
+    {
+        icon: Import,
+        type: "Existing",
+        area: "Lists & Tracking",
+        name: "Letterboxd & IMDb Imports (Beta)",
+        description: (
+            <span>
+                Bring your movies from Letterboxd ratings, watched, and watchlist CSVs,
+                or IMDb ratings and watchlist CSVs. Get started in{" "}
+                <Link to="/settings/imports" className="font-medium text-brand hover:text-brand/80">
+                    Settings → Imports
+                </Link>.
+            </span>
+        ),
+    },
+    {
+        icon: Import,
+        type: "Existing",
+        area: "Lists & Tracking",
+        name: "MyLists Imports (Beta)",
+        description: (
+            <span>
+                Import current MyLists CSV exports for movies, series, anime, games, books, and manga.
+                Get started in{" "}
+                <Link to="/settings/imports/mylists" className="font-medium text-brand hover:text-brand/80">
+                    Settings → Imports
+                </Link>.
+            </span>
+        ),
+    },
     {
         icon: Activity,
         type: "Existing",
@@ -323,12 +361,12 @@ const FEATURES_DATA: FeatureData[] = [
     {
         type: "Existing",
         icon: ListOrdered,
-        name: "Collections & Tags",
+        name: "Tracking tags",
         area: "Lists & Tracking",
         description: (
             <span>
-                Make ranked collections if you want to share a selection, or keep them private.
-                Tags are there for your own messy organization system.
+                Put your own labels on the things you track, then use them to filter your lists.
+                You can find and edit your tags in the filters panel, and use them in dynamic lists too.
             </span>
         ),
     },
@@ -535,7 +573,7 @@ const ReleaseCard = ({ release }: { release: ReleaseData }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 border-t md:grid-cols-3">
+            <div className="grid grid-cols-1 border-t md:grid-cols-2 xl:grid-cols-4">
                 {release.items.map((item, idx) =>
                     <ReleaseItem
                         item={item}
@@ -552,7 +590,7 @@ const ReleaseItem = ({ item }: { item: FeatureData }) => {
     const Icon = item.icon;
 
     return (
-        <article className="p-5 [&:not(:last-child)]:border-b md:[&:not(:last-child)]:border-b-0 md:[&:not(:last-child)]:border-r">
+        <article className="border-b p-5 last:border-b-0 md:odd:border-r md:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0">
             <h3 className="flex items-center gap-2 font-semibold text-foreground">
                 <Icon className="size-4 text-brand"/>
                 {item.name}

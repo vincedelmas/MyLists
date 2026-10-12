@@ -119,6 +119,8 @@ describe("CollectionsService authorization", () => {
                 type: "restricted",
             });
 
+        expect(() => service.recordCollectionView(7, actor)).toThrow(UnauthorizedError);
+
         expect(repository.getCollectionItems).not.toHaveBeenCalled();
         expect(repository.getPaginatedCollectionItems).not.toHaveBeenCalled();
         expect(repository.incrementViewCount).not.toHaveBeenCalled();
@@ -143,6 +145,9 @@ describe("CollectionsService authorization", () => {
         expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, [MediaType.MOVIES], { page: 2 }, undefined, false);
         expect(repository.getCollectionItems).not.toHaveBeenCalled();
         expect(result).toMatchObject({ page: 2, pages: 3, total: 50, perPage: 24 });
+        expect(repository.incrementViewCount).not.toHaveBeenCalled();
+        await service.recordCollectionView(7, actor);
+        expect(repository.incrementViewCount).toHaveBeenCalledExactlyOnceWith(7);
     });
 
     it("loads lazy facet options after authorization without counting another page view", async () => {

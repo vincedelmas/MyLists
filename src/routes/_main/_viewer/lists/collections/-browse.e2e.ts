@@ -64,6 +64,20 @@ test("creates, ranks, annotates and copies a collection across every media type 
     await expect(page).toHaveURL(/\/lists\/collections\/\d+$/);
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
     const collectionId = Number(new URL(page.url()).pathname.split("/").at(-1));
+    const readViewCount = () => page.evaluate(async collectionId => {
+        const modulePath = "/src/lib/server/functions/collections.ts";
+        const { getReadCollectionDetails } = await import(modulePath);
+        return (await getReadCollectionDetails({ data: { collectionId } })).collection.viewCount;
+    }, collectionId);
+    await expect.poll(readViewCount).toBe(1);
+    await expect(page.locator('[title="Views"]')).toHaveCount(0);
+    const collectionSearch = page.getByRole("searchbox", { name: "Search this collection", exact: true });
+    await collectionSearch.fill("No matching title");
+    await expect(page).toHaveURL(/search=No/);
+    await expect.poll(readViewCount).toBe(1);
+    await collectionSearch.fill("");
+    await expect(page).not.toHaveURL(/search=/);
+
     const controls = page.getByRole("group", { name: "Media browsing controls", exact: true });
     await controls.getByRole("button", { name: "Table view", exact: true }).click();
     const table = page.getByRole("table", { name: "Media results", exact: true });
@@ -81,6 +95,10 @@ test("creates, ranks, annotates and copies a collection across every media type 
         ...mixedMedia.slice(2).map(item => [item.mediaType, 501]),
     ]);
     expect(saved.items[0].annotation).toBe(note);
+    expect(saved.collection.viewCount).toBe(1);
+    await page.reload();
+    await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+    await expect.poll(readViewCount).toBe(2);
 
     await page.getByRole("button", { name: "Copy", exact: true }).click();
     await expect(page).toHaveURL(/\/lists\/collections\/\d+\/edit$/);

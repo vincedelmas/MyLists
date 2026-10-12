@@ -1,10 +1,10 @@
-import {Copy, Eye, Heart} from "lucide-react";
+import {Copy, Heart} from "lucide-react";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import type {CollectionSummaryData} from "@/lib/client/react-query/query-options";
 
 
 interface CollectionStatsProps {
-    collection: Pick<CollectionSummaryData, "likeCount" | "viewCount" | "copiedCount">;
+    collection: Pick<CollectionSummaryData, "likeCount" | "copiedCount">;
 }
 
 
@@ -13,7 +13,6 @@ export const CollectionStats = ({ collection }: CollectionStatsProps) => {
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
             {[
                 { label: "Likes", icon: Heart, count: collection.likeCount },
-                { label: "Views", icon: Eye, count: collection.viewCount },
                 { label: "Copies", icon: Copy, count: collection.copiedCount },
             ].map(({ label, icon: Icon, count }) =>
                 <span key={label} className="flex items-center gap-1.5" title={label}>

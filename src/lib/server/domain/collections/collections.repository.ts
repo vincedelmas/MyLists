@@ -24,6 +24,9 @@ import {collectionContainsMediaType, getCollectionMediaTypesSelection} from "@/l
 type CollectionTrackingItem = MediaListDataByType[MediaType]["items"][number];
 
 
+const communityCollectionOrder = [desc(collections.likeCount), desc(collections.viewCount), desc(collections.id)];
+
+
 const collectionSelection = {
     ...getTableColumns(collections),
     ownerName: user.name,
@@ -408,7 +411,7 @@ export class CollectionsRepository {
                     .where(conditions).get()?.count ?? 0;
             },
 
-            getItems: ({ limit, offset }) => this._getCollectionPage(conditions, limit, offset),
+            getItems: ({ limit, offset }) => this._getCollectionPage(conditions, limit, offset, [desc(collections.likeCount), desc(collections.id)]),
         });
     }
 
@@ -441,18 +444,18 @@ export class CollectionsRepository {
                     .where(conditions).get()?.count ?? 0;
             },
 
-            getItems: ({ limit, offset }) => this._getCollectionPage(conditions, limit, offset),
+            getItems: ({ limit, offset }) => this._getCollectionPage(conditions, limit, offset, communityCollectionOrder),
         });
     }
 
-    private static _getCollectionPage(conditions: SQL | undefined, limit: number, offset: number) {
+    private static _getCollectionPage(conditions: SQL | undefined, limit: number, offset: number, order: SQL[]) {
         // Limit the IDs before evaluating counts, media types and previews.
         const pageCollections = getDbClient()
             .select({ id: collections.id })
             .from(collections)
             .innerJoin(user, eq(collections.ownerId, user.id))
             .where(conditions)
-            .orderBy(desc(collections.likeCount), desc(collections.id))
+            .orderBy(...order)
             .limit(limit)
             .offset(offset)
             .as("page_collections");
@@ -462,7 +465,7 @@ export class CollectionsRepository {
             .from(pageCollections)
             .innerJoin(collections, eq(collections.id, pageCollections.id))
             .innerJoin(user, eq(collections.ownerId, user.id))
-            .orderBy(desc(collections.likeCount), desc(collections.id));
+            .orderBy(...order);
     }
 
 
@@ -478,7 +481,7 @@ export class CollectionsRepository {
                 eq(collectionItems.mediaType, mediaType),
                 eq(collectionItems.collectionId, collections.id),
             )).where(eq(collections.privacy, PrivacyType.PUBLIC))
-            .orderBy(desc(collections.likeCount))
+            .orderBy(...communityCollectionOrder)
             .limit(6);
     }
 

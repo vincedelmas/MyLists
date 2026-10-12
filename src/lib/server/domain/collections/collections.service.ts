@@ -24,19 +24,12 @@ export class CollectionsService {
     }
 
     async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor, filters: MediaBrowseFilters = { page: 1 }, includeFilterOptions = false) {
-        const collection = this.repository.getCollectionById(collectionId);
-        if (!collection) throw notFound();
-
-        const decision = this.authorizationService.decideCollection(actor, mode, collection);
-        if (!decision.allowed) {
-            throw new UnauthorizedError(decision.reason === DenialReason.PROFILE_RESTRICTED ? "restricted" : "private");
-        }
+        const collection = this._getAuthorizedCollection(collectionId, mode, actor);
 
         const viewerId = actor.kind === "user" ? actor.id : undefined;
         const [isLiked, capabilities] = await Promise.all([
             actor.kind === "user" ? this.repository.findLikedCollection(actor.id, collectionId) : Promise.resolve(null),
             this.authorizationService.getCollectionCapabilities(actor, collection),
-            mode === "read" && !includeFilterOptions ? this.repository.incrementViewCount(collectionId) : undefined,
         ]);
 
         if (mode === "read") {
@@ -89,6 +82,11 @@ export class CollectionsService {
                 mediaTypes: collection.mediaTypes,
             },
         };
+    }
+
+    recordCollectionView(collectionId: number, actor: Actor) {
+        this._getAuthorizedCollection(collectionId, "read", actor);
+        return this.repository.incrementViewCount(collectionId);
     }
 
     async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType, pinnedOnly = false) {
@@ -341,6 +339,18 @@ export class CollectionsService {
                 }).filter((item): item is NonNullable<typeof item> => item !== null),
             };
         });
+    }
+
+    private _getAuthorizedCollection(collectionId: number, mode: "read" | "edit", actor: Actor) {
+        const collection = this.repository.getCollectionById(collectionId);
+        if (!collection) throw notFound();
+
+        const decision = this.authorizationService.decideCollection(actor, mode, collection);
+        if (!decision.allowed) {
+            throw new UnauthorizedError(decision.reason === DenialReason.PROFILE_RESTRICTED ? "restricted" : "private");
+        }
+
+        return collection;
     }
 
     private _assertAction(collection: Parameters<typeof collectionPolicy.decide>[2], actor: Actor, action: CollectionAction, message: string) {

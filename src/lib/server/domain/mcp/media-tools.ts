@@ -7,15 +7,14 @@ import {mediaDetailsSchema, externalMediaResolveSchema} from "@/lib/schemas/medi
 import {addMediaToListSchema, updateUserMediaSchema, userTagNamesSchema} from "@/lib/schemas/user-media.schema";
 import {getMediaListSF, getMediaListFilters, getMediaListSearchFilters} from "@/lib/server/functions/media-lists";
 import {getMediaDetails, resolveExternalMedia, getGameCompatiblePlatforms} from "@/lib/server/functions/media-details";
-import {postAddMediaToList, postUpdateUserMedia, postEditUserTag, postUpdateUserCustomCover, getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
+import {postAddMediaToList, postUpdateUserMedia, postEditUserTag, getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
 import {
     mediaListInputSchema,
     mediaListFiltersInputSchema,
     mediaListSearchFiltersInputSchema,
     tvSeasonsInputSchema,
     mediaSearchInputSchema,
-    editMediaTagInputSchema,
-    mediaCoverInputSchema
+    editMediaTagInputSchema
 } from "@/lib/server/domain/mcp/tool-schemas";
 
 
@@ -114,10 +113,4 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
         description: "Add or detach a tag on one list entry. Global tag changes are unavailable.",
     }, data => postEditUserTag({ data }));
 
-    register("update_media_cover", {
-        write: true,
-        inputSchema: mediaCoverInputSchema,
-        annotations: { openWorldHint: true, destructiveHint: true },
-        description: "Set a custom cover from imageUrl or restore the catalog cover with remove=true.",
-    }, data => postUpdateUserCustomCover({ data }));
 };

@@ -243,7 +243,6 @@ Media tools call existing website server functions and return their results:
 - `add_media` — add a MyLists media item with an optional status
 - `update_media` — apply one tracking update using the website's payload
 - `edit_media_tag` — attach or detach a tag on one entry
-- `update_media_cover` — set a cover URL or restore the catalog cover
 - `query_mylists` — inspect the analysis schema or run read-only SQL on the connected user's data
 - `dynamic_list_schema` — get the validated JSON rules and starter specifications for dynamic lists
 - `preview_dynamic_list` — check the current matches for a specification without saving it

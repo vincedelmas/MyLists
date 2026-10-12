@@ -4,6 +4,7 @@ import {notFound} from "@tanstack/react-router";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {apiTokens} from "@/lib/server/database/schema";
 import {GameAdvancedSearchFilters} from "@/lib/schemas";
+import {coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
 import {getContainer} from "@/lib/server/core/container";
 import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -235,13 +236,14 @@ export const createIgdbApi = async () => {
             };
         },
 
-        async getGameDetails(apiId: number): Promise<IgdbGameDetails> {
+        async getGameDetails(apiId: number | string): Promise<IgdbGameDetails> {
+            const gameId = coercedPositiveIntFieldSchema.parse(apiId);
             const body = `
                 fields name, cover.image_id, game_engines.name, game_modes.name, platforms.name, genres.name, 
                 player_perspectives.name, total_rating, total_rating_count, first_release_date, 
                 involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
                 summary, themes.name, collections, url, external_games.uid, external_games.external_game_source;
-                where id = ${apiId};
+                where id = ${gameId};
             `;
 
             const headers = await getHeaders();

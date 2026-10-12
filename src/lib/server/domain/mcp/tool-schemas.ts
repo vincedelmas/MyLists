@@ -3,7 +3,7 @@ import {TagAction} from "@/lib/utils/enums";
 import {navbarSearchSchema} from "@/lib/schemas/search.schema";
 import {tvSeasonsQuerySchema} from "@/lib/schemas/tv-seasons.schema";
 import {MAX_QUERY_SQL_LENGTH, QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
-import {editUserTagSchema, updateUserCustomCoverSchema} from "@/lib/schemas/user-media.schema";
+import {editUserTagSchema} from "@/lib/schemas/user-media.schema";
 import {mediaListSchema, mediaListFiltersSchema, mediaListSearchFiltersSchema} from "@/lib/schemas/media-lists.schema";
 
 
@@ -29,15 +29,6 @@ export const editMediaTagInputSchema = editUserTagSchema.safeExtend({
     mediaId: editUserTagSchema.shape.mediaId.unwrap(),
     action: z.enum([TagAction.ADD, TagAction.DELETE_ONE]),
     tag: editUserTagSchema.shape.tag.omit({ oldName: true }).strict(),
-}).strict();
-
-
-// MCP accepts a cover URL. The server function validates the URL/remove combination.
-export const mediaCoverInputSchema = z.object({
-    remove: updateUserCustomCoverSchema.shape.remove,
-    mediaId: updateUserCustomCoverSchema.shape.mediaId,
-    imageUrl: updateUserCustomCoverSchema.shape.imageUrl,
-    mediaType: updateUserCustomCoverSchema.shape.mediaType,
 }).strict();
 
 

@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
     user: { id: 10, userMediaSettings: [{ mediaType: "movies", active: true }, { mediaType: "manga", active: false }] },
     getCollections: vi.fn(),
     getPinned: vi.fn(),
-    getSummary: vi.fn(),
+    getSummaries: vi.fn(),
     setPin: vi.fn(),
 }));
 
@@ -33,7 +33,7 @@ vi.mock("@/lib/server/core/container", () => ({ getContainer: () => ({ services:
 vi.mock("@/lib/server/core/mcp/tool-context", () => ({ mcpRequestContext: { getStore: () => mocks.access } }));
 vi.mock("@/lib/server/domain/profile/profile-pins.repository", () => ({ profilePinsRepository: { set: mocks.setPin } }));
 vi.mock("@/lib/server/domain/dynamic-lists/dynamic-lists.repository", () => ({ dynamicListsRepository: { getPinned: mocks.getPinned } }));
-vi.mock("@/lib/server/domain/dynamic-lists/dynamic-lists.queries", () => ({ getDynamicListSummary: mocks.getSummary }));
+vi.mock("@/lib/server/domain/dynamic-lists/dynamic-lists.queries", () => ({ getDynamicListSummaries: mocks.getSummaries }));
 
 
 beforeEach(() => {
@@ -41,17 +41,18 @@ beforeEach(() => {
     mocks.access = false;
     mocks.getCollections.mockResolvedValue([]);
     mocks.getPinned.mockReturnValue([]);
+    mocks.getSummaries.mockReturnValue(new Map());
 });
 
 
 describe("profile pins endpoints", () => {
-    it("loads accessible pinned collections and narrow dynamic previews for the authorized profile, in their shared order", async () => {
+    it("loads accessible pinned collections and dynamic counts for the authorized profile, in their shared order", async () => {
         const view = { id: 1, profilePosition: 3, spec: { version: 1, title: "Dynamic", mediaTypes: "all", filters: {}, sort: { field: "addedAt", direction: "asc" }, display: "grid" } };
         const collection = { id: 2, title: "Public collection", privacy: PrivacyType.PUBLIC, profilePosition: 1, itemsCount: 2, previews: [] };
-        const preview = { total: 3, mediaTypes: [MediaType.MOVIES], covers: [] };
+        const preview = { total: 3 };
         mocks.getCollections.mockResolvedValue([collection]);
         mocks.getPinned.mockReturnValue([view]);
-        mocks.getSummary.mockReturnValue(preview);
+        mocks.getSummaries.mockReturnValue(new Map([[view.id, preview]]));
 
         await expect(getProfilePins({ data: { username: "profile-owner" } })).resolves.toEqual({
             activeMediaTypes: [MediaType.MOVIES],
@@ -59,7 +60,7 @@ describe("profile pins endpoints", () => {
         });
         expect(mocks.getCollections).toHaveBeenCalledWith(10, { kind: "user", id: 20, role: RoleType.USER }, undefined, true);
         expect(mocks.getPinned).toHaveBeenCalledWith(10);
-        expect(mocks.getSummary).toHaveBeenCalledWith(10, view.spec);
+        expect(mocks.getSummaries).toHaveBeenCalledWith(10, [view], { includeCovers: false });
     });
 
     it("keeps profile shortcuts unavailable through MCP context before reading any pins or summaries", async () => {
@@ -67,7 +68,7 @@ describe("profile pins endpoints", () => {
         await expect(getProfilePins({ data: { username: "profile-owner" } })).rejects.toThrow("available on the website");
         expect(mocks.getCollections).not.toHaveBeenCalled();
         expect(mocks.getPinned).not.toHaveBeenCalled();
-        expect(mocks.getSummary).not.toHaveBeenCalled();
+        expect(mocks.getSummaries).not.toHaveBeenCalled();
     });
 
     it("pins as the authenticated user and rejects forged owner fields", async () => {

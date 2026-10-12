@@ -17,7 +17,7 @@ import {getServerMediaDefinition} from "@/lib/media-definitions/definition.regis
 import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {mediaTags, collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
-import {and, asc, count, desc, eq, getTableColumns, inArray, isNotNull, isNull, like, max, or, sql} from "drizzle-orm";
+import {and, asc, count, desc, eq, getTableColumns, inArray, isNotNull, isNull, like, max, or, sql, type SQL} from "drizzle-orm";
 import {collectionContainsMediaType, getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
 
 
@@ -31,8 +31,8 @@ const collectionSelection = {
     ownerPrivacy: user.privacy,
     mediaTypes: getCollectionMediaTypesSelection(),
     itemsCount: sql<number>`(
-        SELECT COUNT(*) 
-        FROM ${collectionItems} 
+        SELECT COUNT(*)
+        FROM ${collectionItems}
         WHERE ${collectionItems.collectionId} = ${collections.id}
     )`,
 };
@@ -224,9 +224,9 @@ export class CollectionsRepository {
             tags: [], genres: [], mediaTypes, mediaFilters: {},
         };
 
-        const filterMediaTypes = includeFilterOptions ? mediaTypes : selectedTypes;
+        const filterMediaTypes = mediaTypes;
 
-        if (filterMediaTypes.length) {
+        if (includeFilterOptions && filterMediaTypes.length) {
             const sources = filterMediaTypes.map(mediaType => {
                 const definition = getServerMediaDefinition(mediaType).repository;
                 const { listTable, tagTable, genreTable } = definition.tables;
@@ -243,12 +243,10 @@ export class CollectionsRepository {
                         filters.library === "out" ? isNull(listTable.userId) : undefined,
                     ));
 
-                if (includeFilterOptions) {
-                    filterOptions.mediaFilters[mediaType] = getMediaMetadataFilterOptions(definition, {
-                        userId: viewerId,
-                        mediaIds: sourceMediaIds.getSQL(),
-                    });
-                }
+                filterOptions.mediaFilters[mediaType] = getMediaMetadataFilterOptions(definition, {
+                    userId: viewerId,
+                    mediaIds: sourceMediaIds.getSQL(),
+                });
 
                 const source = {
                     genres: db
@@ -270,34 +268,31 @@ export class CollectionsRepository {
                         )),
                 };
 
-                if (includeFilterOptions) {
-                    Object.assign(filterOptions.mediaFilters[mediaType]!, {
-                        genres: db
-                            .all<{ name: string }>(sql`
-                            SELECT DISTINCT "name" 
-                            FROM (${source.genres.getSQL()}) 
-                            ORDER BY "name" COLLATE NOCASE`),
-
-                        tags: db
-                            .all<{ name: string }>(sql`
-                            SELECT DISTINCT "name" 
-                            FROM (${source.tags.getSQL()}) 
-                            ORDER BY "name" COLLATE NOCASE`),
-                    });
-                }
+                Object.assign(filterOptions.mediaFilters[mediaType]!, {
+                    genres: db
+                        .all<{ name: string }>(sql`
+                        SELECT DISTINCT "name"
+                        FROM (${source.genres.getSQL()})
+                        ORDER BY "name" COLLATE NOCASE`),
+                    tags: db
+                        .all<{ name: string }>(sql`
+                        SELECT DISTINCT "name"
+                        FROM (${source.tags.getSQL()})
+                        ORDER BY "name" COLLATE NOCASE`),
+                });
 
                 return source;
             });
 
             filterOptions.genres = db
                 .all<{ name: string }>(sql`
-                SELECT DISTINCT "name" 
+                SELECT DISTINCT "name"
                 FROM (${sql.join(sources.map(source => source.genres.getSQL()), sql` UNION ALL `)})
                 ORDER BY "name" COLLATE NOCASE`).map(item => item.name);
 
             filterOptions.tags = db
                 .all<{ name: string }>(sql`
-                SELECT DISTINCT "name" 
+                SELECT DISTINCT "name"
                 FROM (${sql.join(sources.map(source => source.tags.getSQL()), sql` UNION ALL `)})
                 ORDER BY "name" COLLATE NOCASE`).map(item => item.name);
         }
@@ -413,16 +408,7 @@ export class CollectionsRepository {
                     .where(conditions).get()?.count ?? 0;
             },
 
-            getItems: ({ limit, offset }) => {
-                return getDbClient()
-                    .select({ ...collectionSelection, previewItems: previewItemsSelection })
-                    .from(collections)
-                    .innerJoin(user, eq(collections.ownerId, user.id))
-                    .where(conditions)
-                    .orderBy(desc(collections.likeCount))
-                    .limit(limit)
-                    .offset(offset);
-            },
+            getItems: ({ limit, offset }) => this._getCollectionPage(conditions, limit, offset),
         });
     }
 
@@ -455,21 +441,30 @@ export class CollectionsRepository {
                     .where(conditions).get()?.count ?? 0;
             },
 
-            getItems: ({ limit, offset }) => {
-                return getDbClient()
-                    .select({
-                        ...collectionSelection,
-                        previewItems: previewItemsSelection,
-                    })
-                    .from(collections)
-                    .innerJoin(user, eq(collections.ownerId, user.id))
-                    .where(conditions)
-                    .orderBy(desc(collections.likeCount))
-                    .limit(limit)
-                    .offset(offset);
-            },
+            getItems: ({ limit, offset }) => this._getCollectionPage(conditions, limit, offset),
         });
     }
+
+    private static _getCollectionPage(conditions: SQL | undefined, limit: number, offset: number) {
+        // Limit the IDs before evaluating counts, media types and previews.
+        const pageCollections = getDbClient()
+            .select({ id: collections.id })
+            .from(collections)
+            .innerJoin(user, eq(collections.ownerId, user.id))
+            .where(conditions)
+            .orderBy(desc(collections.likeCount), desc(collections.id))
+            .limit(limit)
+            .offset(offset)
+            .as("page_collections");
+
+        return getDbClient()
+            .select({ ...collectionSelection, previewItems: previewItemsSelection })
+            .from(pageCollections)
+            .innerJoin(collections, eq(collections.id, pageCollections.id))
+            .innerJoin(user, eq(collections.ownerId, user.id))
+            .orderBy(desc(collections.likeCount), desc(collections.id));
+    }
+
 
     static async getMediaCommunityCollections(mediaId: number, mediaType: MediaType) {
         return getDbClient()

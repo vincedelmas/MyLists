@@ -7,7 +7,7 @@ import {mcpRequestContext} from "@/lib/server/core/mcp/tool-context";
 import {getActiveMediaSettings} from "@/lib/utils/media/list-activation";
 import {userCollectionsSearchSchema} from "@/lib/schemas/collections.schema";
 import {publicPreviewMiddleware} from "@/lib/server/middlewares/authorization";
-import {getDynamicListSummary} from "@/lib/server/domain/dynamic-lists/dynamic-lists.queries";
+import {getDynamicListSummaries} from "@/lib/server/domain/dynamic-lists/dynamic-lists.queries";
 import {dynamicListsRepository} from "@/lib/server/domain/dynamic-lists/dynamic-lists.repository";
 
 
@@ -28,13 +28,9 @@ export const getUserListViews = createServerFn({ method: "GET" })
                 .filter(view => view.spec.title.toLocaleLowerCase().includes(query))
             : [];
 
-        const summaries = new Map<number, ReturnType<typeof getDynamicListSummary>>();
+        const summaries = mediaType ? getDynamicListSummaries(targetUser.id, views) : undefined;
         const matchingViews = mediaType
-            ? views.filter(view => {
-                const summary = getDynamicListSummary(targetUser.id, view.spec);
-                summaries.set(view.id, summary);
-                return summary.mediaTypes.includes(mediaType);
-            })
+            ? views.filter(view => summaries!.get(view.id)!.mediaTypes.includes(mediaType))
             : views;
 
         const perPage = 8;
@@ -42,6 +38,7 @@ export const getUserListViews = createServerFn({ method: "GET" })
         const pages = Math.ceil(total / perPage);
         const page = Math.max(1, Math.min(dynamicPage, pages));
         const pageViews = matchingViews.slice((page - 1) * perPage, page * perPage);
+        const pageSummaries = summaries ?? getDynamicListSummaries(targetUser.id, pageViews);
 
         return {
             canReadTracking: decision.allowed,
@@ -52,7 +49,7 @@ export const getUserListViews = createServerFn({ method: "GET" })
                 : [],
             views: pageViews.map(view => ({
                 ...view,
-                preview: summaries.get(view.id) ?? getDynamicListSummary(targetUser.id, view.spec),
+                preview: pageSummaries.get(view.id)!,
             })),
             total,
             page,

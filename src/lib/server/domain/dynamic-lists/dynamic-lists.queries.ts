@@ -1,20 +1,20 @@
-import {MediaType, Status} from "@/lib/utils/enums";
-import {FormattedError} from "@/lib/utils/error-classes";
-import {and, eq, inArray, notInArray, sql} from "drizzle-orm";
+import {MediaType} from "@/lib/utils/enums";
+import {and, eq, inArray, sql} from "drizzle-orm";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import type {IdNamePair} from "@/lib/types/media-common.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {getDynamicListTagNames} from "./dynamic-list-tags.queries";
+import {createDynamicListSources} from "./dynamic-list-sources.queries";
 import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {mediaTags, user, userMediaSettings} from "@/lib/server/database/schema";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
 import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import type {DynamicListRuntimeFilters, DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
-import {getMediaCommonFilterConditions, getMediaScopedFilterConditions, getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
+import {getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 type DynamicListListItem = MediaListDataByType[MediaType]["items"][number];
@@ -26,15 +26,6 @@ type DynamicListItem = DynamicListListItem & {
     releaseDate: string | null;
     providerRating: number | null;
 };
-
-
-const statusGroups = {
-    on_hold: [Status.ON_HOLD],
-    dropped: [Status.DROPPED],
-    completed: [Status.COMPLETED],
-    in_progress: [Status.WATCHING, Status.READING, Status.PLAYING],
-    planned: [Status.PLAN_TO_WATCH, Status.PLAN_TO_READ, Status.PLAN_TO_PLAY],
-} satisfies Record<NonNullable<DynamicListSpec["filters"]["statusGroup"]>, Status[]>;
 
 
 type DynamicListQueryOptions = {
@@ -54,175 +45,19 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
     filters: runtimeFilters,
     includeFilterOptions = false,
 }: DynamicListQueryOptions & { perPage?: number } = {}) => {
-    const { filters } = spec;
-    const tagNames = getDynamicListTagNames(userId, [spec]);
     const browseFilters = runtimeFilters ?? {};
-
     const mediaTypes = spec.mediaTypes === "all" ? ALL_MEDIA_TYPES : spec.mediaTypes;
-    const cutoffs: Partial<Record<"addedBefore" | "addedWithin" | "updatedBefore", string>> = {};
-
-    if (browseFilters.hideCommon && viewerId === undefined) {
-        throw new FormattedError("Sign in to hide media in your own list.");
-    }
-
-    let sortKey = browseFilters.sorting && browseFilters.sorting !== "default"
-        ? browseFilters.sorting
-        : undefined;
-
-    for (const filter of ["addedBefore", "addedWithin", "updatedBefore"] as const) {
-        const relativeAge = filters[filter];
-        if (!relativeAge) continue;
-
-        const date = new Date(now);
-        const day = date.getUTCDate();
-
-        date.setUTCDate(1);
-        date.setUTCMonth(date.getUTCMonth() - relativeAge.monthsAgo);
-
-        const monthEnd = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
-        date.setUTCDate(Math.min(day, monthEnd));
-
-        cutoffs[filter] = date.toISOString();
-    }
-
-    const sources = mediaTypes.map(mediaType => {
-        const allowedStatuses = getMediaDefinition(mediaType).statuses;
-        const definition = getServerMediaDefinition(mediaType).repository;
-        const { tables: { mediaTable, listTable, tagTable, genreTable }, sortColumns } = definition;
-
-        const conditions = [sql`${listTable.userId} = ${userId}`, sql`${userMediaSettings.active} = 1`];
-        conditions.push(
-            ...getMediaCommonFilterConditions(definition, {
-                minRating: filters.minRating, favorite: filters.favorite, genres: filters.genres,
-            }, userId),
-            ...getMediaScopedFilterConditions(definition, filters.mediaFilters?.[mediaType], userId),
-        );
-
-        if (definition.filters.common.search && filters.search) {
-            conditions.push(sql`INSTR(LOWER(${mediaTable.name}), LOWER(${filters.search})) > 0`);
-        }
-
-        if (definition.filters.common.status) {
-            for (const selected of [filters.statusGroup ? statusGroups[filters.statusGroup] : undefined, filters.statuses]) {
-                if (!selected) continue;
-
-                const statuses = selected.filter(status => allowedStatuses.includes(status));
-                conditions.push(statuses.length
-                    ? sql`${listTable.status} IN (${sql.join(statuses.map(status => sql`${status}`), sql`, `)})`
-                    : sql`0`);
-            }
-        }
-
-        if (cutoffs.addedBefore) {
-            conditions.push(sql`JULIANDAY(${listTable.addedAt}) < JULIANDAY(${cutoffs.addedBefore})`);
-        }
-
-        if (cutoffs.addedWithin) {
-            conditions.push(sql`JULIANDAY(${listTable.addedAt}) >= JULIANDAY(${cutoffs.addedWithin})`);
-        }
-
-        if (cutoffs.updatedBefore) {
-            conditions.push(sql`JULIANDAY(${listTable.lastUpdated}) < JULIANDAY(${cutoffs.updatedBefore})`);
-        }
-
-        if (definition.filters.common.minRating && filters.maxRating !== undefined) {
-            conditions.push(sql`${listTable.rating} <= ${filters.maxRating}`);
-        }
-
-        if (definition.filters.common.minRating && filters.rated !== undefined) {
-            conditions.push(filters.rated ? sql`${listTable.rating} IS NOT NULL` : sql`${listTable.rating} IS NULL`);
-        }
-
-        if (definition.filters.common.comment && filters.hasComment !== undefined) {
-            conditions.push(filters.hasComment
-                ? sql`LENGTH(TRIM(COALESCE(${listTable.comment}, ''))) > 0`
-                : sql`LENGTH(TRIM(COALESCE(${listTable.comment}, ''))) = 0`);
-        }
-
-        const releaseYear = sql`CAST(STRFTIME('%Y', ${mediaTable.releaseDate}) AS INTEGER)`;
-
-        if (filters.minReleaseYear !== undefined) {
-            conditions.push(sql`${releaseYear} >= ${filters.minReleaseYear}`);
-        }
-
-        if (filters.maxReleaseYear !== undefined) {
-            conditions.push(sql`${releaseYear} <= ${filters.maxReleaseYear}`);
-        }
-
-        for (const rule of filters.mediaFilters?.[mediaType]?.tagRules ?? []) {
-            conditions.push(...getMediaScopedFilterConditions(definition, {
-                tags: rule.tags?.map(id => tagNames[id]),
-                tagsMatch: rule.tagsMatch,
-                excludeTags: rule.excludeTags?.map(id => tagNames[id]),
-            }, userId));
-        }
-
-        const selection = sql`
-            ${mediaType} AS "mediaType", 
-            ${mediaTable.name} AS "title",
-            ${listTable.mediaId} AS "mediaId", 
-            ${mediaTable.releaseDate} AS "releaseDate",
-            COALESCE(${listTable.customCover}, ${mediaTable.imageCover}) AS "imageCover"`;
-
-        const from = sql`FROM ${listTable}
-            INNER JOIN ${mediaTable} ON ${mediaTable.id} = ${listTable.mediaId}
-            INNER JOIN ${userMediaSettings} ON ${userMediaSettings.userId} = ${listTable.userId}
-                AND ${userMediaSettings.mediaType} = ${mediaType}
-            WHERE ${sql.join(conditions, sql` AND `)}`;
-
-        const baseQuery = sql`SELECT ${selection} ${from}`;
-
-        const browseConditions = [
-            ...getMediaCommonFilterConditions(definition, {
-                ...browseFilters, search: undefined,
-                status: browseFilters.status ? [browseFilters.status] : undefined,
-                favorite: browseFilters.favorite === true ? true : undefined,
-            }, userId),
-            ...getMediaScopedFilterConditions(definition, browseFilters.mediaFilters?.[mediaType], userId),
-        ];
-
-        if (browseFilters.hideCommon && viewerId !== userId) {
-            browseConditions.push(notInArray(listTable.mediaId, getDbClient()
-                .select({ mediaId: listTable.mediaId }).from(listTable).where(eq(listTable.userId, viewerId!))));
-        }
-
-        if (browseFilters.mediaType && browseFilters.mediaType !== mediaType) {
-            browseConditions.push(sql`0`);
-        }
-
-        if (definition.filters.common.search && browseFilters.search) {
-            browseConditions.push(sql`INSTR(LOWER(${mediaTable.name}), LOWER(${browseFilters.search})) > 0`);
-        }
-
-        if (browseFilters.library === "out") {
-            browseConditions.push(sql`0`);
-        }
-
-        return {
-            mediaType,
-            definition,
-            selection,
-            sortColumns,
-            baseQuery,
-            from: browseConditions.length
-                ? sql`${from} AND ${sql.join(browseConditions, sql` AND `)}`
-                : from,
-
-            genreQuery: definition.filters.common.genres ? sql`SELECT ${genreTable.name} AS "name" 
-                FROM ${genreTable}
-                WHERE ${genreTable.mediaId} IN (SELECT "mediaId" FROM (${baseQuery}))` : sql`SELECT NULL AS "name" WHERE 0`,
-
-            tagQuery: definition.filters.common.tags ? sql`SELECT ${mediaTags.name} AS "name"
-                FROM ${tagTable} INNER JOIN ${mediaTags} ON ${mediaTags.id} = ${tagTable.tagId}
-                WHERE ${tagTable.userId} = ${userId} 
-                    AND ${tagTable.mediaId} IN (SELECT "mediaId" FROM (${baseQuery}))` : sql`SELECT NULL AS "name" WHERE 0`,
-        };
+    const sources = createDynamicListSources(userId, spec, getDynamicListTagNames(userId, [spec]), {
+        now, viewerId, filters: runtimeFilters,
     });
+    let sortKey = browseFilters.sorting && browseFilters.sorting !== "default" ? browseFilters.sorting : undefined;
 
     const db = getDbClient();
     const availableMediaTypes = db.all<{ mediaType: MediaType }>(sql`
-        SELECT DISTINCT "mediaType" 
-        FROM (${sql.join(sources.map(source => source.baseQuery), sql` UNION ALL `)})
+        ${sql.join(sources.map(source => sql`
+            SELECT ${source.mediaType} AS "mediaType"
+            WHERE EXISTS (${source.baseQuery})
+        `), sql` UNION ALL `)}
     `).map(row => row.mediaType);
 
     const sortMediaTypes = browseFilters.mediaType && mediaTypes.includes(browseFilters.mediaType)
@@ -240,7 +75,10 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
     `), sql` UNION ALL `);
 
     const direction = sort.direction === "asc" ? sql`ASC` : sql`DESC`;
-    const [{ total }] = db.all<{ total: number }>(sql`SELECT COUNT(*) AS "total" FROM (${union})`);
+    const [{ total }] = db.all<{ total: number }>(sql`
+        SELECT SUM("total") AS "total"
+        FROM (${sql.join(sources.map(source => sql`SELECT COUNT(*) AS "total" ${source.from}`), sql` UNION ALL `)})
+    `);
 
     // Preserve nullable response fields; each media's list projection fills the applicable values.
     const rows = db.all<{ mediaType: MediaType; mediaId: number; title: string; imageCover: string; releaseDate: string | null }>(sql`
@@ -254,17 +92,15 @@ const getDynamicListResultPage = (userId: number, spec: DynamicListSpec, {
         genres: [], tags: [], mediaFilters: {},
     };
 
-    if (runtimeFilters || includeFilterOptions) {
-        if (includeFilterOptions) {
-            for (const source of sources) {
-                filterOptions.mediaFilters[source.mediaType] = {
-                    ...getMediaMetadataFilterOptions(source.definition, {
-                        userId, mediaIds: sql`SELECT "mediaId" FROM (${source.baseQuery})`,
-                    }),
-                    genres: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.genreQuery}) ORDER BY "name" COLLATE NOCASE`),
-                    tags: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.tagQuery}) ORDER BY "name" COLLATE NOCASE`),
-                };
-            }
+    if (includeFilterOptions) {
+        for (const source of sources) {
+            filterOptions.mediaFilters[source.mediaType] = {
+                ...getMediaMetadataFilterOptions(source.definition, {
+                    userId, mediaIds: sql`SELECT "mediaId" FROM (${source.baseQuery})`,
+                }),
+                genres: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.genreQuery}) ORDER BY "name" COLLATE NOCASE`),
+                tags: db.all<{ name: string }>(sql`SELECT DISTINCT "name" FROM (${source.tagQuery}) ORDER BY "name" COLLATE NOCASE`),
+            };
         }
         const tags = sql.join(sources.map(s => s.tagQuery), sql` UNION ALL `);
         const genres = sql.join(sources.map(s => s.genreQuery), sql` UNION ALL `);
@@ -338,17 +174,76 @@ export const getDynamicListResults = (userId: number, spec: DynamicListSpec, opt
 };
 
 
-export const getDynamicListSummary = (userId: number, spec: DynamicListSpec) => {
-    const { total, items, mediaTypes } = getDynamicListResultPage(userId, spec, { perPage: 4 });
+type DynamicListSummary = {
+    total: number;
+    mediaTypes: MediaType[];
+    covers: { mediaType: MediaType; mediaId: number; title: string; imageCover: string }[];
+};
 
-    return {
-        total,
-        mediaTypes,
-        covers: items.map(({ mediaType, mediaId, title, imageCover }) => ({
-            mediaType, mediaId, title,
-            imageCover: getImageUrl(getServerMediaDefinition(mediaType).identity.coverDirectory, imageCover),
-        })),
-    };
+
+export const getDynamicListSummaries = (userId: number, views: { id: number; spec: DynamicListSpec }[], { includeCovers = true } = {}) => {
+    const summaries = new Map<number, DynamicListSummary>();
+    const tagNames = getDynamicListTagNames(userId, views.map(view => view.spec));
+
+    const db = getDbClient();
+    const now = new Date();
+
+    // Bound compound SELECTs and parameters even when filtering a large directory of views.
+    for (let offset = 0; offset < views.length; offset += 8) {
+        const batch = views.slice(offset, offset + 8).map(view => ({
+            ...view, sources: createDynamicListSources(userId, view.spec, tagNames, { now }),
+        }));
+
+        for (const view of batch) {
+            summaries.set(view.id, { total: 0, mediaTypes: [], covers: [] });
+        }
+
+        const counts = db.all<{ viewId: number; mediaType: MediaType; total: number }>(sql`
+            ${sql.join(batch.flatMap(view => view.sources.map(source => sql`
+                SELECT ${view.id} AS "viewId", ${source.mediaType} AS "mediaType", COUNT(*) AS "total"
+                ${source.from}
+            `)), sql` UNION ALL `)}
+        `);
+
+        for (const { viewId, mediaType, total } of counts) {
+            const summary = summaries.get(viewId)!;
+            summary.total += total;
+            if (total > 0) summary.mediaTypes.push(mediaType);
+        }
+
+        if (includeCovers) {
+            const covers = db.all<{ viewId: number; mediaType: MediaType; mediaId: number; title: string; imageCover: string }>(sql`
+                ${sql.join(batch.map(view => {
+                const sort = view.spec.sort;
+                const direction = sort.direction === "asc" ? sql`ASC` : sql`DESC`;
+                return sql`
+                        SELECT ${view.id} AS "viewId", "mediaType", "mediaId", "title", "imageCover"
+                        FROM (
+                            ${sql.join(view.sources.map(source => sql`
+                                SELECT ${source.selection}, ${source.sortColumns[sort.field] ?? sql`NULL`} AS "sortValue"
+                                ${source.from}
+                            `), sql` UNION ALL `)}
+                            ORDER BY "sortValue" ${direction} NULLS LAST, "title" COLLATE NOCASE ASC, "mediaType" ASC, "mediaId" ASC
+                            LIMIT 4
+                        )
+                    `;
+            }), sql` UNION ALL `)}
+            `);
+
+            for (const { viewId, ...cover } of covers) {
+                summaries.get(viewId)!.covers.push({
+                    ...cover, imageCover: getImageUrl(getServerMediaDefinition(cover.mediaType).identity.coverDirectory, cover.imageCover),
+                });
+            }
+        }
+    }
+
+    return summaries;
+};
+
+
+export const getDynamicListSummary = (userId: number, spec: DynamicListSpec) => {
+    return getDynamicListSummaries(userId, [{ id: 0, spec }]).get(0)!;
 };
 
 

@@ -314,14 +314,14 @@ it("hydrates the viewer's full tracking rows for every media type without exposi
         const viewer = toActor({ id: 2, role: RoleType.USER });
         const filtered = await service.getCollectionDetails(collectionId, "read", viewer, {
             library: "in", status: Status.COMPLETED, favorite: true, minRating: 8, tags: ["Watch again"], genres: ["Drama"], sorting: "rating_highest",
-        });
+        }, true);
         expect(filtered).toMatchObject({ total: 1, items: [{ mediaType: MediaType.MOVIES }] });
         expect(filtered.filterOptions).toMatchObject({ genres: ["Drama", "Fantasy"], tags: ["Bookshelf", "Watch again"] });
         const narrowed = await service.getCollectionDetails(collectionId, "read", viewer, {
             library: "in", mediaType: MediaType.BOOKS, search: "does not match",
-        });
+        }, true);
         expect(narrowed.total).toBe(0);
-        expect(narrowed.filterOptions).toMatchObject({ genres: ["Fantasy"], tags: ["Bookshelf"] });
+        expect(narrowed.filterOptions).toMatchObject({ genres: ["Drama", "Fantasy"], tags: ["Bookshelf", "Watch again"] });
         expect(narrowed.filterOptions.mediaTypes).toEqual(filtered.filterOptions.mediaTypes);
         const scoped = await service.getCollectionDetails(collectionId, "read", viewer, {
             page: 1, mediaFilters: { movies: { genres: ["Missing"], tags: ["Watch again"] } },

@@ -16,7 +16,7 @@ import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.
 
 import {dynamicListsRepository} from "./dynamic-lists.repository";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
-import {getDynamicListEditorFilterOptions, getDynamicListResults, getDynamicListSummary} from "./dynamic-lists.queries";
+import {getDynamicListEditorFilterOptions, getDynamicListResults, getDynamicListSummaries, getDynamicListSummary} from "./dynamic-lists.queries";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
@@ -128,6 +128,17 @@ it("offers editor genres and tags from selected owner active lists only", () => 
         expect(preview.covers).toHaveLength(4);
         expect(preview.covers.every(cover => cover.mediaType === MediaType.MOVIES)).toBe(true);
         expect(Object.keys(preview).sort()).toEqual(["covers", "mediaTypes", "total"]);
+        const completed = { ...spec, filters: { statusGroup: "completed" as const } };
+        const planned = { ...spec, filters: { statusGroup: "planned" as const } };
+        const summaries = getDynamicListSummaries(1, [{ id: 1, spec: completed }, { id: 2, spec: planned }]);
+        expect(summaries.get(1)).toEqual(preview);
+        expect(summaries.get(2)).toEqual(getDynamicListSummary(1, planned));
+        const query = vi.spyOn(dbContext.db, "all");
+        const counts = getDynamicListSummaries(1, [{ id: 1, spec: completed }, { id: 2, spec: planned }], { includeCovers: false });
+        expect(counts.get(1)).toEqual({ ...summaries.get(1), covers: [] });
+        expect(counts.get(2)).toEqual({ ...summaries.get(2), covers: [] });
+        expect(query).toHaveBeenCalledTimes(1);
+        query.mockRestore();
     });
 
     it("resolves planned aliases across all six media types", () => {
@@ -218,7 +229,9 @@ it("ANDs filters, matches any requested tag, and scopes tags to the owner", () =
         const saved: DynamicListSpec = { ...spec, filters: { statusGroup: "completed", minRating: 8 } };
         const result = getDynamicListResults(1, saved, { filters: { genres: ["Drama"], tags: ["cozy"], favorite: true } });
         expect(result.items.map(item => item.mediaId)).toEqual([1]);
-        expect(result.filterOptions).toEqual({ genres: ["Drama", "History"], tags: ["cozy", "learning"], mediaFilters: {} });
+        expect(result.filterOptions).toEqual({ genres: [], tags: [], mediaFilters: {} });
+        const options = getDynamicListResults(1, saved, { includeFilterOptions: true });
+        expect(options.filterOptions).toMatchObject({ genres: ["Drama", "History"], tags: ["cozy", "learning"] });
         expect(getDynamicListResults(1, saved, { filters: { status: Status.PLAN_TO_WATCH } }).total).toBe(0);
         expect(getDynamicListResults(1, saved).total).toBe(2);
         expect(saved.filters).toEqual({ statusGroup: "completed", minRating: 8 });

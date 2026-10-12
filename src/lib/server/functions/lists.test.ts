@@ -82,7 +82,11 @@ vi.mock("@/lib/server/core/mcp/tool-context", () => ({ mcpRequestContext: { getS
 vi.mock("@/lib/server/domain/dynamic-lists/dynamic-lists.repository", () => ({
     dynamicListsRepository: { getAll: mocks.getAllViews },
 }));
-vi.mock("@/lib/server/domain/dynamic-lists/dynamic-lists.queries", () => ({ getDynamicListSummary: mocks.getSummary }));
+vi.mock("@/lib/server/domain/dynamic-lists/dynamic-lists.queries", () => ({
+    getDynamicListSummaries: (userId: number, views: { id: number; spec: DynamicListSpec }[]) => {
+        return new Map(views.map(view => [view.id, mocks.getSummary(userId, view.spec)]));
+    },
+}));
 
 
 const view = {

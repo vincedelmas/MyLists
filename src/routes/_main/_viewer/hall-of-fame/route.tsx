@@ -70,22 +70,9 @@ function HallOfFamePage() {
                     asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "profile" : "profiles"}</>}
                 />
 
-                <section className="grid grid-cols-[minmax(0,1fr)_minmax(19.5rem,0.7fr)] items-start gap-6 pt-8 max-lg:grid-cols-1">
-                    <section className="min-w-0">
-                        <div>
-                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                <Trophy className="size-4" aria-hidden="true"/>
-                                All-time board
-                            </div>
-                            <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
-                                Community ranking
-                            </h2>
-                            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                                {rankingDescription}
-                            </p>
-                        </div>
-
-                        <FieldGroup className="mt-6 flex-row items-end gap-3 max-sm:flex-col max-sm:items-stretch">
+                <section className="grid grid-cols-[minmax(0,1fr)_minmax(19.5rem,0.7fr)] items-start gap-6 max-lg:grid-cols-1">
+                    <section className="min-w-0 mt-6">
+                        <FieldGroup className="flex-row items-end gap-3 max-sm:flex-col max-sm:items-stretch">
                             <Field className="min-w-0 flex-1">
                                 <FieldLabel
                                     htmlFor="hall-of-fame-search"
@@ -94,9 +81,9 @@ function HallOfFamePage() {
                                     Find a profile
                                 </FieldLabel>
                                 <SearchInput
-                                    id="hall-of-fame-search"
                                     className="w-full"
                                     value={localSearch}
+                                    id="hall-of-fame-search"
                                     onChange={handleInputChange}
                                     placeholder="Search by name..."
                                 />
@@ -132,8 +119,10 @@ function HallOfFamePage() {
                         </FieldGroup>
 
                         <div className="mt-5 overflow-hidden rounded-xl border shadow-xs">
-                            <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_5rem] items-center gap-2 border-b px-1 py-2
-                            md:grid-cols-[2.5rem_minmax(8rem,0.7fr)_5rem_minmax(14rem,1.3fr)]">
+                            <div
+                                className="grid grid-cols-[2.5rem_minmax(0,1fr)_5rem] items-center gap-2 border-b px-1 py-2
+                                md:grid-cols-[2.5rem_minmax(8rem,0.7fr)_5rem_minmax(14rem,1.3fr)]"
+                            >
                                 <span className="text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                                     Rank
                                 </span>
@@ -147,8 +136,8 @@ function HallOfFamePage() {
                                     Media levels
                                 </span>
                             </div>
-                            {apiData.items.length === 0
-                                ?
+
+                            {apiData.items.length === 0 ?
                                 <EmptyState
                                     icon={UserX}
                                     className="min-h-40"
@@ -170,7 +159,7 @@ function HallOfFamePage() {
                         />
                     </section>
 
-                    <aside className="relative h-fit max-lg:order-first lg:sticky lg:top-20">
+                    <aside className="relative h-fit max-lg:order-first lg:sticky lg:top-15 pt-6">
                         <LockedContent
                             showAuthButtons={true}
                             isAnonymous={isAnonymous}

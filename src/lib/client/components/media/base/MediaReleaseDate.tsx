@@ -1,4 +1,4 @@
-import {extractYear, formatDate} from "@/lib/utils/formatting/date";
+import {extractYear, formatDate, formatDateForDb} from "@/lib/utils/formatting/date";
 
 
 interface MediaReleaseDateProps {
@@ -9,11 +9,9 @@ interface MediaReleaseDateProps {
 
 export const MediaReleaseDate = ({ date, precision = "date" }: MediaReleaseDateProps) => {
     if (precision === "year") {
-        if (typeof date === "number") return null;
-
         return (
             <span className="tabular-nums">
-                {extractYear(date)}
+                {extractYear(typeof date === "number" ? formatDateForDb(date) : date)}
             </span>
         );
     }

@@ -1,7 +1,6 @@
 import {FaGithub, FaGoogle} from "react-icons/fa";
-import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {SocialProvider, useSocialSignInMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 
 
@@ -39,20 +38,18 @@ export const SocialAuthButtons = ({ authMethods, redirectTarget, errorCallbackPa
             }
             <div className="mt-3 flex flex-col gap-2">
                 {availableProviders.map(({ id, label, icon: ProviderIcon }) =>
-                    <Button
+                    <LoadingButton
                         key={id}
                         type="button"
                         className="w-full"
                         variant="secondary"
                         disabled={mutation.isPending}
                         onClick={() => mutation.mutate(id)}
+                        isLoading={mutation.isPending && mutation.variables === id}
+                        icon={<ProviderIcon data-icon="inline-start" aria-hidden="true"/>}
                     >
-                        {mutation.isPending && mutation.variables === id
-                            ? <Spinner data-icon="inline-start" aria-hidden="true"/>
-                            : <ProviderIcon data-icon="inline-start" aria-hidden="true"/>
-                        }
                         {label}
-                    </Button>
+                    </LoadingButton>
                 )}
             </div>
         </>

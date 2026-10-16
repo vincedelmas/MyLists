@@ -4,7 +4,7 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {Alert, AlertDescription, AlertTitle} from "@/lib/client/components/ui/alert";
 import {connectedAppsOptions} from "@/lib/client/react-query/query-options/auth.options";
 import {useDisconnectAppMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
@@ -92,18 +92,16 @@ function ConnectedAppsPage() {
                                 </p>
                             </CardContent>
                             <CardFooter>
-                                <Button
+                                <LoadingButton
                                     size="sm"
                                     variant="outline"
                                     disabled={mutation.isPending}
+                                    icon={<Unplug data-icon="inline-start"/>}
                                     onClick={() => mutation.mutate(connection.clientId)}
+                                    isLoading={mutation.isPending && mutation.variables === connection.clientId}
                                 >
-                                    {mutation.isPending && mutation.variables === connection.clientId
-                                        ? <Spinner data-icon="inline-start"/>
-                                        : <Unplug data-icon="inline-start"/>
-                                    }
                                     Disconnect
-                                </Button>
+                                </LoadingButton>
                             </CardFooter>
                         </Card>
                     )}

@@ -5,11 +5,11 @@ import type {CreateCollection} from "@/lib/schemas";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Switch} from "@/lib/client/components/ui/switch";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {useConfirmBlocker} from "@/lib/client/hooks/use-confirm-blocker";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {Controller, FormProvider, type UseFormReturn} from "react-hook-form";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
@@ -209,13 +209,14 @@ export const CollectionEditor = ({ form, onSubmit, onCancel, submitLabel, isSubm
                             <Button type="button" variant="outline" disabled={isSubmitting} onClick={onCancel}>
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={!isDirty || isSubmitting} aria-busy={isSubmitting}>
-                                {isSubmitting
-                                    ? <Spinner data-icon="inline-start"/>
-                                    : <Save data-icon="inline-start"/>
-                                }
+                            <LoadingButton
+                                type="submit"
+                                disabled={!isDirty}
+                                isLoading={isSubmitting}
+                                icon={<Save data-icon="inline-start"/>}
+                            >
                                 {submitLabel}
-                            </Button>
+                            </LoadingButton>
                         </div>
                     </div>
                 </div>

@@ -4,10 +4,10 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Controller, useForm} from "react-hook-form";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
-import {Spinner} from "@/lib/client/components/ui/spinner";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ForgotPassword, forgotPasswordSchema} from "@/lib/schemas";
-import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {ClockAlert, MailCheck, RefreshCw, ShieldAlert} from "lucide-react";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {useResendVerificationEmailMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
@@ -114,18 +114,14 @@ export const EmailVerificationPanel = ({ status, redirect, defaultEmail, verific
                             />
                         </FieldGroup>
                     </FieldSet>
-                    <Button
+                    <LoadingButton
                         type="submit"
                         className="w-full"
-                        disabled={mutation.isPending}
-                        aria-busy={mutation.isPending}
+                        isLoading={mutation.isPending}
+                        icon={<RefreshCw data-icon="inline-start" aria-hidden="true"/>}
                     >
-                        {mutation.isPending
-                            ? <Spinner className="text-primary-foreground" data-icon="inline-start" aria-hidden="true"/>
-                            : <RefreshCw data-icon="inline-start" aria-hidden="true"/>
-                        }
                         {mutation.isPending ? "Sending email…" : "Resend verification email"}
-                    </Button>
+                    </LoadingButton>
                 </form>
                 <Link to="/login" search={{ redirect }} className={buttonVariants({ variant: "outline" })}>
                     Go to sign in

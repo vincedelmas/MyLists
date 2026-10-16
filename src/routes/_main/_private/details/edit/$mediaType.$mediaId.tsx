@@ -207,8 +207,7 @@ function MediaEditPage() {
                                 <ArrowLeft data-icon="inline-start"/>
                                 Cancel
                             </Button>
-                            <FormSubmitButton isLoading={editMediaMutation.isPending}>
-                                <Save data-icon="inline-start"/>
+                            <FormSubmitButton icon={<Save data-icon="inline-start"/>} isLoading={editMediaMutation.isPending}>
                                 Save changes
                             </FormSubmitButton>
                         </div>

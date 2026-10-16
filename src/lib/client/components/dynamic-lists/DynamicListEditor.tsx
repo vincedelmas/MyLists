@@ -6,7 +6,6 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Layers3, LayoutGrid, List, Save} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
@@ -15,13 +14,14 @@ import {useConfirmBlocker} from "@/lib/client/hooks/use-confirm-blocker";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 import {DynamicListPreview} from "@/lib/client/components/dynamic-lists/DynamicListPreview";
 import {MediaTypeFilterTabs} from "@/lib/client/components/media/browse/MediaTypeFilterTabs";
 import {dynamicListSpecSchema, type DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {getMediaCommonFilterKeys} from "@/lib/client/components/media/browse/media-filter.utils";
-import {DynamicListMediaFilters} from "@/lib/client/components/dynamic-lists/DynamicListMediaFilters";
 import {DYNAMIC_LIST_SORT_OPTIONS} from "@/lib/client/components/dynamic-lists/dynamic-list.config";
+import {DynamicListMediaFilters} from "@/lib/client/components/dynamic-lists/DynamicListMediaFilters";
 import {DynamicListCommonFilters} from "@/lib/client/components/dynamic-lists/DynamicListCommonFilters";
 import {useSaveDynamicListMutation} from "@/lib/client/react-query/query-mutations/dynamic-lists.mutations";
 import {dynamicListEditorFiltersOptions} from "@/lib/client/react-query/query-options/dynamic-lists.options";
@@ -338,16 +338,13 @@ export const DynamicListEditor = ({ listId, initialSpec, initialTagNames = {}, o
                                 <Button type="button" variant="outline" disabled={saveMutation.isPending} onClick={onCancel}>
                                     Cancel
                                 </Button>
-                                <Button type="submit" disabled={saveMutation.isPending}>
-                                    {saveMutation.isPending
-                                        ? <Spinner data-icon="inline-start"/>
-                                        : <Save data-icon="inline-start"/>
-                                    }
-                                    {listId === undefined
-                                        ? "Create dynamic list"
-                                        : "Save changes"
-                                    }
-                                </Button>
+                                <LoadingButton
+                                    type="submit"
+                                    isLoading={saveMutation.isPending}
+                                    icon={<Save data-icon="inline-start"/>}
+                                >
+                                    {listId === undefined ? "Create dynamic list" : "Save changes"}
+                                </LoadingButton>
                             </div>
                         </div>
                     </div>

@@ -1,12 +1,11 @@
 import {cn} from "@/lib/utils/classnames";
 import {useVirtualizer} from "@tanstack/react-virtual";
 import {createFileRoute} from "@tanstack/react-router";
-import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useEffect, useMemo, useRef, useState} from "react";
 import {formatDateTime} from "@/lib/utils/formatting/date";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {FileIcon, FileX, RefreshCw, ServerCrash, Terminal} from "lucide-react";
@@ -256,18 +255,15 @@ function AdminRuntimeLogsPage() {
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
-                            <Button
+                            <LoadingButton
                                 size="icon"
                                 variant="outline"
+                                icon={<RefreshCw/>}
                                 title="Refresh selected log"
-                                disabled={!selectedFileName || logFileQuery.isFetching}
+                                disabled={!selectedFileName}
+                                isLoading={logFileQuery.isFetching}
                                 onClick={() => logFileQuery.refetch()}
-                            >
-                                {logFileQuery.isFetching
-                                    ? <Spinner data-icon="inline-start"/>
-                                    : <RefreshCw/>
-                                }
-                            </Button>
+                            />
                         </div>
                     </div>
 

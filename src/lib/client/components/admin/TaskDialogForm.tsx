@@ -1,21 +1,21 @@
 import {z} from "zod";
-import {toast} from "@/lib/client/components/ui/toast";
 import {useId, useState} from "react";
 import {Settings2} from "lucide-react";
-import {type Control, Controller, FormProvider, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
+import {handleServerFormErrors} from "@/lib/client/forms";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
+import {type Control, Controller, FormProvider, useForm} from "react-hook-form";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {TaskFormValues, TaskInputProperty, TaskMetadata} from "@/lib/types/tasks.types";
 import {useAdminTriggerTaskMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
-import {handleServerFormErrors} from "@/lib/client/forms";
 
 
 interface TaskFormDialogProps {
@@ -56,15 +56,15 @@ export function TaskFormDialog({ task }: TaskFormDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger render={<Button size="sm" disabled={triggerTaskMutation.isPending}/>}>
-                {triggerTaskMutation.isPending
-                    ? <Spinner data-icon="inline-start"/>
-                    : <Settings2/>
+            <DialogTrigger
+                render={
+                    <LoadingButton
+                        icon={<Settings2 data-icon="inline-start"/>}
+                        size="sm" isLoading={triggerTaskMutation.isPending}
+                    />
                 }
-                {triggerTaskMutation.isPending
-                    ? "Running"
-                    : "Configure"
-                }
+            >
+                {triggerTaskMutation.isPending ? "Running" : "Configure"}
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <FormProvider {...form}>

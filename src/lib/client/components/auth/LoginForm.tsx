@@ -5,12 +5,11 @@ import {Login, loginSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
-import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
-import {handleServerFormErrors} from "@/lib/client/forms";
 import {AuthState, getAuthState} from "@/lib/utils/auth";
+import {handleServerFormErrors} from "@/lib/client/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {useEmailLoginMutation, useResendVerificationEmailMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
@@ -114,31 +113,25 @@ export const LoginForm = ({ redirectTarget, passwordResetEnabled }: LoginFormPro
                     <InlineErrorContainer onDismiss={() => setUnverifiedEmail(undefined)}>
                         <div className="flex flex-col items-start gap-2">
                             <p>Your email isn’t verified yet. Request a new verification email to continue.</p>
-                            <Button
+
+                            <LoadingButton
                                 size="sm"
                                 type="button"
                                 variant="outline"
-                                disabled={resendMutation.isPending}
-                                aria-busy={resendMutation.isPending}
+                                isLoading={resendMutation.isPending}
+                                icon={<RefreshCw data-icon="inline-start" aria-hidden="true"/>}
                                 onClick={() => resendMutation.mutate({ email: unverifiedEmail })}
                             >
-                                {resendMutation.isPending
-                                    ? <Spinner data-icon="inline-start" aria-hidden="true"/>
-                                    : <RefreshCw data-icon="inline-start" aria-hidden="true"/>
-                                }
                                 {resendMutation.isPending ? "Sending email…" : "Resend verification email"}
-                            </Button>
+                            </LoadingButton>
                         </div>
                     </InlineErrorContainer>
                 }
 
                 <FormError/>
-                <Button type="submit" className="w-full" disabled={loginMutation.isPending} aria-busy={loginMutation.isPending}>
-                    {loginMutation.isPending &&
-                        <Spinner className="text-primary-foreground" data-icon="inline-start" aria-hidden="true"/>
-                    }
+                <LoadingButton type="submit" className="w-full" isLoading={loginMutation.isPending}>
                     {loginMutation.isPending ? "Signing you in…" : "Login"}
-                </Button>
+                </LoadingButton>
             </form>
         </FormProvider>
     );

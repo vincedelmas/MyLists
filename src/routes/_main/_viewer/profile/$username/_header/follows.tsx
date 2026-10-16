@@ -3,7 +3,6 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {toast} from "@/lib/client/components/ui/toast";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
@@ -12,6 +11,7 @@ import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {followsOptions} from "@/lib/client/react-query/query-options";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {useFollowMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
@@ -166,16 +166,14 @@ function FollowActionButton({ targetUserId, followStatus, profileOwner, isViewin
             ? "secondary" : "outline";
 
     return (
-        <Button
+        <LoadingButton
             variant={variant}
-            disabled={isPending}
             onClick={handleClick}
-            className={cn("group flex-1 font-medium transition-all",
-                followStatus && "hover:bg-destructive/30 hover:text-foreground")}
+            isLoading={isPending}
+            aria-label={isPending ? "Updating follow status" : undefined}
+            className={cn("group flex-1 font-medium transition-all", followStatus && "hover:bg-destructive/30 hover:text-foreground")}
         >
-            {isPending ?
-                <Spinner data-icon="inline-start" className="size-3.5"/>
-                :
+            {!isPending && (
                 followStatus === SocialState.ACCEPTED ?
                     <>
                         <span className="flex items-center gap-2 group-hover:hidden">
@@ -200,7 +198,7 @@ function FollowActionButton({ targetUserId, followStatus, profileOwner, isViewin
                             <UserPlus className="size-3.5"/>
                             {isViewingOwnProfile ? "Follow Back" : "Follow"}
                         </>
-            }
-        </Button>
+            )}
+        </LoadingButton>
     );
 }

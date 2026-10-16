@@ -1,9 +1,8 @@
 import {cn} from "@/lib/utils/classnames";
 import {SocialState} from "@/lib/utils/enums";
-import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
 import {ProfileHeaderOptionsType} from "@/lib/types/query.options.types";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {useFollowMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
@@ -68,15 +67,15 @@ export const FollowButton = ({ profileUsername, social, className }: FollowButto
     };
 
     return (
-        <Button
-            disabled={isPending}
+        <LoadingButton
+            isLoading={isPending}
             onClick={handleClick}
             variant={config.variant}
+            aria-label={isPending ? "Updating follow status" : undefined}
             className={cn("group w-30 font-bold transition-all", config.className, className)}
         >
-            {isPending
-                ? <Spinner data-icon="inline-start" className="size-3.5"/>
-                : <>
+            {!isPending &&
+                <>
                     <span className={cn("flex items-center gap-2", config.hoverLabel && "group-hover:hidden")}>
                         <config.Icon className="size-3.5"/>
                         {config.label}
@@ -89,6 +88,6 @@ export const FollowButton = ({ profileUsername, social, className }: FollowButto
                     }
                 </>
             }
-        </Button>
+        </LoadingButton>
     );
 };

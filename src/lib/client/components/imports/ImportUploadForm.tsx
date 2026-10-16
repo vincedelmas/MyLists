@@ -109,9 +109,7 @@ export function ImportUploadForm({ defaultValues, children }: ImportUploadFormPr
                         )}
                     />
                 </FieldGroup>
-
-                <FormSubmitButton disabled={!selectedFile} isLoading={isSubmitting}>
-                    <UploadCloud data-icon="inline-start"/>
+                <FormSubmitButton icon={<UploadCloud data-icon="inline-start"/>} disabled={!selectedFile} isLoading={isSubmitting}>
                     Import File
                 </FormSubmitButton>
             </form>

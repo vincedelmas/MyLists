@@ -2,8 +2,7 @@ import {Play} from "lucide-react";
 import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {TaskFormDialog} from "@/lib/client/components/admin/TaskDialogForm";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
@@ -53,16 +52,14 @@ function AdminTasksPage() {
                                         task={task}
                                     />
                                     :
-                                    <Button size="sm" disabled={isRunning} onClick={() => executeTask(task.name)}>
-                                        {isRunning
-                                            ? <Spinner data-icon="inline-start"/>
-                                            : <Play className="size-4"/>
-                                        }
-                                        {isRunning
-                                            ? "Running"
-                                            : "Run Task"
-                                        }
-                                    </Button>
+                                    <LoadingButton
+                                        size="sm"
+                                        isLoading={isRunning}
+                                        icon={<Play className="size-4"/>}
+                                        onClick={() => executeTask(task.name)}
+                                    >
+                                        {isRunning ? "Running" : "Run Task"}
+                                    </LoadingButton>
                                 }
                             </CardContent>
                         </Card>

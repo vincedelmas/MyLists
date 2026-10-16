@@ -2,11 +2,10 @@ import {useId} from "react";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {Register, registerSchema} from "@/lib/schemas";
-import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {handleServerFormErrors} from "@/lib/client/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {useEmailRegistrationMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 
@@ -127,21 +126,9 @@ export const RegisterForm = ({ verificationCallbackURL, onVerificationRequested 
                     </FieldGroup>
                 </FieldSet>
                 <FormError/>
-                <Button
-                    type="submit"
-                    className="mb-4 w-full"
-                    disabled={mutation.isPending}
-                    aria-busy={mutation.isPending}
-                >
-                    {mutation.isPending &&
-                        <Spinner
-                            aria-hidden="true"
-                            data-icon="inline-start"
-                            className="text-primary-foreground"
-                        />
-                    }
+                <LoadingButton type="submit" className="mb-4 w-full" isLoading={mutation.isPending}>
                     {mutation.isPending ? "Creating your account…" : "Create an account"}
-                </Button>
+                </LoadingButton>
             </form>
         </FormProvider>
     );

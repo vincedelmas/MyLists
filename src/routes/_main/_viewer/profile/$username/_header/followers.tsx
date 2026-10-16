@@ -5,7 +5,6 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
@@ -13,6 +12,7 @@ import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {followersOptions} from "@/lib/client/react-query/query-options";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {useFollowMutation, useRemoveFollowerMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
@@ -147,18 +147,15 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                                     isViewingOwnProfile={isViewingOwnProfile}
                                 />
                                 {isViewingOwnProfile &&
-                                    <Button
+                                    <LoadingButton
                                         size="icon"
                                         variant="outline"
                                         title="Remove Follower"
                                         onClick={handleRemoveFollower}
-                                        disabled={removeMutation.isPending}
+                                        icon={<UserX className="size-4"/>}
+                                        isLoading={removeMutation.isPending}
                                         className="shrink-0 hover:border-transparent hover:bg-destructive/30 hover:text-foreground"
-                                    >
-                                        {removeMutation.isPending ?
-                                            <Spinner data-icon="inline-start"/> : <UserX className="size-4"/>
-                                        }
-                                    </Button>
+                                    />
                                 }
                             </div>
                         }
@@ -196,15 +193,15 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
     };
 
     return (
-        <Button
-            disabled={isPending}
+        <LoadingButton
             onClick={handleClick}
+            isLoading={isPending}
+            aria-label={isPending ? "Updating follow status" : undefined}
             variant={isFollowing ? "default" : isRequested ? "secondary" : "outline"}
             className={cn("group flex-1 font-medium transition-all", shouldUnfollow && "hover:bg-destructive/30 hover:text-foreground")}
         >
-            {isPending ?
-                <Spinner data-icon="inline-start" className="size-3.5"/>
-                : isFollowing ?
+            {!isPending && (
+                isFollowing ?
                     <>
                         <span className="flex items-center gap-2 group-hover:hidden">
                             <UserCheck className="size-3.5"/> Following
@@ -213,7 +210,8 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
                             <UserX className="size-3.5"/> Unfollow
                         </span>
                     </>
-                    : isRequested ?
+                    :
+                    isRequested ?
                         <>
                             <span className="flex items-center gap-2 group-hover:hidden">
                                 <Clock className="size-3.5"/> Requested
@@ -227,7 +225,7 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
                             <UserPlus className="size-3.5"/>
                             {isViewingOwnProfile ? "Follow Back" : "Follow"}
                         </>
-            }
-        </Button>
+            )}
+        </LoadingButton>
     );
 }

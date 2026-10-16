@@ -1,12 +1,12 @@
 import {useState} from "react";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {Link, createFileRoute} from "@tanstack/react-router";
 import {BookOpen, Pencil, Plug, ShieldCheck} from "lucide-react";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {mcpConsentRequestOptions} from "@/lib/client/react-query/query-options/auth.options";
 import {useMcpConsentMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
@@ -112,10 +112,9 @@ function McpConsentPage() {
                         <Button variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate(false)}>
                             Cancel
                         </Button>
-                        <Button disabled={mutation.isPending} onClick={() => mutation.mutate(true)}>
-                            {mutation.isPending && <Spinner data-icon="inline-start"/>}
+                        <LoadingButton isLoading={mutation.isPending} onClick={() => mutation.mutate(true)}>
                             Allow connection
-                        </Button>
+                        </LoadingButton>
                     </CardFooter>
                 </Card>
             </div>

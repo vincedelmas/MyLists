@@ -1,14 +1,16 @@
-import {type ReactNode, useId} from "react";
+import {useId} from "react";
+import {Save} from "lucide-react";
 import {PrivacyType} from "@/lib/utils/enums";
 import type {CreateCollection} from "@/lib/schemas";
 import {Input} from "@/lib/client/components/ui/input";
+import {Button} from "@/lib/client/components/ui/button";
 import {Switch} from "@/lib/client/components/ui/switch";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {useConfirmBlocker} from "@/lib/client/hooks/use-confirm-blocker";
 import {Controller, FormProvider, type UseFormReturn} from "react-hook-form";
-import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {CollectionItemsEditor} from "@/lib/client/components/collections/CollectionItemsEditor";
@@ -17,14 +19,14 @@ import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabe
 
 interface CollectionEditorProps {
     submitLabel: string;
+    onCancel: () => void;
     isSubmitting?: boolean;
-    footerStart?: ReactNode;
     form: UseFormReturn<CreateCollection>;
     onSubmit: (values: CreateCollection) => void;
 }
 
 
-export const CollectionEditor = ({ form, onSubmit, submitLabel, footerStart, isSubmitting }: CollectionEditorProps) => {
+export const CollectionEditor = ({ form, onSubmit, onCancel, submitLabel, isSubmitting = false }: CollectionEditorProps) => {
     const fieldId = useId();
     const { isDirty } = form.formState;
 
@@ -39,7 +41,7 @@ export const CollectionEditor = ({ form, onSubmit, submitLabel, footerStart, isS
 
     return (
         <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
+            <form aria-label="Collection editor" onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
                 <FieldSet disabled={isSubmitting}>
                     <div className="grid grid-cols-[minmax(0,1fr)_20rem] items-start gap-10 max-lg:grid-cols-1">
                         <div className="flex min-w-0 flex-col gap-7">
@@ -199,12 +201,23 @@ export const CollectionEditor = ({ form, onSubmit, submitLabel, footerStart, isS
                         </aside>
                     </div>
                 </FieldSet>
-                <FormError/>
-                <div className="mt-6 flex items-center justify-between gap-3 border-t pt-4 max-sm:flex-col-reverse max-sm:items-stretch">
-                    {footerStart && <div>{footerStart}</div>}
-                    <FormSubmitButton className="ml-auto max-sm:ml-0" disabled={!isDirty} isLoading={isSubmitting}>
-                        {submitLabel}
-                    </FormSubmitButton>
+
+                <div className="sticky bottom-0 flex flex-col gap-3 border-t bg-background/95 py-4 backdrop-blur-sm">
+                    <FormError/>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="ml-auto flex items-center gap-2">
+                            <Button type="button" variant="outline" disabled={isSubmitting} onClick={onCancel}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={!isDirty || isSubmitting} aria-busy={isSubmitting}>
+                                {isSubmitting
+                                    ? <Spinner data-icon="inline-start"/>
+                                    : <Save data-icon="inline-start"/>
+                                }
+                                {submitLabel}
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </form>
         </FormProvider>

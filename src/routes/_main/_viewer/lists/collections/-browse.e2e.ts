@@ -41,6 +41,11 @@ test("creates, ranks, annotates and copies a collection across every media type 
         await expect(form.getByRole("button", { name: `Remove ${item.name}`, exact: true })).toBeVisible();
     }
     await expect(form.getByText("6 media", { exact: true })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(form.getByRole("button", { name: "Cancel", exact: true })).toBeInViewport();
+    await expect(form.getByRole("button", { name: "Create collection", exact: true })).toBeInViewport();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(form.getByRole("button", { name: "Create collection", exact: true })).toBeInViewport();
     const duplicate = mixedMedia.at(-1)!;
     await form.getByRole("searchbox", { name: `Search ${duplicate.mediaType} to add`, exact: true }).fill("Mixed");
     await page.getByRole("button", { name: `Add ${duplicate.name}`, exact: true }).click();
@@ -102,6 +107,10 @@ test("creates, ranks, annotates and copies a collection across every media type 
 
     await page.getByRole("button", { name: "Copy", exact: true }).click();
     await expect(page).toHaveURL(/\/lists\/collections\/\d+\/edit$/);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(form.getByRole("button", { name: "Cancel", exact: true })).toBeInViewport();
+    await expect(form.getByRole("button", { name: "Save changes", exact: true })).toBeInViewport();
+    await expect(form.getByRole("button", { name: "Delete collection", exact: true })).toHaveCount(0);
     await expect(form.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(`Copy of ${title}`);
     await expect(form.getByRole("radio", { name: "Only Me", exact: true })).toBeChecked();
     await expect(form.getByRole("textbox", { name: `Annotation for ${mixedMedia[1].name}`, exact: true })).toHaveValue(note);

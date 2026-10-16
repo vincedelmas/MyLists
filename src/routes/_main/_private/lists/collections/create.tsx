@@ -1,5 +1,5 @@
-import {PrivacyType} from "@/lib/utils/enums";
 import {Layers3} from "lucide-react";
+import {PrivacyType} from "@/lib/utils/enums";
 import {useForm, useWatch} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -51,10 +51,10 @@ function CollectionCreatePage() {
             <div className="mb-8 flex flex-col pt-8">
                 <PageHeader
                     asideIcon={Layers3}
-                    eyebrow={<ListsBackLink username={currentUser!.name}/>}
                     title="Create a collection"
                     asideLabel="In this collection"
                     asideValue={<>{formatNumber(items.length)} media</>}
+                    eyebrow={<ListsBackLink username={currentUser!.name}/>}
                     description="Bring your favorites together, from a movie marathon to a universe spanning books, games and more."
                 />
 
@@ -64,6 +64,7 @@ function CollectionCreatePage() {
                         onSubmit={handleSubmit}
                         submitLabel="Create collection"
                         isSubmitting={createMutation.isPending}
+                        onCancel={() => void navigate({ to: "/lists/$username", params: { username: currentUser!.name } })}
                     />
                 </div>
             </div>

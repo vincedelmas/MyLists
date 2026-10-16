@@ -1,17 +1,17 @@
 import authClient from "@/lib/client/auth-client";
 import {KeyRound, ShieldCheck} from "lucide-react";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
+import {FormProvider, useForm} from "react-hook-form";
 import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
 import {handleServerFormErrors} from "@/lib/client/forms";
-import {Controller, FormProvider, useForm} from "react-hook-form";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {FieldGroup, FieldSet} from "@/lib/client/components/ui/field";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {ResetPassword, resetPasswordSchema, tokenSchema} from "@/lib/schemas";
 import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 
 
 export const Route = createFileRoute("/_main/_public/reset-password")({
@@ -34,7 +34,9 @@ export const Route = createFileRoute("/_main/_public/reset-password")({
             </div>
         );
     },
-    head: () => ({ meta: [{ title: "Reset your password - MyLists" }, { name: "referrer", content: "no-referrer" }] })
+    head: () => ({
+        meta: [{ title: "Reset your password - MyLists" }, { name: "referrer", content: "no-referrer" }],
+    })
 });
 
 
@@ -65,11 +67,11 @@ function ResetPasswordPage() {
     return (
         <div className="mb-8 flex flex-col pt-8">
             <PageHeader
-                title="Choose a new password"
                 eyebrow="Almost there"
                 eyebrowIcon={KeyRound}
                 asideIcon={ShieldCheck}
                 asideLabel="One last step"
+                title="Choose a new password"
                 asideValue="Choose a new password"
                 description="Choose the password you’ll use the next time you sign in."
             />
@@ -78,39 +80,23 @@ function ResetPasswordPage() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
                         <FieldSet disabled={form.formState.isSubmitting}>
                             <FieldGroup>
-                                <Controller
+                                <FormTextField
+                                    type="password"
+                                    label="Password"
                                     name="newPassword"
+                                    placeholder="********"
                                     control={form.control}
-                                    render={({ field, fieldState }) =>
-                                        <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
-                                            <FieldLabel htmlFor="reset-password-new-password">Password</FieldLabel>
-                                            <Input
-                                                {...field}
-                                                id="reset-password-new-password"
-                                                type="password"
-                                                placeholder="********"
-                                                aria-invalid={fieldState.invalid}
-                                            />
-                                            <FieldError errors={[fieldState.error]}/>
-                                        </Field>
-                                    }
+                                    id="reset-password-new-password"
+                                    disabled={form.formState.isSubmitting}
                                 />
-                                <Controller
+                                <FormTextField
+                                    type="password"
                                     name="confirmPassword"
+                                    placeholder="********"
                                     control={form.control}
-                                    render={({ field, fieldState }) =>
-                                        <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
-                                            <FieldLabel htmlFor="reset-password-confirm-password">Confirm Password</FieldLabel>
-                                            <Input
-                                                {...field}
-                                                id="reset-password-confirm-password"
-                                                type="password"
-                                                placeholder="********"
-                                                aria-invalid={fieldState.invalid}
-                                            />
-                                            <FieldError errors={[fieldState.error]}/>
-                                        </Field>
-                                    }
+                                    label="Confirm Password"
+                                    id="reset-password-confirm-password"
+                                    disabled={form.formState.isSubmitting}
                                 />
                             </FieldGroup>
                         </FieldSet>

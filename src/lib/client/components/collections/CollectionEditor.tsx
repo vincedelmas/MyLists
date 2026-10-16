@@ -2,13 +2,13 @@ import {useId} from "react";
 import {Save} from "lucide-react";
 import {PrivacyType} from "@/lib/utils/enums";
 import type {CreateCollection} from "@/lib/schemas";
-import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {useConfirmBlocker} from "@/lib/client/hooks/use-confirm-blocker";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {Controller, FormProvider, type UseFormReturn} from "react-hook-form";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
@@ -51,23 +51,13 @@ export const CollectionEditor = ({ form, onSubmit, onCancel, submitLabel, isSubm
                                 </CardHeader>
                                 <CardContent>
                                     <FieldGroup className="gap-5">
-                                        <Controller
+                                        <FormTextField
                                             name="title"
+                                            label="Title"
                                             control={form.control}
-                                            render={({ field, fieldState }) =>
-                                                <Field data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
-                                                    <FieldLabel htmlFor={`${fieldId}-title`}>
-                                                        Title
-                                                    </FieldLabel>
-                                                    <Input
-                                                        {...field}
-                                                        id={`${fieldId}-title`}
-                                                        aria-invalid={fieldState.invalid}
-                                                        placeholder="Ex: The Dune universe"
-                                                    />
-                                                    <FieldError errors={[fieldState.error]}/>
-                                                </Field>
-                                            }
+                                            disabled={isSubmitting}
+                                            id={`${fieldId}-title`}
+                                            placeholder="Ex: The Dune universe"
                                         />
                                         <Controller
                                             name="description"

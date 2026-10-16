@@ -1,13 +1,12 @@
-import {useId} from "react";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
+import {FormProvider, useForm} from "react-hook-form";
 import {Register, registerSchema} from "@/lib/schemas";
 import {handleServerFormErrors} from "@/lib/client/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
-import {Controller, FormProvider, useForm} from "react-hook-form";
+import {FieldGroup, FieldSet} from "@/lib/client/components/ui/field";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {useEmailRegistrationMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 
 
 interface RegisterFormProps {
@@ -17,7 +16,6 @@ interface RegisterFormProps {
 
 
 export const RegisterForm = ({ verificationCallbackURL, onVerificationRequested }: RegisterFormProps) => {
-    const fieldId = useId();
     const mutation = useEmailRegistrationMutation(verificationCallbackURL);
     const form = useForm<Register>({
         resolver: zodResolver(registerSchema),
@@ -53,75 +51,39 @@ export const RegisterForm = ({ verificationCallbackURL, onVerificationRequested 
             <form className="mt-2 flex flex-col gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
                 <FieldSet disabled={mutation.isPending}>
                     <FieldGroup>
-                        <Controller
+                        <FormTextField
                             name="username"
+                            label="Username"
                             control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={mutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-username`}>Username</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        placeholder="Username"
-                                        id={`${fieldId}-username`}
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
+                            placeholder="Username"
+                            disabled={mutation.isPending}
                         />
-                        <Controller
+                        <FormTextField
+                            type="email"
                             name="email"
+                            label="Email"
+                            autoComplete="email"
                             control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={mutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-email`}>Email</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        type="email"
-                                        id={`${fieldId}-email`}
-                                        autoComplete="email"
-                                        aria-invalid={fieldState.invalid}
-                                        placeholder="john.doe@example.com"
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
+                            disabled={mutation.isPending}
+                            placeholder="john.doe@example.com"
                         />
-                        <Controller
+                        <FormTextField
                             name="password"
+                            type="password"
+                            label="Password"
                             control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={mutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        type="password"
-                                        placeholder="********"
-                                        autoComplete="new-password"
-                                        id={`${fieldId}-password`}
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
+                            placeholder="********"
+                            autoComplete="new-password"
+                            disabled={mutation.isPending}
                         />
-                        <Controller
+                        <FormTextField
+                            type="password"
                             name="confirmPassword"
                             control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={mutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-confirm-password`}>Confirm Password</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        type="password"
-                                        placeholder="********"
-                                        autoComplete="new-password"
-                                        aria-invalid={fieldState.invalid}
-                                        id={`${fieldId}-confirm-password`}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
+                            placeholder="********"
+                            label="Confirm Password"
+                            autoComplete="new-password"
+                            disabled={mutation.isPending}
                         />
                     </FieldGroup>
                 </FieldSet>

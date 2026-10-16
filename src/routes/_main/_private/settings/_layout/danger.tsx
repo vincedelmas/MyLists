@@ -1,16 +1,16 @@
+import {useState} from "react";
 import {Trash2} from "lucide-react";
-import {useId, useState} from "react";
 import {DeleteAccountForm} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Input} from "@/lib/client/components/ui/input";
+import {FormProvider, useForm} from "react-hook-form";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {FieldGroup} from "@/lib/client/components/ui/field";
 import {FormError} from "@/lib/client/components/forms/FormError";
-import {Controller, FormProvider, useForm} from "react-hook-form";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {accountSecurityOptions} from "@/lib/client/react-query/query-options";
-import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {useDeleteAccountMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
@@ -27,7 +27,6 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/danger")(
 
 
 function DangerForm() {
-    const passwordId = useId();
     const { clearSession, signOut } = useAuth();
     const [open, setOpen] = useState(false);
     const { accountSecurityOptions } = Route.useRouteContext();
@@ -105,51 +104,26 @@ function DangerForm() {
 
                             {hasPassword ?
                                 <FieldGroup>
-                                    <Controller
+                                    <FormTextField
+                                        type="password"
                                         name="currentPassword"
-                                        rules={{ required: "Current password is required." }}
                                         control={form.control}
-                                        render={({ field, fieldState }) =>
-                                            <Field data-invalid={fieldState.invalid} data-disabled={deleteAccountMutation.isPending}>
-                                                <FieldLabel htmlFor={passwordId}>
-                                                    Current password
-                                                </FieldLabel>
-                                                <Input
-                                                    {...field}
-                                                    id={passwordId}
-                                                    type={"password"}
-                                                    autoComplete="current-password"
-                                                    aria-invalid={fieldState.invalid}
-                                                    disabled={deleteAccountMutation.isPending}
-                                                />
-                                                <FieldError errors={[fieldState.error]}/>
-                                            </Field>
-                                        }
+                                        label="Current password"
+                                        autoComplete="current-password"
+                                        disabled={deleteAccountMutation.isPending}
+                                        rules={{ required: "Current password is required." }}
                                     />
                                 </FieldGroup>
                                 :
                                 <FieldGroup>
-                                    <Controller
+                                    <FormTextField
+                                        spellCheck={false}
+                                        autoComplete="off"
+                                        label="Type DELETE"
                                         name="confirmation"
                                         control={form.control}
-                                        rules={{
-                                            validate: (value) =>
-                                                value === "DELETE" || "Type DELETE to confirm account deletion."
-                                        }}
-                                        render={({ field, fieldState }) =>
-                                            <Field data-invalid={fieldState.invalid} data-disabled={deleteAccountMutation.isPending}>
-                                                <FieldLabel htmlFor={passwordId}>Type DELETE</FieldLabel>
-                                                <Input
-                                                    {...field}
-                                                    id={passwordId}
-                                                    autoComplete="off"
-                                                    spellCheck={false}
-                                                    aria-invalid={fieldState.invalid}
-                                                    disabled={deleteAccountMutation.isPending}
-                                                />
-                                                <FieldError errors={[fieldState.error]}/>
-                                            </Field>
-                                        }
+                                        disabled={deleteAccountMutation.isPending}
+                                        rules={{ validate: (val) => val === "DELETE" || "Type DELETE to confirm account deletion." }}
                                     />
                                 </FieldGroup>
                             }

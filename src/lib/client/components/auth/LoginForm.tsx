@@ -1,17 +1,17 @@
-import {useId, useState} from "react";
+import {useState} from "react";
 import {RefreshCw} from "lucide-react";
 import {Link} from "@tanstack/react-router";
 import {Login, loginSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
+import {FormProvider, useForm} from "react-hook-form";
 import {AuthState, getAuthState} from "@/lib/utils/auth";
 import {handleServerFormErrors} from "@/lib/client/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
-import {Controller, FormProvider, useForm} from "react-hook-form";
+import {FieldGroup, FieldSet} from "@/lib/client/components/ui/field";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {useEmailLoginMutation, useResendVerificationEmailMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 
 
@@ -22,7 +22,6 @@ interface LoginFormProps {
 
 
 export const LoginForm = ({ redirectTarget, passwordResetEnabled }: LoginFormProps) => {
-    const fieldId = useId();
     const { completeSignIn } = useAuth();
     const loginMutation = useEmailLoginMutation();
     const [unverifiedEmail, setUnverifiedEmail] = useState<string>();
@@ -66,45 +65,30 @@ export const LoginForm = ({ redirectTarget, passwordResetEnabled }: LoginFormPro
             <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
                 <FieldSet disabled={loginMutation.isPending}>
                     <FieldGroup>
-                        <Controller
+                        <FormTextField
                             name="email"
+                            type="email"
+                            label="Email"
+                            placeholder="Email"
                             control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={loginMutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-email`}>Email</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        type="email"
-                                        placeholder="Email"
-                                        id={`${fieldId}-email`}
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
+                            disabled={loginMutation.isPending}
                         />
-                        <Controller
+                        <FormTextField
+                            type="password"
                             name="password"
+                            label="Password"
                             control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={loginMutation.isPending}>
-                                    <div className="flex items-center justify-between">
-                                        <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
-                                        {passwordResetEnabled
-                                            ? <Link to="/forgot-password" className="text-sm underline">Forgot password?</Link>
-                                            : <span className="text-xs text-muted-foreground">Reset unavailable</span>
-                                        }
-                                    </div>
-                                    <Input
-                                        {...field}
-                                        type="password"
-                                        placeholder="********"
-                                        id={`${fieldId}-password`}
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
+                            placeholder="********"
+                            disabled={loginMutation.isPending}
+                            labelAction={passwordResetEnabled ?
+                                <Link to="/forgot-password" className="text-sm underline">
+                                    Forgot password?
+                                </Link>
+                                :
+                                <span className="text-xs text-muted-foreground">
+                                    Reset unavailable
+                                </span>
+                            }
                         />
                     </FieldGroup>
                 </FieldSet>

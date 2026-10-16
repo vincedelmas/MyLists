@@ -1,19 +1,19 @@
 import {useState} from "react";
 import authClient from "@/lib/client/auth-client";
 import {zodResolver} from "@hookform/resolvers/zod";
+import {FormProvider, useForm} from "react-hook-form";
 import {toast} from "@/lib/client/components/ui/toast";
-import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {createFileRoute, Link} from "@tanstack/react-router";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {createFileRoute, Link} from "@tanstack/react-router";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {FormError} from "@/lib/client/components/forms/FormError";
-import {Controller, FormProvider, useForm} from "react-hook-form";
 import {ForgotPassword, forgotPasswordSchema} from "@/lib/schemas";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {FieldGroup, FieldSet} from "@/lib/client/components/ui/field";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {ArrowLeft, KeyRound, Mail, MailCheck, ShieldCheck, TriangleAlert} from "lucide-react";
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 
 
 export const Route = createFileRoute("/_main/_public/forgot-password")({
@@ -61,9 +61,9 @@ function ForgotPasswordPage() {
             <PageHeader
                 asideIcon={Mail}
                 eyebrowIcon={KeyRound}
-                eyebrow="Forgot your password?"
                 asideLabel="We’ll send you"
                 title="Let’s get you back in"
+                eyebrow="Forgot your password?"
                 asideValue="A secure reset link"
                 description="Enter the email you use for MyLists to choose a new password."
             />
@@ -72,18 +72,26 @@ function ForgotPasswordPage() {
                 <div className="order-2 p-6 sm:p-8 lg:order-1 lg:border-r">
                     <div className="max-w-xl space-y-7">
                         <div className="flex gap-4">
-                            <span className="text-sm tabular-nums text-brand">01</span>
+                            <span className="text-sm tabular-nums text-brand">
+                                01
+                            </span>
                             <div>
-                                <h2 className="text-sm font-semibold text-foreground">Confirm your account email</h2>
+                                <h2 className="text-sm font-semibold text-foreground">
+                                    Confirm your account email
+                                </h2>
                                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                                     Use the same address you normally use to sign in to MyLists.
                                 </p>
                             </div>
                         </div>
                         <div className="flex gap-4">
-                            <span className="text-sm tabular-nums text-brand">02</span>
+                            <span className="text-sm tabular-nums text-brand">
+                                02
+                            </span>
                             <div>
-                                <h2 className="text-sm font-semibold text-foreground">Open the recovery link</h2>
+                                <h2 className="text-sm font-semibold text-foreground">
+                                    Open the recovery link
+                                </h2>
                                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                                     The link in your inbox is valid for one hour and can be used to choose a new password.
                                 </p>
@@ -103,7 +111,9 @@ function ForgotPasswordPage() {
                         <div className="flex gap-3 rounded-xl border border-warning/40 border-l-2 border-l-warning bg-warning/5 px-4 py-3">
                             <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true"/>
                             <div>
-                                <h2 className="text-sm font-semibold text-foreground">Recovery unavailable</h2>
+                                <h2 className="text-sm font-semibold text-foreground">
+                                    Recovery unavailable
+                                </h2>
                                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                                     Email delivery is not configured on this MyLists instance.
                                 </p>
@@ -135,24 +145,16 @@ function ForgotPasswordPage() {
                                     </div>
                                     <FieldSet disabled={form.formState.isSubmitting}>
                                         <FieldGroup>
-                                            <Controller
+                                            <FormTextField
                                                 name="email"
+                                                type="email"
+                                                autoFocus={true}
+                                                autoComplete="email"
+                                                label="Email address"
                                                 control={form.control}
-                                                render={({ field, fieldState }) =>
-                                                    <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
-                                                        <FieldLabel htmlFor="forgot-password-email">Email address</FieldLabel>
-                                                        <Input
-                                                            {...field}
-                                                            autoFocus
-                                                            id="forgot-password-email"
-                                                            type="email"
-                                                            autoComplete="email"
-                                                            placeholder="john.doe@example.com"
-                                                            aria-invalid={fieldState.invalid}
-                                                        />
-                                                        <FieldError errors={[fieldState.error]}/>
-                                                    </Field>
-                                                }
+                                                id="forgot-password-email"
+                                                placeholder="john.doe@example.com"
+                                                disabled={form.formState.isSubmitting}
                                             />
                                         </FieldGroup>
                                     </FieldSet>

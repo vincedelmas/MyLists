@@ -7,11 +7,18 @@ test("signs in, persists the session, and protects pages after logout", async ({
     await expect(page).toHaveURL(/\/login\?/);
     expect(new URL(page.url()).searchParams.get("redirect")).toBe("/settings/imports/mylists");
 
+    await page.getByRole("button", { name: "Login", exact: true }).click();
+    await expect(page.getByLabel("Email", { exact: true })).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByLabel("Email", { exact: true })).toHaveAccessibleDescription(/Invalid email address/);
+    await expect(page.getByLabel("Password", { exact: true })).toHaveAccessibleDescription("Password is required.");
+
     await page.getByLabel("Email", { exact: true }).fill(users.owner.email);
     await page.getByLabel("Password", { exact: true }).fill("IncorrectPassword!");
     await page.getByRole("button", { name: "Login", exact: true }).click();
 
     await expect(page.getByText("Invalid email or password", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Email", { exact: true })).not.toHaveAttribute("aria-describedby");
+    await expect(page.getByLabel("Password", { exact: true })).not.toHaveAttribute("aria-describedby");
     await expect(page).toHaveURL(/\/login\?/);
 
     await page.getByLabel("Password", { exact: true }).fill(password);

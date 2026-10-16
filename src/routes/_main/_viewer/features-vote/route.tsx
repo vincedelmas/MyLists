@@ -3,22 +3,22 @@ import {FeatureStatus} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {handleServerFormErrors} from "@/lib/client/forms";
 import {formatDateTime} from "@/lib/utils/formatting/date";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Textarea} from "@/lib/client/components/ui/textarea";
-import {handleServerFormErrors} from "@/lib/client/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {TabNav, TabItem} from "@/lib/client/components/general/TabNav";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
-import {TabNav, TabItem} from "@/lib/client/components/general/TabNav";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
@@ -142,26 +142,13 @@ function FeatureVotesPage() {
                         <form onSubmit={form.handleSubmit(onSubmitAddNewFeature)} className="mt-6 flex flex-col gap-4">
                             <FieldSet disabled={createFeatureMutation.isPending || isAnonymous}>
                                 <FieldGroup className="gap-4">
-                                    <Controller
+                                    <FormTextField
                                         name="title"
+                                        label="Title"
                                         control={form.control}
-                                        render={({ field, fieldState }) =>
-                                            <Field
-                                                data-invalid={fieldState.invalid}
-                                                data-disabled={createFeatureMutation.isPending || isAnonymous}
-                                            >
-                                                <FieldLabel htmlFor={`${fieldId}-title`}>
-                                                    Title
-                                                </FieldLabel>
-                                                <Input
-                                                    {...field}
-                                                    id={`${fieldId}-title`}
-                                                    placeholder="Feature title"
-                                                    aria-invalid={fieldState.invalid}
-                                                />
-                                                <FieldError errors={[fieldState.error]}/>
-                                            </Field>
-                                        }
+                                        id={`${fieldId}-title`}
+                                        placeholder="Feature title"
+                                        disabled={createFeatureMutation.isPending || isAnonymous}
                                     />
                                     <Controller
                                         name="description"

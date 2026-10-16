@@ -1,14 +1,13 @@
-import {useId} from "react";
+import {useForm} from "react-hook-form";
 import {Link} from "@tanstack/react-router";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Controller, useForm} from "react-hook-form";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {Input} from "@/lib/client/components/ui/input";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ForgotPassword, forgotPasswordSchema} from "@/lib/schemas";
+import {FieldGroup, FieldSet} from "@/lib/client/components/ui/field";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {ClockAlert, MailCheck, RefreshCw, ShieldAlert} from "lucide-react";
 import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {useResendVerificationEmailMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
 
@@ -51,9 +50,9 @@ const verificationContent = {
 
 
 export const EmailVerificationPanel = ({ status, redirect, defaultEmail, verificationCallbackURL, onVerificationResent }: EmailVerificationPanelProps) => {
-    const fieldId = useId();
     const content = verificationContent[status];
     const StatusIcon = content.icon;
+
     const mutation = useResendVerificationEmailMutation(verificationCallbackURL);
     const form = useForm<ForgotPassword>({
         resolver: zodResolver(forgotPasswordSchema),
@@ -94,23 +93,14 @@ export const EmailVerificationPanel = ({ status, redirect, defaultEmail, verific
                 <form className="flex w-full flex-col gap-4 text-left" onSubmit={form.handleSubmit(handleSubmit)}>
                     <FieldSet disabled={mutation.isPending}>
                         <FieldGroup>
-                            <Controller
+                            <FormTextField
                                 name="email"
+                                type="email"
+                                autoComplete="email"
+                                label="Account email"
                                 control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid} data-disabled={mutation.isPending}>
-                                        <FieldLabel htmlFor={`${fieldId}-verification-email`}>Account email</FieldLabel>
-                                        <Input
-                                            {...field}
-                                            type="email"
-                                            autoComplete="email"
-                                            aria-invalid={fieldState.invalid}
-                                            placeholder="john.doe@example.com"
-                                            id={`${fieldId}-verification-email`}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                )}
+                                disabled={mutation.isPending}
+                                placeholder="john.doe@example.com"
                             />
                         </FieldGroup>
                     </FieldSet>

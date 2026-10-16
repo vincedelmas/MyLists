@@ -1,13 +1,18 @@
 import {notFound} from "@tanstack/react-router";
-import {MediaInfo} from "@/lib/types/activity.types";
+import {uniqueBy} from "@/lib/utils/arrays-objects";
+import {toItemKey} from "@/lib/utils/media/item-key";
+import type {MediaInfo} from "@/lib/types/media-common.types";
+import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {CollectionItemInput} from "@/lib/types/collections.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import {DenialReason, MediaType, PrivacyType} from "@/lib/utils/enums";
+import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {Actor, AuthorizationService, CollectionAction, collectionPolicy} from "@/lib/server/authorization";
+import {type CollectionFilterSearch, type CommunitySearch, createCollectionSchema, type UserCollectionsSearch} from "@/lib/schemas/collections.schema";
 
 
 export class CollectionsService {
@@ -18,65 +23,84 @@ export class CollectionsService {
     ) {
     }
 
-    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor, page?: number) {
-        const collection = this.repository.getCollectionById(collectionId);
-        if (!collection) throw notFound();
+    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor, filters: MediaBrowseFilters = { page: 1 }, includeFilterOptions = false) {
+        const collection = this._getAuthorizedCollection(collectionId, mode, actor);
 
-        const decision = this.authorizationService.decideCollection(actor, mode, collection);
-        if (!decision.allowed) {
-            throw new UnauthorizedError(decision.reason === DenialReason.PROFILE_RESTRICTED ? "restricted" : "private");
-        }
-
-        const editableItems = mode === "edit" ? this.repository.getCollectionItems(collectionId) : [];
-        const [itemResults, isLiked] = await Promise.all([
-            mode === "read"
-                ? this.repository.getPaginatedCollectionItems(collectionId, page)
-                : {
-                    items: editableItems,
-                    page: 1,
-                    total: editableItems.length,
-                    pages: editableItems.length > 0 ? 1 : 0,
-                    perPage: Math.max(editableItems.length, 1),
-                },
+        const viewerId = actor.kind === "user" ? actor.id : undefined;
+        const [isLiked, capabilities] = await Promise.all([
             actor.kind === "user" ? this.repository.findLikedCollection(actor.id, collectionId) : Promise.resolve(null),
-            this.repository.incrementViewCount(collectionId),
+            this.authorizationService.getCollectionCapabilities(actor, collection),
         ]);
 
-        const { items } = itemResults;
-        const mediaService = this.mediaRegistry.get(collection.mediaType);
-        const mediaRows = await mediaService.getMediaDetailsByIds(items.map(i => i.mediaId), actor.kind === "user" ? actor.id : undefined);
-        const mediaMap = new Map(mediaRows.map((m) => [m.id, m]));
-        const capabilities = await this.authorizationService.getCollectionCapabilities(actor, collection);
+        if (mode === "read") {
+            const results = await this.repository.getPaginatedCollectionItems(collectionId, collection.mediaTypes, filters, viewerId, includeFilterOptions);
+
+            return {
+                ...results,
+                collection,
+                capabilities,
+                isLiked: !!isLiked,
+            };
+        }
+
+        const items = this.repository.getCollectionItems(collectionId);
+        const mediaMap = await this._getMediaLookup(items, viewerId);
 
         const detailedItems = items.map((item) => {
-            const media = mediaMap.get(item.mediaId)!;
+            const media = mediaMap.get(toItemKey(item))!;
+
             return {
+                userMedia: null,
+                status: null,
+                rating: null,
+                addedAt: null,
+                favorite: null,
+                lastUpdated: null,
                 mediaId: item.mediaId,
                 mediaName: media.name,
+                mediaType: item.mediaType,
                 orderIndex: item.orderIndex,
                 annotation: item.annotation,
-                mediaCover: media.imageCover,
                 inUserList: media.inUserList,
                 releaseDate: media.releaseDate,
+                mediaCover: getImageUrl(getServerMediaDefinition(item.mediaType).identity.coverDirectory, media.customCover ?? media.imageCover),
             };
         });
 
         return {
-            ...itemResults,
+            page: 1,
             collection,
             capabilities,
             isLiked: !!isLiked,
+            total: items.length,
             items: detailedItems,
+            pages: items.length > 0 ? 1 : 0,
+            perPage: Math.max(items.length, 1),
+            filterOptions: {
+                tags: [],
+                genres: [],
+                mediaTypes: collection.mediaTypes,
+            },
         };
     }
 
-    async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType) {
-        const collections = await this.repository.getUserCollections(targetUserId, actor, mediaType);
+    recordCollectionView(collectionId: number, actor: Actor) {
+        this._getAuthorizedCollection(collectionId, "read", actor);
+        return this.repository.incrementViewCount(collectionId);
+    }
+
+    searchCollectionFilters(search: CollectionFilterSearch, actor: Actor) {
+        this._getAuthorizedCollection(search.collectionId, "read", actor);
+        return this.repository.searchCollectionFilters(search, actor.kind === "user" ? actor.id : undefined);
+    }
+
+    async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType, pinnedOnly = false) {
+        const collections = await this.repository.getUserCollections(targetUserId, actor, mediaType, pinnedOnly);
         return this._enrichWithPreviews(collections, actor);
     }
 
-    async getPaginatedUserCollections(targetUserId: number, params: Omit<UserCollectionsSearch, "username">, actor: Actor) {
-        const paginatedCollections = await this.repository.getPaginatedUserCollections(targetUserId, actor, params);
+    async getPaginatedUserCollections(targetUserId: number, params: Omit<UserCollectionsSearch, "username">, actor: Actor, publicOnly = false) {
+        const paginatedCollections = await this.repository.getPaginatedUserCollections(targetUserId, actor, params, publicOnly);
         const results = await this._enrichWithPreviews(paginatedCollections.items, actor);
 
         return {
@@ -107,9 +131,10 @@ export class CollectionsService {
     addMediaToCollection(params: { actor: Actor; mediaId: number; mediaType: MediaType; collectionId: number }) {
         return withTransaction(() => {
             const collection = this.repository.getCollectionById(params.collectionId);
-            if (!collection || collection.mediaType !== params.mediaType) {
+            if (!collection) {
                 throw new FormattedError("Unauthorized to update this collection.");
             }
+
             this._assertAction(collection, params.actor, "addItem", "Unauthorized to update this collection.");
 
             const nextOrderIndex = this.repository.getMaxCollectionItemOrder(params.collectionId) + 1;
@@ -126,16 +151,17 @@ export class CollectionsService {
     removeMediaFromCollection(params: { actor: Actor; mediaId: number; mediaType: MediaType; collectionId: number }) {
         return withTransaction(() => {
             const collection = this.repository.getCollectionById(params.collectionId);
-            if (!collection || collection.mediaType !== params.mediaType) {
+            if (!collection) {
                 throw new FormattedError("Unauthorized to update this collection.");
             }
+
             this._assertAction(collection, params.actor, "removeItem", "Unauthorized to update this collection.");
 
             if (collection.itemsCount <= 1) {
                 throw new FormattedError("A collection must contain at least one item.");
             }
 
-            this.repository.deleteCollectionItem(params.collectionId, params.mediaId);
+            this.repository.deleteCollectionItem(params.collectionId, params.mediaId, params.mediaType);
         });
     }
 
@@ -144,20 +170,19 @@ export class CollectionsService {
         ownerId: number;
         ordered: boolean;
         privacy: PrivacyType;
-        mediaType: MediaType;
         description?: string | null;
         items: CollectionItemInput[];
     }) {
         return withTransaction(() => {
             const { items, ...collectionData } = params;
-            const uniqueItems = this._normalizeItems(items);
+            const uniqueItems = uniqueBy(items, toItemKey);
 
             const collectionId = this.repository.createCollection({ ...collectionData });
             this.repository.replaceCollectionItems(collectionId, uniqueItems.map((item, index) => ({
                 collectionId,
                 mediaId: item.mediaId,
                 orderIndex: index + 1,
-                mediaType: params.mediaType,
+                mediaType: item.mediaType,
                 annotation: item.annotation ?? null,
             })));
 
@@ -180,7 +205,7 @@ export class CollectionsService {
 
             this._assertAction(collection, params.actor, "edit", "Unauthorized to update this collection.");
 
-            const sanitizedItems = this._normalizeItems(params.items);
+            const uniqueItems = uniqueBy(params.items, toItemKey);
             this.repository.updateCollection(params.collectionId, {
                 title: params.title,
                 privacy: params.privacy,
@@ -188,10 +213,10 @@ export class CollectionsService {
                 description: params.description ?? null,
             });
 
-            this.repository.replaceCollectionItems(params.collectionId, sanitizedItems.map((item, index) => ({
+            this.repository.replaceCollectionItems(params.collectionId, uniqueItems.map((item, index) => ({
                 mediaId: item.mediaId,
                 orderIndex: index + 1,
-                mediaType: collection.mediaType,
+                mediaType: item.mediaType,
                 collectionId: params.collectionId,
                 annotation: item.annotation ?? null,
             })));
@@ -219,13 +244,21 @@ export class CollectionsService {
             if (!decision.allowed) throw new UnauthorizedError("private");
 
             const existingLike = this.repository.findLikedCollection(actor.id, collectionId);
+
             if (existingLike) {
                 this.repository.deleteLike(existingLike.id);
-                this.repository.decrementLikeCount(collectionId);
+
+                return {
+                    isLiked: false,
+                    likeCount: this.repository.decrementLikeCount(collectionId),
+                };
             }
             else {
                 this.repository.insertLike(actor.id, collectionId);
-                this.repository.incrementLikeCount(collectionId);
+                return {
+                    isLiked: true,
+                    likeCount: this.repository.incrementLikeCount(collectionId),
+                };
             }
         });
     }
@@ -244,18 +277,17 @@ export class CollectionsService {
                 ownerId: actor.id,
                 ordered: collection.ordered,
                 privacy: PrivacyType.PRIVATE,
-                mediaType: collection.mediaType,
                 description: collection.description,
-                title: `Copy of ${collection.title}`,
+                title: `Copy of ${collection.title}`.slice(0, createCollectionSchema.shape.title.maxLength!),
             });
 
             if (items.length > 0) {
                 this.repository.replaceCollectionItems(createdId, items.map((item) => ({
                     mediaId: item.mediaId,
                     collectionId: createdId,
+                    mediaType: item.mediaType,
                     annotation: item.annotation,
                     orderIndex: item.orderIndex,
-                    mediaType: collection.mediaType,
                 })));
             }
 
@@ -265,40 +297,31 @@ export class CollectionsService {
         });
     }
 
-    private _normalizeItems(items: CollectionItemInput[]) {
-        const seen = new Set<number>();
-        return items.filter((item) => {
-            if (seen.has(item.mediaId)) return false;
-            seen.add(item.mediaId);
-            return true;
-        });
-    }
-
-    private async _enrichWithPreviews(
-        collections: Awaited<ReturnType<typeof CollectionsRepository.getUserCollections>>,
-        actor: Actor,
-    ) {
-        if (collections.length === 0) return [];
-
-        const mediaMapByType = new Map<MediaType, Set<number>>();
-
-        for (const collection of collections) {
-            if (!mediaMapByType.has(collection.mediaType)) {
-                mediaMapByType.set(collection.mediaType, new Set<number>());
-            }
-            const idSet = mediaMapByType.get(collection.mediaType)!;
-            collection.previewItems.forEach((id: number) => idSet.add(id));
+    private async _getMediaLookup(items: CollectionItemInput[], viewerId?: number) {
+        const idsByType = new Map<MediaType, Set<number>>();
+        for (const item of items) {
+            const ids = idsByType.get(item.mediaType) ?? new Set<number>();
+            ids.add(item.mediaId);
+            idsByType.set(item.mediaType, ids);
         }
 
         const mediaLookup = new Map<string, MediaInfo>();
-
-        await Promise.all([...mediaMapByType.entries()].map(async ([mediaType, ids]) => {
-            const mediaService = this.mediaRegistry.get(mediaType);
-            const mediaDetails = await mediaService.getMediaDetailsByIds([...ids]);
-            mediaDetails.forEach((media) => mediaLookup.set(`${mediaType}-${media.id}`, media));
+        await Promise.all([...idsByType.entries()].map(async ([mediaType, ids]) => {
+            const mediaDetails = await this.mediaRegistry.get(mediaType).getMediaDetailsByIds([...ids], viewerId);
+            for (const media of mediaDetails) {
+                mediaLookup.set(toItemKey({ mediaType, mediaId: media.id }), media);
+            }
         }));
 
-        return collections.map((collection) => {
+        return mediaLookup;
+    }
+
+    private async _enrichWithPreviews(collections: Awaited<ReturnType<typeof CollectionsRepository.getUserCollections>>, actor: Actor) {
+        if (collections.length === 0) return [];
+
+        const mediaLookup = await this._getMediaLookup(collections.flatMap(collection => collection.previewItems));
+
+        return collections.map(({ previewItems, ...collection }) => {
             const policyCapabilities = collectionPolicy.capabilities(actor, collection);
 
             return {
@@ -307,19 +330,32 @@ export class CollectionsService {
                     edit: policyCapabilities.edit,
                     delete: policyCapabilities.delete,
                 },
-                previews: collection.previewItems.map((id: number) => {
-                    const media = mediaLookup.get(`${collection.mediaType}-${id}`);
+                previews: previewItems.map((item) => {
+                    const media = mediaLookup.get(toItemKey(item));
                     if (!media) return null;
 
                     return {
                         mediaId: media.id,
                         mediaName: media.name,
-                        mediaCover: media.imageCover,
+                        mediaType: item.mediaType,
                         releaseDate: media.releaseDate,
+                        mediaCover: getImageUrl(getServerMediaDefinition(item.mediaType).identity.coverDirectory, media.imageCover),
                     };
                 }).filter((item): item is NonNullable<typeof item> => item !== null),
             };
         });
+    }
+
+    private _getAuthorizedCollection(collectionId: number, mode: "read" | "edit", actor: Actor) {
+        const collection = this.repository.getCollectionById(collectionId);
+        if (!collection) throw notFound();
+
+        const decision = this.authorizationService.decideCollection(actor, mode, collection);
+        if (!decision.allowed) {
+            throw new UnauthorizedError(decision.reason === DenialReason.PROFILE_RESTRICTED ? "restricted" : "private");
+        }
+
+        return collection;
     }
 
     private _assertAction(collection: Parameters<typeof collectionPolicy.decide>[2], actor: Actor, action: CollectionAction, message: string) {

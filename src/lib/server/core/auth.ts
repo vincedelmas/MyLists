@@ -1,8 +1,10 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import {eq} from "drizzle-orm";
+import {mcp} from "@better-auth/mcp";
 import {clientEnv} from "@/env/client";
 import {serverEnv} from "@/env/server";
+import {jwt} from "better-auth/plugins";
 import {db} from "@/lib/server/database/db";
 import {betterAuth} from "better-auth/minimal";
 import {logger} from "@/lib/server/core/logger";
@@ -14,8 +16,9 @@ import {clearAdminCookie} from "@/lib/server/core/admin-auth";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {hashPassword, verifyPassword} from "better-auth/crypto";
-import {addUsernameSuffix, checkOAuthUsername} from "@/lib/utils/auth";
 import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
+import {MCP_RESOURCE, MCP_SCOPES} from "@/lib/server/core/mcp/config";
+import {addUsernameSuffix, checkOAuthUsername} from "@/lib/utils/auth";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {user as userTable, userMediaSettings} from "@/lib/server/database/schema";
 import {APIError, createAuthMiddleware, getSessionFromCtx} from "better-auth/api";
@@ -326,6 +329,20 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         },
     },
     plugins: [
+        jwt(),
+        mcp({
+            scopes: MCP_SCOPES,
+            resource: MCP_RESOURCE,
+            loginPage: "/oauth/login",
+            consentPage: "/oauth/consent",
+            accessTokenExpiresIn: 15 * 60,
+            allowPublicClientPrelogin: true,
+            allowDynamicClientRegistration: true,
+            allowUnauthenticatedClientRegistration: true,
+            grantTypes: ["authorization_code", "refresh_token"],
+            clientPrivileges: () => false,
+            customAccessTokenClaims: () => ({ mylistsIssuedAt: Date.now() }),
+        }),
         tanstackStartCookies(),
     ]
 }));

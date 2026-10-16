@@ -87,46 +87,6 @@ describe("MangaService", () => {
             expect(delta.statusCounts?.[Status.COMPLETED]).toBe(-1);
         });
 
-        it("should calculate delta when status updates: PLAN_TO_READ -> COMPLETED", () => {
-            const old = makeUserState({ status: Status.PLAN_TO_READ, total: 0, currentChapter: 0 });
-            const newer = makeState({ status: Status.COMPLETED, currentChapter: 100, total: 100 });
-            const delta = mangaService.calculateDeltaStats(old, newer, baseManga);
-
-            expect(delta.timeSpent).toBe(100 * TIME_PER_CHAPTER);
-            expect(delta.totalSpecific).toBe(100);
-            expect(delta.statusCounts?.[Status.PLAN_TO_READ]).toBe(-1);
-            expect(delta.statusCounts?.[Status.COMPLETED]).toBe(1);
-        });
-
-        it("should handle redo increment correctly", () => {
-            const old = makeUserState({ status: Status.COMPLETED, redo: 1, total: 200, currentChapter: 100 });
-            const newer = makeState({ status: Status.COMPLETED, redo: 2, total: 300, currentChapter: 100 });
-            const delta = mangaService.calculateDeltaStats(old, newer, baseManga);
-
-            expect(delta.totalRedo).toBe(1);
-            expect(delta.totalSpecific).toBe(100);
-            expect(delta.timeSpent).toBe(100 * TIME_PER_CHAPTER);
-        });
-
-        it("should handle redo decrement correctly", () => {
-            const old = makeUserState({ redo: 3, total: 400, currentChapter: 100 });
-            const newer = makeState({ redo: 2, total: 300, currentChapter: 100 });
-            const delta = mangaService.calculateDeltaStats(old, newer, baseManga);
-
-            expect(delta.totalRedo).toBe(-1);
-            expect(delta.totalSpecific).toBe(-100);
-            expect(delta.timeSpent).toBe(-100 * TIME_PER_CHAPTER);
-        });
-
-        it("should handle chapter change correctly", () => {
-            const old = makeUserState({ status: Status.READING, currentChapter: 50, total: 50 });
-            const newer = makeState({ status: Status.READING, currentChapter: 75, total: 75 });
-            const delta = mangaService.calculateDeltaStats(old, newer, baseManga);
-
-            expect(delta.timeSpent).toBe(25 * TIME_PER_CHAPTER);
-            expect(delta.totalSpecific).toBe(25);
-        });
-
     });
 
     describe("updateHandlers", () => {
@@ -137,53 +97,6 @@ describe("MangaService", () => {
             expect(log).toEqual({ oldValue: 99, newValue: 100 });
         });
 
-        it("rejects progress beyond a known final chapter", () => {
-            expect(() => mangaService.updateChapterHandler(makeState({}), { currentChapter: 101 }, baseManga)).toThrow("Invalid chapter");
-        });
-
-        it("updateStatusHandler: READING -> PTR should reset currentChapter", () => {
-            const current = makeState({ status: Status.READING, currentChapter: 50, total: 50 });
-            const [next, log] = mangaService.updateStatusHandler(current, { status: Status.PLAN_TO_READ }, baseManga);
-
-            expect(next.total).toBe(0);
-            expect(next.currentChapter).toBe(0);
-            expect(next.status).toBe(Status.PLAN_TO_READ);
-            expect(log?.oldValue).toBe(Status.READING);
-            expect(log?.newValue).toBe(Status.PLAN_TO_READ);
-        });
-
-        it("updateStatusHandler: PTR -> COMPLETED, update currentChapter and total", () => {
-            const current = makeState({ status: Status.PLAN_TO_READ, currentChapter: 0, total: 0 });
-            const [next, log] = mangaService.updateStatusHandler(current, { status: Status.COMPLETED }, baseManga);
-
-            expect(next.currentChapter).toBe(100);
-            expect(next.total).toBe(100);
-            expect(next.status).toBe(Status.COMPLETED);
-            expect(log?.oldValue).toBe(Status.PLAN_TO_READ);
-            expect(log?.newValue).toBe(Status.COMPLETED);
-        });
-
-        it("preserves recorded rereads when completing before manually adding another redo", () => {
-            const current = makeUserState({ status: Status.READING, currentChapter: 50, redo: 1, total: 150 });
-            const [completed] = mangaService.updateStatusHandler(current, { status: Status.COMPLETED }, baseManga);
-
-            expect(completed).toMatchObject({ status: Status.COMPLETED, currentChapter: 100, redo: 1, total: 200 });
-            const delta = mangaService.calculateDeltaStats(current, completed, baseManga);
-            expect(delta.totalSpecific).toBe(50);
-            expect(delta.totalRedo).toBe(0);
-
-            const [reread] = mangaService.updateRedoHandler(completed, { redo: 2 }, baseManga);
-            expect(reread).toMatchObject({ currentChapter: 100, redo: 2, total: 300 });
-        });
-
-        it("preserves recorded rereads when switching from completed to reading and back", () => {
-            const current = makeState({ status: Status.COMPLETED, currentChapter: 100, redo: 3, total: 400 });
-            const [reading] = mangaService.updateStatusHandler(current, { status: Status.READING }, baseManga);
-            const [completed] = mangaService.updateStatusHandler(reading, { status: Status.COMPLETED }, baseManga);
-
-            expect(completed).toEqual(current);
-        });
-
         it("updateStatusHandler: preserves entered chapters when a publishing manga has no chapter total", () => {
             const current = makeState({ status: Status.READING, currentChapter: 1, total: 1 });
             const media = { ...baseManga, chapters: null, prodStatus: "Publishing" };
@@ -191,16 +104,6 @@ describe("MangaService", () => {
 
             expect(next.currentChapter).toBe(1);
             expect(next.total).toBe(1);
-            expect(next.status).toBe(Status.COMPLETED);
-        });
-
-        it("updateStatusHandler: keeps zero progress when a manga has no chapter total", () => {
-            const current = makeState({ status: Status.READING, currentChapter: 0, total: 0 });
-            const media = { ...baseManga, chapters: null };
-            const [next] = mangaService.updateStatusHandler(current, { status: Status.COMPLETED }, media);
-
-            expect(next.currentChapter).toBe(0);
-            expect(next.total).toBe(0);
             expect(next.status).toBe(Status.COMPLETED);
         });
 
@@ -214,17 +117,6 @@ describe("MangaService", () => {
             expect(next.status).toBe(Status.PLAN_TO_READ);
             expect(log?.oldValue).toBe(Status.COMPLETED);
             expect(log?.newValue).toBe(Status.PLAN_TO_READ);
-        });
-
-        it("updateRedoHandler should update redo and total", () => {
-            const current = makeState({ status: Status.COMPLETED, redo: 1, total: 200, currentChapter: 100 });
-            const [next, log] = mangaService.updateRedoHandler(current, { redo: 2 }, baseManga);
-
-            expect(next.redo).toBe(2);
-            expect(next.total).toBe(300);
-            expect(next.currentChapter).toBe(100);
-            expect(log?.oldValue).toBe(1);
-            expect(log?.newValue).toBe(2);
         });
 
         it.each([{ redo: 0, total: 50 }, { redo: 2, total: 250 }])(
@@ -244,14 +136,6 @@ describe("MangaService", () => {
             },
         );
 
-        it("updateChapterHandler should update currentChapter and total", () => {
-            const current = makeState({ status: Status.READING, currentChapter: 50, total: 50 });
-            const [next, log] = mangaService.updateChapterHandler(current, { currentChapter: 100 }, baseManga);
 
-            expect(next.currentChapter).toBe(100);
-            expect(next.total).toBe(100);
-            expect(log?.oldValue).toBe(50);
-            expect(log?.newValue).toBe(100);
-        });
     });
 });

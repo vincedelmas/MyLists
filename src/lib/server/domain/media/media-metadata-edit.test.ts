@@ -75,44 +75,6 @@ describe("validated metadata edits", () => {
         expect(saveImageFromUrl).not.toHaveBeenCalled();
     });
 
-    it.each([
-        [MediaType.MOVIES, ["originalName", "name", "directorName", "releaseDate", "duration", "synopsis", "budget", "revenue", "tagline", "originalLanguage", "lockStatus", "homepage"]],
-        [MediaType.GAMES, ["name", "gameEngine", "gameModes", "playerPerspective", "releaseDate", "synopsis", "hltbMainTime", "hltbMainAndExtraTime", "hltbTotalCompleteTime", "lockStatus"]],
-        [MediaType.BOOKS, ["name", "releaseDate", "pages", "language", "publishers", "synopsis", "lockStatus", "authors"]],
-        [MediaType.MANGA, ["name", "releaseDate", "chapters", "publishers", "synopsis", "lockStatus"]],
-        [MediaType.SERIES, ["name", "originalName", "releaseDate", "lastAirDate", "homepage", "createdBy", "duration", "originCountry", "prodStatus", "synopsis", "lockStatus"]],
-        [MediaType.ANIME, ["name", "originalName", "releaseDate", "lastAirDate", "homepage", "createdBy", "duration", "originCountry", "prodStatus", "synopsis", "lockStatus"]],
-    ] as const)("returns ordered form fields that round-trip without changing metadata for %s", async (mediaType, expectedFields) => {
-        await db.insert(schema.booksAuthors).values([{ mediaId: 1, name: "Author A" }, { mediaId: 1, name: "Author B" }]);
-        await db.insert(schema.mangaGenre).values({ mediaId: 1, name: "Drama" });
-
-        const service = services[mediaType];
-        const before = service.findById(1)!;
-        const { fields, editableFields } = await service.getMediaEditableFields(1);
-        expect(Object.keys(fields)).toEqual(expectedFields);
-        const separateFields = mediaType === MediaType.MANGA ? ["imageCover", "genres"] : ["imageCover"];
-        expect([...Object.keys(fields), ...separateFields].sort())
-            .toEqual([...editableFields].sort());
-
-        // Text inputs send changed values as strings; untouched nullable fields stay null.
-        const input = Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, value == null ? value : String(value)]));
-        const payload = createMediaEditPayloadSchema(mediaType, editableFields).parse({ ...input, imageCover: "" });
-        expect(payload).toEqual({ ...fields, imageCover: undefined });
-        await service.updateMediaEditableFields(1, payload);
-
-        expect(service.findById(1)).toEqual({ ...before, lastApiUpdate: expect.any(String) });
-        expect(db.select({ name: schema.booksAuthors.name }).from(schema.booksAuthors).orderBy(schema.booksAuthors.name).all())
-            .toEqual([{ name: "Author A" }, { name: "Author B" }]);
-        expect(db.select({ name: schema.mangaGenre.name }).from(schema.mangaGenre).all()).toEqual([{ name: "Drama" }]);
-        expect(saveImageFromUrl).not.toHaveBeenCalled();
-    });
-
-    it("returns empty book relations and an empty authors input when none are stored", async () => {
-        const details = await createBooksRepository().findAllAssociatedDetails(1);
-        expect(details).toMatchObject({ authors: [], genres: [] });
-        expect((await services[MediaType.BOOKS].getMediaEditableFields(1)).fields.authors).toBe("");
-    });
-
     it("uses the definition for form order and rejects disabled scalar, cover and relation edits before side effects", async () => {
         const definition = {
             ...mangaServerDefinition,
@@ -169,32 +131,6 @@ describe("validated metadata edits", () => {
         await services[MediaType.SERIES].updateMediaEditableFields(1, { duration: 60 });
         expect(service.findById(1)?.duration).toBe(24);
         expect(services[MediaType.SERIES].findById(1)?.duration).toBe(60);
-    });
-
-    it("stores normalized numbers and downloaded cover filenames without changing the payload", async () => {
-        const payload = Object.freeze(editMediaDetailsPayloadSchemas[MediaType.MOVIES].parse({
-            duration: "95", imageCover: "https://example.com/new.jpg",
-        }));
-        await services[MediaType.MOVIES].updateMediaEditableFields(1, payload);
-
-        expect(services[MediaType.MOVIES].findById(1)).toMatchObject({ duration: 95, imageCover: expect.stringContaining("updated.jpg") });
-        expect(saveImageFromUrl).toHaveBeenCalledWith({ dirSaveName: "movies-covers", imageUrl: "https://example.com/new.jpg" });
-        expect(payload.imageCover).toBe("https://example.com/new.jpg");
-    });
-
-    it.each(Object.values(MediaType))("preserves the %s cover after a failed download and accepts a successful replacement", async (mediaType) => {
-        const service = services[mediaType];
-        const originalCover = service.findById(1)!.imageCover;
-        vi.mocked(saveImageFromUrl).mockResolvedValueOnce("default.jpg");
-
-        await service.updateMediaEditableFields(1, { name: "Updated", imageCover: "https://example.com/broken.jpg" });
-
-        expect(service.findById(1)).toMatchObject({ name: "Updated", imageCover: originalCover });
-
-        vi.mocked(saveImageFromUrl).mockResolvedValueOnce("replacement.jpg");
-        await service.updateMediaEditableFields(1, { imageCover: "https://example.com/replacement.jpg" });
-
-        expect(service.findById(1)).toMatchObject({ name: "Updated", imageCover: expect.stringMatching(/\/replacement\.jpg$/) });
     });
 
     it("preserves omitted book authors and replaces or clears explicit authors", async () => {

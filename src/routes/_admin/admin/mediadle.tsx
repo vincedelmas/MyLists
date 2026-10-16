@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_admin/admin/mediadle")({
         adminMediadleQueryOptions: adminMediadleOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.adminMediadleQueryOptions);
+        return context.queryClient.query({ ...context.adminMediadleQueryOptions, staleTime: "static" });
     },
     component: AdminMediadlePage,
 })

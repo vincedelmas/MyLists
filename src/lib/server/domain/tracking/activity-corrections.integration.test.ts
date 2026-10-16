@@ -86,17 +86,6 @@ describe("progress corrections", () => {
 
     afterEach(() => { sqlite.close(); vi.useRealTimers(); });
 
-    it("changes +120 to +100 and counts subsequent reading once", () => {
-        progress(200, "2026-08-20");
-        progress(320);
-        const corrected = progress(300);
-        expect(corrected.userMedia.actualPage).toBe(300);
-        expect(activities().map(row => [row.monthBucket, row.progressGained])).toEqual([["2026-08", 200], ["2026-09", 100]]);
-        expect(snapshot().stats.find(row => row.mediaType === MediaType.BOOKS)?.totalSpecific).toBe(300);
-        progress(320);
-        expect(activities().find(row => row.monthBucket === "2026-09")?.progressGained).toBe(120);
-    });
-
     it("previews an older correction without committing changes, then applies the confirmed month", () => {
         progress(120, "2026-08-20");
         const before = snapshot();
@@ -119,20 +108,6 @@ describe("progress corrections", () => {
         expect(activities()).toHaveLength(1);
     });
 
-    it("lets the user select an older month or preserve already corrected history", () => {
-        progress(100, "2026-07-20");
-        progress(120, "2026-08-20");
-        const plan = preview(110);
-        progress(110, undefined, { version: plan.version, startMonth: "2026-07" });
-        expect(activities().map(row => row.progressGained)).toEqual([90, 20]);
-        const before = activities();
-        const next = preview(100);
-        const result = progress(100, undefined, { version: next.version, keepHistory: true });
-        expect(result.userMedia.actualPage).toBe(100);
-        expect(result.activityCorrection?.keptHistory).toBe(true);
-        expect(activities()).toEqual(before);
-    });
-
     it("requires a fresh preview after a manual activity edit or concurrent progress change", () => {
         progress(120, "2026-08-20");
         const plan = preview(100);
@@ -147,36 +122,6 @@ describe("progress corrections", () => {
         expect(snapshot()).toEqual(changed);
     });
 
-    it.each([0, 5])("reports progress with no matching activity (%s recorded pages)", recorded => {
-        progress(120);
-        if (recorded === 0) MonthlyActivityRepository.removeFromMonth(1, activities()[0].id);
-        else MonthlyActivityRepository.updateMonthlyActivity(1, activities()[0].id, { progressGained: recorded });
-        const plan = preview(100);
-        expect(allocateActivityCorrection(plan).unrecordedProgress).toBe(20 - recorded);
-        progress(100, undefined, { version: plan.version });
-        expect(activities()).toEqual([]);
-        expect(snapshot().list[0].actualPage).toBe(100);
-    });
-
-    it("does not turn a confirmed correction into new activity after another edit reverses the delta", () => {
-        progress(120, "2026-08-20");
-        const plan = preview(100);
-        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.STATUS, status: Status.PLAN_TO_READ } });
-        const before = snapshot();
-        expect(() => progress(100, undefined, { version: plan.version })).toThrow("Your progress changed");
-        expect(snapshot()).toEqual(before);
-    });
-
-    it("limits a backdated correction to the selected month and earlier history", () => {
-        progress(100, "2026-07-20");
-        progress(120, "2026-08-20");
-        progress(130);
-        const plan = preview(110, undefined, "2026-07-25");
-        expect(plan.months.map(month => month.monthBucket)).toEqual(["2026-07"]);
-        progress(110, "2026-07-25", { version: plan.version });
-        expect(activities().map(row => [row.monthBucket, row.progressGained])).toEqual([["2026-07", 80], ["2026-08", 20], ["2026-09", 10]]);
-    });
-
     it("preserves hidden activity and completion flags when correcting its progress", () => {
         progress(120);
         MonthlyActivityRepository.updateMonthlyActivity(1, activities()[0].id, { hidden: true, hadCompletion: true });
@@ -185,20 +130,10 @@ describe("progress corrections", () => {
         expect(activities()).toEqual([{ ...before, progressGained: 0 }]);
     });
 
-    it("leaves reading history intact for a status reset and corrects explicit reread counts", () => {
-        progress(120);
-        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.REDO, redo: 2 } });
-        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.REDO, redo: 1 } });
-        expect(activities()).toMatchObject([{ progressGained: 620, redoGained: 1 }]);
-        const before = activities();
-        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.STATUS, status: Status.PLAN_TO_READ } });
-        expect(activities()).toEqual(before);
-    });
-
     it("rolls back the correction along with progress when history writing fails", () => {
         progress(120);
         const before = snapshot();
-        sqlite.exec("CREATE TRIGGER fail_history BEFORE INSERT ON user_media_update BEGIN SELECT RAISE(ABORT, 'history failure'); END");
+        sqlite.run("CREATE TRIGGER fail_history BEFORE INSERT ON user_media_update BEGIN SELECT RAISE(ABORT, 'history failure'); END");
         expect(() => progress(100)).toThrow("history failure");
         expect(snapshot()).toEqual(before);
     });

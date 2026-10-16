@@ -6,8 +6,7 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {compareDateInputs} from "@/lib/utils/formatting/date";
 import {TrendGrid} from "@/lib/client/components/trends/TrendGrid";
 import {TrendHero} from "@/lib/client/components/trends/TrendHero";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {trendsOptions} from "@/lib/client/react-query/query-options";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {TREND_MEDIA_TYPES, trendsSearchSchema} from "@/lib/schemas";
@@ -20,9 +19,10 @@ export const Route = createFileRoute("/_main/_viewer/trends")({
         trendsQueryOptions: trendsOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.trendsQueryOptions);
+        return context.queryClient.query({ ...context.trendsQueryOptions, staleTime: "static" });
     },
     component: TrendsPage,
+    head: () => ({ meta: [{ title: "Weekly trends - MyLists" }] }),
 });
 
 
@@ -52,43 +52,41 @@ function TrendsPage() {
     const filteredTrends = getFilteredData();
 
     return (
-        <PageTitle title="Weekly trends" onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    eyebrowIcon={Flame}
-                    title="Weekly trends"
-                    asideIcon={TrendingUp}
-                    eyebrow="Popular this week"
-                    asideLabel="On this page"
-                    description="The movies, series and games drawing the most attention this week."
-                    asideValue={<>{formatNumber(filteredTrends.length)} {filteredTrends.length === 1 ? "title" : "titles"}</>}
-                    navigation={
-                        <TabHeader
-                            tabs={mediaTabs}
-                            value={activeTab}
-                            triggerClassName="max-sm:px-3"
-                            renderTrigger={(tab, props) =>
-                                <Link
-                                    {...props}
-                                    to="/trends"
-                                    resetScroll={false}
-                                    search={{ activeTab: tab.id === "all" ? undefined : tab.id }}
-                                />
-                            }
-                        />
-                    }
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                eyebrowIcon={Flame}
+                title="Weekly trends"
+                asideIcon={TrendingUp}
+                eyebrow="Popular this week"
+                asideLabel="On this page"
+                description="The movies, series and games drawing the most attention this week."
+                asideValue={<>{formatNumber(filteredTrends.length)} {filteredTrends.length === 1 ? "title" : "titles"}</>}
+                navigation={
+                    <TabNav
+                        tabs={mediaTabs}
+                        value={activeTab}
+                        triggerClassName="max-sm:px-3"
+                        renderTrigger={(tab, props) =>
+                            <Link
+                                {...props}
+                                to="/trends"
+                                resetScroll={false}
+                                search={{ activeTab: tab.id === "all" ? undefined : tab.id }}
+                            />
+                        }
+                    />
+                }
+            />
+
+            <div>
+                <TrendHero
+                    trend={heroMedia}
                 />
 
-                <div>
-                    <TrendHero
-                        trend={heroMedia}
-                    />
-
-                    <TrendGrid
-                        data={filteredTrends}
-                    />
-                </div>
+                <TrendGrid
+                    data={filteredTrends}
+                />
             </div>
-        </PageTitle>
+        </div>
     );
 }

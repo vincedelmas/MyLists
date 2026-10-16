@@ -26,7 +26,7 @@ export function ErrorCatchBoundary({ error }: Readonly<ErrorComponentProps>) {
             <ErrorComponent
                 icon={<Skull/>}
                 title="Well, This is Awkward"
-                footerText="If this keeps happening, we probably broke something important."
+                footerText="If this keeps happening, I probably broke something important."
                 text="Sorry, it looks like something isn't working right now. Please try refreshing the page or come back later."
             />
         );
@@ -34,7 +34,7 @@ export function ErrorCatchBoundary({ error }: Readonly<ErrorComponentProps>) {
 
     return (
         <ErrorComponent
-            footerText="If this keeps happening, we probably broke something important."
+            footerText="If this keeps happening, I probably broke something important."
             title={upstreamFailure
                 ? "App Temporarily Unavailable"
                 : "An Error Occurred"

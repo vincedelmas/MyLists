@@ -1,13 +1,13 @@
 import React, {useId} from "react";
 import {EyeOff, ListOrdered, Shuffle} from "lucide-react";
-import {Input} from "@/lib/client/components/ui/input";
 import {Controller, useFormContext, useWatch} from "react-hook-form";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
 import {CuratedMediaManager} from "@/lib/client/components/user-settings/CuratedMediaManager";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab} from "@/lib/types/profile-custom.types";
+import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 
 
 interface TabCustomContentProps {
@@ -45,34 +45,25 @@ export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache }: T
             </CardHeader>
             <CardContent className="p-5 sm:p-6">
                 <FieldGroup className="gap-6">
-                    <Controller
+                    <FormTextField
+                        maxLength={50}
                         control={control}
+                        label="Section title"
+                        id={`${fieldId}-title`}
                         name={`${activeTab}.title`}
-                        render={({field, fieldState}) =>
-                            <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor={`${fieldId}-title`}>Section title</FieldLabel>
-                                <Input
-                                    {...field}
-                                    id={`${fieldId}-title`}
-                                    maxLength={50}
-                                    placeholder="Highlighted media"
-                                    aria-invalid={fieldState.invalid}
-                                />
-                                <FieldDescription>
-                                    This heading appears above the media on your profile.
-                                </FieldDescription>
-                                <FieldError errors={[fieldState.error]}/>
-                            </Field>
-                        }
+                        placeholder="Highlighted media"
+                        description="This heading appears above the media on your profile."
                     />
 
                     <Controller
                         control={control}
                         name={`${activeTab}.mode`}
-                        render={({field, fieldState}) =>
+                        render={({ field, fieldState }) =>
                             <Field data-invalid={fieldState.invalid}>
                                 <FieldSet>
-                                    <FieldLegend id={`${fieldId}-mode`} variant="label">What to show</FieldLegend>
+                                    <FieldLegend id={`${fieldId}-mode`} variant="label">
+                                        What to show
+                                    </FieldLegend>
                                     <RadioGroup
                                         value={field.value}
                                         onValueChange={field.onChange}

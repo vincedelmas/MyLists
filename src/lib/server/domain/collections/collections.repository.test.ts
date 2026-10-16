@@ -1,10 +1,13 @@
+import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
+import {eq} from "drizzle-orm";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
+
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MediaType, PrivacyType, RoleType} from "@/lib/utils/enums";
+import {MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 import {AuthorizationService, toActor} from "@/lib/server/authorization";
 import type {SocialService} from "@/lib/server/domain/social/social.service";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
@@ -13,13 +16,14 @@ import {CollectionsService} from "@/lib/server/domain/collections/collections.se
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
-
 const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
 
 
 vi.mock("@/lib/server/database/db", () => ({
     get db() { return dbContext.db; },
 }));
+vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "https://mylists.example.invalid" } }));
+vi.mock("@/env/server", () => ({ serverEnv: { UPLOADS_DIR_NAME: "static" } }));
 
 
 describe("collection media references", () => {
@@ -32,7 +36,6 @@ describe("collection media references", () => {
         description: "My favorite movies",
         ordered: true,
         privacy: PrivacyType.PUBLIC,
-        mediaType: MediaType.MOVIES,
     };
 
     const snapshot = () => ({
@@ -55,11 +58,11 @@ describe("collection media references", () => {
         db.insert(schema.movies).values([1, 2, 3].map(id => ({
             ...media, id, apiId: 100 + id, name: `Movie ${id}`, duration: 90,
         }))).run();
-        db.insert(schema.series).values({ ...media, duration: 30, totalSeasons: 1, totalEpisodes: 10 }).run();
-        db.insert(schema.anime).values({ ...media, duration: 24, totalSeasons: 1, totalEpisodes: 12 }).run();
-        db.insert(schema.books).values({ ...media, apiId: "book-101", pages: 200 }).run();
-        db.insert(schema.manga).values({ ...media, chapters: 10 }).run();
-        db.insert(schema.games).values([media, { ...media, id: 77, apiId: 177 }]).run();
+        db.insert(schema.series).values({ ...media, name: "Series 1", duration: 30, totalSeasons: 1, totalEpisodes: 10 }).run();
+        db.insert(schema.anime).values({ ...media, name: "Anime 1", duration: 24, totalSeasons: 1, totalEpisodes: 12 }).run();
+        db.insert(schema.books).values({ ...media, name: "Book 1", apiId: "book-101", pages: 200 }).run();
+        db.insert(schema.manga).values({ ...media, name: "Manga 1", chapters: 10 }).run();
+        db.insert(schema.games).values([{ ...media, name: "Game 1" }, { ...media, id: 77, apiId: 177 }]).run();
 
         const mediaRegistry = {
             get: (mediaType: MediaType) => createMediaQueries(getServerMediaDefinition(mediaType)),
@@ -73,56 +76,8 @@ describe("collection media references", () => {
 
     afterEach(() => sqlite.close());
 
-    it.each(Object.values(MediaType))("accepts existing %s IDs and rejects unknown IDs without creating a partial collection", async mediaType => {
-        const collectionId = service.createCollection({ ...collectionData, mediaType, items: [{ mediaId: 1 }] });
-        const before = snapshot();
-
-        expect(() => service.createCollection({
-            ...collectionData, mediaType, items: [{ mediaId: 1 }, { mediaId: 999 }],
-        })).toThrow(FormattedError);
-        expect(snapshot()).toEqual(before);
-
-        const result = await service.getCollectionDetails(collectionId, "read", actor);
-        expect(result.items).toHaveLength(1);
-        expect(result.items[0]).toMatchObject({ mediaId: 1, orderIndex: 1 });
-    });
-
-    it("rejects an ID that exists only in a different media type", () => {
-        expect(() => service.createCollection({
-            ...collectionData, items: [{ mediaId: 77 }],
-        })).toThrow(FormattedError);
-
-        expect(snapshot()).toEqual({ collections: [], items: [] });
-    });
-
-    it("preserves collection details, order, and annotations when an edit contains an unknown ID", () => {
-        const collectionId = service.createCollection({
-            ...collectionData, items: [{ mediaId: 1, annotation: "Keep me" }, { mediaId: 2 }],
-        });
-        const before = snapshot();
-
-        expect(() => service.updateCollection({
-            actor, collectionId, title: "Changed title", description: "Changed description",
-            ordered: false, privacy: PrivacyType.PRIVATE,
-            items: [{ mediaId: 2, annotation: "Changed annotation" }, { mediaId: 999 }],
-        })).toThrow(FormattedError);
-
-        expect(snapshot()).toEqual(before);
-    });
-
-    it("rejects adding an unknown item to an existing collection", () => {
-        const collectionId = service.createCollection({ ...collectionData, items: [{ mediaId: 1 }] });
-        const before = snapshot();
-
-        expect(() => service.addMediaToCollection({
-            actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 999,
-        })).toThrow(FormattedError);
-
-        expect(snapshot()).toEqual(before);
-    });
-
     it("rejects copying legacy invalid references without creating a copy or incrementing its counter", () => {
-        const collectionId = service.createCollection({ ...collectionData, items: [{ mediaId: 1 }] });
+        const collectionId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
         dbContext.db.insert(schema.collectionItems).values({
             collectionId, mediaId: 999, mediaType: MediaType.MOVIES, orderIndex: 2,
         }).run();
@@ -133,39 +88,304 @@ describe("collection media references", () => {
         expect(snapshot()).toEqual(before);
     });
 
-    it("keeps valid items readable and editable while preserving deduplication, ordering, and annotations", async () => {
+    it("keeps same-ID media distinct through creation, editing, copying, additions and removals", async () => {
+        const types = Object.values(MediaType);
         const collectionId = service.createCollection({
             ...collectionData,
-            items: [{ mediaId: 2, annotation: "Second first" }, { mediaId: 1 }, { mediaId: 2, annotation: "Duplicate" }],
+            items: [
+                ...types.map(mediaType => ({ mediaType, mediaId: 1, annotation: `Original ${mediaType}` })),
+                { mediaType: MediaType.MOVIES, mediaId: 1, annotation: "Discard duplicate" },
+            ],
         });
-        expect(CollectionsRepository.getCollectionItems(collectionId)).toMatchObject([
-            { mediaId: 2, orderIndex: 1, annotation: "Second first" },
-            { mediaId: 1, orderIndex: 2, annotation: null },
-        ]);
-
-        service.updateCollection({
-            actor, collectionId, title: "Updated favorites", ordered: true, privacy: PrivacyType.PUBLIC,
-            items: [{ mediaId: 1, annotation: "First now" }, { mediaId: 2 }, { mediaId: 1 }],
-        });
-        service.addMediaToCollection({ actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 1 });
-        service.addMediaToCollection({ actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 3 });
-
+        expect(CollectionsRepository.getCollectionById(collectionId)).toMatchObject({ itemsCount: 6 });
+        expect(CollectionsRepository.getCollectionById(collectionId)!.mediaTypes).toEqual(expect.arrayContaining(types));
         for (const mode of ["read", "edit"] as const) {
             const result = await service.getCollectionDetails(collectionId, mode, actor);
-            expect(result.items).toMatchObject([
-                { mediaId: 1, mediaName: "Movie 1", orderIndex: 1, annotation: "First now" },
-                { mediaId: 2, mediaName: "Movie 2", orderIndex: 2, annotation: null },
-                { mediaId: 3, mediaName: "Movie 3", orderIndex: 3, annotation: null },
-            ]);
+            expect(result.total).toBe(6);
+            expect(result.items.map(item => [item.mediaType, item.mediaId, item.annotation])).toEqual(
+                types.map(type => [type, 1, `Original ${type}`]),
+            );
+            expect(new Set(result.items.map(item => item.mediaName)).size).toBe(6);
+            expect(result.items.every(item => item.mediaCover.includes(`${item.mediaType}-covers/`))).toBe(true);
         }
 
+        service.updateCollection({
+            actor, collectionId, title: "A mixed universe", ordered: true, privacy: PrivacyType.PUBLIC,
+            items: [...types].reverse().map(mediaType => ({ mediaType, mediaId: 1, annotation: `Updated ${mediaType}` })),
+        });
+        service.addMediaToCollection({ actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 1 });
+        service.addMediaToCollection({ actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 2 });
+        service.addMediaToCollection({ actor, collectionId, mediaType: MediaType.GAMES, mediaId: 77 });
+        service.removeMediaFromCollection({ actor, collectionId, mediaType: MediaType.BOOKS, mediaId: 1 });
+        const remaining = CollectionsRepository.getCollectionItems(collectionId);
+        expect(remaining).toHaveLength(7);
+        expect(remaining.some(item => item.mediaType === MediaType.MOVIES && item.mediaId === 1)).toBe(true);
+        expect(remaining.some(item => item.mediaType === MediaType.BOOKS && item.mediaId === 1)).toBe(false);
+        expect(CollectionsRepository.getCollectionById(collectionId)!.mediaTypes).not.toContain(MediaType.BOOKS);
+
         const copy = service.copyCollection(collectionId, toActor({ id: 2, role: RoleType.USER }));
-        expect(CollectionsRepository.getCollectionById(copy.id)).toMatchObject({ ownerId: 2, privacy: PrivacyType.PRIVATE });
-        expect(CollectionsRepository.getCollectionItems(copy.id)).toMatchObject([
-            { mediaId: 1, orderIndex: 1, annotation: "First now" },
-            { mediaId: 2, orderIndex: 2, annotation: null },
-            { mediaId: 3, orderIndex: 3, annotation: null },
+        expect(CollectionsRepository.getCollectionById(copy.id)).toMatchObject({ ownerId: 2, itemsCount: 7, privacy: PrivacyType.PRIVATE });
+        expect(CollectionsRepository.getCollectionItems(copy.id).map(({ mediaId, mediaType, orderIndex, annotation }) => ({ mediaId, mediaType, orderIndex, annotation })))
+            .toEqual(remaining.map(({ mediaId, mediaType, orderIndex, annotation }) => ({ mediaId, mediaType, orderIndex, annotation })));
+        expect(CollectionsRepository.getCollectionById(collectionId)!.copiedCount).toBe(1);
+    });
+
+    it("validates every media type before replacing existing mixed collection data", () => {
+        const collectionId = service.createCollection({
+            ...collectionData,
+            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }, { mediaType: MediaType.BOOKS, mediaId: 1, annotation: "Book note" }],
+        });
+        const before = snapshot();
+        const items = [{ mediaType: MediaType.MOVIES, mediaId: 2 }, { mediaType: MediaType.BOOKS, mediaId: 77 }];
+        expect(() => service.createCollection({ ...collectionData, items })).toThrow(FormattedError);
+        expect(snapshot()).toEqual(before);
+        expect(() => service.updateCollection({
+            actor, collectionId, title: "Do not save", description: "Do not save", ordered: false,
+            privacy: PrivacyType.PRIVATE, items,
+        })).toThrow(FormattedError);
+        expect(snapshot()).toEqual(before);
+    });
+
+    it("keeps ranks consecutive after removing items without changing their order or annotations", async () => {
+        const collectionId = service.createCollection({
+            ...collectionData,
+            items: [
+                { mediaType: MediaType.MOVIES, mediaId: 2 },
+                { mediaType: MediaType.BOOKS, mediaId: 1, annotation: "Keep this note" },
+                { mediaType: MediaType.MOVIES, mediaId: 1 },
+                { mediaType: MediaType.GAMES, mediaId: 77 },
+                { mediaType: MediaType.MANGA, mediaId: 1 },
+            ],
+        });
+
+        for (const [mediaType, mediaId] of [
+            [MediaType.MOVIES, 1],
+            [MediaType.MOVIES, 2],
+            [MediaType.MANGA, 1],
+        ] as const) {
+            service.removeMediaFromCollection({ actor, collectionId, mediaType, mediaId });
+            const items = CollectionsRepository.getCollectionItems(collectionId);
+            expect(items.map(item => item.orderIndex)).toEqual(items.map((_, index) => index + 1));
+        }
+
+        service.addMediaToCollection({ actor, collectionId, mediaType: MediaType.MOVIES, mediaId: 1 });
+        const result = await service.getCollectionDetails(collectionId, "read", actor);
+        expect(result.items).toMatchObject([
+            { mediaType: MediaType.BOOKS, mediaId: 1, orderIndex: 1, annotation: "Keep this note" },
+            { mediaType: MediaType.GAMES, mediaId: 77, orderIndex: 2 },
+            { mediaType: MediaType.MOVIES, mediaId: 1, orderIndex: 3 },
         ]);
-        expect(CollectionsRepository.getCollectionById(collectionId)?.copiedCount).toBe(1);
+    });
+
+    it("orders community collections by likes, then views, with stable pagination", async () => {
+        const ids = [
+            service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] }),
+            service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] }),
+            service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] }),
+        ];
+        dbContext.db.update(schema.collections).set({ likeCount: 2, viewCount: 1 }).where(eq(schema.collections.id, ids[0]!)).run();
+        dbContext.db.update(schema.collections).set({ likeCount: 1, viewCount: 100 }).where(eq(schema.collections.id, ids[1]!)).run();
+        dbContext.db.update(schema.collections).set({ likeCount: 1, viewCount: 50 }).where(eq(schema.collections.id, ids[2]!)).run();
+        const directory = await CollectionsRepository.getPublicCollections({ page: 1 });
+        expect(directory.items.map(item => item.id)).toEqual(ids);
+        const mediaCollections = await CollectionsRepository.getMediaCommunityCollections(1, MediaType.MOVIES);
+        expect(mediaCollections.map(item => item.id)).toEqual(ids);
+        dbContext.db.update(schema.collections).set({ viewCount: 100 }).where(eq(schema.collections.id, ids[2]!)).run();
+        expect((await CollectionsRepository.getPublicCollections({ page: 1 })).items.map(item => item.id))
+            .toEqual([ids[0], ids[2], ids[1]]);
+    });
+
+    it("globally sorts, searches and paginates mixed results while preserving collection ranks", async () => {
+        const entries = Array.from({ length: 32 }, (_, index) => ({
+            id: 10 + Math.floor(index / 2),
+            mediaType: index % 2 === 0 ? MediaType.MOVIES : MediaType.BOOKS,
+            name: `Entry ${String(index + 1).padStart(2, "0")}`,
+            releaseDate: index === 31 ? null : index % 2 === 0
+                ? `${2000 + index}-01-01 00:00:00` : `${2000 + index}-01-01T00:00:00.000Z`,
+        }));
+        dbContext.db.insert(schema.movies).values(entries.filter(item => item.mediaType === MediaType.MOVIES).map(({ mediaType: _, ...item }) => ({
+            ...item, apiId: 100 + item.id, duration: 90, imageCover: "movie.jpg",
+        }))).run();
+        dbContext.db.insert(schema.books).values(entries.filter(item => item.mediaType === MediaType.BOOKS).map(({ mediaType: _, ...item }) => ({
+            ...item, apiId: `book-${item.id}`, pages: 200, imageCover: "book.jpg",
+        }))).run();
+        const collectionId = service.createCollection({
+            ...collectionData,
+            items: [...entries].reverse().map(item => ({ mediaType: item.mediaType, mediaId: item.id, annotation: `Note ${item.name}` })),
+        });
+        const first = await service.getCollectionDetails(collectionId, "read", toActor());
+        expect(first).toMatchObject({ total: 32, pages: 2, page: 1, perPage: 24 });
+        expect(first.items.map(item => item.mediaName)).toEqual([...entries].reverse().slice(0, 24).map(item => item.name));
+        const second = await service.getCollectionDetails(collectionId, "read", toActor(), { page: 2 });
+        expect(second.items.map(item => item.orderIndex)).toEqual([25, 26, 27, 28, 29, 30, 31, 32]);
+        const sorted = await service.getCollectionDetails(collectionId, "read", toActor(), { sorting: "title_asc" });
+        expect(sorted.items.map(item => item.mediaName)).toEqual(entries.slice(0, 24).map(item => item.name));
+        const sortedSecond = await service.getCollectionDetails(collectionId, "read", toActor(), { sorting: "title_asc", page: 2 });
+        expect(sortedSecond.items.map(item => item.mediaName)).toEqual(entries.slice(24).map(item => item.name));
+        const found = await service.getCollectionDetails(collectionId, "read", toActor(), { search: "Entry 01" });
+        expect(found).toMatchObject({ total: 1, items: [{ mediaType: MediaType.MOVIES, mediaId: 10, orderIndex: 32, annotation: "Note Entry 01" }] });
+        const latest = await service.getCollectionDetails(collectionId, "read", toActor(), { sorting: "release_newest" });
+        expect(latest.items[0].mediaName).toBe("Entry 31");
+        const oldest = await service.getCollectionDetails(collectionId, "read", toActor(), { sorting: "release_oldest", page: 2 });
+        expect(oldest.items.at(-1)!.mediaName).toBe("Entry 32");
+        const books = await service.getCollectionDetails(collectionId, "read", toActor(), { mediaType: MediaType.BOOKS, sorting: "title_asc" });
+        expect(books.total).toBe(16);
+        expect(books.items.every(item => item.mediaType === MediaType.BOOKS)).toBe(true);
+        expect(books.filterOptions.mediaTypes).toEqual(expect.arrayContaining([MediaType.MOVIES, MediaType.BOOKS]));
+        const absent = await service.getCollectionDetails(collectionId, "read", toActor(), { mediaType: MediaType.MANGA });
+        expect(absent).toMatchObject({ total: 0, items: [], pages: 0 });
+    });
+
+    it("joins tracking membership by media type and viewer, including same numeric IDs", async () => {
+        const collectionId = service.createCollection({
+            ...collectionData,
+            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }, { mediaType: MediaType.BOOKS, mediaId: 1 }, { mediaType: MediaType.GAMES, mediaId: 1 }],
+        });
+        dbContext.db.insert(schema.moviesList).values({ userId: 2, mediaId: 1, status: Status.COMPLETED, rating: 9, customCover: "viewer.jpg" }).run();
+        dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.COMPLETED, rating: 10, customCover: "owner-private.jpg" }).run();
+        const viewer = toActor({ id: 2, role: RoleType.USER });
+        const tracked = await service.getCollectionDetails(collectionId, "read", viewer, { library: "in" });
+        expect(tracked).toMatchObject({ total: 1, items: [{ mediaType: MediaType.MOVIES, mediaId: 1, inUserList: true, rating: 9 }] });
+        expect(tracked.items[0].mediaCover).toBe("https://mylists.example.invalid/static/movies-covers/viewer.jpg");
+        const untracked = await service.getCollectionDetails(collectionId, "read", viewer, { library: "out" });
+        expect(untracked.total).toBe(2);
+        expect(untracked.items.map(item => item.mediaType)).toEqual([MediaType.BOOKS, MediaType.GAMES]);
+        expect(untracked.items.every(item => item.status === null && item.rating === null && !item.inUserList)).toBe(true);
+        expect(untracked.items[0].mediaCover).not.toContain("owner-private");
+        await expect(service.getCollectionDetails(collectionId, "read", toActor(), { library: "in" })).rejects.toThrow("Sign in");
+    });
+
+it("hydrates the viewer's full tracking rows for every media type without exposing another user's data", async () => {
+        const collectionId = service.createCollection({
+            ...collectionData,
+            items: Object.values(MediaType).map(mediaType => ({ mediaType, mediaId: 1, annotation: `Note ${mediaType}` })),
+        });
+        const tracking = { userId: 2, mediaId: 1, status: Status.COMPLETED, rating: 8, favorite: true, comment: "Viewer note" };
+        dbContext.db.update(schema.user).set({ ratingSystem: RatingSystemType.FEELING }).where(eq(schema.user.id, 2)).run();
+        dbContext.db.insert(schema.moviesList).values({ ...tracking, redo: 3 }).run();
+        dbContext.db.insert(schema.booksList).values({ ...tracking, actualPage: 123, redo: 2, customCover: "viewer-book.jpg" }).run();
+        dbContext.db.insert(schema.gamesList).values({ ...tracking, playtime: 120 }).run();
+        dbContext.db.insert(schema.mangaList).values({ ...tracking, currentChapter: 7, redo: 1 }).run();
+        dbContext.db.insert(schema.seriesList).values({ ...tracking, currentSeason: 1, currentEpisode: 4, redo: 2 }).run();
+        dbContext.db.insert(schema.animeList).values({ ...tracking, currentSeason: 1, currentEpisode: 5, redo: 1 }).run();
+        dbContext.db.insert(schema.seriesEpisodesPerSeason).values({ mediaId: 1, season: 1, episodes: 10 }).run();
+        dbContext.db.insert(schema.animeEpisodesPerSeason).values({ mediaId: 1, season: 1, episodes: 12 }).run();
+        seedMediaTags(dbContext.db, MediaType.BOOKS, [
+            { userId: 2, mediaId: 1, name: "Viewer tag" },
+            { userId: 1, mediaId: 1, name: "Owner private tag" },
+        ]);
+        dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.READING, actualPage: 99, comment: "Owner private note" }).run();
+
+        const viewer = await service.getCollectionDetails(collectionId, "read", toActor({ id: 2, role: RoleType.USER }));
+        expect(viewer.items).toHaveLength(6);
+        for (const item of viewer.items) {
+            expect(item.userMedia).toMatchObject({
+                userId: 2, mediaId: 1, status: Status.COMPLETED, rating: 8, favorite: true,
+                comment: "Viewer note", ratingSystem: RatingSystemType.FEELING,
+            });
+            expect(item.annotation).toBe(`Note ${item.mediaType}`);
+        }
+        const byType = new Map(viewer.items.map(item => [item.mediaType, item.userMedia]));
+        expect(byType.get(MediaType.MOVIES)).toMatchObject({ redo: 3 });
+        expect(byType.get(MediaType.BOOKS)).toMatchObject({
+            actualPage: 123, pages: 200, redo: 2,
+            imageCover: "https://mylists.example.invalid/static/books-covers/viewer-book.jpg",
+            tags: [{ name: "Viewer tag" }],
+        });
+        expect(byType.get(MediaType.GAMES)).toMatchObject({ playtime: 120 });
+        expect(byType.get(MediaType.MANGA)).toMatchObject({ currentChapter: 7, chapters: 10 });
+        expect(byType.get(MediaType.SERIES)).toMatchObject({ currentEpisode: 4, epsPerSeason: [{ season: 1, episodes: 10 }] });
+        expect(byType.get(MediaType.ANIME)).toMatchObject({ currentEpisode: 5, epsPerSeason: [{ season: 1, episodes: 12 }] });
+
+        const anonymous = await service.getCollectionDetails(collectionId, "read", toActor());
+        expect(anonymous.items.every(item => item.userMedia === null)).toBe(true);
+        expect(JSON.stringify(anonymous.items)).not.toContain("Viewer note");
+        expect(JSON.stringify(anonymous.items)).not.toContain("Owner private");
+
+        const owner = await service.getCollectionDetails(collectionId, "read", actor);
+        expect(owner.items.filter(item => item.userMedia)).toHaveLength(1);
+        expect(owner.items.find(item => item.mediaType === MediaType.BOOKS)!.userMedia).toMatchObject({
+            userId: 1, actualPage: 99, comment: "Owner private note", tags: [{ name: "Owner private tag" }],
+        });
+    });
+
+    it("scopes personal filter options to the viewer's tracked collection items independently of runtime filters", async () => {
+        const collectionId = service.createCollection({
+            ...collectionData,
+            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }, { mediaType: MediaType.BOOKS, mediaId: 1 }, { mediaType: MediaType.GAMES, mediaId: 1 }],
+        });
+        dbContext.db.insert(schema.moviesList).values([
+            { userId: 2, mediaId: 1, status: Status.COMPLETED, favorite: true, rating: 9 },
+            { userId: 2, mediaId: 2, status: Status.COMPLETED },
+        ]).run();
+        dbContext.db.insert(schema.booksList).values({ userId: 2, mediaId: 1, status: Status.READING, favorite: false, rating: 5 }).run();
+        dbContext.db.insert(schema.gamesList).values({ userId: 1, mediaId: 1, status: Status.COMPLETED }).run();
+        dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 2, name: "Outside collection" }]).run();
+        dbContext.db.insert(schema.booksGenre).values({ mediaId: 1, name: "Fantasy" }).run();
+        dbContext.db.insert(schema.gamesGenre).values({ mediaId: 1, name: "Untracked genre" }).run();
+        seedMediaTags(dbContext.db, MediaType.MOVIES, [
+            { userId: 2, mediaId: 1, name: "Watch again" },
+            { userId: 2, mediaId: 2, name: "Outside collection" },
+            { userId: 1, mediaId: 1, name: "Private tag" },
+        ]);
+        seedMediaTags(dbContext.db, MediaType.BOOKS, { userId: 2, mediaId: 1, name: "Bookshelf" });
+        const viewer = toActor({ id: 2, role: RoleType.USER });
+        const filtered = await service.getCollectionDetails(collectionId, "read", viewer, {
+            library: "in", status: Status.COMPLETED, favorite: true, minRating: 8, tags: ["Watch again"], genres: ["Drama"], sorting: "rating_highest",
+        }, true);
+        expect(filtered).toMatchObject({ total: 1, items: [{ mediaType: MediaType.MOVIES }] });
+        expect(filtered.filterOptions).toMatchObject({ genres: ["Drama", "Fantasy"], tags: ["Bookshelf", "Watch again"] });
+        const narrowed = await service.getCollectionDetails(collectionId, "read", viewer, {
+            library: "in", mediaType: MediaType.BOOKS, search: "does not match",
+        }, true);
+        expect(narrowed.total).toBe(0);
+        expect(narrowed.filterOptions).toMatchObject({ genres: ["Drama", "Fantasy"], tags: ["Bookshelf", "Watch again"] });
+        expect(narrowed.filterOptions.mediaTypes).toEqual(filtered.filterOptions.mediaTypes);
+        const scoped = await service.getCollectionDetails(collectionId, "read", viewer, {
+            page: 1, mediaFilters: { movies: { genres: ["Missing"], tags: ["Watch again"] } },
+        }, true);
+        expect(scoped.items.map(item => item.mediaType).sort()).toEqual([MediaType.BOOKS, MediaType.GAMES]);
+        expect(scoped.filterOptions).toMatchObject({ mediaFilters: { movies: { genres: [{ name: "Drama" }], tags: [{ name: "Watch again" }] } } });
+        expect(scoped.filterOptions).toMatchObject({ mediaFilters: { books: { genres: [{ name: "Fantasy" }], tags: [{ name: "Bookshelf" }] } } });
+        const guest = await service.getCollectionDetails(collectionId, "read", toActor(null), {
+            page: 1, mediaFilters: { books: { genres: ["Missing"] } },
+        });
+        expect(guest.items.map(item => item.mediaType).sort()).toEqual([MediaType.GAMES, MediaType.MOVIES]);
+        const absentType = await service.getCollectionDetails(collectionId, "read", viewer, {
+            mediaType: MediaType.MANGA,
+        }, true);
+        expect(absentType).toMatchObject({ total: 0, items: [] });
+        expect(absentType.filterOptions).toEqual(scoped.filterOptions);
+    });
+
+    it("filters pinned collections before pagination while preserving visibility and media filters", async () => {
+        const movieId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
+        const bookId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.BOOKS, mediaId: 1 }] });
+        service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 2 }] });
+        const privateId = service.createCollection({ ...collectionData, privacy: PrivacyType.PRIVATE, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
+        for (const [index, id] of [movieId, bookId, privateId].entries()) {
+            dbContext.db.update(schema.collections).set({ profilePosition: index + 1 }).where(eq(schema.collections.id, id)).run();
+        }
+
+        const result = await service.getPaginatedUserCollections(1, { pinnedOnly: true, mediaType: MediaType.MOVIES, page: 1 }, toActor(), true);
+        expect(result).toMatchObject({ total: 1, page: 1, pages: 1, items: [{ id: movieId }] });
+
+        dbContext.db.update(schema.collections).set({ profilePosition: null }).where(eq(schema.collections.id, movieId)).run();
+        await expect(service.getPaginatedUserCollections(1, { pinnedOnly: true, mediaType: MediaType.MOVIES }, toActor(), true))
+            .resolves.toMatchObject({ total: 0, items: [] });
+    });
+
+    it("filters restricted and private collections in SQL when only public summaries are allowed", async () => {
+        dbContext.db.update(schema.user).set({ privacy: PrivacyType.PRIVATE }).where(eq(schema.user.id, 1)).run();
+        const publicId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.BOOKS, mediaId: 1 }] });
+        service.createCollection({ ...collectionData, privacy: PrivacyType.RESTRICTED, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
+        service.createCollection({ ...collectionData, privacy: PrivacyType.PRIVATE, items: [{ mediaType: MediaType.GAMES, mediaId: 1 }] });
+
+        const anonymous = await service.getPaginatedUserCollections(1, { page: 1 }, toActor(), true);
+        expect(anonymous).toMatchObject({ total: 1, items: [{ id: publicId, previews: [{ mediaType: MediaType.BOOKS }] }] });
+        const owner = await service.getPaginatedUserCollections(1, { page: 1 }, actor);
+        expect(owner.total).toBe(3);
+        const forcedPublic = await service.getPaginatedUserCollections(1, { page: 1 }, actor, true);
+        expect(forcedPublic).toMatchObject({ total: 1, items: [{ id: publicId }] });
     });
 });

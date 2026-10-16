@@ -1,24 +1,22 @@
 import {toActor} from "@/lib/server/authorization";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {contentAuthorizationMiddleware} from "@/lib/server/middlewares/authorization";
 import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     collectionDetailsReadSchema,
+    collectionFilterSearchSchema,
     collectionIdSchema,
     collectionMediaItemActionSchema,
-    collectionMediaMembershipsSchema,
-    communityCollectionsSchema,
+    collectionsBrowseFiltersSchema,
     createCollectionSchema,
-    mediaCommunityCollectionsSchema,
-    updateCollectionSchema,
-    userCollectionsSearchSchema
+    mediaTypeMediaIdSchema,
+    updateCollectionSchema
 } from "@/lib/schemas";
 
 
 export const getCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(communityCollectionsSchema)
+    .validator(collectionsBrowseFiltersSchema)
     .handler(async ({ data: { search, page, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -28,7 +26,7 @@ export const getCommunityCollections = createServerFn({ method: "GET" })
 
 export const getMediaCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(mediaCommunityCollectionsSchema)
+    .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaId, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -39,26 +37,34 @@ export const getMediaCommunityCollections = createServerFn({ method: "GET" })
 export const getReadCollectionDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
     .validator(collectionDetailsReadSchema)
-    .handler(async ({ data: { collectionId, page }, context: { currentUser } }) => {
+    .handler(async ({ data: { collectionId, includeFilterOptions, ...filters }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser), page);
+        return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser), filters, includeFilterOptions);
     });
 
 
-export const getPaginatedUserCollections = createServerFn({ method: "GET" })
-    .middleware([contentAuthorizationMiddleware])
-    .validator(userCollectionsSearchSchema)
-    .handler(async ({ data: { search, page, mediaType }, context: { user, currentUser } }) => {
+export const getCollectionSearchFilters = createServerFn({ method: "GET" })
+    .middleware([publicAuthMiddleware])
+    .validator(collectionFilterSearchSchema)
+    .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        const collectionService = container.services.collections;
-        return collectionService.getPaginatedUserCollections(user.id, { search, page, mediaType }, toActor(currentUser));
+        return container.services.collections.searchCollectionFilters(data, toActor(currentUser));
+    });
+
+
+export const postRecordCollectionView = createServerFn({ method: "POST" })
+    .middleware([publicAuthMiddleware])
+    .validator(collectionIdSchema)
+    .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
+        const container = await getContainer();
+        return container.services.collections.recordCollectionView(collectionId, toActor(currentUser));
     });
 
 
 export const getUserCollectionMemberships = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .validator(collectionMediaMembershipsSchema)
+    .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaId, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;

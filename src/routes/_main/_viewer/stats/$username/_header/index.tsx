@@ -5,13 +5,12 @@ import {capitalize} from "@/lib/utils/formatting/text";
 import {formatHours} from "@/lib/utils/formatting/number";
 import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {YearRecapReleaseStatus} from "@/lib/types/year-recap.types";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {createFileRoute, Link, redirect} from "@tanstack/react-router";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {TabNav, TabItem} from "@/lib/client/components/general/TabNav";
 import {CalendarRange, ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
 import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
@@ -33,7 +32,7 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
             : undefined,
     }),
     loader: async ({ context, params: { username }, deps: { search } }) => {
-        const releases = await context.queryClient.ensureQueryData(context.yearRecapReleasesQueryOptions);
+        const releases = await context.queryClient.query({ ...context.yearRecapReleasesQueryOptions, staleTime: "static" });
 
         if (search.recap) {
             if (!releases.some(({ year, isAvailable }) => year === search.recap && isAvailable)) {
@@ -44,7 +43,7 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
                 });
             }
 
-            const recap = await context.queryClient.ensureQueryData(context.yearRecapQueryOptions!);
+            const recap = await context.queryClient.query({ ...context.yearRecapQueryOptions!, staleTime: "static" });
 
             if (search.activeTab !== "overview" && !recap.availableMediaTypes.includes(search.activeTab)) {
                 throw redirect({
@@ -58,7 +57,7 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
         }
 
         try {
-            await context.queryClient.ensureQueryData(context.userStatsQueryOptions!);
+            await context.queryClient.query({ ...context.userStatsQueryOptions!, staleTime: "static" });
         }
         catch (error) {
             if (search.activeTab !== "overview" && error instanceof InactiveMediaTypeError) {
@@ -74,6 +73,9 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
         return { view: "all-time" as const, releases };
     },
     component: UserStatsPage,
+    head: ({ params: { username }, match: { search } }) => ({
+        meta: [{ title: `${username} ${search.recap ? `Recap ${search.recap}` : "Stats"} - MyLists` }],
+    }),
 });
 
 
@@ -102,42 +104,40 @@ function AllTimeStatsPage({ releases, queryOptions }: {
     const trackedHours = isOverview ? apiData.totalHours : apiData.timeSpentHours;
 
     return (
-        <PageTitle title={`${username} Stats`} onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    asideIcon={Clock3}
-                    eyebrow="At a glance"
-                    title={`${username}'s stats`}
-                    asideValue={formatHours(trackedHours)}
-                    eyebrowIcon={ChartNoAxesColumnIncreasing}
-                    description={`A look at what ${username} has tracked, rated and enjoyed.`}
-                    asideLabel={
-                        <span className="flex items-center gap-1.5">
-                            {isOverview
-                                ? "Total time tracked"
-                                : `${capitalize(apiData.mediaType)} time tracked`
-                            }
-                            <InfoPopover label="Statistics cache information">
-                                Statistics are cached for 1h, so recent changes may take time to appear.
-                            </InfoPopover>
-                        </span>
-                    }
-                    navigation={
-                        <StatsNavigation
-                            releases={releases}
-                            mediaTabs={mediaTabs}
-                        />
-                    }
-                />
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                asideIcon={Clock3}
+                eyebrow="At a glance"
+                title={`${username}'s stats`}
+                asideValue={formatHours(trackedHours)}
+                eyebrowIcon={ChartNoAxesColumnIncreasing}
+                description={`A look at what ${username} has tracked, rated and enjoyed.`}
+                asideLabel={
+                    <span className="flex items-center gap-1.5">
+                        {isOverview
+                            ? "Total time tracked"
+                            : `${capitalize(apiData.mediaType)} time tracked`
+                        }
+                        <InfoPopover label="Statistics cache information">
+                            Statistics are cached for 1h, so recent changes may take time to appear.
+                        </InfoPopover>
+                    </span>
+                }
+                navigation={
+                    <StatsNavigation
+                        releases={releases}
+                        mediaTabs={mediaTabs}
+                    />
+                }
+            />
 
-                <DashboardContent
-                    data={apiData}
-                    showHero={false}
-                    subjectName={username}
-                    onSelectMediaType={(val) => void navigate({ search: (prev) => ({ ...prev, activeTab: val }) })}
-                />
-            </div>
-        </PageTitle>
+            <DashboardContent
+                data={apiData}
+                showHero={false}
+                subjectName={username}
+                onSelectMediaType={(val) => void navigate({ search: (prev) => ({ ...prev, activeTab: val }) })}
+            />
+        </div>
     );
 }
 
@@ -153,31 +153,29 @@ function RecapStatsPage({ releases, queryOptions }: {
     const mediaTabs = createMediaTabItems(recap.availableMediaTypes, { leading: "overview" }) as TabItem<StatsActiveTab>[];
 
     return (
-        <PageTitle title={`${username} Recap ${year}`} onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    asideIcon={Clock3}
-                    eyebrow="Year in review"
-                    eyebrowIcon={CalendarRange}
-                    title={`${username}'s ${year} recap`}
-                    asideValue={formatHours(recap.totals.hours)}
-                    asideLabel={recap.scope === "all" ? "Time tracked this year" : `${capitalize(recap.scope)} time tracked`}
-                    description={`A summary of ${username}'s time tracked, titles completed, and repeats in ${year}.`}
-                    navigation={
-                        <StatsNavigation
-                            releases={releases}
-                            mediaTabs={mediaTabs}
-                        />
-                    }
-                />
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                asideIcon={Clock3}
+                eyebrow="Year in review"
+                eyebrowIcon={CalendarRange}
+                title={`${username}'s ${year} recap`}
+                asideValue={formatHours(recap.totals.hours)}
+                asideLabel={recap.scope === "all" ? "Time tracked this year" : `${capitalize(recap.scope)} time tracked`}
+                description={`A summary of ${username}'s time tracked, titles completed, and repeats in ${year}.`}
+                navigation={
+                    <StatsNavigation
+                        releases={releases}
+                        mediaTabs={mediaTabs}
+                    />
+                }
+            />
 
-                <YearRecapDashboard
-                    recap={recap}
-                    showHero={false}
-                    canGenerateImage={currentUser?.name.toLocaleLowerCase() === username.toLocaleLowerCase()}
-                />
-            </div>
-        </PageTitle>
+            <YearRecapDashboard
+                recap={recap}
+                showHero={false}
+                canGenerateImage={currentUser?.name.toLocaleLowerCase() === username.toLocaleLowerCase()}
+            />
+        </div>
     );
 }
 
@@ -204,7 +202,7 @@ function StatsNavigation({ mediaTabs, releases }: StatsNavigationProps) {
 
     return (
         <>
-            <TabHeader
+            <TabNav
                 tabs={mediaTabs}
                 value={activeTab}
                 trailing={

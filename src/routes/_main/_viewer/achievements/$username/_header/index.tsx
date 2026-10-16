@@ -4,7 +4,7 @@ import {capitalize} from "@/lib/utils/formatting/text";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {achievementOptions} from "@/lib/client/react-query/query-options";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_main/_viewer/achievements/$username/_hea
         achievementQueryOptions: achievementOptions(username),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.achievementQueryOptions);
+        return context.queryClient.query({ ...context.achievementQueryOptions, staleTime: "static" });
     },
     component: AchievementPage,
 });
@@ -44,7 +44,7 @@ function AchievementPage() {
                 title={`${username}'s achievements`}
                 description={`See what ${username} has earned and how close the next achievements are.`}
                 navigation={
-                    <TabHeader
+                    <TabNav
                         tabs={mediaTabs}
                         value={currentTab}
                         triggerClassName="max-sm:px-3"

@@ -4,13 +4,11 @@ import {useQuery} from "@tanstack/react-query";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Button} from "@/lib/client/components/ui/button";
-import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {useDebounce} from "@/lib/client/hooks/use-debounce";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
-import {SearchInput} from "@/lib/client/components/general/SearchInput";
-import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
-import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
+import {SearchSelect} from "@/lib/client/components/general/SearchSelect";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {monthlyActivityMediaSearchOptions} from "@/lib/client/react-query/query-options";
 import {getDefaultActivityDate, toActivityStoredValue} from "@/lib/utils/media/activity";
@@ -34,12 +32,11 @@ interface MonthlyActivityAddDialogProps {
 
 export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange }: MonthlyActivityAddDialogProps) => {
     const fieldId = useId();
+    const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 400);
     const mediaTypeItems = createMediaSelectItems(mediaTypes);
     const addMutation = useAddMonthlyActivityMutation({ noErrorToast: true });
     const [selectedMedia, setSelectedMedia] = useState<{ id: number; name: string; imageCover: string } | null>(null);
-    const { search, setSearch, debouncedSearch, isOpen, reset: resetSearch, containerRef } = useSearchContainer({
-        onReset: () => undefined,
-    });
 
     const form = useForm<AddMonthlyActivityInput, unknown, AddMonthlyActivity>({
         resolver: zodResolver(addMonthlyActivitySchema),
@@ -60,7 +57,8 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
 
     const handleTypeChange = (value: MediaType | null) => {
         if (value === null) return;
-        resetSearch();
+
+        setSearch("");
         setSelectedMedia(null);
         form.clearErrors("mediaId");
         form.setValue("mediaId", 0, { shouldDirty: true });
@@ -73,8 +71,8 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
             name: item.mediaName,
             imageCover: item.customCover ?? item.mediaCover,
         });
+
         form.setValue("mediaId", item.mediaId, { shouldDirty: true, shouldValidate: true });
-        resetSearch();
     };
 
     const handleSubmit = (values: AddMonthlyActivity) => {
@@ -116,13 +114,11 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                     control={form.control}
                                     render={({ field, fieldState }) =>
                                         <Field className="w-36" data-invalid={fieldState.invalid} data-disabled={addMutation.isPending}>
-                                            <FieldLabel htmlFor={`${fieldId}-media-type`}>Media Type</FieldLabel>
+                                            <FieldLabel htmlFor={`${fieldId}-media-type`}>
+                                                Media Type
+                                            </FieldLabel>
                                             <Select items={mediaTypeItems} value={field.value} onValueChange={handleTypeChange}>
-                                                <SelectTrigger
-                                                    id={`${fieldId}-media-type`}
-                                                    className="w-36 capitalize"
-                                                    aria-invalid={fieldState.invalid}
-                                                >
+                                                <SelectTrigger id={`${fieldId}-media-type`} className="w-36 capitalize">
                                                     <SelectValue/>
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -144,7 +140,9 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                     control={form.control}
                                     render={({ fieldState }) =>
                                         <Field data-invalid={fieldState.invalid} data-disabled={addMutation.isPending}>
-                                            <FieldTitle id={`${fieldId}-media-label`}>Media</FieldTitle>
+                                            <FieldTitle id={`${fieldId}-media-label`}>
+                                                Media
+                                            </FieldTitle>
                                             <div aria-labelledby={`${fieldId}-media-label`}>
                                                 {selectedMedia ?
                                                     <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
@@ -176,55 +174,39 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                                         </Button>
                                                     </div>
                                                     :
-                                                    <div ref={containerRef} className="relative">
-                                                        <SearchInput
-                                                            value={search}
-                                                            id={`${fieldId}-media-search`}
-                                                            aria-invalid={fieldState.invalid}
-                                                            aria-labelledby={`${fieldId}-media-label`}
-                                                            onChange={(ev) => setSearch(ev.target.value)}
-                                                            placeholder={`Search your ${capitalize(selectedType)} list...`}
-                                                        />
-                                                        <SearchContainer
-                                                            error={error}
-                                                            search={search}
-                                                            isOpen={isOpen}
-                                                            isPending={isFetching}
-                                                            debouncedSearch={debouncedSearch}
-                                                            hasResults={searchResults.length > 0}
-                                                        >
-                                                            <div className="flex max-h-80 flex-col overflow-y-auto">
-                                                                {searchResults.map((item) =>
-                                                                    <div key={item.mediaId}>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => handleSelectedMedia(item)}
-                                                                            className="w-full text-left hover:bg-popover/70"
-                                                                        >
-                                                                            <div className="flex items-center gap-3 p-3">
-                                                                                <div className="relative shrink-0">
-                                                                                    <img
-                                                                                        alt=""
-                                                                                        src={item.customCover ?? item.mediaCover}
-                                                                                        className="h-16 w-11 rounded-sm object-cover"
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="min-w-0">
-                                                                                    <div className="line-clamp-2 font-medium">
-                                                                                        {item.mediaName}
-                                                                                    </div>
-                                                                                    <div className="text-xs text-muted-foreground">
-                                                                                        In your {capitalize(selectedType)} list
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </button>
-                                                                        <Separator className="m-0"/>
+                                                    <SearchSelect
+                                                        error={error}
+                                                        search={search}
+                                                        items={searchResults}
+                                                        onSearchChange={setSearch}
+                                                        id={`${fieldId}-media-search`}
+                                                        onSelect={handleSelectedMedia}
+                                                        disabled={addMutation.isPending}
+                                                        aria-invalid={fieldState.invalid}
+                                                        getItemLabel={item => item.mediaName}
+                                                        getItemKey={item => String(item.mediaId)}
+                                                        aria-labelledby={`${fieldId}-media-label`}
+                                                        isPending={isFetching || search !== debouncedSearch}
+                                                        emptyMessage="No matching media found in your list."
+                                                        placeholder={`Search your ${capitalize(selectedType)} list...`}
+                                                        renderItem={item =>
+                                                            <>
+                                                                <img
+                                                                    alt=""
+                                                                    src={item.customCover ?? item.mediaCover}
+                                                                    className="h-16 w-11 shrink-0 rounded-sm object-cover"
+                                                                />
+                                                                <div className="min-w-0">
+                                                                    <div className="line-clamp-2 font-medium">
+                                                                        {item.mediaName}
                                                                     </div>
-                                                                )}
-                                                            </div>
-                                                        </SearchContainer>
-                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        In your {capitalize(selectedType)} list
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        }
+                                                    />
                                                 }
                                             </div>
                                             <FieldError errors={[fieldState.error]}/>

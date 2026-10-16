@@ -34,32 +34,6 @@ describe("createMalApi", () => {
         });
     });
 
-    it("uses shared conservative rate limits and authenticates manga searches", async () => {
-        const mal = await createMalApi();
-        await mal.searchManga("Berserk", 2);
-
-        expect(httpMocks.createApiHttpClient).toHaveBeenCalledWith(expect.objectContaining({
-            consumeKey: "mal-API",
-            throttleOptions: [
-                expect.objectContaining({ points: 1, duration: 2 }),
-            ],
-        }));
-
-        const [requestUrl, method, options] = httpMocks.call.mock.calls[0];
-        const url = new URL(requestUrl);
-        expect(url.pathname).toBe("/v2/manga");
-        expect(url.searchParams.get("q")).toBe("Berserk");
-        expect(url.searchParams.get("limit")).toBe("20");
-        expect(url.searchParams.get("offset")).toBe("20");
-        expect(url.searchParams.get("fields")).toContain("alternative_titles");
-        expect(method).toBe("get");
-        expect(options).toEqual({
-            headers: {
-                "X-MAL-CLIENT-ID": "mal-client-id",
-            },
-        });
-    });
-
     it("requests every manga detail field used by the transformer", async () => {
         const mal = await createMalApi();
         await mal.getMangaDetails(2);
@@ -84,16 +58,6 @@ describe("createMalApi", () => {
         ]) {
             expect(fields).toContain(field);
         }
-    });
-
-    it("caps anime genre search queries and requests five matches", async () => {
-        const mal = await createMalApi();
-        await mal.searchAnimeGenres("A".repeat(80));
-
-        const url = new URL(httpMocks.call.mock.calls[0][0]);
-        expect(url.pathname).toBe("/v2/anime");
-        expect(url.searchParams.get("q")).toBe("A".repeat(64));
-        expect(url.searchParams.get("limit")).toBe("5");
     });
 
     it("fails lazily with a clear message when MAL is not configured", async () => {

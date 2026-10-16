@@ -1,7 +1,6 @@
 import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
 import {Activity, ArrowUp10, Award, LayoutGrid, User} from "lucide-react";
 import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
@@ -9,6 +8,7 @@ import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
 import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab";
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/lib/client/components/ui/tabs";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
 import {ONBOARDING_PROFILE_NAME, onboardingProfileFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
 import {OnboardingContainer, OnboardingDemoBox, OnboardingNote, OnboardingSection, OnboardingSubSection} from "@/lib/client/components/onboarding/OnBoardingShared";
@@ -93,33 +93,44 @@ function ProfileOnboarding() {
                 }
             >
                 <OnboardingDemoBox className="pt-2">
-                    <div className="w-[95%] min-w-0 space-y-6 max-lg:w-3/5 max-sm:mt-4 max-sm:w-full max-sm:space-y-4">
-                        <TabHeader
-                            tabs={mediaTabs}
-                            value={effectiveActiveTab}
-                            onValueChange={setActiveTab}
-                        />
+                    <Tabs
+                        value={effectiveActiveTab}
+                        onValueChange={setActiveTab}
+                        className="w-[95%] min-w-0 gap-6 max-lg:w-3/5 max-sm:mt-4 max-sm:w-full max-sm:gap-4"
+                    >
+                        <TabsList aria-label="Profile preview">
+                            {mediaTabs.map(tab =>
+                                <TabsTrigger key={tab.id} value={tab.id} accent={tab.isAccent}>
+                                    {tab.icon}
+                                    {tab.label}
+                                </TabsTrigger>
+                            )}
+                        </TabsList>
                         <div className="min-h-113 animate-in fade-in duration-300">
-                            {effectiveActiveTab === "overview" ?
+                            <TabsContent value="overview">
                                 <OverviewTab
-                                    showContinue
                                     isCurrent={false}
+                                    showContinue={true}
                                     inProgressMedia={[]}
                                     perMedia={apiData.perMediaSummary}
                                     globalStats={apiData.mediaGlobalSummary}
                                     ratingSystem={apiData.userData.ratingSystem}
+                                    profilePins={{ items: [], activeMediaTypes: [] }}
                                     highlightedMedia={apiData.highlightedMedia.overview}
                                 />
-                                :
-                                <MediaStatsTab
-                                    username={username}
-                                    ratingSystem={apiData.userData.ratingSystem}
-                                    highlightedMedia={apiData.highlightedMedia[activeTab]}
-                                    mediaSummary={apiData.perMediaSummary.find((p) => p.mediaType === activeTab)!}
-                                />
-                            }
+                            </TabsContent>
+                            {mediaTabs.map(tab => tab.id !== "overview" &&
+                                <TabsContent key={tab.id} value={tab.id}>
+                                    <MediaStatsTab
+                                        username={username}
+                                        ratingSystem={apiData.userData.ratingSystem}
+                                        highlightedMedia={apiData.highlightedMedia[tab.id]}
+                                        mediaSummary={apiData.perMediaSummary.find((p) => p.mediaType === tab.id)!}
+                                    />
+                                </TabsContent>
+                            )}
                         </div>
-                    </div>
+                    </Tabs>
                 </OnboardingDemoBox>
             </OnboardingSubSection>
 

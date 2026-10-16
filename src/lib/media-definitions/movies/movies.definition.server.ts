@@ -1,9 +1,27 @@
-import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
+import {getTableColumns, ne, sql} from "drizzle-orm";
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {MOVIES_FALLBACK_DURATION, moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
-import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {movies, moviesActors, moviesGenre, moviesList, moviesTags} from "@/lib/server/database/schema/media/movies.schema";
-import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+
+
+const tables = {
+    mediaTable: movies,
+    listTable: moviesList,
+    genreTable: moviesGenre,
+    tagTable: moviesTags,
+    deleteDependents: [moviesActors, moviesGenre, moviesTags],
+};
+
+
+const sortColumns = {
+    ...getCommonMediaSortColumns(tables),
+    redo: moviesList.redo,
+    providerRating: movies.voteAverage,
+};
 
 
 export const moviesServerDefinition = defineServerMediaDefinition({
@@ -12,13 +30,22 @@ export const moviesServerDefinition = defineServerMediaDefinition({
         coverDirectory: "movies-covers",
     },
     repository: {
-        tables: {
-            mediaTable: movies,
-            listTable: moviesList,
-            genreTable: moviesGenre,
-            tagTable: moviesTags,
-            deleteDependents: [moviesActors, moviesGenre, moviesTags],
-        },
+        sortColumns,
+        filters: defineMediaFilterDefinitions(moviesDefinition, tables, {
+            actors: {
+                searchable: true,
+                entityTable: moviesActors,
+                filterColumn: moviesActors.name,
+            },
+            langs: {
+                filterColumn: movies.originalLanguage,
+            },
+            directors: {
+                searchable: true,
+                filterColumn: movies.directorName,
+            },
+        }),
+        tables,
         popularity: {
             eligibility: sql`${movies.voteCount} >= 1000`,
         },
@@ -28,45 +55,8 @@ export const moviesServerDefinition = defineServerMediaDefinition({
                 imageCover: movies.imageCover,
                 ...getTableColumns(moviesList),
             },
-            filters: {
-                actors: createArrayFilter({
-                    argName: "actors",
-                    mediaTable: movies,
-                    entityTable: moviesActors,
-                    filterColumn: moviesActors.name,
-                }),
-                langs: createArrayFilter({
-                    argName: "langs",
-                    mediaTable: movies,
-                    filterColumn: movies.originalLanguage,
-                }),
-                directors: createArrayFilter({
-                    argName: "directors",
-                    mediaTable: movies,
-                    filterColumn: movies.directorName,
-                }),
-            },
-            filterOptions: {
-                langs: createMediaColOptionsLoader({
-                    mediaTable: movies,
-                    listTable: moviesList,
-                    nameColumn: movies.originalLanguage,
-                }),
-            },
-            defaultSort: "Title A-Z",
-            sorts: {
-                "Title A-Z": asc(movies.name),
-                "Title Z-A": desc(movies.name),
-                "Rating +": [desc(moviesList.rating), asc(movies.name)],
-                "Rating -": [asc(moviesList.rating), asc(movies.name)],
-                "TMDB Rating +": [desc(movies.voteAverage), asc(movies.name)],
-                "TMDB Rating -": [asc(movies.voteAverage), asc(movies.name)],
-                "Release Date +": [desc(movies.releaseDate), asc(movies.name)],
-                "Release Date -": [sql`${movies.releaseDate} ASC NULLS LAST`, asc(movies.name)],
-                "Recently Added": [desc(moviesList.addedAt), asc(movies.name)],
-                "Recently Modified": [desc(moviesList.lastUpdated), asc(movies.name)],
-                "Re-Watched": [desc(moviesList.redo), asc(movies.name)],
-            },
+            defaultSort: getMediaSortLabel(moviesDefinition, moviesDefinition.sorting.default),
+            sorts: createMediaListSorts(moviesDefinition, sortColumns, movies.id),
         },
         communityActivity: {
             aggregates: {

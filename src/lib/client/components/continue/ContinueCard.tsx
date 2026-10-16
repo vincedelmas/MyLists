@@ -1,10 +1,9 @@
 import {useId} from "react";
 import {getThemeColor} from "@/lib/client/theme";
-import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {getMediaConfig} from "@/lib/client/components/media/media-config";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {useContinueMediaMutation} from "@/lib/client/react-query/query-mutations/continue.mutations";
@@ -61,17 +60,17 @@ export const ContinueCard = ({ item, compact = false, readOnly = false }: { item
                 )}
                 {!readOnly &&
                     <div className="pointer-events-auto flex items-center gap-2 pt-1">
-                        <Button
+                        <LoadingButton
                             size="xs"
-                            className="min-h-11 min-w-0 flex-1 sm:min-h-6 pointer-coarse:min-h-11"
-                            disabled={update.isPending || !progress.update}
+                            disabled={!progress.update}
+                            isLoading={update.isPending}
                             onClick={() => update.mutate()}
+                            className="min-h-7 min-w-0 flex-1 sm:min-h-6"
                         >
-                            {update.isPending && <Spinner data-icon="inline-start"/>}
                             <span className="truncate">
                                 {progress.actionLabel}
                             </span>
-                        </Button>
+                        </LoadingButton>
                     </div>
                 }
             </MediaCardFooter>

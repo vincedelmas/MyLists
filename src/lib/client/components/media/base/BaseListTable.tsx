@@ -53,6 +53,7 @@ export const getBaseColumns = <T extends UserMediaItem>(props: ColumnConfigProps
                             type="button"
                             variant="ghost"
                             onClick={() => onEdit(original.mediaId)}
+                            aria-label={`Edit ${original.mediaName}`}
                             className="flex w-full items-center justify-center"
                         >
                             <Settings2 className="size-4 opacity-70"/>

@@ -1,5 +1,5 @@
-import React, {useState} from "react";
 import Cropper, {Area} from "react-easy-crop";
+import React, {useEffect, useState} from "react";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {FieldDescription} from "@/lib/client/components/ui/field";
@@ -31,6 +31,7 @@ interface CropState {
 
 
 export const ImageCropper = ({ aspect, inputId, fileName, sliceHeight, cropShape, onCropApplied, resultClassName = "", "aria-invalid": ariaInvalid }: ImageCropperProps) => {
+    const [croppedImageUrl, setCroppedImageUrl] = useState("");
     const [state, setState] = useState<CropState>({
         zoom: 1,
         open: true,
@@ -42,6 +43,15 @@ export const ImageCropper = ({ aspect, inputId, fileName, sliceHeight, cropShape
         crop: { x: 0, y: 0 },
         croppedAreaPixels: null,
     });
+
+    useEffect(() => {
+        if (!state.croppedImage) return;
+
+        const url = URL.createObjectURL(state.croppedImage);
+        setCroppedImageUrl(url);
+
+        return () => URL.revokeObjectURL(url);
+    }, [state.croppedImage]);
 
     const computedAspect = (sliceHeight && state.imageWidth) ? state.imageWidth / sliceHeight : aspect ?? 1;
 
@@ -177,15 +187,15 @@ export const ImageCropper = ({ aspect, inputId, fileName, sliceHeight, cropShape
                     </Button>
                 </div>
             }
-            {(state.showResult && state.croppedImage) &&
+            {(state.showResult && croppedImageUrl) &&
                 <div className="space-y-4 mt-4 bg-card rounded-lg p-3">
                     <h4 className="font-medium">
                         Selected Image
                     </h4>
                     <img
                         alt={fileName}
+                        src={croppedImageUrl}
                         className={resultClassName}
-                        src={URL.createObjectURL(state.croppedImage)}
                     />
                     <Button onClick={handleEditCrop}>
                         Edit Crop

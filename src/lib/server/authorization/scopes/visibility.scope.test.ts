@@ -101,19 +101,16 @@ describe("authorization visibility scopes", () => {
                 {
                     ownerId: 2,
                     title: "Public",
-                    mediaType: MediaType.MOVIES,
                     privacy: PrivacyType.PUBLIC,
                 },
                 {
                     ownerId: 2,
                     title: "Restricted",
-                    mediaType: MediaType.MOVIES,
                     privacy: PrivacyType.RESTRICTED,
                 },
                 {
                     ownerId: 2,
                     title: "Private",
-                    mediaType: MediaType.MOVIES,
                     privacy: PrivacyType.PRIVATE,
                 },
             ]);

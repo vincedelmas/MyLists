@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_admin/admin/archived-tasks")({
         archivedTasksQueryOptions: adminArchivedTasksOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.archivedTasksQueryOptions);
+        return context.queryClient.query({ ...context.archivedTasksQueryOptions, staleTime: "static" });
     },
     component: AdminArchivedTasksPage,
 })

@@ -34,11 +34,11 @@ describe("media lock defaults", () => {
         dbContext.db = drizzle(sqlite, { schema, casing: "snake_case" });
         sqlite.transaction(() => {
             for (const migration of migrations.slice(0, lockMigrationIndex)) {
-                for (const statement of migration.sql) sqlite.exec(statement);
+                for (const statement of migration.sql) sqlite.run(statement);
             }
         })();
-        sqlite.exec("PRAGMA foreign_keys=ON");
-        sqlite.exec(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at)
+        sqlite.run("PRAGMA foreign_keys=ON");
+        sqlite.run(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at)
             VALUES (1, 'Reader', 'reader@example.com', 1, '2025-01-01', '2025-01-01')`);
     });
 
@@ -56,21 +56,21 @@ describe("media lock defaults", () => {
         ["anime", ", duration, total_seasons, total_episodes", ", 24, 1, 12", ", current_season, current_episode", ", 1, 5"],
     ] as const)("repairs existing locks and defaults new %s to unlocked without losing related data", async (kind, columns, values, listColumns, listValues) => {
         for (const [id, lockStatus] of [[1, "NULL"], [2, "0"], [3, "1"]]) {
-            sqlite.exec(`INSERT INTO ${kind} (id, api_id, name, image_cover, lock_status, last_api_update${columns})
+            sqlite.run(`INSERT INTO ${kind} (id, api_id, name, image_cover, lock_status, last_api_update${columns})
                 VALUES (${id}, ${id}, 'Title ${id}', 'cover.jpg', ${lockStatus}, '2000-01-01 00:00:00'${values})`);
         }
-        sqlite.exec(`INSERT INTO ${kind}_genre (media_id, name) VALUES (1, 'Drama')`);
-        sqlite.exec(`INSERT INTO ${kind}_list (id, user_id, media_id, status, rating${listColumns})
+        sqlite.run(`INSERT INTO ${kind}_genre (media_id, name) VALUES (1, 'Drama')`);
+        sqlite.run(`INSERT INTO ${kind}_list (id, user_id, media_id, status, rating${listColumns})
             VALUES (1, 1, 1, 'Completed', 8.5${listValues})`);
         if (kind === "series" || kind === "anime") {
-            sqlite.exec(`INSERT INTO ${kind}_list_seasons (list_id, season, redo, rating) VALUES (1, 1, 2, 8.5)`);
+            sqlite.run(`INSERT INTO ${kind}_list_seasons (list_id, season, redo, rating) VALUES (1, 1, 2, 8.5)`);
         }
         const mediaBefore = sqlite.prepare<Record<string, unknown>, []>(`SELECT * FROM ${kind} ORDER BY id`).all();
         const listBefore = sqlite.query(`SELECT * FROM ${kind}_list`).all();
         const genresBefore = sqlite.query(`SELECT * FROM ${kind}_genre`).all();
 
         sqlite.transaction(() => {
-            for (const statement of migrations[lockMigrationIndex].sql) sqlite.exec(statement);
+            for (const statement of migrations[lockMigrationIndex].sql) sqlite.run(statement);
         })();
 
         expect(sqlite.prepare(`SELECT * FROM ${kind} ORDER BY id`).all())
@@ -84,11 +84,11 @@ describe("media lock defaults", () => {
         expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);
 
         // Provider imports omit lock_status. Once stale, these rows must be eligible for refresh.
-        sqlite.exec(`INSERT INTO ${kind} (id, api_id, name, image_cover, last_api_update${columns})
+        sqlite.run(`INSERT INTO ${kind} (id, api_id, name, image_cover, last_api_update${columns})
             VALUES (4, 4, 'Imported title', 'cover.jpg', '2000-01-01 00:00:00'${values}),
                    (5, 5, 'Fresh title', 'cover.jpg', CURRENT_TIMESTAMP${values})`);
         expect(sqlite.query(`SELECT lock_status FROM ${kind} WHERE id = 4`).get()).toEqual({ lock_status: 0 });
-        expect(() => sqlite.exec(`UPDATE ${kind} SET lock_status = NULL WHERE id = 4`)).toThrow(/NOT NULL/);
+        expect(() => sqlite.run(`UPDATE ${kind} SET lock_status = NULL WHERE id = 4`)).toThrow(/NOT NULL/);
         if (kind !== "books") {
             const candidates = await repositories[kind].getMediaIdsToBeRefreshed([1, 2, 3, 4, 5]);
             expect(candidates.sort((a, b) => a - b)).toEqual([1, 2, 4]);

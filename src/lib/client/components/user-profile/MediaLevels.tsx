@@ -61,7 +61,7 @@ const MediaLevelBar = ({ mediaType, username, level }: MediaLevelBarProps) => {
                         size={16}
                         type={mediaType}
                     />
-                    <Link to="/list/$mediaType/$username" params={{ mediaType, username }}>
+                    <Link to="/lists/tracking/$mediaType/$username" params={{ mediaType, username }}>
                             <span className="capitalize">
                                 {mediaType}
                             </span>

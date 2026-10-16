@@ -88,8 +88,8 @@ export const updateUserMediaSchema = z.object({
     mediaId: coercedPositiveIntFieldSchema,
     activityCorrection: z.object({
         version: z.string().length(64),
-        startMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
         keepHistory: z.boolean().optional(),
+        startMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
     }).optional(),
     payload: z.object({
         type: z.enum(UpdateType),
@@ -151,14 +151,17 @@ export const updateUserMediaSchema = z.object({
     validateStatusForMediaType(data.mediaType, data.payload.status, ctx, ["payload", "status"]);
 });
 
+
 export const deleteUserUpdatesSchema = z.object({
     updateIds: z.array(positiveIntFieldSchema),
     returnData: z.coerce.boolean().default(false),
 });
 
+
 export const userTagNamesSchema = z.object({
     mediaType: mediaTypeFieldSchema,
 });
+
 
 export const editUserTagSchema = z.object({
     action: z.enum(TagAction),
@@ -166,6 +169,12 @@ export const editUserTagSchema = z.object({
     mediaId: coercedPositiveIntFieldSchema.optional(),
     tag: z.object({
         name: z.string(),
-        oldName: z.string().optional(),
+        oldName: z.string().min(1).optional(),
     }),
+}).refine(data => data.action === TagAction.DELETE_ONE || data.action === TagAction.DELETE_ALL || data.tag.name.trim().length > 0, {
+    message: "Tag name is required.", path: ["tag", "name"],
+}).refine(data => data.action !== TagAction.RENAME || data.tag.oldName !== undefined, {
+    message: "The original tag name is required to rename a tag.", path: ["tag", "oldName"],
+}).refine(data => data.action !== TagAction.DELETE_ONE || data.mediaId !== undefined, {
+    message: "A media ID is required to remove a tag assignment.", path: ["mediaId"],
 });

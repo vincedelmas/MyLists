@@ -5,8 +5,7 @@ import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {platformStatsOptions} from "@/lib/client/react-query/query-options";
 import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
@@ -20,9 +19,10 @@ export const Route = createFileRoute("/_main/_viewer/platform-stats")({
         platformStatsQueryOptions: platformStatsOptions(search.activeTab),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.platformStatsQueryOptions);
+        return context.queryClient.query({ ...context.platformStatsQueryOptions, staleTime: "static" });
     },
     component: PlatformStatsPage,
+    head: () => ({ meta: [{ title: "Platform statistics - MyLists" }] }),
 });
 
 
@@ -41,53 +41,51 @@ function PlatformStatsPage() {
     const trackedHours = isOverview ? apiData.totalHours : apiData.timeSpentHours;
 
     return (
-        <PageTitle title="Platform statistics" onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    title="MyLists stats"
-                    asideIcon={Clock3}
-                    eyebrow="Across the community"
-                    asideValue={formatHours(trackedHours)}
-                    eyebrowIcon={ChartNoAxesColumnIncreasing}
-                    asideLabel={isOverview ? "Total time tracked" : `${capitalize(apiData.mediaType)} time tracked`}
-                    description="A look at what people are tracking, rating and enjoying across MyLists."
-                    navigation={
-                        <TabHeader
-                            tabs={mediaTabs}
-                            value={activeTab}
-                            triggerClassName="max-sm:px-3"
-                            trailing={
-                                <div
-                                    title="Platform statistics are cached for up to 24 hours"
-                                    className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground"
-                                >
-                                    <Clock3 className="size-3.5"/>
-                                    <span className="max-sm:hidden">
-                                        Updated daily
-                                    </span>
-                                    <span className="sm:hidden">
-                                        Daily
-                                    </span>
-                                </div>
-                            }
-                            renderTrigger={(tab, props) =>
-                                <Link
-                                    {...props}
-                                    resetScroll={false}
-                                    to="/platform-stats"
-                                    search={{ activeTab: tab.id === "overview" ? undefined : tab.id }}
-                                />
-                            }
-                        />
-                    }
-                />
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                title="MyLists stats"
+                asideIcon={Clock3}
+                eyebrow="Across the community"
+                asideValue={formatHours(trackedHours)}
+                eyebrowIcon={ChartNoAxesColumnIncreasing}
+                asideLabel={isOverview ? "Total time tracked" : `${capitalize(apiData.mediaType)} time tracked`}
+                description="A look at what people are tracking, rating and enjoying across MyLists."
+                navigation={
+                    <TabNav
+                        tabs={mediaTabs}
+                        value={activeTab}
+                        triggerClassName="max-sm:px-3"
+                        trailing={
+                            <div
+                                title="Platform statistics are cached for up to 24 hours"
+                                className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground"
+                            >
+                                <Clock3 className="size-3.5"/>
+                                <span className="max-sm:hidden">
+                                    Updated daily
+                                </span>
+                                <span className="sm:hidden">
+                                    Daily
+                                </span>
+                            </div>
+                        }
+                        renderTrigger={(tab, props) =>
+                            <Link
+                                {...props}
+                                resetScroll={false}
+                                to="/platform-stats"
+                                search={{ activeTab: tab.id === "overview" ? undefined : tab.id }}
+                            />
+                        }
+                    />
+                }
+            />
 
-                <DashboardContent
-                    data={apiData}
-                    showHero={false}
-                    onSelectMediaType={handleTabChange}
-                />
-            </div>
-        </PageTitle>
+            <DashboardContent
+                data={apiData}
+                showHero={false}
+                onSelectMediaType={handleTabChange}
+            />
+        </div>
     );
 }

@@ -21,7 +21,7 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
-    const updateTagNames = (newTagsList: (Tag | undefined)[]) => {
+    const updateTagNames = (newTagsList: Tag[]) => {
         if (queryOption.queryKey[0] === "details") {
             queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                 if (!oldData) return;
@@ -62,17 +62,17 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
             <div className="flex flex-wrap gap-1 mt-1">
                 {tags.length === 0 ?
                     <div className="mt-1 text-muted-foreground text-sm">
-                        Not tag added yet.
+                        No tags added yet.
                     </div>
                     :
                     tags.map((tag) =>
                         <Link
                             key={tag.name}
                             search={{ tags: [tag.name] }}
-                            to="/list/$mediaType/$username"
+                            to="/lists/tracking/$mediaType/$username"
                             params={{ mediaType, username: currentUser!.name }}
                         >
-                            <Badge key={tag.name} variant="tag" className="max-w-50">
+                            <Badge variant="tag" className="max-w-50">
                                 # {tag.name}
                             </Badge>
                         </Link>

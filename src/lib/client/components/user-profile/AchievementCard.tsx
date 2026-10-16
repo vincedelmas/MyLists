@@ -53,7 +53,7 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                     }
                 </div>
                 {achievements.length !== 0 &&
-                    <Link to="/achievements/$username" params={{ username }} className={cn(buttonVariants({ variant: "dashed" }))}>
+                    <Link to="/achievements/$username" params={{ username }} className={buttonVariants({ variant: "dashed" })}>
                         View all Achievements
                     </Link>
                 }

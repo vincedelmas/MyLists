@@ -1,19 +1,18 @@
-import {cn} from "@/lib/utils/classnames";
+import {UserX} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {followersOptions} from "@/lib/client/react-query/query-options";
-import {useFollowMutation, useRemoveFollowerMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
+import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
+import {useRemoveFollowerMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/followers")({
@@ -21,9 +20,10 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/f
         followersQueryOptions: followersOptions(username),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.followersQueryOptions);
+        return context.queryClient.query({ ...context.followersQueryOptions, staleTime: "static" });
     },
     component: ProfileFollowers,
+    head: () => ({ meta: [{ title: "Followers - MyLists" }] }),
 });
 
 
@@ -35,28 +35,35 @@ function ProfileFollowers() {
 
     const isViewingOwnProfile = currentUser?.name === profileOwner;
     return (
-        <PageTitle
-            title="Followers"
-            subtitle={isViewingOwnProfile ? "People who subscribe to your updates." : `People following ${profileOwner}`}
-        >
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {apiData.followers.map((follower) =>
-                    <FollowerCard
-                        key={follower.id}
-                        follower={follower}
-                        profileOwner={profileOwner}
-                        currentUserName={currentUser?.name}
-                        isViewingOwnProfile={isViewingOwnProfile}
-                    />
-                )}
-            </div>
-
-            {apiData.followers.length === 0 &&
-                <div className="flex flex-col items-center justify-center pt-20 text-center">
-                    <EmptyState icon={UserX} message="No Followers Found."/>
+        <div className="flex flex-col mx-auto mb-8 pt-6">
+            <header>
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    Followers
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                    {isViewingOwnProfile ? "People who subscribe to your updates." : `People following ${profileOwner}`}
+                </p>
+            </header>
+            <div className="mt-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {apiData.followers.map((follower) =>
+                        <FollowerCard
+                            key={follower.id}
+                            follower={follower}
+                            profileOwner={profileOwner}
+                            currentUserName={currentUser?.name}
+                            isViewingOwnProfile={isViewingOwnProfile}
+                        />
+                    )}
                 </div>
-            }
-        </PageTitle>
+
+                {apiData.followers.length === 0 &&
+                    <div className="flex flex-col items-center justify-center pt-20 text-center">
+                        <EmptyState icon={UserX} message="No Followers Found."/>
+                    </div>
+                }
+            </div>
+        </div>
     );
 }
 
@@ -140,25 +147,23 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                             </Button>
                             :
                             <div className="flex w-full gap-2">
-                                <FollowerActionButton
-                                    followerId={follower.id}
-                                    profileOwner={profileOwner}
+                                <FollowButton
+                                    targetUserId={follower.id}
+                                    profileUsername={profileOwner}
+                                    className="w-auto flex-1 font-medium"
                                     followStatus={follower.myFollowStatus}
-                                    isViewingOwnProfile={isViewingOwnProfile}
+                                    followLabel={isViewingOwnProfile ? "Follow Back" : "Follow"}
                                 />
                                 {isViewingOwnProfile &&
-                                    <Button
+                                    <LoadingButton
                                         size="icon"
                                         variant="outline"
                                         title="Remove Follower"
                                         onClick={handleRemoveFollower}
-                                        disabled={removeMutation.isPending}
+                                        icon={<UserX className="size-4"/>}
+                                        isLoading={removeMutation.isPending}
                                         className="shrink-0 hover:border-transparent hover:bg-destructive/30 hover:text-foreground"
-                                    >
-                                        {removeMutation.isPending ?
-                                            <Spinner data-icon="inline-start"/> : <UserX className="size-4"/>
-                                        }
-                                    </Button>
+                                    />
                                 }
                             </div>
                         }
@@ -166,68 +171,5 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                 }
             </div>
         </div>
-    );
-}
-
-
-interface FollowerActionButtonProps {
-    followerId: number;
-    profileOwner: string;
-    isViewingOwnProfile: boolean;
-    followStatus: SocialState | null;
-}
-
-
-function FollowerActionButton({ followerId, followStatus, profileOwner, isViewingOwnProfile }: FollowerActionButtonProps) {
-    const followMutation = useFollowMutation(profileOwner);
-    const unfollowMutation = useUnfollowMutation(profileOwner);
-    const isPending = followMutation.isPending || unfollowMutation.isPending;
-
-    const isFollowing = followStatus === SocialState.ACCEPTED;
-    const isRequested = followStatus === SocialState.REQUESTED;
-    const shouldUnfollow = isFollowing || isRequested;
-
-    const handleClick = () => {
-        const mutation = shouldUnfollow ? unfollowMutation : followMutation;
-
-        mutation.mutate({ data: { targetUserId: followerId } }, {
-            onError: () => toast.add({ title: "Sorry, an error occurred...", type: "error", priority: "high" }),
-        });
-    };
-
-    return (
-        <Button
-            disabled={isPending}
-            onClick={handleClick}
-            variant={isFollowing ? "default" : isRequested ? "secondary" : "outline"}
-            className={cn("group flex-1 font-medium transition-all", shouldUnfollow && "hover:bg-destructive/30 hover:text-foreground")}
-        >
-            {isPending ?
-                <Spinner data-icon="inline-start" className="size-3.5"/>
-                : isFollowing ?
-                    <>
-                        <span className="flex items-center gap-2 group-hover:hidden">
-                            <UserCheck className="size-3.5"/> Following
-                        </span>
-                        <span className="hidden items-center gap-2 group-hover:flex">
-                            <UserX className="size-3.5"/> Unfollow
-                        </span>
-                    </>
-                    : isRequested ?
-                        <>
-                            <span className="flex items-center gap-2 group-hover:hidden">
-                                <Clock className="size-3.5"/> Requested
-                            </span>
-                            <span className="hidden items-center gap-2 group-hover:flex">
-                                <UserX className="size-3.5"/> Cancel request
-                            </span>
-                        </>
-                        :
-                        <>
-                            <UserPlus className="size-3.5"/>
-                            {isViewingOwnProfile ? "Follow Back" : "Follow"}
-                        </>
-            }
-        </Button>
     );
 }

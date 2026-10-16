@@ -1,5 +1,4 @@
 import {UserRoundX} from "lucide-react";
-import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {UserFollowsType} from "@/lib/types/query.options.types";
 import {buttonVariants} from "@/lib/client/components/ui/button";
@@ -61,7 +60,7 @@ export const ProfileFollows = ({ username, followsCount, follows }: ProfileFollo
                 </div>
 
                 {followsCount > 0 &&
-                    <Link params={{ username }} to="/profile/$username/follows" className={cn(buttonVariants({ variant: "dashed" }))}>
+                    <Link params={{ username }} to="/profile/$username/follows" className={buttonVariants({ variant: "dashed" })}>
                         View all {followsCount} Follows
                     </Link>
                 }

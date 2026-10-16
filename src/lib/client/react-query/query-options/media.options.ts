@@ -3,8 +3,13 @@ import {JobType, MediaType} from "@/lib/utils/enums";
 import {Pagination, SearchType} from "@/lib/schemas";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
 import {getAdminAllUpdatesHistory} from "@/lib/server/functions/admin";
+import type {MediaFilterSearchSource} from "@/lib/types/media-list.types";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
+import {getMediaListSearchFilters} from "@/lib/server/functions/media-lists";
+import {getCollectionSearchFilters} from "@/lib/server/functions/collections";
 import {getReleaseCalendarMedia} from "@/lib/server/functions/release-calendar";
+import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
+import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 import {
     checkGameHltb,
     getGameCompatiblePlatforms,
@@ -40,6 +45,17 @@ export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number) => qu
     queryKey: ["details", mediaType, mediaId] as const,
     queryFn: () => getMediaDetails({ data: { mediaType, mediaId } }),
     staleTime: 3 * 1000,
+});
+
+
+export const mediaFilterSearchOptions = (source: MediaFilterSearchSource, mediaType: MediaType, field: MediaMetadataFilterKey, query: string) => queryOptions({
+    queryKey: ["mediaFilterSearch", source, mediaType, field, query],
+    queryFn: () => {
+        const data = { mediaType, field, query };
+        return source.type === "tracking"
+            ? getMediaListSearchFilters({ data: { ...data, username: source.username } })
+            : getCollectionSearchFilters({ data: { ...data, collectionId: source.collectionId, library: source.library } });
+    },
 });
 
 
@@ -79,9 +95,9 @@ export const editMediaDetailsOptions = (mediaType: MediaType, mediaId: number) =
 });
 
 
-export const jobDetailsOptions = (mediaType: MediaType, job: JobType, name: string, pagination: Pagination) => queryOptions({
-    queryKey: ["jobDetails", mediaType, job, name, pagination],
-    queryFn: () => getJobDetails({ data: { mediaType, job, name, pagination } }),
+export const jobDetailsOptions = (mediaType: MediaType, job: JobType, name: string, filters: MediaCatalogBrowseFilters) => queryOptions({
+    queryKey: ["jobDetails", mediaType, job, name, filters],
+    queryFn: () => getJobDetails({ data: { mediaType, job, name, filters } }),
 });
 
 

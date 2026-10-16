@@ -1,21 +1,23 @@
 import {notFound} from "@tanstack/react-router";
 import {Actor} from "@/lib/server/authorization";
 import {DeltaStats} from "@/lib/types/stats.types";
-import type {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import type {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {JobType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
+import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
+import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.queries";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {MediaListArgs, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 import {createMediaCommunityQueries} from "@/lib/server/domain/media/base/media-community.queries";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
 type MediaServiceRepository<TDef extends AnyServerMediaDefinition> = MediaQueries<TDef> & {
@@ -37,7 +39,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
 ) {
     const { identity, ingestion, service: servicePolicy } = definition;
 
-    const tagQueries = createMediaTagQueries(definition.repository);
+    const tagQueries = createMediaTagQueries(definition);
     const communityQueries = createMediaCommunityQueries(definition);
     const listQueries = createMediaListQueries(definition.repository);
 
@@ -72,8 +74,8 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         return repository.searchByName(query, limit);
     }
 
-    async function getListFilters(userId: number) {
-        return listQueries.getListFilters(userId);
+    async function getListFilters(userId: number, metadataFields?: readonly MediaMetadataFilterKey[]) {
+        return listQueries.getListFilters(userId, metadataFields);
     }
 
     async function getTagNames(userId: number) {
@@ -116,16 +118,12 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         }) satisfies MyListsCSVImport);
     }
 
-    async function getSearchListFilters(userId: number, query: string, job: JobType) {
-        return repository.getSearchListFilters(userId, query, job);
+    async function getSearchListFilters(userId: number, query: string, field: MediaMetadataFilterKey) {
+        return listQueries.getSearchListFilters(userId, query, field);
     }
 
-    async function getMediaJobDetails(job: JobType, name: string, pagination: Pagination, userId?: number) {
-        const page = pagination.page ?? 1;
-        const perPage = pagination.perPage ?? 24;
-        const offset = (page - 1) * perPage;
-
-        return repository.getMediaJobDetails(job, name, offset, perPage, userId);
+    async function getMediaJobDetails(job: JobType, name: string, filters: MediaCatalogBrowseFilters, userId?: number) {
+        return repository.getMediaJobDetails(job, name, filters, userId);
     }
 
     async function getMediaCommunityActivity(actor: Actor, mediaId: number, search: SearchType) {
@@ -137,6 +135,10 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
 
     function editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {
         return withTransaction(() => {
+            if (mediaId && !repository.findUserMedia(userId, mediaId)) {
+                throw new FormattedError("Media not in your list");
+            }
+
             return tagQueries.editUserTag(userId, tag, action, mediaId);
         });
     }
@@ -145,8 +147,8 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         return listQueries.getMediaList(currentUserId, userId, args);
     }
 
-    async function getTagsView(userId: number, search: SimpleSearch) {
-        return tagQueries.getTagsView(userId, search);
+    async function getTagsView(userId: number) {
+        return tagQueries.getTagsView(userId);
     }
 
     function addMediaToUserList(userId: number, mediaId: number, status?: Status) {
@@ -339,6 +341,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         removeMediaFromUserList,
         searchMediadleSuggestion,
         getMediaCommunityActivity,
+        findUserMedia: repository.findUserMedia,
         getReleaseCalendarMedia: repository.getReleaseCalendarMedia,
     };
 }

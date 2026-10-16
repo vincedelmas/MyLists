@@ -50,7 +50,7 @@ export const useUpdateBookCoverMutation = (mediaId: number, meta?: MutationMeta)
 };
 
 
-export const useAddMediaToCollectionMutation = () => {
+export const useResolveExternalMediaMutation = () => {
     return useMutation({
         mutationFn: resolveExternalMedia,
     });

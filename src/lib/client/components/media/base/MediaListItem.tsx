@@ -6,6 +6,11 @@ import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 interface MediaListItemProps<T extends MediaType> {
+    rank?: number;
+    annotation?: string | null;
+    showMediaType?: boolean;
+    loadEditDetails?: boolean;
+    onEdited?: () => Promise<void>;
     mediaType: T;
     isCurrent: boolean;
     isConnected: boolean;
@@ -17,7 +22,7 @@ interface MediaListItemProps<T extends MediaType> {
 
 
 export const MediaListItem = <T extends MediaType>(props: MediaListItemProps<T>) => {
-    const { mediaType, queryOption, isCurrent, isConnected, isMediaTypeActive, allStatuses, userMedia } = props;
+    const { mediaType, queryOption, isCurrent, isConnected, isMediaTypeActive, allStatuses, userMedia, onEdited, loadEditDetails, showMediaType, rank, annotation } = props;
 
     const MediaItemComponent = mediaConfig[mediaType].mediaListCard;
     const rating = formatRating(userMedia.ratingSystem, userMedia.rating);
@@ -25,6 +30,11 @@ export const MediaListItem = <T extends MediaType>(props: MediaListItemProps<T>)
     return (
         <MediaItemComponent
             rating={rating}
+            rank={rank}
+            annotation={annotation}
+            showMediaType={showMediaType}
+            onEdited={onEdited}
+            loadEditDetails={loadEditDetails}
             isCurrent={isCurrent}
             mediaType={mediaType}
             userMedia={userMedia}

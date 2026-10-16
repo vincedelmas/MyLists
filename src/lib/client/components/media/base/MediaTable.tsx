@@ -27,77 +27,60 @@ interface MediaTableProps {
 }
 
 
+const columnWidths: Record<string, string> = {
+    actions: "80px",
+    information: "250px",
+};
+
+
 const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onChangePage }: MediaTableProps) => {
     const { currentUser } = useAuth();
     const isConnected = !!currentUser;
-    const [dialogOpen, setDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const editingItem = results.items.find(item => item.mediaId === editingId);
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
     const { pagination, onPaginationChange } = useTablePagination({
-        pageSize: 25,
+        pageSize: results.pagination.perPage,
         page: filters.page,
         onPageChange: (page) => onChangePage({ page }),
     });
 
-    const handleEdit = (mediaId: number) => {
-        setEditingId(mediaId);
-        setDialogOpen(true);
-    };
-
     const listColumns = mediaConfig[mediaType]
-        .mediaListColumns({ isCurrent, isConnected, isMediaTypeActive, mediaType, queryOption, onEdit: handleEdit });
+        .mediaListColumns({ isCurrent, isConnected, isMediaTypeActive, mediaType, queryOption, onEdit: setEditingId });
 
     const table = useTable({
         onPaginationChange,
+        data: results.items,
         manualPagination: true,
-        data: results.items ?? [],
         columns: listColumns as any,
         features: mediaTableFeatures,
-        rowCount: results.pagination.totalItems ?? 0,
+        rowCount: results.pagination.totalItems,
         state: { pagination },
     });
-
-    const getCurrentEditingItem = () => {
-        if (!editingId) return null;
-        return results.items.find((item) => item.mediaId === editingId);
-    };
 
     return (
         <>
             <DataTable
                 table={table}
-                getCellStyle={(cell) => ({ width: getColumnWidth(cell.column.id) })}
+                getCellStyle={(cell) => ({ width: columnWidths[cell.column.id] ?? "auto" })}
             />
             <div className="mt-3">
                 <TablePagination
                     table={table}
                 />
             </div>
-            <UserMediaEditDialog
-                mediaType={mediaType}
-                dialogOpen={dialogOpen}
-                queryOption={queryOption}
-                userMedia={getCurrentEditingItem()!}
-                onOpenChange={() => {
-                    setEditingId(null);
-                    setDialogOpen(false);
-                }}
-            />
+            {editingItem &&
+                <UserMediaEditDialog
+                    dialogOpen={true}
+                    mediaType={mediaType}
+                    userMedia={editingItem}
+                    queryOption={queryOption}
+                    onOpenChange={() => setEditingId(null)}
+                />
+            }
         </>
     );
 };
 
 
 export default MediaTable;
-
-
-function getColumnWidth(colId: string) {
-    const columnWidths: Record<string, string> = {
-        "Name": "auto",
-        "status": "auto",
-        "Progress": "auto",
-        "Information": "250px",
-        "actions": "80px",
-    };
-    return columnWidths[colId] || "auto";
-}

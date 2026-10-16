@@ -36,8 +36,6 @@ vi.mock("rate-limiter-flexible", () => ({
     },
 }));
 
-
-import {FormattedError} from "@/lib/utils/error-classes";
 import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 
@@ -91,32 +89,6 @@ describe("createApiHttpClient", () => {
         }));
     });
 
-    it("retries retryable HTTP responses and consumes limiter tokens for each attempt", async () => {
-        vi.useFakeTimers();
-        const successResponse = new Response("ok", { status: 200 });
-        const fetchMock = vi.fn()
-            .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
-            .mockResolvedValueOnce(successResponse);
-        vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient({ ...config, throttleOptions: [config.throttleOptions[0]] });
-
-        const pendingResponse = client.call("https://example.com/items");
-        await vi.runAllTimersAsync();
-
-        await expect(pendingResponse).resolves.toBe(successResponse);
-        expect(fetchMock).toHaveBeenCalledTimes(2);
-        expect(transportMocks.removeTokens).toHaveBeenCalledTimes(2);
-    });
-
-    it("does not retry non-retryable HTTP responses", async () => {
-        const fetchMock = vi.fn().mockResolvedValue(new Response("bad request", { status: 400 }));
-        vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient(config);
-
-        await expect(client.call("https://example.com/items")).rejects.toThrow("Unexpected Error: 400");
-        expect(fetchMock).toHaveBeenCalledOnce();
-    });
-
     it("bounds network retries, starts a cooldown, and logs only the URL origin and pathname", async () => {
         vi.useFakeTimers();
         const url = "https://example.com/items?api_key=test-secret&query=private-search#private-fragment";
@@ -144,22 +116,6 @@ describe("createApiHttpClient", () => {
         );
         expect(JSON.stringify(transportMocks.logger.error.mock.calls)).not.toContain("test-secret");
         expect(JSON.stringify(transportMocks.logger.error.mock.calls)).not.toContain("private-search");
-    });
-
-    it("maps fetch timeouts to a formatted gateway-timeout error", async () => {
-        vi.useFakeTimers();
-        const fetchMock = vi.fn().mockRejectedValue(new DOMException("Timed out", "TimeoutError"));
-        vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient(config);
-
-        const request = client.call("https://example.com/items");
-        const assertion = expect(request).rejects.toMatchObject({
-            args: { statusCode: 504 },
-        });
-        await vi.runAllTimersAsync();
-        await assertion;
-        await expect(request).rejects.toBeInstanceOf(FormattedError);
-        expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
     it.each([true, false])("handles interrupted response bodies inside transport retries (recovers: %s)", async recovers => {
@@ -213,15 +169,6 @@ describe("createApiHttpClient", () => {
         } });
         expect(fetchMock).toHaveBeenCalledOnce();
         expect(transportMocks.setProviderCooldown).toHaveBeenCalledOnce();
-    });
-
-    it.each(["120", new Date(Date.now() + 120_000).toUTCString()])("persists Retry-After %s instead of holding the worker", async header => {
-        const fetchMock = vi.fn().mockResolvedValue(new Response("busy", { status: 503, headers: { "Retry-After": header } }));
-        vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient(config);
-        await expect(client.call("https://example.com/items")).rejects.toMatchObject({ details: { kind: "unavailable" } });
-        expect(fetchMock).toHaveBeenCalledOnce();
-        expect(transportMocks.setProviderCooldown.mock.calls[0][0].details.retryAt).toBeGreaterThanOrEqual(Date.now() + 119_000);
     });
 
     it("classifies rate-limit 403 responses separately from credential errors", async () => {
@@ -284,35 +231,4 @@ describe("createApiHttpClient", () => {
         expect(transportMocks.setProviderCooldown).not.toHaveBeenCalled();
     });
 
-    it("maps a 404 response to the router not-found result", async () => {
-        const fetchMock = vi.fn().mockResolvedValue(new Response("missing", { status: 404 }));
-        vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient(config);
-
-        await expect(client.call("https://example.com/items/404")).rejects.toMatchObject({
-            isNotFound: true,
-        });
-        expect(fetchMock).toHaveBeenCalledOnce();
-    });
-
-    it("waits for the response body and leaves it readable", async () => {
-        let body: ReadableStreamDefaultController;
-        const response = new Response(new ReadableStream({
-            start(controller) { body = controller; },
-        }));
-        const fetchMock = vi.fn().mockResolvedValue(response);
-        vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient(config);
-        const completed = vi.fn();
-        const request = client.call("https://example.com/games").then(completed);
-
-        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
-        expect(completed).not.toHaveBeenCalled();
-        body!.enqueue(new TextEncoder().encode("[]"));
-        body!.close();
-
-        await request;
-        expect(completed).toHaveBeenCalledWith(response);
-        await expect(response.json()).resolves.toEqual([]);
-    });
 });

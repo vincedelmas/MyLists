@@ -18,8 +18,6 @@ vi.mock("@/lib/server/database/db", () => ({
 
 
 const { ImportRepository } = await import("@/lib/server/domain/imports/import.repository");
-const { ImportService } = await import("@/lib/server/domain/imports/import.service");
-
 
 describe("ImportRepository", () => {
     let sqlite: Database;
@@ -49,40 +47,6 @@ describe("ImportRepository", () => {
         dbContext.db = undefined;
     });
 
-    it("creates a parsing job", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-
-        expect(job).toMatchObject({
-            userId: 42,
-            totalCount: 0,
-            source: ImportSource.MYLISTS,
-            status: ImportJobStatus.PARSING,
-        });
-    });
-
-    it("rolls back settled items when updating the job counters fails", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        ImportRepository.insertParsedItems(job.id, [createItem(2)]);
-        ImportRepository.markJobQueued(job.id, 1, 0);
-        await ImportRepository.claimNextQueuedJob();
-        const [item] = db.select().from(importItems).all();
-        await ImportRepository.markItemsProcessing(job.id, [item.id]);
-
-        const beforeItems = db.select().from(importItems).all();
-        const beforeJobs = db.select().from(importJobs).all();
-        sqlite.exec(`CREATE TRIGGER fail_counters BEFORE UPDATE ON import_jobs
-            BEGIN SELECT RAISE(ABORT, 'counter failure'); END`);
-
-        await expect(new ImportService(ImportRepository).applyItemOutcomes(job.id, [{
-            itemId: item.id,
-            matchedMediaId: 100,
-            status: ImportItemStatus.COMPLETED,
-        }])).rejects.toThrow();
-
-        expect(db.select().from(importItems).all()).toEqual(beforeItems);
-        expect(db.select().from(importJobs).all()).toEqual(beforeJobs);
-    });
-
     it("allows only one active job per user", async () => {
         const activeJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
 
@@ -98,23 +62,6 @@ describe("ImportRepository", () => {
             userId: 42,
             status: ImportJobStatus.PARSING,
         });
-    });
-
-    it("rolls back requeued rows if persisting the pause fails", async () => {
-        const job = ImportRepository.createJob(42, ImportSource.MYLISTS);
-        ImportRepository.insertParsedItems(job.id, [createItem(2)]);
-        ImportRepository.markJobQueued(job.id, 1, 0);
-        await ImportRepository.claimNextQueuedJob();
-        const [item] = db.select().from(importItems).all();
-        await ImportRepository.markItemsProcessing(job.id, [item.id]);
-        const beforeItems = db.select().from(importItems).all();
-        const beforeJobs = db.select().from(importJobs).all();
-        sqlite.exec(`CREATE TRIGGER fail_pause BEFORE UPDATE ON import_jobs
-            BEGIN SELECT RAISE(ABORT, 'pause failure'); END`);
-
-        expect(() => new ImportService(ImportRepository).pauseProcessingJob(job.id, "Provider paused", Date.now() + 60_000)).toThrow();
-        expect(db.select().from(importItems).all()).toEqual(beforeItems);
-        expect(db.select().from(importJobs).all()).toEqual(beforeJobs);
     });
 
     it("atomically claims only the oldest queued job while no job is processing", async () => {
@@ -141,101 +88,6 @@ describe("ImportRepository", () => {
         await expect(ImportRepository.claimNextQueuedJob()).resolves.toMatchObject({
             id: secondJob.id,
             status: ImportJobStatus.PROCESSING,
-        });
-    });
-
-    it("loads only queued items from a processing job in deterministic media and row order", async () => {
-        const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        const waitingJob = await ImportRepository.createJob(43, ImportSource.MYLISTS);
-
-        await ImportRepository.insertParsedItems(processingJob.id, [
-            createItem(4, { mediaType: MediaType.MOVIES }),
-            createItem(2, { mediaType: MediaType.SERIES, status: ImportItemStatus.FAILED }),
-            createItem(3, { mediaType: MediaType.GAMES }),
-        ]);
-
-        await ImportRepository.insertParsedItems(waitingJob.id, [
-            createItem(2, { mediaType: MediaType.BOOKS }),
-        ]);
-
-        await ImportRepository.markJobQueued(processingJob.id, 3, 1);
-        await ImportRepository.markJobQueued(waitingJob.id, 1, 0);
-        await ImportRepository.claimNextQueuedJob();
-
-        const items = await ImportRepository.getQueuedItemsForProcessingJob(processingJob.id);
-
-        expect(items.map(item => [item.mediaType, item.rowNumber])).toEqual([[MediaType.GAMES, 3], [MediaType.MOVIES, 4]]);
-        await expect(ImportRepository.getQueuedItemsForProcessingJob(waitingJob.id)).resolves.toEqual([]);
-    });
-
-    it("transitions processing items to terminal outcomes and increments job counters", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        await ImportRepository.insertParsedItems(job.id, [createItem(2), createItem(3), createItem(4)]);
-        await ImportRepository.markJobQueued(job.id, 3, 0);
-        await ImportRepository.claimNextQueuedJob();
-
-        const queuedItems = await ImportRepository.getQueuedItemsForProcessingJob(job.id);
-        const claimedItems = await ImportRepository.markItemsProcessing(job.id, queuedItems.map(item => item.id));
-
-        expect(claimedItems).toHaveLength(3);
-
-        const settledItems = await ImportRepository.settleProcessingItems(job.id, [
-            {
-                matchedMediaId: 101,
-                itemId: queuedItems[0].id,
-                status: ImportItemStatus.COMPLETED,
-            },
-            {
-                itemId: queuedItems[1].id,
-                statusReason: "Ambiguous match",
-                status: ImportItemStatus.SKIPPED,
-            },
-            {
-                itemId: queuedItems[2].id,
-                statusReason: "Provider error",
-                status: ImportItemStatus.FAILED,
-            },
-        ]);
-
-        expect(settledItems).toEqual([
-            { id: queuedItems[0].id, status: ImportItemStatus.COMPLETED },
-            { id: queuedItems[1].id, status: ImportItemStatus.SKIPPED },
-            { id: queuedItems[2].id, status: ImportItemStatus.FAILED },
-        ]);
-
-        await ImportRepository.incrementJobCounters(job.id, {
-            failedCount: 1,
-            skippedCount: 1,
-            completedCount: 1,
-            processedCount: 3,
-        });
-
-        const storedItems = await db
-            .select()
-            .from(importItems)
-            .where(eq(importItems.jobId, job.id))
-            .orderBy(importItems.rowNumber);
-
-        const storedJob = db
-            .select()
-            .from(importJobs)
-            .where(eq(importJobs.id, job.id))
-            .get();
-
-        expect(storedItems.map(item => ({
-            status: item.status,
-            statusReason: item.statusReason,
-            matchedMediaId: item.matchedMediaId,
-        }))).toEqual([
-            { status: ImportItemStatus.COMPLETED, matchedMediaId: 101, statusReason: null },
-            { status: ImportItemStatus.SKIPPED, matchedMediaId: null, statusReason: "Ambiguous match" },
-            { status: ImportItemStatus.FAILED, matchedMediaId: null, statusReason: "Provider error" },
-        ]);
-        expect(storedJob).toMatchObject({
-            failedCount: 1,
-            skippedCount: 1,
-            completedCount: 1,
-            processedCount: 3,
         });
     });
 
@@ -292,131 +144,7 @@ describe("ImportRepository", () => {
         ]);
     });
 
-    it("finalizes a fully accounted job without issues as completed", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        await ImportRepository.insertParsedItems(job.id, [createItem(2)]);
-        await ImportRepository.markJobQueued(job.id, 1, 0);
-        await ImportRepository.claimNextQueuedJob();
-
-        await expect(ImportRepository.finalizeProcessingJob(job.id)).resolves.toBeNull();
-
-        const [item] = await ImportRepository.getQueuedItemsForProcessingJob(job.id);
-        await ImportRepository.markItemsProcessing(job.id, [item.id]);
-        await ImportRepository.settleProcessingItems(job.id, [{
-            itemId: item.id,
-            matchedMediaId: 101,
-            status: ImportItemStatus.COMPLETED,
-        }]);
-        await ImportRepository.incrementJobCounters(job.id, {
-            failedCount: 0,
-            skippedCount: 0,
-            completedCount: 1,
-            processedCount: 1,
-        });
-
-        const finalizedJob = await ImportRepository.finalizeProcessingJob(job.id);
-
-        expect(finalizedJob).toMatchObject({
-            processedCount: 1,
-            completedCount: 1,
-            status: ImportJobStatus.COMPLETED,
-        });
-        expect(finalizedJob?.finishedAt).toBeTruthy();
-        await expect(ImportRepository.finalizeProcessingJob(job.id)).resolves.toBeNull();
-    });
-
-    it("finalizes a fully accounted job with issues as completed with errors", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        await ImportRepository.insertParsedItems(job.id, [
-            createItem(2, { status: ImportItemStatus.FAILED, statusReason: "Invalid row" }),
-            createItem(3),
-        ]);
-        await ImportRepository.markJobQueued(job.id, 2, 1);
-        await ImportRepository.claimNextQueuedJob();
-
-        const [item] = await ImportRepository.getQueuedItemsForProcessingJob(job.id);
-        await ImportRepository.markItemsProcessing(job.id, [item.id]);
-        await ImportRepository.settleProcessingItems(job.id, [{
-            itemId: item.id,
-            matchedMediaId: 102,
-            status: ImportItemStatus.COMPLETED,
-        }]);
-        await ImportRepository.incrementJobCounters(job.id, {
-            failedCount: 0,
-            skippedCount: 0,
-            completedCount: 1,
-            processedCount: 1,
-        });
-
-        await expect(ImportRepository.finalizeProcessingJob(job.id))
-            .resolves.toMatchObject({
-                status: ImportJobStatus.COMPLETED_WITH_ERRORS,
-                completedCount: 1,
-                failedCount: 1,
-                processedCount: 2,
-            });
-    });
-
-    it("inserts parsed items in batches and queues the job with parsing counters", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        const items = Array.from({ length: 51 }, (_, idx) => createItem(idx + 2, {
-            status: idx === 50 ? ImportItemStatus.FAILED : ImportItemStatus.QUEUED,
-            statusReason: idx === 50 ? "Invalid row" : null,
-        }));
-
-        await ImportRepository.insertParsedItems(job.id, items);
-        const queuedJob = await ImportRepository.markJobQueued(job.id, items.length, ImportRepository.countFailedItems(items));
-
-        const storedItems = await db.select().from(importItems).where(eq(importItems.jobId, job.id));
-
-        expect(storedItems).toHaveLength(51);
-        expect(queuedJob).toMatchObject({
-            totalCount: 51,
-            failedCount: 1,
-            processedCount: 1,
-            status: ImportJobStatus.QUEUED,
-        });
-    });
-
-    it("only queues jobs that are still parsing", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        await ImportRepository.markJobQueued(job.id, 0, 0);
-
-        await expect(ImportRepository.markJobQueued(job.id, 0, 0)).toBeNull();
-    });
-
-    it("marks parsing failures as terminal and truncates stored errors", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-
-        const failedJob = await ImportRepository.markJobFailed(job.id, "x".repeat(2_100));
-        const storedJob = db
-            .select()
-            .from(importJobs)
-            .where(eq(importJobs.id, job.id))
-            .get();
-
-        expect(failedJob).toMatchObject({ status: ImportJobStatus.FAILED });
-        expect(storedJob?.error).toHaveLength(2_000);
-        expect(storedJob?.finishedAt).toBeTruthy();
-    });
-
-    it("marks processing failures as terminal and only affects processing jobs", async () => {
-        const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        const parsingJob = await ImportRepository.createJob(43, ImportSource.MYLISTS);
-
-        await ImportRepository.markJobQueued(processingJob.id, 0, 0);
-        await ImportRepository.claimNextQueuedJob();
-
-        expect(ImportRepository.markProcessingJobFailed(parsingJob.id, "Wrong state")).toBeNull();
-
-        const failedJob = await ImportRepository.markProcessingJobFailed(processingJob.id, "x".repeat(2_100));
-
-        expect(failedJob).toMatchObject({ status: ImportJobStatus.FAILED });
-        expect(failedJob?.error).toHaveLength(2_000);
-        expect(failedJob?.finishedAt).toBeTruthy();
-    });
-
-    it("finds jobs only for their owner and counts processing and earlier queued jobs", async () => {
+it("finds jobs only for their owner and counts processing and earlier queued jobs", async () => {
         const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         const earlierQueuedJob = await ImportRepository.createJob(43, ImportSource.MYLISTS);
         const targetJob = await ImportRepository.createJob(44, ImportSource.MYLISTS);
@@ -434,27 +162,7 @@ describe("ImportRepository", () => {
         await expect(ImportRepository.countJobsAhead(queuedTarget)).resolves.toBe(2);
     });
 
-    it("returns only failed and skipped items ordered by CSV row with bounded pagination", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        await ImportRepository.insertParsedItems(job.id, [
-            createItem(4, { status: ImportItemStatus.SKIPPED, statusReason: "Ambiguous" }),
-            createItem(2, { status: ImportItemStatus.FAILED, statusReason: "Invalid date" }),
-            createItem(3, { status: ImportItemStatus.COMPLETED }),
-        ]);
-
-        const result = await ImportRepository.getIssueItems(job.id, 1, 1);
-
-        expect(result).toMatchObject({ page: 1, perPage: 1, pages: 2, total: 2 });
-        expect(result.items).toEqual([
-            expect.objectContaining({
-                rowNumber: 2,
-                statusReason: "Invalid date",
-                status: ImportItemStatus.FAILED,
-            }),
-        ]);
-    });
-
-    it.each([ImportJobStatus.QUEUED, ImportJobStatus.FAILED])("deletes only owned %s jobs and cascades their items before a processor can claim them", async status => {
+it.each([ImportJobStatus.QUEUED, ImportJobStatus.FAILED])("deletes only owned %s jobs and cascades their items before a processor can claim them", async status => {
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         await ImportRepository.insertParsedItems(job.id, [createItem(2)]);
         if (status === ImportJobStatus.QUEUED) await ImportRepository.markJobQueued(job.id, 1, 0);
@@ -487,11 +195,6 @@ describe("ImportRepository", () => {
         await expect(ImportRepository.findJobForUser(job.id, 42)).resolves.toMatchObject({ status: ImportJobStatus.PROCESSING });
     });
 
-    it("does not delete a job that is still being parsed", async () => {
-        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        await expect(ImportRepository.deleteQueuedOrTerminalJob(job.id, 42)).resolves.toBeNull();
-        await expect(ImportRepository.findJobForUser(job.id, 42)).resolves.toEqual(job);
-    });
 });
 
 

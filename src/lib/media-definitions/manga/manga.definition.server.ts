@@ -1,9 +1,28 @@
-import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
+import {getTableColumns, ne, sql} from "drizzle-orm";
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {MANGA_FIXED_DURATION_MIN, mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
-import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
-import {createArrayFilter} from "@/lib/server/domain/media/base/media-list.queries";
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+
+
+const tables = {
+    mediaTable: manga,
+    listTable: mangaList,
+    genreTable: mangaGenre,
+    tagTable: mangaTags,
+    deleteDependents: [mangaAuthors, mangaGenre, mangaTags],
+};
+
+
+const sortColumns = {
+    ...getCommonMediaSortColumns(tables),
+    redo: mangaList.redo,
+    chapters: manga.chapters,
+    providerRating: manga.voteAverage,
+};
 
 
 export const mangaServerDefinition = defineServerMediaDefinition({
@@ -12,13 +31,19 @@ export const mangaServerDefinition = defineServerMediaDefinition({
         coverDirectory: "manga-covers",
     },
     repository: {
-        tables: {
-            mediaTable: manga,
-            listTable: mangaList,
-            genreTable: mangaGenre,
-            tagTable: mangaTags,
-            deleteDependents: [mangaAuthors, mangaGenre, mangaTags],
-        },
+        sortColumns,
+        filters: defineMediaFilterDefinitions(mangaDefinition, tables, {
+            authors: {
+                searchable: true,
+                entityTable: mangaAuthors,
+                filterColumn: mangaAuthors.name,
+            },
+            publishers: {
+                searchable: true,
+                filterColumn: manga.publishers,
+            },
+        }),
+        tables,
         popularity: {
             eligibility: sql`${manga.voteCount} >= 5000`,
         },
@@ -29,34 +54,8 @@ export const mangaServerDefinition = defineServerMediaDefinition({
                 imageCover: manga.imageCover,
                 ...getTableColumns(mangaList),
             },
-            filters: {
-                authors: createArrayFilter({
-                    argName: "authors",
-                    mediaTable: manga,
-                    entityTable: mangaAuthors,
-                    filterColumn: mangaAuthors.name,
-                }),
-                publishers: createArrayFilter({
-                    argName: "publishers",
-                    mediaTable: manga,
-                    filterColumn: manga.publishers,
-                }),
-            },
-            filterOptions: {},
-            defaultSort: "Title A-Z",
-            sorts: {
-                "Title A-Z": asc(manga.name),
-                "Title Z-A": desc(manga.name),
-                "Rating +": [desc(mangaList.rating), asc(manga.name)],
-                "Rating -": [asc(mangaList.rating), asc(manga.name)],
-                "Published Date +": [desc(manga.releaseDate), asc(manga.name)],
-                "Published Date -": [sql`${manga.releaseDate} ASC NULLS LAST`, asc(manga.name)],
-                "Recently Added": [desc(mangaList.addedAt), asc(manga.name)],
-                "Recently Modified": [desc(mangaList.lastUpdated), asc(manga.name)],
-                "Re-Read": [desc(mangaList.redo), asc(manga.name)],
-                "Chapters +": [desc(manga.chapters), asc(manga.name)],
-                "Chapters -": [asc(manga.chapters), asc(manga.name)],
-            },
+            defaultSort: getMediaSortLabel(mangaDefinition, mangaDefinition.sorting.default),
+            sorts: createMediaListSorts(mangaDefinition, sortColumns, manga.id),
         },
         communityActivity: {
             aggregates: {

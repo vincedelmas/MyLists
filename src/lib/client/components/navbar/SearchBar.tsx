@@ -7,10 +7,10 @@ import {Link, useNavigate} from "@tanstack/react-router";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
-import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
-import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
+import {useNavbarSearch} from "@/lib/client/components/navbar/use-navbar-search";
 import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
 import {NavbarSearchResults} from "@/lib/client/components/navbar/NavbarSearchResults";
+import {NavbarSearchDropdown} from "@/lib/client/components/navbar/NavbarSearchDropdown";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
@@ -26,11 +26,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     const [page, setPage] = useState(1);
     const [prevSelector, setPrevSelector] = useState(currentUser?.searchSelector);
     const [selectDrop, setSelectDrop] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.USERS);
-
-    const { search, setSearch, setIsOpen, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer({
-        resetOnOutsideClick: false,
-        onReset: () => setPage(1),
-    });
+    const { search, setSearch, setIsOpen, debouncedSearch, isOpen, reset, containerRef } = useNavbarSearch(() => setPage(1));
 
     const { data: searchResults, isFetching, error } = useQuery(navSearchOptions(debouncedSearch, page, selectDrop));
 
@@ -161,7 +157,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                 </InputGroupAddon>
             </InputGroup>
 
-            <SearchContainer
+            <NavbarSearchDropdown
                 error={error}
                 isOpen={isOpen}
                 search={search}
@@ -184,7 +180,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                         }}
                     />
                 }
-            </SearchContainer>
+            </NavbarSearchDropdown>
         </div>
     );
 };

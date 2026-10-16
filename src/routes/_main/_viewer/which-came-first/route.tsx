@@ -5,7 +5,6 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {Progress} from "@/lib/client/components/ui/progress";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -43,9 +42,10 @@ export const Route = createFileRoute("/_main/_viewer/which-came-first")({
         whichCameFirstQueryOptions: whichCameFirstOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.whichCameFirstQueryOptions);
+        return context.queryClient.query({ ...context.whichCameFirstQueryOptions, staleTime: "static" });
     },
     component: WhichCameFirstPage,
+    head: () => ({ meta: [{ title: "Which Came First? - MyLists" }] }),
 });
 
 
@@ -112,56 +112,54 @@ function WhichCameFirstPage() {
     }, [answerResult]);
 
     return (
-        <PageTitle title="Which Came First?" onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    asideIcon={Target}
-                    asideLabel="Run limit"
-                    title="Which Came First?"
-                    eyebrowIcon={GitCompareArrows}
-                    eyebrow="Release date challenge"
-                    asideValue={`Up to ${WCF_MAX_ROUNDS} rounds`}
-                    description="Two covers. Pick the title released first. One mistake ends the run."
-                />
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                asideIcon={Target}
+                asideLabel="Run limit"
+                title="Which Came First?"
+                eyebrowIcon={GitCompareArrows}
+                eyebrow="Release date challenge"
+                asideValue={`Up to ${WCF_MAX_ROUNDS} rounds`}
+                description="Two covers. Pick the title released first. One mistake ends the run."
+            />
 
-                <section className="mt-8 grid grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] items-stretch overflow-hidden rounded-xl border shadow-xs max-lg:grid-cols-1">
-                    <div className="min-w-0 p-5 sm:p-6">
-                        {activeRun && showGameOver && answerResult ?
-                            <GameOverScreen
+            <section className="mt-8 grid grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] items-stretch overflow-hidden rounded-xl border shadow-xs max-lg:grid-cols-1">
+                <div className="min-w-0 p-5 sm:p-6">
+                    {activeRun && showGameOver && answerResult ?
+                        <GameOverScreen
+                            run={activeRun}
+                            result={answerResult}
+                            onPlayAgain={playAgain}
+                            onMainMenu={continueGame}
+                            isStarting={startMutation.isPending}
+                        />
+                        : activeRun ?
+                            <GameBoard
                                 run={activeRun}
                                 result={answerResult}
-                                onPlayAgain={playAgain}
-                                onMainMenu={continueGame}
-                                isStarting={startMutation.isPending}
+                                onAnswer={submitAnswer}
+                                isPending={answerMutation.isPending}
+                                onAbandon={() => abandonMutation.mutate({ data: { runId: activeRun.id } })}
                             />
-                            : activeRun ?
-                                <GameBoard
-                                    run={activeRun}
-                                    result={answerResult}
-                                    onAnswer={submitAnswer}
-                                    isPending={answerMutation.isPending}
-                                    onAbandon={() => abandonMutation.mutate({ data: { runId: activeRun.id } })}
-                                />
-                                :
-                                <GameSetup
-                                    onStart={startGame}
-                                    selectedTypes={selectedTypes}
-                                    onSelectionChange={setSelectedTypes}
-                                    isPending={startMutation.isPending}
-                                />
-                        }
-                    </div>
-                    <Stats
-                        stats={stats}
-                        canReset={!activeRun && !answerResult}
-                    />
-                </section>
-
-                <WcfLeaderboard
-                    leaderboard={leaderboard}
+                            :
+                            <GameSetup
+                                onStart={startGame}
+                                selectedTypes={selectedTypes}
+                                onSelectionChange={setSelectedTypes}
+                                isPending={startMutation.isPending}
+                            />
+                    }
+                </div>
+                <Stats
+                    stats={stats}
+                    canReset={!activeRun && !answerResult}
                 />
-            </div>
-        </PageTitle>
+            </section>
+
+            <WcfLeaderboard
+                leaderboard={leaderboard}
+            />
+        </div>
     );
 }
 

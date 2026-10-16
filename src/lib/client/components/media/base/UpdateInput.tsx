@@ -1,7 +1,7 @@
-import React, {useState} from "react";
 import {UpdateType} from "@/lib/utils/enums";
-import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
+import {useNumericEdit} from "@/lib/client/components/media/base/use-numeric-edit";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
+import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
 interface UpdateInputProps {
@@ -14,60 +14,22 @@ interface UpdateInputProps {
 
 
 export const UpdateInput = ({ total, initValue, updateInput, payloadName, updateType }: UpdateInputProps) => {
-    const [currentValue, setCurrentValue] = useState(initValue?.toString() ?? "0");
-
-    const validateAndMutate = () => {
-        if (currentValue.trim() === "") {
-            setCurrentValue(initValue?.toString() ?? "0");
-            return;
-        }
-
-        const parsed = Number(currentValue);
-        if (!Number.isFinite(parsed)) {
-            setCurrentValue(initValue?.toString() ?? "0");
-            return;
-        }
-
-        if (parsed === initValue) return;
-
-        if (total !== undefined && total !== null && (parsed > total || parsed < 0)) {
-            setCurrentValue(initValue?.toString() ?? "0");
-            return;
-        }
-
-        updateInput.mutate({ payload: { type: updateType, [payloadName]: parsed } }, {
-            onError: () => {
-                setCurrentValue(initValue?.toString() ?? "0");
-            },
-            onSuccess: (data) => {
-                if (!data) {
-                    setCurrentValue(initValue?.toString() ?? "0");
-                }
-            },
-        });
-    };
-
-    const handleOnBlur = (ev: React.FocusEvent<HTMLInputElement>) => {
-        ev.preventDefault();
-        validateAndMutate();
-    };
-
-    const handleOnKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
-        if (ev.key === "Enter") {
-            ev.preventDefault();
-            ev.currentTarget.blur();
-        }
-    };
+    const input = useNumericEdit({
+        value: initValue ?? 0,
+        validate: (value) => {
+            return Number.isInteger(value) && value >= 0 && (total === undefined || total === null || value <= total);
+        },
+        onCommit: async (value) => {
+            return Boolean(await updateInput.mutateAsync({ payload: { type: updateType, [payloadName]: value } }));
+        },
+    });
 
     return (
         <InputGroup className="w-34 h-7 rounded-md">
             <InputGroupInput
+                {...input}
                 inputMode="numeric"
-                value={currentValue}
-                onBlur={handleOnBlur}
-                onKeyDown={handleOnKeyDown}
                 disabled={updateInput.isPending}
-                onChange={(ev) => setCurrentValue(ev.target.value)}
                 aria-label={payloadName === "actualPage" ? "Current page" : "Current chapter"}
             />
             <InputGroupAddon align="inline-end">

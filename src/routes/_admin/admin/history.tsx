@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_admin/admin/history")({
         adminHistoryQueryOptions: adminAllUpdatesOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.adminHistoryQueryOptions);
+        return context.queryClient.query({ ...context.adminHistoryQueryOptions, staleTime: "static" });
     },
     component: AdminGlobalHistory,
 });

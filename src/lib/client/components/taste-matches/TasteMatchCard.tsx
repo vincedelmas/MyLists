@@ -33,10 +33,15 @@ export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; ac
                 />
                 <div className="flex flex-wrap gap-3">
                     <FollowButton
+                        targetUserId={match.id}
                         profileUsername={match.name}
-                        social={{ followId: match.id, followStatus: match.followStatus }}
+                        followStatus={match.followStatus?.status}
                     />
-                    <Link to="/profile/$username" params={{ username: match.name }} className={buttonVariants({ variant: "secondary" })}>
+                    <Link
+                        to="/profile/$username"
+                        params={{ username: match.name }}
+                        className={buttonVariants({ variant: "secondary" })}
+                    >
                         View profile
                     </Link>
                 </div>
@@ -89,7 +94,8 @@ export const TasteMatchCard = ({ match, activeTab }: { match: TasteMatch; active
                 <FollowButton
                     className="w-auto"
                     profileUsername={match.name}
-                    social={{ followId: match.id, followStatus: match.followStatus }}
+                    targetUserId={match.id}
+                    followStatus={match.followStatus?.status}
                 />
             </div>
         </Card>

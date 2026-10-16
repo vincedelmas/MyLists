@@ -27,7 +27,7 @@ export class MediaTrackingService {
     ) {
     }
 
-    addMediaToList({ userId, mediaType, mediaId, status }: MediaAction & { status?: Status; silent?: boolean }) {
+    addMediaToList({ userId, mediaType, mediaId, status }: MediaAction & { status?: Status }) {
         return withTransaction(() => {
             const mediaService = this.mediaServiceRegistry.get(mediaType);
 

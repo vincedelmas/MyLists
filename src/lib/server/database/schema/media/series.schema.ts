@@ -2,6 +2,7 @@ import {sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
+import {mediaTags} from "@/lib/server/database/schema/media-tags.schema";
 import {check, integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
 import {
     commMediaEpsCols,
@@ -139,6 +140,10 @@ export const seriesTagsRelations = relations(seriesTags, ({ one }) => ({
     series: one(series, {
         fields: [seriesTags.mediaId],
         references: [series.id]
+    }),
+    tag: one(mediaTags, {
+        fields: [seriesTags.tagId],
+        references: [mediaTags.id],
     }),
     user: one(user, {
         fields: [seriesTags.userId],

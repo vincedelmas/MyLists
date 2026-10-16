@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_admin/admin/achievements")({
         achievementsQueryOptions: adminAchievementsOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.achievementsQueryOptions);
+        return context.queryClient.query({ ...context.achievementsQueryOptions, staleTime: "static" });
     },
     component: AchievementPage,
 })

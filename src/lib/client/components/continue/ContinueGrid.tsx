@@ -4,7 +4,7 @@ import {ContinueCard} from "@/lib/client/components/continue/ContinueCard";
 import type {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
 
 
-export const ContinueGrid = ({ items }: { items: ContinueItem[] }) => {
+export const ContinueGrid = ({ items, readOnly = false }: { items: ContinueItem[]; readOnly?: boolean }) => {
     const [visibleCount, setVisibleCount] = useState(12);
 
     return (
@@ -13,6 +13,7 @@ export const ContinueGrid = ({ items }: { items: ContinueItem[] }) => {
                 {items.slice(0, visibleCount).map(item =>
                     <ContinueCard
                         item={item}
+                        readOnly={readOnly}
                         key={`${item.mediaType}-${item.mediaId}`}
                     />
                 )}

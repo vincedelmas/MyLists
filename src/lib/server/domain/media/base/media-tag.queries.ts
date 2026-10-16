@@ -1,148 +1,115 @@
 import {TagAction} from "@/lib/utils/enums";
-import type {SimpleSearch} from "@/lib/schemas";
+import {mediaTags} from "@/lib/server/database/schema";
 import type {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {getDbClient} from "@/lib/server/database/async-storage";
-import {resolvePagination} from "@/lib/server/database/pagination";
-import {and, asc, countDistinct, desc, eq, like, lte, sql} from "drizzle-orm";
-import type {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
+import {and, asc, count, eq, inArray, notExists, type SQL, sql} from "drizzle-orm";
+import {removeDynamicListTagReferences} from "@/lib/server/domain/dynamic-lists/dynamic-list-tags.queries";
+import type {AnyServerMediaDefinition, BaseMediaTables} from "@/lib/media-definitions/base/media.definition.server";
 
 
-export const createMediaTagQueries = (definition: AnyMediaRepositoryDefinition) => {
-    const { listTable, mediaTable, tagTable } = definition.tables;
+export const getMediaTagNames = (tagTable: BaseMediaTables["tagTable"], userId: number) => getDbClient()
+    .selectDistinct({ name: mediaTags.name })
+    .from(tagTable)
+    .innerJoin(mediaTags, eq(mediaTags.id, tagTable.tagId))
+    .where(eq(tagTable.userId, userId))
+    .orderBy(asc(mediaTags.name))
+    .all();
+
+
+export const createMediaTagQueries = (definition: AnyServerMediaDefinition) => {
+    const { identity: { mediaType }, repository: { tables: { tagTable } } } = definition;
+
+    const removeAssignments = (condition: SQL) => {
+        const db = getDbClient();
+        const removed = db
+            .delete(tagTable)
+            .where(condition)
+            .returning({ tagId: tagTable.tagId })
+            .all();
+
+        if (!removed.length) return;
+
+        const deleted = db
+            .delete(mediaTags)
+            .where(and(
+                inArray(mediaTags.id, [...new Set(removed.map(row => row.tagId))]),
+                notExists(db
+                    .select({ id: tagTable.id })
+                    .from(tagTable)
+                    .where(eq(tagTable.tagId, mediaTags.id))
+                ),
+            )).returning({ id: mediaTags.id, userId: mediaTags.userId })
+            .all();
+
+        const byUser = new Map<number, number[]>();
+        for (const tag of deleted) {
+            const ids = byUser.get(tag.userId) ?? [];
+            ids.push(tag.id);
+            byUser.set(tag.userId, ids);
+        }
+
+        for (const [userId, ids] of byUser) {
+            removeDynamicListTagReferences(userId, mediaType, ids);
+        }
+    };
 
     return {
         async getTagNames(userId: number) {
-            return getDbClient()
-                .selectDistinct({ name: sql<string>`${tagTable.name}` })
-                .from(tagTable)
-                .where(eq(tagTable.userId, userId))
-                .orderBy(asc(tagTable.name));
+            return getMediaTagNames(tagTable, userId);
         },
 
         editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {
-            const db = getDbClient();
+            return withTransaction(() => {
+                const db = getDbClient();
+                const owner = and(eq(mediaTags.userId, userId), eq(mediaTags.mediaType, mediaType));
 
-            if (action === TagAction.ADD) {
-                const [tagData] = db
-                    .insert(tagTable)
-                    .values({ userId, name: tag.name, mediaId })
-                    .returning({ name: tagTable.name }).all();
-
-                return tagData satisfies Tag;
-            }
-            else if (action === TagAction.RENAME) {
-                if (!tag.oldName) return;
-
-                const existingTag = db
-                    .select()
-                    .from(tagTable)
-                    .where(and(eq(tagTable.userId, userId), eq(tagTable.name, tag.name)))
-                    .get();
-
-                if (existingTag) {
-                    throw new FormattedError("A tag with this name already exists.");
+                if (action === TagAction.ADD) {
+                    let identity = db.select().from(mediaTags).where(and(owner, eq(mediaTags.name, tag.name))).get();
+                    if (!identity) {
+                        identity = db.insert(mediaTags).values({ userId, mediaType, name: tag.name }).returning().get()!;
+                    }
+                    db.insert(tagTable).values({ userId, mediaId, tagId: identity.id }).run();
+                    return { name: identity.name } satisfies Tag;
+                }
+                if (action === TagAction.RENAME) {
+                    const existing = db.select({ id: mediaTags.id }).from(mediaTags)
+                        .where(and(owner, eq(mediaTags.name, tag.name))).get();
+                    if (existing) throw new FormattedError("A tag with this name already exists.");
+                    return db.update(mediaTags).set({ name: tag.name })
+                        .where(and(owner, eq(mediaTags.name, tag.oldName!)))
+                        .returning({ name: mediaTags.name }).get();
                 }
 
-                const [tagData] = db
-                    .update(tagTable)
-                    .set({ name: tag.name })
-                    .where(and(
-                        eq(tagTable.userId, userId),
-                        eq(tagTable.name, tag.oldName)
-                    )).returning({ name: tagTable.name }).all();
-                return tagData satisfies Tag;
-            }
-            else if (action === TagAction.DELETE_ONE) {
-                if (!mediaId) return;
+                const identity = db.select({ id: mediaTags.id }).from(mediaTags)
+                    .where(and(owner, eq(mediaTags.name, tag.name))).get();
+                if (!identity) return;
 
-                db
-                    .delete(tagTable)
-                    .where(and(eq(tagTable.userId, userId), eq(tagTable.name, tag.name), eq(tagTable.mediaId, mediaId))).run();
-            }
-            else if (action === TagAction.DELETE_ALL) {
-                db
-                    .delete(tagTable)
-                    .where(and(eq(tagTable.userId, userId), eq(tagTable.name, tag.name))).run();
-            }
+                if (action === TagAction.DELETE_ONE) {
+                    removeAssignments(and(eq(tagTable.userId, userId), eq(tagTable.tagId, identity.id), eq(tagTable.mediaId, mediaId!))!);
+                }
+                else if (action === TagAction.DELETE_ALL) {
+                    db.delete(mediaTags).where(eq(mediaTags.id, identity.id)).run();
+                    removeDynamicListTagReferences(userId, mediaType, [identity.id]);
+                }
+            });
         },
 
-        async getTagsView(userId: number, search: SimpleSearch) {
-            const pagination = resolvePagination({ page: search.page, perPage: 16, maxPerPage: 16 });
-            const searchCondition = search.search ? like(tagTable.name, `%${search.search}%`) : undefined;
+        removeMediaAssignments(mediaIds: number[], userId?: number) {
+            return withTransaction(() => removeAssignments(and(
+                inArray(tagTable.mediaId, mediaIds),
+                userId === undefined ? undefined : eq(tagTable.userId, userId),
+            )!));
+        },
 
-            const rankedSq = getDbClient()
-                .$with("ranked_data")
-                .as(getDbClient()
-                    .select({
-                        tagId: tagTable.id,
-                        mediaId: listTable.mediaId,
-                        mediaCover: mediaTable.imageCover,
-                        tagName: sql<string>`${tagTable.name}`.as("tag_name"),
-                        mediaName: sql<string>`${mediaTable.name}`.as("media_name"),
-                        rowNumber: sql<number>`row_number() over (
-                            partition by ${tagTable.name}
-                            order by ${listTable.lastUpdated} desc
-                        )`.as("row_number"),
-                        totalCount: sql<number>`count(${tagTable.mediaId}) over (
-                            partition by ${tagTable.name}
-                        )`.as("total_count"),
-                        tagLastActivity: sql<number>`max(${listTable.lastUpdated}) over (
-                            partition by ${tagTable.name}
-                        )`.as("tags_last_activity"),
-                    })
-                    .from(tagTable)
-                    .leftJoin(mediaTable, eq(tagTable.mediaId, mediaTable.id))
-                    .leftJoin(listTable, and(eq(tagTable.mediaId, listTable.mediaId), eq(listTable.userId, userId)))
-                    .where(and(eq(tagTable.userId, userId), searchCondition))
-                );
-
-            const [{ total, exactMatch }, items] = await Promise.all([
-                getDbClient()
-                    .select({
-                        total: countDistinct(tagTable.name),
-                        exactMatch: search.search
-                            ? sql<number>`max(case when lower(${tagTable.name}) = lower(${search.search}) then 1 else 0 end)`
-                            : sql<number>`0`,
-                    })
-                    .from(tagTable)
-                    .where(and(eq(tagTable.userId, userId), searchCondition))
-                    .then(([result]) => result),
-                getDbClient()
-                    .with(rankedSq)
-                    .select({
-                        tagId: rankedSq.tagId,
-                        tagName: rankedSq.tagName,
-                        totalCount: rankedSq.totalCount,
-                        medias: sql<{ mediaId: number; mediaName: string; mediaCover: string }[]>`
-                            json_group_array(json_object(
-                                'mediaId', ${rankedSq.mediaId},
-                                'mediaName', ${rankedSq.mediaName},
-                                'mediaCover', ${rankedSq.mediaCover}
-                            ))`.mapWith((rawString) => {
-                            const parsedArray = JSON.parse(rawString);
-                            return parsedArray.filter((item: any) => item.mediaId !== null).map((item: any) => ({
-                                ...item,
-                                mediaCover: mediaTable.imageCover.mapFromDriverValue(item.mediaCover),
-                            }))
-                        }),
-                    })
-                    .from(rankedSq)
-                    .where(lte(rankedSq.rowNumber, 3))
-                    .groupBy(sql`${rankedSq.tagName}`)
-                    .orderBy(desc(rankedSq.tagLastActivity))
-                    .limit(pagination.limit)
-                    .offset(pagination.offset),
-            ]);
-
-            return {
-                total,
-                items: items,
-                page: pagination.page,
-                exactMatch: !!exactMatch,
-                perPage: pagination.perPage,
-                pages: Math.ceil(total / pagination.perPage),
-            };
+        async getTagsView(userId: number) {
+            return getDbClient()
+                .select({ tagName: mediaTags.name, totalCount: count(tagTable.mediaId) })
+                .from(tagTable)
+                .innerJoin(mediaTags, eq(mediaTags.id, tagTable.tagId))
+                .where(eq(tagTable.userId, userId))
+                .groupBy(mediaTags.id)
+                .orderBy(sql`${mediaTags.name} COLLATE NOCASE`, asc(mediaTags.name)).all();
         },
     };
 };

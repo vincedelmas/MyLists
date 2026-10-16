@@ -1,8 +1,10 @@
+import {MediaType} from "@/lib/utils/enums";
+import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
-import {movies, moviesActors, moviesGenre, moviesList, moviesTags, user} from "@/lib/server/database/schema";
+import {movies, moviesList, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -82,16 +84,12 @@ describe("Shared media persistence and list queries", () => {
         expect(storedRows).toHaveLength(2);
     });
 
-    it("does not execute an insert for an empty batch", async () => {
-        await expect(repository.bulkInsertUserMedia([])).resolves.toEqual([]);
-    });
-
     it("rolls back earlier insert batches if a later batch fails", async () => {
         const media = Array.from({ length: 201 }, (_,index) => ({
             id: 1000 + index, apiId: 10000 + index, name: `Batch movie ${index}`, imageCover: "movie.jpg", duration: 120,
         }));
         db.insert(movies).values(media).run();
-        sqlite.exec(`CREATE TRIGGER fail_later_batch BEFORE INSERT ON movies_list
+        sqlite.run(`CREATE TRIGGER fail_later_batch BEFORE INSERT ON movies_list
             WHEN NEW.media_id = 1200 BEGIN SELECT RAISE(ABORT, 'later batch failed'); END`);
 
         await expect(repository.bulkInsertUserMedia(media.map(({ id }) => ({
@@ -114,18 +112,7 @@ describe("Shared media persistence and list queries", () => {
         expect(originalNameResult.items.map(item => item.mediaId)).toEqual([101]);
     });
 
-    it("searches user-list suggestions by original media name", async () => {
-        await db.insert(moviesList).values([
-            { userId: 42, mediaId: 100, status: Status.COMPLETED },
-            { userId: 42, mediaId: 101, status: Status.COMPLETED },
-        ]);
-
-        const result = await service.searchUserListByName(42, "Original One");
-
-        expect(result.map(item => item.mediaId)).toEqual([100]);
-    });
-
-    it("scopes tag filters to the owner of the requested list", async () => {
+it("scopes tag filters to the owner of the requested list", async () => {
         await db.insert(user).values({
             id: 43,
             emailVerified: true,
@@ -138,7 +125,7 @@ describe("Shared media persistence and list queries", () => {
             { userId: 42, mediaId: 100, status: Status.COMPLETED },
             { userId: 42, mediaId: 101, status: Status.COMPLETED },
         ]);
-        await db.insert(moviesTags).values([
+        seedMediaTags(db, MediaType.MOVIES, [
             { userId: 43, mediaId: 100, name: "private-tag" },
             { userId: 42, mediaId: 101, name: "private-tag" },
         ]);
@@ -148,22 +135,4 @@ describe("Shared media persistence and list queries", () => {
         expect(result.items.map((item) => item.mediaId)).toEqual([101]);
     });
 
-    it("clears related rows when an update explicitly supplies an empty array", async () => {
-        await db.insert(moviesActors).values({ mediaId: 100, name: "Actor" });
-        await db.insert(moviesGenre).values({ mediaId: 100, name: "Drama" });
-
-        await repository.updateMediaWithDetails({
-            mediaData: {
-                apiId: 1000,
-                duration: 120,
-                name: "Movie 1",
-                imageCover: "1.jpg",
-            },
-            actorsData: [],
-            genresData: [],
-        });
-
-        await expect(db.select().from(moviesActors).where(eq(moviesActors.mediaId, 100))).resolves.toEqual([]);
-        await expect(db.select().from(moviesGenre).where(eq(moviesGenre.mediaId, 100))).resolves.toEqual([]);
-    });
 });

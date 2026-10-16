@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_admin/admin/overview")({
         overviewQueryOptions: adminOverviewOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.overviewQueryOptions);
+        return context.queryClient.query({ ...context.overviewQueryOptions, staleTime: "static" });
     },
     component: OverviewPage,
 });

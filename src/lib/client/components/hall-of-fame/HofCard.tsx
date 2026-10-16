@@ -4,11 +4,11 @@ import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {calculateMediaLevel} from "@/lib/utils/media/level";
-import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {HofUserData} from "@/lib/types/query.options.types";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 
 
@@ -89,7 +89,7 @@ export const HofCard = ({ userData }: HofCardProps) => {
                         <Link
                             key={mediaType}
                             disabled={!setting?.active}
-                            to="/list/$mediaType/$username"
+                            to="/lists/tracking/$mediaType/$username"
                             params={{ mediaType, username: userData.name }}
                             className={cn("group/media flex min-w-0 items-center gap-2", !setting?.active && "pointer-events-none opacity-40")}
                         >
@@ -99,7 +99,7 @@ export const HofCard = ({ userData }: HofCardProps) => {
                                     {mediaType}
                                 </span>
                                 <span className="block text-sm font-semibold tabular-nums">
-                                    {setting?.active ? Math.floor(calculateMediaLevel(setting.timeSpent)) : "—"}
+                                    {setting?.active ? Math.floor(calculateMediaLevel(setting.timeSpent)) : DEFAULT_DASH_FALLBACK}
                                 </span>
                             </span>
                         </Link>

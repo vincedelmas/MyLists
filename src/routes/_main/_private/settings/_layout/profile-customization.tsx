@@ -1,15 +1,18 @@
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useId, useState} from "react";
 import {toItemKey} from "@/lib/utils/media/item-key";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {toast} from "@/lib/client/components/ui/toast";
-import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {createFileRoute, Link} from "@tanstack/react-router";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {profileCustomizationSettingsSchema} from "@/lib/schemas";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {profileCustomOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
+import {MAX_PROFILE_PINS} from "@/lib/schemas/profile-pins.schema";
 import {TabCustomContent} from "@/lib/client/components/user-settings/TabCustomContent";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {ProfileSidebarTabs} from "@/lib/client/components/user-settings/ProfileSidebarTabs";
@@ -20,19 +23,25 @@ import {HIGHLIGHTED_MEDIA_TABS, HighlightedMediaSearchItem, HighlightedMediaTab,
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/profile-customization")({
-    context: () => ({ profileCustomQueryOptions: profileCustomOptions }),
-    loader: ({ context }) => context.queryClient.ensureQueryData(context.profileCustomQueryOptions),
+    context: () => ({
+        profileCustomQueryOptions: profileCustomOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.query({ ...context.profileCustomQueryOptions, staleTime: "static" });
+    },
     component: ProfileCustomForm,
 });
 
 
 function ProfileCustomForm() {
     const fieldId = useId();
+    const { currentUser } = useAuth();
     const { profileCustomQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(profileCustomQueryOptions).data;
     const mutation = useProfileCustomMutation({ noErrorToast: true });
     const [activeTab, setActiveTab] = useState<HighlightedMediaTab>("overview");
     const [localPreviewCache, setLocalPreviewCache] = useState<Record<string, HighlightedMediaSearchItem>>({});
+
     const form = useForm<ProfileCustomizationSettings, unknown, ProfileCustomizationSettings>({
         resolver: zodResolver<ProfileCustomizationSettings, unknown, ProfileCustomizationSettings>(profileCustomizationSettingsSchema),
         values: cloneSettings(apiData.settings),
@@ -115,6 +124,26 @@ function ProfileCustomForm() {
                                     </CardContent>
                                 </Card>
                             }
+
+                            {activeTab === "overview" &&
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Pinned lists & collections</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex flex-col gap-4">
+                                        <p className="text-sm text-muted-foreground">
+                                            Pin up to {MAX_PROFILE_PINS} dynamic lists and collections to your overview.
+                                            Visitors only see pins they can access. With none pinned, the section is hidden.
+                                        </p>
+                                        <div>
+                                            <Link to="/lists/$username" params={{ username: currentUser!.name }} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                                                Manage profile pins
+                                            </Link>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            }
+
                             <TabCustomContent
                                 key={activeTab}
                                 activeTab={activeTab}

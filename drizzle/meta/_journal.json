@@ -372,6 +372,69 @@
       "when": 1790942371747,
       "tag": "0052_game_hltb_last_checked",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1790947257959,
+      "tag": "0053_authenticated_mcp",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1791032949509,
+      "tag": "0054_smart_views",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "6",
+      "when": 1791035210381,
+      "tag": "0055_smart_view_profile_shortcuts",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1791038203578,
+      "tag": "0056_smart_view_profile_limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1791291883760,
+      "tag": "0057_mixed_media_collections",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1791538978048,
+      "tag": "0058_collection_profile_pins",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1791715725144,
+      "tag": "0059_stable_dynamic_list_tags",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "6",
+      "when": 1791734184625,
+      "tag": "0060_normalized_tag_assignments",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1791802071248,
+      "tag": "0061_better_auth_remove_issuer",
+      "breakpoints": true
     }
   ]
 }

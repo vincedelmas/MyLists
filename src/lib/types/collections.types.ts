@@ -1,12 +1,14 @@
+import type {MediaType} from "@/lib/utils/enums";
+
+
 export type CollectionItemInput = {
     mediaId: number;
+    mediaType: MediaType;
     annotation?: string | null;
 };
 
 
-export type DraftItem = {
-    mediaId: number;
+export type DraftItem = CollectionItemInput & {
     mediaName: string;
     mediaCover: string;
-    annotation?: string | null;
 };

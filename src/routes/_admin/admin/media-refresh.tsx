@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_admin/admin/media-refresh")({
         mediaRefreshQueryOptions: adminMediaRefreshOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.mediaRefreshQueryOptions);
+        return context.queryClient.query({ ...context.mediaRefreshQueryOptions, staleTime: "static" });
     },
     component: MediaRefreshPage,
 });

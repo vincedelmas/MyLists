@@ -2,10 +2,10 @@ import type {LucideIcon} from "lucide-react";
 import type {ComponentType, ReactNode} from "react";
 import type {ColumnDef} from "@tanstack/react-table";
 import type {MediaStatsFor} from "@/lib/types/stats.types";
-import type {SheetFilterObject} from "@/lib/types/media-list.types";
-import type {ApiProviderType, MediaType, Status} from "@/lib/utils/enums";
+import type {MediaFilterKeyFor} from "@/lib/media-definitions/definition.registry";
 import type {mediaListOptions} from "@/lib/client/react-query/query-options";
 import type {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
+import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {ContinueConfig} from "@/lib/client/components/continue/continue.types";
 import type {AdvancedSearchFilterDefinition} from "@/lib/types/advanced-search.types";
 import type {ColumnConfigProps} from "@/lib/client/components/media/base/BaseListTable";
@@ -37,6 +37,11 @@ export interface MediaFollowCardProps<T extends MediaType> {
 
 
 export interface MediaListCardProps<T extends MediaType> {
+    rank?: number;
+    annotation?: string | null;
+    showMediaType?: boolean;
+    loadEditDetails?: boolean;
+    onEdited?: () => Promise<void>;
     mediaType: T;
     rating: ReactNode;
     isCurrent: boolean;
@@ -55,22 +60,39 @@ export interface AdvancedSearchConfig extends AdvancedSearchFilterDefinition {
 
 export interface MediaStatCardDefinition {
     title: string;
+    value: ReactNode;
     icon?: LucideIcon;
     subtitle?: string;
-    value: ReactNode;
+}
+
+
+interface MediaJobPresentation {
+    label: string;
+    icon: LucideIcon;
+    sectionTitle: string;
+    descriptionVerb: string;
+    descriptionSuffix: string;
+}
+
+
+interface MediaFilterPresentation {
+    title: string;
+    type: "checkbox" | "search";
+    render?: (name: string) => string;
 }
 
 
 export interface MediaClientConfig<T extends MediaType> {
     mediaType: T;
     advancedSearch?: AdvancedSearchConfig;
-    sheetFilters: () => SheetFilterObject[];
+    metadataFilters: Readonly<Record<MediaFilterKeyFor<T>, MediaFilterPresentation>>;
     infoGrid: ComponentType<MediaDetailsProps<T>>;
     overTitle: ComponentType<MediaDetailsProps<T>>;
     underTitle: ComponentType<MediaDetailsProps<T>>;
     mediaListCard: ComponentType<MediaListCardProps<T>>;
     upComingAlert?: ComponentType<MediaDetailsProps<T>>;
     extraSections?: ComponentType<MediaDetailsProps<T>>;
+    jobs: Partial<Record<JobType, MediaJobPresentation>>;
     mediaFollowCard: ComponentType<MediaFollowCardProps<T>>;
     mediaUserDetails: ComponentType<MediaUserDetailsProps<T>>;
     continue: ContinueConfig<T> | (T extends typeof MediaType.MOVIES ? null : never);

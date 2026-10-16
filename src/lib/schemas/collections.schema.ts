@@ -1,5 +1,7 @@
 import * as z from "zod";
 import {PrivacyType} from "@/lib/utils/enums";
+import {mediaBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
+import {mediaListSearchFiltersSchema} from "@/lib/schemas/media-lists.schema";
 import {
     coercedPositiveIntFieldSchema,
     mediaTypeFieldSchema,
@@ -12,32 +14,30 @@ import {
 
 
 export type CreateCollection = z.infer<typeof createCollectionSchema>;
-export type CommunitySearch = z.infer<typeof communityCollectionsSchema>;
+export type CommunitySearch = z.infer<typeof collectionsBrowseFiltersSchema>;
 export type UserCollectionsSearch = z.infer<typeof userCollectionsSearchSchema>;
+export type CollectionFilterSearch = z.infer<typeof collectionFilterSearchSchema>;
 
 
 const collectionItemSchema = z.object({
+    mediaId: positiveIntFieldSchema,
+    mediaType: mediaTypeFieldSchema,
     mediaName: z.string().optional(),
     mediaCover: z.string().optional(),
-    mediaId: positiveIntFieldSchema,
     annotation: z.string().trim().max(500).optional().nullable(),
 });
 
-const collectionBaseSchema = z.object({
+export const createCollectionSchema = z.object({
     ordered: z.boolean(),
     privacy: z.enum(PrivacyType),
     items: z.array(collectionItemSchema).min(1, "Collection must contain at least 1 item."),
+    description: z.string().trim().max(400, "Description cannot exceed 400 characters").optional().nullable(),
     title: z.string().trim()
         .min(3, "Title must be at least 3 characters long")
         .max(100, "Title is too long (max 100 characters)"),
-    description: z.string().trim().max(400, "Description cannot exceed 400 characters").optional().nullable(),
 });
 
-export const createCollectionSchema = collectionBaseSchema.extend({
-    mediaType: mediaTypeFieldSchema,
-});
-
-export const updateCollectionSchema = collectionBaseSchema.extend({
+export const updateCollectionSchema = createCollectionSchema.extend({
     collectionId: coercedPositiveIntFieldSchema,
 });
 
@@ -45,30 +45,33 @@ export const collectionIdSchema = z.object({
     collectionId: coercedPositiveIntFieldSchema,
 });
 
-export const collectionItemsSearchSchema = paginationSchema.pick({ page: true });
-
-export const collectionDetailsReadSchema = collectionItemsSearchSchema.extend({
+export const collectionDetailsReadSchema = mediaBrowseFiltersSchema.extend({
+    includeFilterOptions: z.boolean().optional(),
     collectionId: coercedPositiveIntFieldSchema,
 });
 
-export const userCollectionsFiltersSchema = paginationSchema.extend({
+export const collectionFilterSearchSchema = mediaListSearchFiltersSchema.extend(collectionIdSchema.shape).extend({
+    library: mediaBrowseFiltersSchema.shape.library,
+});
+
+export const collectionsBrowseFiltersSchema = paginationSchema.extend({
     search: optionalSearchFieldSchema,
     mediaType: mediaTypeFieldSchema.optional().catch(undefined),
 });
 
-export const userCollectionsSearchSchema = userCollectionsFiltersSchema.extend({
+export const userCollectionsSearchSchema = collectionsBrowseFiltersSchema.extend({
     username: usernameFieldSchema,
+    pinnedOnly: z.boolean().optional(),
 });
 
-export const communityCollectionsSchema = paginationSchema.extend({
-    search: optionalSearchFieldSchema,
-    mediaType: mediaTypeFieldSchema.optional().catch(undefined),
+export const collectionBrowseSearchSchema = mediaBrowseFiltersSchema.extend({
+    display: z.enum(["grid", "table"]).optional(),
+    sorting: mediaBrowseFiltersSchema.shape.sorting.catch(undefined),
+    fromCommunity: collectionsBrowseFiltersSchema.optional(),
 });
 
-export const mediaCommunityCollectionsSchema = mediaTypeMediaIdSchema;
+export const collectionNavigationSchema = collectionBrowseSearchSchema.pick({ fromCommunity: true });
 
-export const collectionMediaMembershipsSchema = mediaTypeMediaIdSchema;
-
-export const collectionMediaItemActionSchema = collectionMediaMembershipsSchema.extend({
+export const collectionMediaItemActionSchema = mediaTypeMediaIdSchema.extend({
     collectionId: coercedPositiveIntFieldSchema,
 });

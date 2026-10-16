@@ -1,15 +1,15 @@
-import {navbarSearchSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
-import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {navbarSearchSchema} from "@/lib/schemas/search.schema";
 import {ProviderSearchResult, ProviderSearchResults} from "@/lib/types/provider.types";
+import {optionalMediaAuthMiddleware} from "@/lib/server/middlewares/media-authentication";
 import {IGDB_ADVANCED_SEARCH_OPTIONS_CACHE_KEY, ONE_DAY_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 
 
 export const getGameAdvancedSearchOptions = createServerFn({ method: "GET" })
-    .middleware([publicAuthMiddleware])
+    .middleware([optionalMediaAuthMiddleware])
     .handler(async () => {
         const container = await getContainer();
         const gameProvider = container.registries.externalProviders.get(MediaType.GAMES);
@@ -27,7 +27,7 @@ export const getGameAdvancedSearchOptions = createServerFn({ method: "GET" })
 
 
 export const getSearchResults = createServerFn({ method: "GET" })
-    .middleware([publicAuthMiddleware])
+    .middleware([optionalMediaAuthMiddleware])
     .validator(navbarSearchSchema)
     .handler(async ({ data: { query, page, apiProvider, advancedFilters }, context: { currentUser } }) => {
         const container = await getContainer();

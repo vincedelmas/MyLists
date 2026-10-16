@@ -1,16 +1,21 @@
 import {notFound} from "@tanstack/react-router";
-import {user} from "@/lib/server/database/schema";
-import {MediaInfo} from "@/lib/types/activity.types";
+import {mediaTags, user} from "@/lib/server/database/schema";
 import {ExportMediaList} from "@/lib/types/media-list.types";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {UpComingMedia} from "@/lib/types/notifications.types";
+import type {MediaInfo} from "@/lib/types/media-common.types";
+import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {UserMediaWithTags} from "@/lib/types/user-media.types";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
+import {resolvePagination} from "@/lib/server/database/pagination";
 import {ReleaseCalendarItem} from "@/lib/types/release-calendar.types";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
+import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
+import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, SQL, sql} from "drizzle-orm";
+import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
+import {and, asc, count, desc, eq, exists, getTableColumns, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, SQL, sql} from "drizzle-orm";
 
 
 const SIMILAR_MAX_GENRES = 10;
@@ -19,6 +24,7 @@ const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 
 export function createMediaQueries<TDef extends AnyServerMediaDefinition>(definition: TDef) {
     const { identity, repository: repoDefinition } = definition;
+    const tagQueries = createMediaTagQueries(definition);
 
     type TListTableInsert = TDef["repository"]["tables"]["listTable"]["$inferInsert"];
     type TListTableSelect = TDef["repository"]["tables"]["listTable"]["$inferSelect"];
@@ -104,15 +110,12 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
     }
 
     function removeMediaFromUserList(userId: number, mediaId: number) {
-        const { listTable, tagTable } = repoDefinition.tables;
-
-        getDbClient()
-            .delete(listTable)
-            .where(and(eq(listTable.userId, userId), eq(listTable.mediaId, mediaId))).run();
-
-        getDbClient()
-            .delete(tagTable)
-            .where(and(eq(tagTable.userId, userId), eq(tagTable.mediaId, mediaId))).run();
+        return withTransaction(() => {
+            const { listTable } = repoDefinition.tables;
+            tagQueries.removeMediaAssignments([mediaId], userId);
+            getDbClient().delete(listTable)
+                .where(and(eq(listTable.userId, userId), eq(listTable.mediaId, mediaId))).run();
+        });
     }
 
     async function findSimilarMedia(mediaId: number) {
@@ -305,10 +308,11 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         }
 
         const associatedTags = getDbClient()
-            .select({ name: sql<string>`${tagTable.name}` })
+            .select({ name: mediaTags.name })
             .from(tagTable)
+            .innerJoin(mediaTags, eq(mediaTags.id, tagTable.tagId))
             .where(and(eq(tagTable.mediaId, mediaId), eq(tagTable.userId, userId)))
-            .orderBy(asc(tagTable.name)).all();
+            .orderBy(asc(mediaTags.name)).all();
 
         if (!associatedTags) {
             return null;
@@ -392,88 +396,58 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .orderBy(asc(mediaTable.releaseDate), asc(mediaTable.name));
     }
 
-    // TODO: use the paginate function?
-    async function getMediaJobDetails(job: JobType, name: string, offset: number, limit = 25, userId?: number) {
+    async function getMediaJobDetails(job: JobType, name: string, filters: MediaCatalogBrowseFilters, viewerId?: number) {
+        const db = getDbClient();
         const { tables: { mediaTable, listTable }, jobs } = repoDefinition;
 
         const jobHandler = jobs[job];
         if (!jobHandler) throw notFound();
 
-        const hasUser = !!userId;
         const { sourceTable, nameColumn, mediaIdColumn } = jobHandler;
-
-        let dataQuery = getDbClient()
-            .selectDistinct({
-                mediaId: mediaTable.id,
-                mediaName: mediaTable.name,
-                imageCover: mediaTable.imageCover,
-                releaseDate: mediaTable.releaseDate,
-                inUserList: hasUser
-                    ? isNotNull(listTable.userId).mapWith(Boolean).as("inUserList")
-                    : sql<boolean>`false`.as("inUserList"),
-            })
-            .from(mediaTable)
-            .$dynamic();
-
-        if (hasUser) {
-            dataQuery = dataQuery.leftJoin(listTable, and(
-                eq(listTable.userId, userId),
-                eq(listTable.mediaId, mediaTable.id),
-            ));
-        }
-
-        let countQuery = getDbClient()
-            .select({ value: countDistinct(mediaTable.id) })
-            .from(mediaTable)
-            .$dynamic();
-
-        if (sourceTable !== mediaTable) {
-            const joinCondition = eq(mediaIdColumn, mediaTable.id);
-            dataQuery.innerJoin(sourceTable, joinCondition);
-            countQuery.innerJoin(sourceTable, joinCondition);
-        }
 
         const filterCondition = jobHandler.getFilter
             ? jobHandler.getFilter(name)
             : like(nameColumn, `%${name}%`);
 
-        dataQuery = dataQuery.where(filterCondition);
-        countQuery = countQuery.where(filterCondition);
+        const sourceCondition = (sourceTable === mediaTable)
+            ? filterCondition
+            : exists(getDbClient()
+                .select({ id: mediaIdColumn })
+                .from(sourceTable)
+                .where(and(eq(mediaIdColumn, mediaTable.id), filterCondition)));
 
-        const [totalCount, results] = await Promise.all([
-            countQuery.get()?.value ?? 0,
-            dataQuery.orderBy(asc(mediaTable.releaseDate))
+        const browse = createMediaBrowseQueryParts(definition, filters, viewerId);
+        const { page, perPage, limit, offset } = resolvePagination({ page: filters.page, defaultPerPage: 24, maxPerPage: 24 });
+
+        const [total, items] = await Promise.all([
+            db.select({ value: count() })
+                .from(mediaTable)
+                .leftJoin(listTable, browse.viewerJoin)
+                .where(and(sourceCondition, ...browse.conditions))
+                .get()?.value ?? 0,
+
+            db.select({
+                mediaId: mediaTable.id,
+                mediaName: mediaTable.name,
+                releaseDate: mediaTable.releaseDate,
+                inUserList: isNotNull(listTable.userId).mapWith(Boolean),
+                imageCover: sql<string>`${mediaTable.imageCover}`.mapWith(value => getImageUrl(identity.coverDirectory, value)),
+            })
+                .from(mediaTable)
+                .leftJoin(listTable, browse.viewerJoin)
+                .where(and(sourceCondition, ...browse.conditions))
+                .orderBy(...browse.orderBy([sql`JULIANDAY(${mediaTable.releaseDate}) ASC NULLS LAST`]))
                 .limit(limit)
-                .offset(offset)
-                .execute(),
+                .offset(offset),
         ]);
 
         return {
-            items: results,
-            total: totalCount,
-            pages: Math.ceil(totalCount / limit),
+            page,
+            items,
+            total,
+            perPage,
+            pages: Math.ceil(total / perPage),
         };
-    }
-
-    async function getSearchListFilters(userId: number, query: string, job: JobType) {
-        const { tables: { listTable }, jobs } = repoDefinition;
-
-        const jobHandler = jobs[job];
-        if (!jobHandler) throw notFound();
-
-        const { sourceTable, nameColumn, mediaIdColumn, postProcess } = jobHandler;
-
-        const results = await getDbClient()
-            .selectDistinct({ name: sql<string>`${nameColumn}` })
-            .from(sourceTable)
-            .innerJoin(listTable, eq(listTable.mediaId, mediaIdColumn))
-            .where(and(eq(listTable.userId, userId), like(nameColumn, `%${query}%`)));
-
-        if (postProcess) {
-            return postProcess(results);
-        }
-
-        return results;
     }
 
     return {
@@ -490,7 +464,6 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         bulkInsertUserMedia,
         getPopularMediaRefs,
         getMediaDetailsByIds,
-        getSearchListFilters,
         getMediaDurationsByIds,
         updateUserMediaDetails,
         downloadMediaListAsCSV,

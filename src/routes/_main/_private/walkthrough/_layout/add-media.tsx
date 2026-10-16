@@ -1,7 +1,6 @@
 import dedent from "dedent";
-import {cn} from "@/lib/utils/classnames";
-import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
@@ -50,7 +49,7 @@ function RouteComponent() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={media.providerData.url}
-                                className={cn(buttonVariants({ variant: "tame", className: "w-full gap-2" }))}
+                                className={buttonVariants({ variant: "tame", className: "w-full gap-2" })}
                             >
                                 <ExternalLink className="size-4"/>
                                 View on {media.providerData.name}

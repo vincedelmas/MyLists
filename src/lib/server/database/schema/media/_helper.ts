@@ -2,6 +2,7 @@ import {sql} from "drizzle-orm";
 import {REDO_MAX} from "@/lib/utils/constants";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {user} from "@/lib/server/database/schema/auth.schema";
+import {mediaTags} from "@/lib/server/database/schema/media-tags.schema";
 import {imageUrl, nullableImageUrl} from "@/lib/server/database/custom-types";
 import {check, index, integer, primaryKey, real, SQLiteColumn, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
@@ -75,20 +76,20 @@ export const commonMediaTagsCols = (modelMediaId: SQLiteColumn) => {
         id: integer().primaryKey().notNull(),
         userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
         mediaId: integer().references(() => modelMediaId),
-        name: text("name").notNull(),
+        tagId: integer().notNull().references(() => mediaTags.id, { onDelete: "cascade" }),
     };
 };
 
 
-export const commonMediaTagsIndexes = (table: { userId: SQLiteColumn; mediaId: SQLiteColumn; name: SQLiteColumn }, mediaTypeName: MediaType) => {
+export const commonMediaTagsIndexes = (table: { userId: SQLiteColumn; mediaId: SQLiteColumn; tagId: SQLiteColumn }, mediaTypeName: MediaType) => {
     return [
-        uniqueIndex(`ux_${mediaTypeName}_tags_user_media_name`)
-            .on(table.userId, table.mediaId, table.name)
+        uniqueIndex(`ux_${mediaTypeName}_tags_user_media_tag`)
+            .on(table.userId, table.mediaId, table.tagId)
             .where(sql`${table.mediaId} IS NOT NULL`),
-        uniqueIndex(`ux_${mediaTypeName}_tags_user_placeholder_name`)
-            .on(table.userId, table.name)
+        uniqueIndex(`ux_${mediaTypeName}_tags_user_placeholder_tag`)
+            .on(table.userId, table.tagId)
             .where(sql`${table.mediaId} IS NULL`),
-        index(`ix_${mediaTypeName}_tags_user_name_media`).on(table.userId, table.name, table.mediaId),
+        index(`ix_${mediaTypeName}_tags_user_tag_media`).on(table.userId, table.tagId, table.mediaId),
     ];
 };
 

@@ -6,8 +6,7 @@ import {HeartHandshake, UsersRound} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -28,9 +27,10 @@ export const Route = createFileRoute("/_main/_private/taste-matches")({
         tasteMatchesQueryOptions: tasteMatchesOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.tasteMatchesQueryOptions);
+        return context.queryClient.query({ ...context.tasteMatchesQueryOptions, staleTime: "static" });
     },
     component: TasteMatchesPage,
+    head: () => ({ meta: [{ title: "Taste matches - MyLists" }] }),
 });
 
 
@@ -58,123 +58,121 @@ function TasteMatchesPage() {
     }
 
     return (
-        <PageTitle title="Taste matches" onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    title="Taste matches"
-                    asideIcon={UsersRound}
-                    eyebrowIcon={HeartHandshake}
-                    asideLabel="Matches found"
-                    eyebrow="People with similar taste"
-                    description="Find people whose ratings are closest to yours."
-                    asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "match" : "matches"}</>}
-                    navigation={
-                        <TabHeader
-                            tabs={mediaTabs}
-                            value={currentActiveTab}
-                            triggerClassName="max-sm:px-3"
-                            renderTrigger={(tab, props) =>
-                                <Link
-                                    {...props}
-                                    to="/taste-matches"
-                                    resetScroll={false}
-                                    search={{ ...filters, page: 1, activeTab: tab.id === "all" ? undefined : tab.id }}
-                                />
-                            }
-                        />
-                    }
-                />
-
-                <div className="grid grid-cols-[minmax(0,1fr)_10rem_auto] items-center gap-3 pt-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <SearchInput
-                        value={localSearch}
-                        onChange={handleInputChange}
-                        aria-label="Search taste matches"
-                        placeholder="Search by username..."
-                        className="w-full max-w-md max-sm:col-span-2"
-                    />
-                    <Select items={sortingItems} value={sorting} onValueChange={handleSortChange}>
-                        <SelectTrigger aria-label="Sort taste matches" className="w-full">
-                            <SelectValue/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                {sortingItems.map((item) =>
-                                    <SelectItem key={item.value} value={item.value}>
-                                        {item.label}
-                                    </SelectItem>
-                                )}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <div className="flex shrink-0 items-center gap-2">
-                        <Switch
-                            id="hide-followed"
-                            checked={hideFollowed}
-                            onCheckedChange={(checked) => updateFilters({ page: 1, hideFollowed: checked })}
-                        />
-                        <Label htmlFor="hide-followed" className="whitespace-nowrap text-sm">
-                            Hide follows
-                        </Label>
-                    </div>
-                </div>
-
-                <section className="pt-6">
-                    {apiData.featuredMatch &&
-                        <FeaturedTasteMatch
-                            activeTab={currentActiveTab}
-                            match={apiData.featuredMatch}
-                        />
-                    }
-
-                    {(apiData.items.length > 0 || apiData.total === 0) &&
-                        <>
-                            <div className={cn(
-                                "flex items-center justify-between gap-4",
-                                apiData.featuredMatch && "mt-8",
-                            )}>
-                                <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                    {apiData.featuredMatch ? "More matches" : "Taste matches"}
-                                </h2>
-                                {apiData.pages > 1 &&
-                                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                                        Page {page} / {apiData.pages}
-                                    </span>
-                                }
-                            </div>
-
-                            {apiData.total === 0
-                                ?
-                                <EmptyState
-                                    iconSize={44}
-                                    icon={UsersRound}
-                                    className="mt-4 min-h-72 rounded-xl border shadow-xs"
-                                    message={search
-                                        ? `No taste matches found for “${search}”.`
-                                        : `No matches yet. Rate at least ${apiData.minimumSharedRatings} titles also rated by other members.`
-                                    }
-                                />
-                                :
-                                <div className="grid gap-4 pt-4 md:grid-cols-2 xl:grid-cols-3">
-                                    {apiData.items.map((match) =>
-                                        <TasteMatchCard
-                                            match={match}
-                                            key={match.id}
-                                            activeTab={currentActiveTab}
-                                        />
-                                    )}
-                                </div>
-                            }
-
-                            <Pagination
-                                currentPage={page}
-                                totalPages={apiData.pages}
-                                onChangePage={(nextPage) => updateFilters({ page: nextPage })}
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                title="Taste matches"
+                asideIcon={UsersRound}
+                eyebrowIcon={HeartHandshake}
+                asideLabel="Matches found"
+                eyebrow="People with similar taste"
+                description="Find people whose ratings are closest to yours."
+                asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "match" : "matches"}</>}
+                navigation={
+                    <TabNav
+                        tabs={mediaTabs}
+                        value={currentActiveTab}
+                        triggerClassName="max-sm:px-3"
+                        renderTrigger={(tab, props) =>
+                            <Link
+                                {...props}
+                                to="/taste-matches"
+                                resetScroll={false}
+                                search={{ ...filters, page: 1, activeTab: tab.id === "all" ? undefined : tab.id }}
                             />
-                        </>
-                    }
-                </section>
+                        }
+                    />
+                }
+            />
+
+            <div className="grid grid-cols-[minmax(0,1fr)_10rem_auto] items-center gap-3 pt-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+                <SearchInput
+                    value={localSearch}
+                    onChange={handleInputChange}
+                    aria-label="Search taste matches"
+                    placeholder="Search by username..."
+                    className="w-full max-w-md max-sm:col-span-2"
+                />
+                <Select items={sortingItems} value={sorting} onValueChange={handleSortChange}>
+                    <SelectTrigger aria-label="Sort taste matches" className="w-full">
+                        <SelectValue/>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            {sortingItems.map((item) =>
+                                <SelectItem key={item.value} value={item.value}>
+                                    {item.label}
+                                </SelectItem>
+                            )}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+                <div className="flex shrink-0 items-center gap-2">
+                    <Switch
+                        id="hide-followed"
+                        checked={hideFollowed}
+                        onCheckedChange={(checked) => updateFilters({ page: 1, hideFollowed: checked })}
+                    />
+                    <Label htmlFor="hide-followed" className="whitespace-nowrap text-sm">
+                        Hide follows
+                    </Label>
+                </div>
             </div>
-        </PageTitle>
+
+            <section className="pt-6">
+                {apiData.featuredMatch &&
+                    <FeaturedTasteMatch
+                        activeTab={currentActiveTab}
+                        match={apiData.featuredMatch}
+                    />
+                }
+
+                {(apiData.items.length > 0 || apiData.total === 0) &&
+                    <>
+                        <div className={cn(
+                            "flex items-center justify-between gap-4",
+                            apiData.featuredMatch && "mt-8",
+                        )}>
+                            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                {apiData.featuredMatch ? "More matches" : "Taste matches"}
+                            </h2>
+                            {apiData.pages > 1 &&
+                                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                                    Page {page} / {apiData.pages}
+                                </span>
+                            }
+                        </div>
+
+                        {apiData.total === 0
+                            ?
+                            <EmptyState
+                                iconSize={44}
+                                icon={UsersRound}
+                                className="mt-4 min-h-72 rounded-xl border shadow-xs"
+                                message={search
+                                    ? `No taste matches found for “${search}”.`
+                                    : `No matches yet. Rate at least ${apiData.minimumSharedRatings} titles also rated by other members.`
+                                }
+                            />
+                            :
+                            <div className="grid gap-4 pt-4 md:grid-cols-2 xl:grid-cols-3">
+                                {apiData.items.map((match) =>
+                                    <TasteMatchCard
+                                        match={match}
+                                        key={match.id}
+                                        activeTab={currentActiveTab}
+                                    />
+                                )}
+                            </div>
+                        }
+
+                        <Pagination
+                            currentPage={page}
+                            totalPages={apiData.pages}
+                            onChangePage={(nextPage) => updateFilters({ page: nextPage })}
+                        />
+                    </>
+                }
+            </section>
+        </div>
     );
 }

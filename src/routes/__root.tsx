@@ -27,8 +27,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     }),
     beforeLoad: async ({ context }) => {
         await Promise.all([
-            context.queryClient.ensureQueryData(context.authQueryOptions),
-            context.queryClient.ensureQueryData(context.authMethodsQueryOptions),
+            context.queryClient.query({ ...context.authQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.authMethodsQueryOptions, staleTime: "static" }),
         ]);
     },
     head: () => ({
@@ -58,7 +58,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en" className="dark" data-theme="dark" style={{ colorScheme: "dark" }}>
+        // Browser extensions can add attributes to <html> before React hydrates it.
+        <html lang="en" className="dark" data-theme="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
         <head>
             <HeadContent/>
         </head>

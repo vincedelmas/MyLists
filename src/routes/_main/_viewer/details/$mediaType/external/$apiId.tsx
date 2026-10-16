@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/external
         },
     },
     loader: async ({ context: { queryClient }, params: { mediaType, apiId } }) => {
-        const { mediaId } = await queryClient.fetchQuery(mediaExternalOptions(mediaType, apiId));
+        const { mediaId } = await queryClient.query(mediaExternalOptions(mediaType, apiId));
 
         throw redirect({
             params: { mediaType, mediaId },

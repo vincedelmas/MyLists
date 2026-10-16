@@ -1,7 +1,8 @@
-import {asc, desc, getTableColumns, notInArray, sql} from "drizzle-orm";
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
+import {getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {SERIES_FALLBACK_DURATION, seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
-import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {
     series,
@@ -13,6 +14,27 @@ import {
     seriesNetwork,
     seriesTags
 } from "@/lib/server/database/schema/media/series.schema";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+
+
+const tables = {
+    mediaTable: series,
+    listTable: seriesList,
+    seasonStateTable: seriesListSeasons,
+    genreTable: seriesGenre,
+    tagTable: seriesTags,
+    actorTable: seriesActors,
+    networkTable: seriesNetwork,
+    epsPerSeasonTable: seriesEpisodesPerSeason,
+    deleteDependents: [seriesEpisodesPerSeason, seriesNetwork, seriesActors, seriesGenre, seriesTags],
+};
+
+
+const sortColumns = {
+    ...getCommonMediaSortColumns(tables),
+    redo: seriesList.redo,
+    providerRating: series.voteAverage,
+};
 
 
 export const seriesServerDefinition = defineServerMediaDefinition({
@@ -21,17 +43,28 @@ export const seriesServerDefinition = defineServerMediaDefinition({
         coverDirectory: "series-covers",
     },
     repository: {
-        tables: {
-            mediaTable: series,
-            listTable: seriesList,
-            seasonStateTable: seriesListSeasons,
-            genreTable: seriesGenre,
-            tagTable: seriesTags,
-            actorTable: seriesActors,
-            networkTable: seriesNetwork,
-            epsPerSeasonTable: seriesEpisodesPerSeason,
-            deleteDependents: [seriesEpisodesPerSeason, seriesNetwork, seriesActors, seriesGenre, seriesTags],
-        },
+        sortColumns,
+        filters: defineMediaFilterDefinitions(seriesDefinition, tables, {
+            actors: {
+                searchable: true,
+                entityTable: seriesActors,
+                filterColumn: seriesActors.name,
+            },
+            networks: {
+                searchable: true,
+                entityTable: seriesNetwork,
+                filterColumn: seriesNetwork.name,
+            },
+            creators: {
+                searchable: true,
+                filterColumn: series.createdBy,
+                splitValues: true,
+            },
+            langs: {
+                filterColumn: series.originCountry,
+            },
+        }),
+        tables,
         popularity: {
             eligibility: sql`${series.voteCount} >= 300`,
         },
@@ -50,51 +83,8 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                 )`.mapWith(JSON.parse),
                 ...getTableColumns(seriesList),
             },
-            filters: {
-                actors: createArrayFilter({
-                    argName: "actors",
-                    mediaTable: series,
-                    entityTable: seriesActors,
-                    filterColumn: seriesActors.name,
-                }),
-                networks: createArrayFilter({
-                    argName: "networks",
-                    mediaTable: series,
-                    entityTable: seriesNetwork,
-                    filterColumn: seriesNetwork.name,
-                }),
-                creators: createArrayFilter({
-                    argName: "creators",
-                    mediaTable: series,
-                    filterColumn: series.createdBy,
-                }),
-                langs: createArrayFilter({
-                    argName: "langs",
-                    mediaTable: series,
-                    filterColumn: series.originCountry,
-                }),
-            },
-            filterOptions: {
-                langs: createMediaColOptionsLoader({
-                    mediaTable: series,
-                    listTable: seriesList,
-                    nameColumn: series.originCountry,
-                }),
-            },
-            defaultSort: "Title A-Z",
-            sorts: {
-                "Title A-Z": asc(series.name),
-                "Title Z-A": desc(series.name),
-                "Release Date +": [desc(series.releaseDate), asc(series.name)],
-                "Release Date -": [sql`${series.releaseDate} ASC NULLS LAST`, asc(series.name)],
-                "TMDB Rating +": [desc(series.voteAverage), asc(series.name)],
-                "TMDB Rating -": [asc(series.voteAverage), asc(series.name)],
-                "Recently Added": [desc(seriesList.addedAt), asc(series.name)],
-                "Recently Modified": [desc(seriesList.lastUpdated), asc(series.name)],
-                "Rating +": [desc(seriesList.rating), asc(series.name)],
-                "Rating -": [asc(seriesList.rating), asc(series.name)],
-                "Re-watched": [desc(seriesList.redo), asc(series.name)],
-            },
+            defaultSort: getMediaSortLabel(seriesDefinition, seriesDefinition.sorting.default),
+            sorts: createMediaListSorts(seriesDefinition, sortColumns, series.id),
         },
         communityActivity: {
             aggregates: {

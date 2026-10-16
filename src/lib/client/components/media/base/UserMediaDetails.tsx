@@ -7,12 +7,12 @@ import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {historyOptions} from "@/lib/client/react-query/query-options";
 import {TagsLists} from "@/lib/client/components/media/base/TagsLists";
 import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
 import {BacklogModeSystem} from "@/lib/client/components/media/base/BacklogModeSystem";
 import {CustomCoverTabContent} from "@/lib/client/components/media/base/CustomCoverTab";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/lib/client/components/ui/tabs";
 import {UserMediaSpecificDetails} from "@/lib/client/components/media/base/UserMediaSpecificDetails";
 import {
     useRemoveMediaFromListMutation,
@@ -37,7 +37,6 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
     const [backlogMode, setBacklogMode] = useState(false);
     const removeMediaFromListMutation = useRemoveMediaFromListMutation(queryOption);
     const updateCustomCoverMutation = useUpdateCustomCoverMutation(queryOption, { noErrorToast: true });
-    const [activeTab, setActiveTab] = useState<"progress" | "history" | "custom">("progress");
     const history = useQuery({ ...historyOptions(mediaType, userMedia.mediaId), enabled: !preview }).data;
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, {
         backlogMode,
@@ -59,93 +58,82 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
         });
     };
 
-    const tabs: TabItem<"progress" | "history" | "custom">[] = [
-        {
-            id: "progress",
-            isAccent: true,
-            label: "Progress",
-        },
-        {
-            id: "history",
-            label: `History (${history?.length})`,
-        },
-        {
-            id: "custom",
-            label: "Custom",
-        }
-    ]
-
     return (
-        <Card className="bg-popover w-full p-3">
-            <TabHeader
-                tabs={tabs}
-                value={activeTab}
-                triggerClassName="px-2.5"
-                onValueChange={setActiveTab}
-                trailing={
+        <Tabs defaultValue="progress" render={<Card className="bg-popover w-full p-3"/>}>
+            <div className="flex items-center justify-between border-b">
+                <TabsList aria-label="Media details" className="flex-1 border-b-0">
+                    <TabsTrigger value="progress" accent className="px-2.5">
+                        Progress
+                    </TabsTrigger>
+                    <TabsTrigger value="history" className="px-2.5">
+                        History ({history?.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="custom" className="px-2.5">
+                        Custom
+                    </TabsTrigger>
+                </TabsList>
+                <div className="flex shrink-0 items-center px-2">
                     <UpdateFavorite
                         disabled={backlogMode}
                         isFavorite={userMedia.favorite}
                         updateFavorite={updateUserMediaMutation}
                     />
-                }
-            />
-
-            {activeTab === "progress" ?
-                <div className="space-y-2 px-4 mt-1">
-                    <BacklogModeSystem
-                        date={backlogDate}
-                        enabled={backlogMode}
-                        onDateChange={setBacklogDate}
-                        onEnabledChange={setBacklogMode}
-                        disabled={updateUserMediaMutation.isPending}
-                    />
-
-                    <div className={(backlogMode && !backlogDate) ? "pointer-events-none opacity-40 space-y-2" : "space-y-2"}>
-                        <UserMediaSpecificDetails
-                            mediaType={mediaType}
-                            userMedia={userMedia}
-                            queryOption={queryOption}
-                            mutationOptions={{ backlogMode, loggedAt: backlogMode ? backlogDate : undefined }}
-                        />
-                    </div>
-
-                    <UpdateComment
-                        disabled={backlogMode}
-                        content={userMedia.comment}
-                        updateComment={updateUserMediaMutation}
-                    />
-
-                    <div className={backlogMode ? "pointer-events-none opacity-40" : ""}>
-                        <TagsLists
-                            mediaType={mediaType}
-                            queryOption={queryOption}
-                            mediaId={userMedia.mediaId}
-                            tags={userMedia?.tags ?? []}
-                        />
-                    </div>
-
                 </div>
-                :
-                activeTab === "custom" ?
-                    <CustomCoverTabContent
+            </div>
+
+            <TabsContent value="progress" className="space-y-2 px-4 mt-1">
+                <BacklogModeSystem
+                    date={backlogDate}
+                    enabled={backlogMode}
+                    onDateChange={setBacklogDate}
+                    onEnabledChange={setBacklogMode}
+                    disabled={updateUserMediaMutation.isPending}
+                />
+
+                <div className={(backlogMode && !backlogDate) ? "pointer-events-none opacity-40 space-y-2" : "space-y-2"}>
+                    <UserMediaSpecificDetails
                         mediaType={mediaType}
                         userMedia={userMedia}
-                        onUpdateMutation={updateCustomCoverMutation}
+                        queryOption={queryOption}
+                        mutationOptions={{ backlogMode, loggedAt: backlogMode ? backlogDate : undefined }}
                     />
-                    :
-                    <div className="overflow-y-auto scrollbar-thin max-h-83 px-1">
-                        <HistoryDetails
-                            mediaType={mediaType}
-                            history={history ?? []}
-                            mediaId={userMedia.mediaId}
-                        />
-                    </div>
-            }
+                </div>
+
+                <UpdateComment
+                    disabled={backlogMode}
+                    content={userMedia.comment}
+                    updateComment={updateUserMediaMutation}
+                />
+
+                <div className={backlogMode ? "pointer-events-none opacity-40" : ""}>
+                    <TagsLists
+                        mediaType={mediaType}
+                        queryOption={queryOption}
+                        mediaId={userMedia.mediaId}
+                        tags={userMedia?.tags ?? []}
+                    />
+                </div>
+            </TabsContent>
+
+            <TabsContent value="custom">
+                <CustomCoverTabContent
+                    mediaType={mediaType}
+                    userMedia={userMedia}
+                    onUpdateMutation={updateCustomCoverMutation}
+                />
+            </TabsContent>
+
+            <TabsContent value="history" className="overflow-y-auto scrollbar-thin max-h-83 px-1">
+                <HistoryDetails
+                    mediaType={mediaType}
+                    history={history ?? []}
+                    mediaId={userMedia.mediaId}
+                />
+            </TabsContent>
 
             <Button variant="destructive" className="w-full mt-4" onClick={handleRemoveMediaFromList}>
                 Remove from your list
             </Button>
-        </Card>
+        </Tabs>
     );
 };

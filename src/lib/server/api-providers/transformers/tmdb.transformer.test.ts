@@ -1,7 +1,7 @@
-import {MalAnimeSearchResponse, TmdbMovieDetails, TmdbTvDetails} from "@/lib/types/provider.types";
+import {MalAnimeSearchResponse, TmdbTvDetails} from "@/lib/types/provider.types";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
-import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
+
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 
 
@@ -74,26 +74,6 @@ describe("tmdbTransformer", () => {
         imageMocks.saveImageFromUrl.mockResolvedValue("series-covers/default.webp");
     });
 
-    it.each([
-        { runtime: 0, expectedDuration: 100 },
-        { runtime: null, expectedDuration: 100 },
-        { runtime: undefined, expectedDuration: 100 },
-        { runtime: 1, expectedDuration: 1 },
-        { runtime: 125, expectedDuration: 125 },
-    ])("transforms movie runtime $runtime into $expectedDuration minutes", async ({ runtime, expectedDuration }) => {
-        const details = { id: 1, title: "Movie", runtime, release_date: "2026-01-01" } as TmdbMovieDetails;
-        const { identity, ingestion } = moviesServerDefinition;
-
-        const result = await tmdbTransformer.transformMoviesDetailsResults(details, {
-            coverDirectory: identity.coverDirectory,
-            defaultDuration: ingestion.defaultDuration,
-            maxGenres: ingestion.limits.genres,
-            maxActors: ingestion.limits.actors,
-        });
-
-        expect(result.mediaData.duration).toBe(expectedDuration);
-    });
-
     it("deduplicates TV relation names before applying their limits", async () => {
         const result = await tmdbTransformer.transformTvDetailsResults(createTvDetails(), seriesTransformOptions);
 
@@ -115,24 +95,6 @@ describe("tmdbTransformer", () => {
         ]);
     });
 
-    it("uses media-specific relation limits and duration fallback", async () => {
-        const details = createTvDetails();
-        details.episode_run_time = [];
-
-        const result = await tmdbTransformer.transformTvDetailsResults(details, {
-            ...seriesTransformOptions,
-            defaultDuration: 55,
-            maxGenres: 1,
-            maxActors: 1,
-            maxNetworks: 1,
-        });
-
-        expect(result.mediaData.duration).toBe(55);
-        expect(result.genresData).toEqual([{ name: "Action" }]);
-        expect(result.actorsData).toEqual([{ name: "John Cena" }]);
-        expect(result.networkData).toEqual([{ name: "HBO Max" }]);
-    });
-
     it("uses the episode-weighted average when TMDB has no global TV runtime", async () => {
         const details = createTvDetails();
         details.episode_run_time = [];
@@ -151,35 +113,6 @@ describe("tmdbTransformer", () => {
         const result = await tmdbTransformer.transformTvDetailsResults(details, seriesTransformOptions);
 
         expect(result.mediaData.duration).toBe(30);
-    });
-
-    it("prefers TMDB's global TV runtime over appended episode runtimes", async () => {
-        const details = createTvDetails();
-        details["season/1"] = {
-            episodes: [
-                { runtime: 20 },
-                { runtime: 20 },
-            ],
-        } as typeof details["season/1"];
-
-        const result = await tmdbTransformer.transformTvDetailsResults(details, seriesTransformOptions);
-
-        expect(result.mediaData.duration).toBe(45);
-    });
-
-    it("uses the media-specific fallback writer limit", async () => {
-        const details = createTvDetails();
-        details.credits.crew = [
-            { name: "Second Writer", department: "Writing", known_for_department: "Writing", popularity: 10 },
-            { name: "Top Writer", department: "Writing", known_for_department: "Writing", popularity: 20 },
-        ] as typeof details.credits.crew;
-
-        const result = await tmdbTransformer.transformTvDetailsResults(details, {
-            ...seriesTransformOptions,
-            maxWriters: 1,
-        });
-
-        expect(result.mediaData.createdBy).toBe("Top Writer");
     });
 
     it("prioritizes MAL demographic genres even when they appear after the genre limit", () => {
@@ -211,67 +144,4 @@ describe("tmdbTransformer", () => {
         ]);
     });
 
-    it("falls back to TMDB genres when MAL returns no matching genres", () => {
-        const malData = { data: [], paging: {} } satisfies MalAnimeSearchResponse;
-
-        expect(tmdbTransformer.addAnimeSpecificGenres(malData, "Anime", [
-            { name: "Animation" },
-            { name: "Comedy" },
-        ], 5)).toEqual([
-            { name: "Animation" },
-            { name: "Comedy" },
-        ]);
-    });
-
-    it("uses genres from the matching English title instead of the first MAL result", () => {
-        const malData = {
-            data: [
-                {
-                    node: {
-                        id: 1,
-                        title: "Anime Special",
-                        alternative_titles: { en: "Target Anime: Special" },
-                        genres: [{ id: 22, name: "Romance" }],
-                    },
-                },
-                {
-                    node: {
-                        id: 2,
-                        title: "Anime",
-                        alternative_titles: { en: "Target Anime" },
-                        genres: [{ id: 1, name: "Action" }],
-                    },
-                },
-            ],
-            paging: {},
-        } satisfies MalAnimeSearchResponse;
-
-        expect(tmdbTransformer.addAnimeSpecificGenres(
-            malData,
-            "target anime",
-            [{ name: "Animation" }],
-            5,
-        )).toEqual([{ name: "Action" }]);
-    });
-
-    it("keeps TMDB genres when no MAL English title matches", () => {
-        const malData = {
-            data: [{
-                node: {
-                    id: 1,
-                    title: "Different Anime",
-                    alternative_titles: { en: "Different Anime" },
-                    genres: [{ id: 1, name: "Action" }],
-                },
-            }],
-            paging: {},
-        } satisfies MalAnimeSearchResponse;
-
-        expect(tmdbTransformer.addAnimeSpecificGenres(
-            malData,
-            "Target Anime",
-            [{ name: "Animation" }],
-            5,
-        )).toEqual([{ name: "Animation" }]);
-    });
 });

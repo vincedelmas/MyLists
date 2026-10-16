@@ -1,12 +1,10 @@
 import {Suspense} from "react";
-import {cn} from "@/lib/utils/classnames";
 import {ExternalLink, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Card, CardContent} from "@/lib/client/components/ui/card";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
@@ -38,11 +36,15 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
         communityActivityQueryOptions: mediaCommunityActivityOptions(mediaId, mediaType, { page: 1, perPage: 8 }),
     }),
     loader: async ({ context }) => {
-        await context.queryClient.ensureQueryData(context.mediaDetailsQueryOptions);
-        void context.queryClient.prefetchQuery(context.communityCollectionsQueryOptions);
-        void context.queryClient.prefetchQuery(context.communityActivityQueryOptions);
+        const { media } = await context.queryClient.query({ ...context.mediaDetailsQueryOptions, staleTime: "static" });
+        void context.queryClient.query(context.communityCollectionsQueryOptions).catch(() => {});
+        void context.queryClient.query(context.communityActivityQueryOptions).catch(() => {});
+        return { title: media.name };
     },
     component: MediaDetailsPage,
+    head: ({ loaderData }) => ({
+        meta: loaderData ? [{ title: `${loaderData.title} - MyLists` }] : [],
+    }),
 });
 
 
@@ -60,7 +62,7 @@ function MediaDetailsPage() {
     };
 
     return (
-        <PageTitle title={media.name} onlyHelmet>
+        <>
             <MediaHero
                 media={media}
                 mediaType={mediaType}
@@ -125,7 +127,7 @@ function MediaDetailsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={media.providerData.url}
-                                className={cn(buttonVariants({ size: "lg", variant: "tame", className: "w-full" }))}
+                                className={buttonVariants({ size: "lg", variant: "tame", className: "w-full" })}
                             >
                                 View on {media.providerData.name} <ExternalLink/>
                             </a>
@@ -183,6 +185,6 @@ function MediaDetailsPage() {
                     </div>
                 </div>
             </div>
-        </PageTitle>
+        </>
     );
 }

@@ -38,6 +38,7 @@
         "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": "warn",
         "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": "warn",
         "typescript/ban-ts-comment": "error",
+        "typescript/no-deprecated": "error",
         "typescript/no-duplicate-enum-values": "error",
         "typescript/no-empty-object-type": "error",
         "typescript/no-explicit-any": "error",
@@ -151,7 +152,6 @@
                 "**/*.{ts,tsx}"
             ],
             "rules": {
-                "no-redeclare": "error",
                 "no-shadow": "off",
                 "no-unused-vars": [
                     "warn",
@@ -220,6 +220,14 @@
                 "jsx-a11y/scope": "error",
                 "jsx-a11y/tabindex-no-positive": "error",
                 "react/rules-of-hooks": "error",
+                "react/jsx-key": [
+                    "error",
+                    {
+                        "checkFragmentShorthand": true,
+                        "checkKeyMustBeforeSpread": true,
+                        "warnOnDuplicates": true
+                    }
+                ],
                 "react/exhaustive-deps": "warn"
             },
             "plugins": [

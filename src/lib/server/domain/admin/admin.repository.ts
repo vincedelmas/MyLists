@@ -6,9 +6,11 @@ import {formatMonthYear} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {and, asc, count, countDistinct, desc, eq, gte, like, lt, lte, or, sql} from "drizzle-orm";
-import {apiCallRollup, collections, mediaRefreshLog, taskHistory, user, yearRecapRelease} from "@/lib/server/database/schema";
+import {getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
+import {apiCallRollup, collectionItems, collections, mediaRefreshLog, taskHistory, user, yearRecapRelease} from "@/lib/server/database/schema";
 
 
 export class AdminRepository {
@@ -91,13 +93,7 @@ export class AdminRepository {
                 totalViews: sql<number>`coalesce(sum(${collections.viewCount}), 0)`.as("totalViews"),
                 totalLikes: sql<number>`coalesce(sum(${collections.likeCount}), 0)`.as("totalLikes"),
                 totalCopies: sql<number>`coalesce(sum(${collections.copiedCount}), 0)`.as("totalCopies"),
-                animeCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.ANIME} then 1 else 0 end)`.as("animeCount"),
-                booksCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.BOOKS} then 1 else 0 end)`.as("booksCount"),
-                gamesCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.GAMES} then 1 else 0 end)`.as("gamesCount"),
-                mangaCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.MANGA} then 1 else 0 end)`.as("mangaCount"),
                 publicCount: sql<number>`sum(case when ${collections.privacy} = ${PrivacyType.PUBLIC} then 1 else 0 end)`.as("publicCount"),
-                seriesCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.SERIES} then 1 else 0 end)`.as("seriesCount"),
-                moviesCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.MOVIES} then 1 else 0 end)`.as("moviesCount"),
                 privateCount: sql<number>`sum(case when ${collections.privacy} = ${PrivacyType.PRIVATE} then 1 else 0 end)`.as("privateCount"),
                 restrictedCount: sql<number>`sum(case when ${collections.privacy} = ${PrivacyType.RESTRICTED} then 1 else 0 end)`.as("restrictedCount"),
                 createdThisMonth: sql<number>`sum(case when ${collections.createdAt} >= ${currentMonthStart} then 1 else 0 end)`.as("createdThisMonth"),
@@ -109,6 +105,15 @@ export class AdminRepository {
             })
             .from(collections)
             .get();
+
+        const mediaCounts = getDbClient()
+            .select({
+                mediaType: collectionItems.mediaType,
+                count: countDistinct(collectionItems.collectionId),
+            })
+            .from(collectionItems)
+            .groupBy(collectionItems.mediaType)
+            .all();
 
         return {
             total: result?.total ?? 0,
@@ -123,14 +128,10 @@ export class AdminRepository {
                 { privacy: PrivacyType.PRIVATE, count: result?.privateCount ?? 0 },
                 { privacy: PrivacyType.RESTRICTED, count: result?.restrictedCount ?? 0 },
             ],
-            collectionsPerMediaType: [
-                { mediaType: MediaType.SERIES, count: result?.seriesCount ?? 0 },
-                { mediaType: MediaType.ANIME, count: result?.animeCount ?? 0 },
-                { mediaType: MediaType.MOVIES, count: result?.moviesCount ?? 0 },
-                { mediaType: MediaType.GAMES, count: result?.gamesCount ?? 0 },
-                { mediaType: MediaType.BOOKS, count: result?.booksCount ?? 0 },
-                { mediaType: MediaType.MANGA, count: result?.mangaCount ?? 0 },
-            ],
+            collectionsPerMediaType: ALL_MEDIA_TYPES.map(mediaType => ({
+                mediaType,
+                count: mediaCounts.find(entry => entry.mediaType === mediaType)?.count ?? 0,
+            })),
         };
     }
 
@@ -154,7 +155,7 @@ export class AdminRepository {
         const sortDesc = data.sortDesc ?? true;
         const search = data.search?.trim() ?? "";
 
-        const allowedSorts = ["id", "title", "createdAt", "privacy", "mediaType", "viewCount", "likeCount", "copiedCount", "ownerName"] as const;
+        const allowedSorts = ["id", "title", "createdAt", "privacy", "viewCount", "likeCount", "copiedCount", "ownerName"] as const;
         const sorting = resolveSorting(data.sorting, allowedSorts, "createdAt");
 
         const searchCondition = search
@@ -169,8 +170,6 @@ export class AdminRepository {
                     return collections.title;
                 case "privacy":
                     return collections.privacy;
-                case "mediaType":
-                    return collections.mediaType;
                 case "viewCount":
                     return collections.viewCount;
                 case "likeCount":
@@ -201,18 +200,18 @@ export class AdminRepository {
                 const query = getDbClient()
                     .select({
                         ownerId: user.id,
+                        id: collections.id,
                         ownerName: user.name,
                         ownerImage: user.image,
-                        id: collections.id,
                         title: collections.title,
                         ordered: collections.ordered,
                         privacy: collections.privacy,
-                        mediaType: collections.mediaType,
                         viewCount: collections.viewCount,
                         likeCount: collections.likeCount,
                         createdAt: collections.createdAt,
                         updatedAt: collections.updatedAt,
                         copiedCount: collections.copiedCount,
+                        mediaTypes: getCollectionMediaTypesSelection(),
                         itemsCount: sql<number>`(
                             SELECT COUNT(*)
                             FROM collection_items

@@ -1,14 +1,43 @@
+import {tvMetadataFilters} from "@/lib/media-definitions/tv/filters.definition";
+import {commonMediaFilters} from "@/lib/media-definitions/base/media-filters";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import {tvContinueDefinition} from "@/lib/media-definitions/tv/continue.definition";
+import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
 
 export const ANIME_FALLBACK_DURATION = 24;
 
 
 export const animeDefinition = defineMediaDefinition({
+    filters: {
+        common: commonMediaFilters,
+        metadata: tvMetadataFilters,
+    },
     continue: tvContinueDefinition,
     statuses: [Status.WATCHING, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLAN_TO_WATCH],
+    sorting: {
+        default: "title_asc",
+        options: [
+            "title_asc",
+            "title_desc",
+            "release_newest",
+            "release_oldest",
+            "provider_rating_highest",
+            "provider_rating_lowest",
+            "added_newest",
+            "added_oldest",
+            "modified_newest",
+            "modified_oldest",
+            "rating_highest",
+            "rating_lowest",
+            "redo_highest",
+        ],
+        labels: {
+            redo_highest: "Re-watched",
+            provider_rating_lowest: "TMDB Rating -",
+            provider_rating_highest: "TMDB Rating +",
+        },
+    },
     identity: {
         mediaType: MediaType.ANIME,
     },

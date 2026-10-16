@@ -1,12 +1,16 @@
 import {MediaType} from "@/lib/utils/enums";
-import {useQueryClient} from "@tanstack/react-query";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {UserMediaItem} from "@/lib/types/query.options.types";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import {mediaDetailsOptions, mediaListOptions} from "@/lib/client/react-query/query-options";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {Button} from "@/lib/client/components/ui/button";
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
 interface UserMediaEditDialogProps {
+    loadDetails?: boolean;
+    onEdited?: () => Promise<void>;
     dialogOpen: boolean;
     mediaType: MediaType;
     userMedia: UserMediaItem;
@@ -15,7 +19,7 @@ interface UserMediaEditDialogProps {
 }
 
 
-export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOption, onOpenChange }: UserMediaEditDialogProps) => {
+export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOption, onOpenChange, onEdited, loadDetails = false }: UserMediaEditDialogProps) => {
     const queryClient = useQueryClient();
     if (!userMedia) return null;
 
@@ -38,6 +42,7 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
         }
 
         await queryClient.invalidateQueries({ queryKey: ["userList", mediaType, queryOption.queryKey[2]] });
+        await onEdited?.();
     }
 
     return (
@@ -52,13 +57,37 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
                     </DialogDescription>
                 </DialogHeader>
                 <div className="w-full flex items-center justify-center max-sm:mb-8 max-sm:px-2">
-                    <UserMediaDetails
-                        userMedia={userMedia}
-                        mediaType={mediaType}
-                        queryOption={queryOption}
-                    />
+                    {loadDetails ?
+                        <MediaDetailsEditor mediaType={mediaType} mediaId={userMedia.mediaId} enabled={dialogOpen}/>
+                        :
+                        <UserMediaDetails
+                            userMedia={userMedia}
+                            mediaType={mediaType}
+                            queryOption={queryOption}
+                        />
+                    }
                 </div>
             </DialogContent>
         </Dialog>
     );
+};
+
+
+const MediaDetailsEditor = ({ mediaType, mediaId, enabled }: { mediaType: MediaType; mediaId: number; enabled: boolean }) => {
+    const queryOption = mediaDetailsOptions(mediaType, mediaId);
+    const details = useQuery({ ...queryOption, enabled });
+    if (details.isPending) return <Spinner/>;
+    if (details.isError) {
+        return (
+            <div className="flex flex-col items-center gap-3">
+                <p>Could not load this title's details.</p>
+                <Button variant="outline" onClick={() => void details.refetch()} disabled={details.isFetching}>
+                    Try again
+                </Button>
+            </div>
+        );
+    }
+    if (!details.data.userMedia) return <p>This title is no longer in your list.</p>;
+
+    return <UserMediaDetails mediaType={mediaType} userMedia={details.data.userMedia} queryOption={queryOption}/>;
 };

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_admin/admin/media-overview")({
         mediaOverviewQueryOptions: adminMediaOverviewOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.mediaOverviewQueryOptions);
+        return context.queryClient.query({ ...context.mediaOverviewQueryOptions, staleTime: "static" });
     },
     component: MediaDashboardPage,
 });

@@ -12,7 +12,7 @@ interface PageHeaderProps {
     asideValue?: ReactNode;
     navigation?: ReactNode;
     description?: ReactNode;
-    eyebrowIcon: LucideIcon;
+    eyebrowIcon?: LucideIcon;
     eyebrowClassName?: string;
 }
 
@@ -38,7 +38,7 @@ export const PageHeader = (props: PageHeaderProps) => {
             <header className={cn("flex items-end justify-between gap-8 pb-6 max-sm:flex-col max-sm:items-start", !navigation && "border-b")}>
                 <div className="flex min-w-0 flex-col gap-2">
                     <div className={cn("flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand", eyebrowClassName)}>
-                        <EyebrowIcon className="size-4" aria-hidden="true"/>
+                        {EyebrowIcon && <EyebrowIcon className="size-4" aria-hidden="true"/>}
                         {eyebrow}
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">

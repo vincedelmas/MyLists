@@ -1,5 +1,7 @@
+import {ApiProviderType} from "@/lib/utils/enums";
 import {TmdbApi} from "@/lib/server/api-providers/api";
 import {MoviesRepository} from "@/lib/server/domain/media/movies";
+import type {AdvancedSearchFilters} from "@/lib/schemas/search.schema";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
@@ -26,8 +28,13 @@ export const createTmdbMoviesProvider = (tmdb: TmdbApi) => {
     };
 
     return ({
-        async search(query: string, page = 1) {
-            const raw = await tmdb.search(query, page);
+        async search(query: string, page = 1, advancedFilters?: AdvancedSearchFilters) {
+            const filters = advancedFilters?.provider === ApiProviderType.TMDB
+                ? advancedFilters
+                : undefined;
+
+            const raw = await tmdb.search(query, page, filters);
+
             return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
         },
 

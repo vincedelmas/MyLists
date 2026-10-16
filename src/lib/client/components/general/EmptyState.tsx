@@ -1,5 +1,6 @@
-import {cn} from "@/lib/utils/classnames";
 import {LucideIcon} from "lucide-react";
+import {cn} from "@/lib/utils/classnames";
+import {Empty, EmptyDescription, EmptyMedia} from "@/lib/client/components/ui/empty";
 
 
 interface EmptyStateProps {
@@ -12,14 +13,16 @@ interface EmptyStateProps {
 
 export const EmptyState = ({ icon: Icon, message, className, iconSize = 30 }: EmptyStateProps) => {
     return (
-        <div className={cn("flex flex-col items-center justify-center w-full h-full text-muted-foreground", className)}>
-            <Icon
-                size={iconSize}
-                className="mb-2 opacity-30"
-            />
-            <p className="text-sm">
+        <Empty className={cn("h-full flex-initial gap-0 rounded-none p-0 text-muted-foreground", className)}>
+            <EmptyMedia>
+                <Icon
+                    size={iconSize}
+                    className="opacity-30"
+                />
+            </EmptyMedia>
+            <EmptyDescription>
                 {message}
-            </p>
-        </div>
+            </EmptyDescription>
+        </Empty>
     );
 }

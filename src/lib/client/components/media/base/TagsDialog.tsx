@@ -1,29 +1,27 @@
+import {useId, useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
-import React, {useId, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
+import {ChevronRight, Tags} from "lucide-react";
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {DialogRootChangeEventDetails} from "@base-ui/react";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
-import {displayContainerError} from "@/lib/client/error-display";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
-import {ChevronRight, PlusCircle, Tags} from "lucide-react";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {Dialog, DialogTrigger} from "@/lib/client/components/ui/dialog";
+import {MembershipSearchInput} from "@/lib/client/components/media/base/MembershipSearchInput";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
+import {MembershipDialogContent} from "@/lib/client/components/media/base/MembershipDialogContent";
 
 
 interface TagsDialogProps {
     tags: Tag[];
     mediaId: number;
     mediaType: MediaType;
-    updateTag: (tags: (Tag | undefined)[]) => void;
+    updateTag: (tags: Tag[]) => void;
 }
 
 
@@ -33,33 +31,26 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const mutation = useEditTagMutation(mediaType, mediaId, { noErrorToast: true });
-    const { data: allTags = [], isLoading } = useQuery(tagNamesOptions(mediaType, isOpen));
+    const { data: allTags = [], isLoading, error } = useQuery(tagNamesOptions(mediaType, isOpen));
 
-    const activeIds = new Set(tags.map((c) => c.name));
-    const filteredTags = allTags.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    const showCreateButton = searchQuery.trim().length > 0
-        && !allTags.some((c) => c.name.toLowerCase() === searchQuery.trim().toLowerCase());
+    const query = searchQuery.trim().toLowerCase();
+    const activeNames = new Set(tags.map(tag => tag.name));
+    const filteredTags = allTags.filter(tag => tag.name.toLowerCase().includes(query));
+    const showCreateButton = !error && !isLoading && query.length > 0 && !allTags.some(tag => tag.name.toLowerCase() === query);
 
     const handleAction = (tag: Tag, action: TagAction) => {
         mutation.mutate({ tag, action }, {
-            onSuccess: (data) => {
+            onSuccess: () => {
                 if (action === TagAction.ADD) {
-                    updateTag([...tags, data]);
+                    updateTag([...tags, tag]);
                     setSearchQuery("");
                 }
                 else {
-                    updateTag(tags.filter((c) => c.name !== tag.name));
+                    updateTag(tags.filter(item => item.name !== tag.name));
                 }
             },
         });
     };
-
-    const onSearchKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
-        if (ev.key === "Enter" && showCreateButton) {
-            handleAction({ name: searchQuery.trim() }, TagAction.ADD);
-        }
-    }
 
     const onOpenChange = (open: boolean, ev: DialogRootChangeEventDetails) => {
         if (!open && ev.reason === "escape-key" && searchQuery.length > 0) {
@@ -72,127 +63,71 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogTrigger className="text-muted-foreground">
-                <Button type="button" size="bare" variant="ghost" className="text-xs">
-                    Manage
-                </Button>
+            <DialogTrigger render={<Button type="button" size="bare" variant="ghost" className="text-xs text-muted-foreground"/>}>
+                Manage
             </DialogTrigger>
-            <DialogContent className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full">
-                <div className="p-6 pb-4">
-                    <DialogHeader className="p-0 mb-6 mt-2">
-                        <DialogTitle>
-                            Manage Tags
-                        </DialogTitle>
-                        <DialogDescription>
-                            Add this {mediaType} to your tags to organize your list.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="relative group">
-                        <Input
-                            autoFocus
-                            value={searchQuery}
-                            disabled={isLoading}
-                            onKeyDown={onSearchKeyDown}
-                            className="h-9 bg-popover/50"
-                            placeholder="Find or create a tag..."
-                            onChange={(ev) => setSearchQuery(ev.target.value)}
-                        />
-                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 flex items-center">
-                            {showCreateButton ?
-                                <Button
-                                    size="sm"
-                                    variant="default"
-                                    className="text-[10px]"
-                                    onClick={() => handleAction({ name: searchQuery.trim() }, TagAction.ADD)}
-                                >
-                                    {mutation.isPending ? "..." : "CREATE"}
-                                </Button>
-                                :
-                                <div className="px-2 py-1 rounded bg-popover/50 border text-[10px] text-muted-foreground font-mono tracking-tighter">
-                                    ESC
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-col border-t bg-accent/20">
-                    <div className="h-70 overflow-y-auto p-2 scrollbar-thin">
-                        {isLoading ?
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-                                <Spinner className="size-6" aria-hidden="true"/>
-                                <span className="text-xs font-medium">Syncing...</span>
-                            </div>
-                            : filteredTags.length === 0 ?
-                                <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                                    <PlusCircle className="size-8 text-muted-foreground mb-3 opacity-50"/>
-                                    <p className="text-sm text-muted-foreground font-medium">
-                                        No tag found
-                                    </p>
-                                    <p className="text-xs text-muted-foreground/70 mt-1">
-                                        {searchQuery ?
-                                            `Click 'create' to create '${searchQuery.trim()}' tags.`
-                                            :
-                                            "Start typing to create your first list."
-                                        }
-                                    </p>
-                                </div>
-                                :
-                                <div className="grid gap-0.5">
-                                    {filteredTags.map((col, idx) => {
-                                        const checkboxId = `${fieldId}-${idx}`;
-                                        const isActive = activeIds.has(col.name);
-
-                                        return (
-                                            <Field
-                                                key={col.name}
-                                                orientation="horizontal"
-                                                data-disabled={mutation.isPending}
-                                                className={cn("p-3 rounded-lg", isActive
-                                                    ? "bg-brand/4 text-brand" : "hover:bg-popover"
-                                                )}
-                                            >
-                                                <Checkbox
-                                                    id={checkboxId}
-                                                    checked={isActive}
-                                                    disabled={mutation.isPending}
-                                                    onCheckedChange={() => handleAction(col, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
-                                                />
-                                                <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">
-                                                    # {col.name}
-                                                </FieldLabel>
-                                            </Field>
-                                        );
-                                    })}
-                                </div>
-                        }
-                    </div>
-
-                    {mutation.isError &&
-                        <div className="mb-3 mt-1 px-2">
-                            <InlineErrorContainer>
-                                {displayContainerError({ error: mutation.error })}
-                            </InlineErrorContainer>
-                        </div>
-                    }
-
-                    <div className="p-4 border-t flex items-center justify-between bg-popover">
+            <MembershipDialogContent
+                title="Manage Tags"
+                isLoading={isLoading}
+                emptyTitle="No tag found"
+                error={error ?? mutation.error}
+                description={<>Add this {mediaType} to your tags to organize your list.</>}
+                emptyDescription={searchQuery
+                    ? `Click 'create' to create '${searchQuery.trim()}' tag.`
+                    : "Start typing to create your first tag."}
+                search={
+                    <MembershipSearchInput
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        canCreate={showCreateButton}
+                        isCreating={mutation.isPending}
+                        placeholder="Find or create a tag..."
+                        disabled={isLoading || !!error || mutation.isPending}
+                        onCreate={() => handleAction({ name: searchQuery.trim() }, TagAction.ADD)}
+                    />
+                }
+                footer={
+                    <>
                         <Link
-                            to="/list/$mediaType/$username/tags"
+                            search={{ filtersTab: "tags" }}
+                            to="/lists/tracking/$mediaType/$username"
                             params={{ mediaType, username: currentUser!.name }}
                             className="flex items-center gap-1.5 text-xs text-foreground/90 hover:text-brand transition-colors"
                         >
                             <Tags className="size-3"/>
                             Open Tags
-                            <ChevronRight className="size-3 mt-0.5"/>
+                            <ChevronRight className="size-3 -ml-1"/>
                         </Link>
                         <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
                             Done
                         </Button>
-                    </div>
-                </div>
-            </DialogContent>
+                    </>
+                }
+            >
+                {filteredTags.map((tag, idx) => {
+                    const checkboxId = `${fieldId}-${idx}`;
+                    const isActive = activeNames.has(tag.name);
+
+                    return (
+                        <Field
+                            key={tag.name}
+                            orientation="horizontal"
+                            data-disabled={!!error || mutation.isPending}
+                            className={cn("p-3 rounded-lg", isActive ? "bg-brand/4 text-brand" : "hover:bg-popover")}
+                        >
+                            <Checkbox
+                                id={checkboxId}
+                                checked={isActive}
+                                disabled={!!error || mutation.isPending}
+                                onCheckedChange={() => handleAction(tag, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
+                            />
+                            <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">
+                                # {tag.name}
+                            </FieldLabel>
+                        </Field>
+                    );
+                })}
+            </MembershipDialogContent>
         </Dialog>
     );
 };

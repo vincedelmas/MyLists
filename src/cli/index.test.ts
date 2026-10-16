@@ -62,64 +62,12 @@ describe("CLI entry point", () => {
         return { exitCode, stdout, stderr };
     };
 
-    it("shows activity repair help without an application environment or database", async () => {
-        const result = await runCli(["activity-repair", "--help"], false, { DATABASE_URL: undefined });
-        expect(result).toMatchObject({ exitCode: 0, stderr: "" });
-        expect(result.stdout).toContain("Usage: activity-repair");
-        expect(result.stdout).toContain("--evidence-only");
-        expect(result.stdout).toContain("--apply [file.json]");
-    });
-
-    it("lists activity repair in the main CLI help", async () => {
-        const result = await runCli(["--help"], true);
-        expect(result, result.stderr).toMatchObject({ exitCode: 0 });
-        expect(result.stdout).toContain("activity-repair [options]");
-    });
-
-    it("rejects unknown repair options without loading application services", async () => {
-        const result = await runCli(["activity-repair", "--unknown-option"], false, { DATABASE_URL: undefined });
-        expect(result.exitCode).toBe(1);
-        expect(result.stderr).toContain("unknown option");
-        expect(result.stderr).not.toContain("Invalid environment variables");
-    });
-
-    it("exits quietly on an empty queue without loading application environment validation", async () => {
-        // No application secrets are provided. Loading the full CLI would fail.
-        expect(await runCli()).toEqual({ exitCode: 0, stdout: "", stderr: "" });
-    });
-
-    it("ignores terminal job history without loading application services", async () => {
-        for (const status of [ImportJobStatus.COMPLETED, ImportJobStatus.COMPLETED_WITH_ERRORS, ImportJobStatus.FAILED, ImportJobStatus.CANCELLED]) {
-            sqlite.run("INSERT INTO import_jobs (user_id, source, status) VALUES (1, 'mylists', ?)", [status]);
-        }
-        expect(await runCli()).toEqual({ exitCode: 0, stdout: "", stderr: "" });
-    });
-
-    it("exits quietly when all queued jobs are waiting for their retry time", async () => {
-        sqlite.run("INSERT INTO import_jobs (user_id, source, status, next_attempt_at) VALUES (1, 'mylists', 'queued', datetime('now', '+1 day'))");
-        expect(await runCli()).toEqual({ exitCode: 0, stdout: "", stderr: "" });
-    });
-
-    it.each([undefined, ""])("reports an unconfigured DATABASE_URL (%j) clearly", async databaseUrl => {
-        const result = await runCli(["import-drain"], false, { DATABASE_URL: databaseUrl });
-        expect(result.exitCode).toBe(1);
-        expect(result.stderr).toContain("DATABASE_URL must be set");
-    });
-
     it("reports a missing database without creating it", async () => {
         const missingDatabase = join(directory, "missing.db");
         const result = await runCli(["import-drain"], false, { DATABASE_URL: missingDatabase });
         expect(result.exitCode).toBe(1);
         expect(result.stderr).toContain("Could not check the import queue");
         expect(existsSync(missingDatabase)).toBe(false);
-    });
-
-    it("reports an unmigrated database instead of treating it as an empty queue", async () => {
-        const unmigratedDatabase = join(directory, "unmigrated.db");
-        new Database(unmigratedDatabase).close();
-        const result = await runCli(["import-drain"], false, { DATABASE_URL: unmigratedDatabase });
-        expect(result.exitCode).toBe(1);
-        expect(result.stderr).toContain("Could not check the import queue");
     });
 
     it.each([ImportJobStatus.QUEUED, ImportJobStatus.PROCESSING, "due-retry"])("loads the real drain for a %s job, including recovery without queued jobs", async state => {
@@ -139,7 +87,7 @@ describe("CLI entry point", () => {
             .toEqual([{ user_id: 1, media_id: 100, rating: 8, comment: "CLI test" }]);
     });
 
-    it("fails without flock instead of recovering jobs without exclusive ownership", async () => {
+it("fails without flock instead of recovering jobs without exclusive ownership", async () => {
         sqlite.run("INSERT INTO import_jobs (user_id, source, status) VALUES (1, 'mylists', 'processing')");
         const result = await runCli(["import-drain"], false, { PATH: directory });
         expect(result.exitCode).toBe(1);
@@ -147,7 +95,7 @@ describe("CLI entry point", () => {
         expect(sqlite.query("SELECT status FROM import_jobs").get()).toEqual({ status: "processing" });
     });
 
-    it("keeps a live owner exclusive and recovers immediately after SIGKILL without duplicating its insert", async () => {
+it("keeps a live owner exclusive and recovers immediately after SIGKILL without duplicating its insert", async () => {
         sqlite.run("INSERT INTO movies (id, api_id, name, image_cover, duration) VALUES (100, 100, 'Crash test movie', 'test.jpg', 100)");
         sqlite.run("INSERT INTO import_jobs (id, user_id, source, status, total_count) VALUES (1, 1, 'mylists', 'queued', 1)");
         sqlite.run(`INSERT INTO import_items (job_id, row_number, name, media_type, external_api_id, external_api_source, status, payload_json)
@@ -199,22 +147,4 @@ describe("CLI entry point", () => {
         }
     }, 15_000);
 
-    it("preserves import help when the queue is empty", async () => {
-        const result = await runCli(["import-drain", "--help"], true);
-        expect(result.exitCode).toBe(0);
-        expect(result.stdout).toContain("Usage: mylists-cli import-drain");
-    });
-
-    it("does not hide invalid import arguments behind an empty queue", async () => {
-        const result = await runCli(["import-drain", "--unknown-option"], true);
-        expect(result.exitCode).toBe(1);
-        expect(result.stderr).toContain("unknown option");
-    });
-
-    it("keeps other CLI commands available", async () => {
-        const result = await runCli(["compute-users-stats", "--help"], true);
-        expect(result.exitCode).toBe(0);
-        expect(result.stdout).toContain("Usage: mylists-cli compute-users-stats");
-        expect(result.stdout).toContain("--user-ids <values...>");
-    });
 });

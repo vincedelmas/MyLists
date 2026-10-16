@@ -7,7 +7,7 @@
   policy. Keep server dependencies out of shared definitions and utilities.
 - Keep tests beside their modules and use direct imports when moving code; do not leave forwarding modules at the old paths.
 - Do not build the project unless explicitly asked.
-- Create tests only when they are necessary.
+- Create tests only when they are really necessary.
 - Avoid creating functions that are used only once when possible. First look for an existing function that already works or can be lightly
   modified to support the use case.
 - Do not use overly defensive programming. Add checks where necessary; otherwise, trust the types.

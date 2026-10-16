@@ -1,18 +1,14 @@
-import {cn} from "@/lib/utils/classnames";
+import {UserX} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {toast} from "@/lib/client/components/ui/toast";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {followsOptions} from "@/lib/client/react-query/query-options";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {useFollowMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/follows")({
@@ -20,9 +16,10 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/f
         followsQueryOptions: followsOptions(username),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.followsQueryOptions);
+        return context.queryClient.query({ ...context.followsQueryOptions, staleTime: "static" });
     },
     component: ProfileFollows,
+    head: () => ({ meta: [{ title: "Follows - MyLists" }] }),
 });
 
 
@@ -31,34 +28,41 @@ function ProfileFollows() {
     const { username: profileOwner } = Route.useParams();
     const { followsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(followsQueryOptions).data;
-
     const isViewingOwnProfile = currentUser?.name === profileOwner;
-    return (
-        <PageTitle
-            title="Follows"
-            subtitle={isViewingOwnProfile ? "People you subscribe to their updates." : `People followed by ${profileOwner}`}
-        >
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {apiData.follows.map((follow) =>
-                    <FollowCard
-                        key={follow.id}
-                        follow={follow}
-                        profileOwner={profileOwner}
-                        currentUsername={currentUser?.name}
-                        isViewingOwnProfile={isViewingOwnProfile}
-                    />
-                )}
-            </div>
 
-            {apiData.follows.length === 0 &&
-                <div className="flex flex-col items-center justify-center pt-20 text-center">
-                    <EmptyState
-                        icon={UserX}
-                        message="No Follows Found."
-                    />
+    return (
+        <div className="flex flex-col mx-auto mb-8 pt-6">
+            <header>
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    Follows
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                    {isViewingOwnProfile ? "People you subscribe to their updates." : `People followed by ${profileOwner}`}
+                </p>
+            </header>
+            <div className="mt-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {apiData.follows.map((follow) =>
+                        <FollowCard
+                            key={follow.id}
+                            follow={follow}
+                            profileOwner={profileOwner}
+                            currentUsername={currentUser?.name}
+                            isViewingOwnProfile={isViewingOwnProfile}
+                        />
+                    )}
                 </div>
-            }
-        </PageTitle>
+
+                {apiData.follows.length === 0 &&
+                    <div className="flex flex-col items-center justify-center pt-20 text-center">
+                        <EmptyState
+                            icon={UserX}
+                            message="No Follows Found."
+                        />
+                    </div>
+                }
+            </div>
+        </div>
     );
 }
 
@@ -125,82 +129,17 @@ function FollowCard({ follow, currentUsername, profileOwner, isViewingOwnProfile
                                 You
                             </Button>
                             :
-                            <FollowActionButton
+                            <FollowButton
                                 targetUserId={follow.id}
-                                profileOwner={profileOwner}
+                                profileUsername={profileOwner}
                                 followStatus={follow.myFollowStatus}
-                                isViewingOwnProfile={isViewingOwnProfile}
+                                followLabel={isViewingOwnProfile ? "Follow Back" : "Follow"}
+                                className="w-auto flex-1 font-medium"
                             />
                         }
                     </>
                 }
             </div>
         </div>
-    );
-}
-
-
-interface FollowActionButtonProps {
-    targetUserId: number;
-    profileOwner: string;
-    isViewingOwnProfile: boolean;
-    followStatus: SocialState | null;
-}
-
-
-function FollowActionButton({ targetUserId, followStatus, profileOwner, isViewingOwnProfile }: FollowActionButtonProps) {
-    const followMutation = useFollowMutation(profileOwner);
-    const unfollowMutation = useUnfollowMutation(profileOwner);
-    const isPending = followMutation.isPending || unfollowMutation.isPending;
-
-    const handleClick = () => {
-        const mutation = followStatus ? unfollowMutation : followMutation;
-
-        mutation.mutate({ data: { targetUserId } }, {
-            onError: () => toast.add({ title: "Sorry, an error occurred...", type: "error", priority: "high" })
-        });
-    };
-
-    const variant = followStatus === SocialState.ACCEPTED
-        ? "selected" : followStatus === SocialState.REQUESTED
-            ? "secondary" : "outline";
-
-    return (
-        <Button
-            variant={variant}
-            disabled={isPending}
-            onClick={handleClick}
-            className={cn("group flex-1 font-medium transition-all",
-                followStatus && "hover:bg-destructive/30 hover:text-foreground")}
-        >
-            {isPending ?
-                <Spinner data-icon="inline-start" className="size-3.5"/>
-                :
-                followStatus === SocialState.ACCEPTED ?
-                    <>
-                        <span className="flex items-center gap-2 group-hover:hidden">
-                            <UserCheck className="size-3.5"/> Following
-                        </span>
-                        <span className="hidden items-center gap-2 group-hover:flex">
-                            <UserX className="size-3.5"/> Unfollow
-                        </span>
-                    </>
-                    :
-                    followStatus === SocialState.REQUESTED ?
-                        <>
-                            <span className="flex items-center gap-2 group-hover:hidden">
-                                <Clock className="size-3.5"/> Requested
-                            </span>
-                            <span className="hidden items-center gap-2 group-hover:flex">
-                                <UserX className="size-3.5"/> Cancel request
-                            </span>
-                        </>
-                        :
-                        <>
-                            <UserPlus className="size-3.5"/>
-                            {isViewingOwnProfile ? "Follow Back" : "Follow"}
-                        </>
-            }
-        </Button>
     );
 }

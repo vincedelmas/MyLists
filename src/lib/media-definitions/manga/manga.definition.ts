@@ -1,3 +1,4 @@
+import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
@@ -8,6 +9,13 @@ export const MANGA_FIXED_DURATION_MIN = 7;
 
 
 export const mangaDefinition = defineMediaDefinition({
+    filters: {
+        common: commonMediaFilters,
+        metadata: {
+            authors: mediaFilterNamesSchema,
+            publishers: mediaFilterNamesSchema,
+        },
+    },
     continue: {
         status: Status.READING,
         getUpdate: (state: ContinueStateByType[typeof MediaType.MANGA]) => {
@@ -21,6 +29,19 @@ export const mangaDefinition = defineMediaDefinition({
         },
     },
     statuses: [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ],
+    sorting: {
+        default: "title_asc",
+        options: [
+            "title_asc", "title_desc", "rating_highest", "rating_lowest",
+            "release_newest", "release_oldest", "added_newest", "added_oldest",
+            "modified_newest", "modified_oldest", "redo_highest", "chapters_highest", "chapters_lowest",
+        ],
+        labels: {
+            redo_highest: "Re-Read",
+            release_newest: "Published Date +",
+            release_oldest: "Published Date -",
+        },
+    },
     identity: {
         mediaType: MediaType.MANGA,
     },

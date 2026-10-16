@@ -3,11 +3,13 @@ import {CoverType} from "@/lib/types/media-common.types";
 import {getImageFilename, getImageUrl} from "@/lib/server/core/images/image-url";
 
 
-export const customJson = <TData>(name: string) => customType<{ data: TData; driverData: string }>({
+export const customJson = <TData>(name: string, options?: { acceptSerialized?: boolean }) => customType<{ data: TData; driverData: string }>({
     dataType() {
         return "text";
     },
-    toDriver(value: TData) {
+    toDriver(value: TData | string) {
+        // Better Auth serializes SQLite JSON before handing it to Drizzle.
+        if (options?.acceptSerialized && typeof value === "string") return value;
         return JSON.stringify(value);
     },
     fromDriver(value: string): TData {

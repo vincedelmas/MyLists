@@ -1,6 +1,7 @@
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";
+import {mediaTags} from "@/lib/server/database/schema/media-tags.schema";
 import {index, integer, real, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {
     commonGenericCols,
@@ -112,6 +113,10 @@ export const gamesTagsRelations = relations(gamesTags, ({ one }) => ({
     game: one(games, {
         fields: [gamesTags.mediaId],
         references: [games.id]
+    }),
+    tag: one(mediaTags, {
+        fields: [gamesTags.tagId],
+        references: [mediaTags.id],
     }),
     user: one(user, {
         fields: [gamesTags.userId],

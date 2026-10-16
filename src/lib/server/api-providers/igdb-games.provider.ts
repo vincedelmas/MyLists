@@ -45,7 +45,7 @@ export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<Up
             return igdb.getAdvancedSearchOptions();
         },
 
-        async getDetails(apiId: number) {
+        async getDetails(apiId) {
             const raw = await igdb.getGameDetails(apiId);
             return igdbTransformer.transformDetailsResults(raw, transformOptions);
         },

@@ -1,6 +1,6 @@
-import {XLineTop} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
+import {JobType, MediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
+import {Building2, Gamepad2, XLineTop} from "lucide-react";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {GameListItem} from "@/lib/client/components/media/games/GameListItem";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
@@ -13,13 +13,28 @@ import {getGamesColumns} from "@/lib/client/components/media/games/GamesListColu
 import {GamesUserDetails} from "@/lib/client/components/media/games/GamesUserDetails";
 import {GamesExtraSections} from "@/lib/client/components/media/games/GamesExtraSections";
 import {GamesUpComingAlert} from "@/lib/client/components/media/games/GamesUpComingAlert";
-import {getGamesActiveFilters} from "@/lib/client/components/media/games/GamesActiveFilters";
 import {getGamesContinueProgress} from "@/lib/client/components/media/games/continue-progress";
 import {gameSearchFilterDefinition} from "@/lib/client/components/media/games/GameSearchFilters";
 
 
 export const gamesMediaConfig = defineMediaConfig({
     mediaType: MediaType.GAMES,
+    jobs: {
+        [JobType.CREATOR]: {
+            icon: Gamepad2,
+            label: "Developer",
+            descriptionSuffix: "",
+            sectionTitle: "Catalogue",
+            descriptionVerb: "developed by",
+        },
+        [JobType.PUBLISHER]: {
+            icon: Building2,
+            label: "Publisher",
+            descriptionSuffix: "",
+            sectionTitle: "Catalogue",
+            descriptionVerb: "published by",
+        },
+    },
     infoGrid: GamesInfoGrid,
     overTitle: GamesOverTitle,
     underTitle: GamesUnderTitle,
@@ -29,7 +44,10 @@ export const gamesMediaConfig = defineMediaConfig({
     extraSections: GamesExtraSections,
     mediaListColumns: getGamesColumns,
     mediaUserDetails: GamesUserDetails,
-    sheetFilters: getGamesActiveFilters,
+    metadataFilters: {
+        companies: { title: "Companies", type: "search" },
+        platforms: { title: "Platforms", type: "checkbox" },
+    },
     continue: {
         getProgress: getGamesContinueProgress,
     },

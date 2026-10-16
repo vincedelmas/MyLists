@@ -78,7 +78,7 @@ describe("social relationship and notification transactions", () => {
     it("rolls back a new follow and notification deletion if the replacement notification fails", () => {
         context.db.insert(schema.socialNotifications).values({ userId: 1, actorId: 2, type: SocialNotifType.FOLLOW_DECLINED }).run();
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_notification BEFORE INSERT ON ${getTableName(schema.socialNotifications)}
+        sqlite.run(`CREATE TRIGGER fail_notification BEFORE INSERT ON ${getTableName(schema.socialNotifications)}
             BEGIN SELECT RAISE(ABORT, 'notification failed'); END`);
 
         expect(() => social.follow(1, 2, true)).toThrow();
@@ -88,7 +88,7 @@ describe("social relationship and notification transactions", () => {
     it.each(["accept", "decline"])("rolls back %s if its notification fails", (action) => {
         social.follow(1, 2, true);
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_notification BEFORE INSERT ON ${getTableName(schema.socialNotifications)}
+        sqlite.run(`CREATE TRIGGER fail_notification BEFORE INSERT ON ${getTableName(schema.socialNotifications)}
             BEGIN SELECT RAISE(ABORT, 'notification failed'); END`);
 
         expect(() => action === "accept" ? social.acceptFollowRequest(1, 2) : social.declineFollowRequest(1, 2)).toThrow();
@@ -98,7 +98,7 @@ describe("social relationship and notification transactions", () => {
     it.each(["unfollow", "remove"])("rolls back %s if notification cleanup fails", (action) => {
         social.follow(1, 2, true);
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_notification BEFORE DELETE ON ${getTableName(schema.socialNotifications)}
+        sqlite.run(`CREATE TRIGGER fail_notification BEFORE DELETE ON ${getTableName(schema.socialNotifications)}
             BEGIN SELECT RAISE(ABORT, 'notification failed'); END`);
 
         expect(() => action === "unfollow" ? social.unfollow(1, 2) : social.removeFollower(1, 2)).toThrow();

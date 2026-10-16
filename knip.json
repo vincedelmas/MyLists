@@ -10,7 +10,7 @@
         "src/routes/**/*.{ts,tsx}"
     ],
     "project": [
-        "src/**/*.{ts,tsx}"
+        "src/**/*.{ts,tsx,css}"
     ],
     "vite": {
         "config": [
@@ -23,9 +23,6 @@
         "@fontsource-variable/noto-emoji",
         "@fontsource-variable/noto-sans-jp",
         "pino-pretty"
-    ],
-    "ignoreFiles": [
-        "src/lib/client/components/user-profile/**"
     ],
     "ignoreBinaries": [
         "flock"

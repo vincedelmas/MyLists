@@ -5,18 +5,21 @@ import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
 import {ContinuePreview} from "@/lib/client/components/continue/ContinuePreview";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
+import {ProfilePinnedItems} from "@/lib/client/components/lists/ProfilePinnedItems";
 import {ChartNoAxesColumn, Clock, ClockAlert, LibraryBig, Star} from "lucide-react";
 import {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
 import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
 import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
 import {MediaGlobalSummaryType, PerMediaSummaryType} from "@/lib/types/query.options.types";
+import type {ProfilePinsData} from "@/lib/client/react-query/query-options/profile-pins.options";
 import {SegmentedDistributionBar} from "@/lib/client/components/general/SegmentedDistributionBar";
 
 
 interface OverviewTabProps {
     isCurrent: boolean,
     showContinue: boolean,
+    profilePins: ProfilePinsData,
     perMedia: PerMediaSummaryType,
     ratingSystem: RatingSystemType,
     inProgressMedia: ContinueItem[],
@@ -25,7 +28,9 @@ interface OverviewTabProps {
 }
 
 
-export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMedia, inProgressMedia, isCurrent, showContinue }: OverviewTabProps) => {
+export const OverviewTab = (props: OverviewTabProps) => {
+    const { profilePins, globalStats, perMedia, ratingSystem, highlightedMedia, inProgressMedia, isCurrent, showContinue } = props;
+
     const rating = globalStats.avgRated;
     const distributionTotalDays = perMedia.reduce((total, media) => total + media.timeSpentDays, 0);
 
@@ -42,7 +47,7 @@ export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMe
         : getFeelingIcon(rating, { size: 22, className: "mt-0.5" });
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <section className="overflow-hidden rounded-xl border shadow-xs">
                 <div className="p-5 sm:p-6">
                     <CompactStatsGrid
@@ -110,6 +115,11 @@ export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMe
                     items={inProgressMedia}
                 />
             }
+
+            <ProfilePinnedItems
+                pins={profilePins}
+                isCurrent={isCurrent}
+            />
 
             <HighlightedMedia
                 showMediaType={true}

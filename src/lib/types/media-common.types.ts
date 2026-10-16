@@ -2,11 +2,23 @@ import {MediaType} from "@/lib/utils/enums";
 import {EpsPerSeasonType} from "@/lib/types/media-list.types";
 
 
+export type StatsCTE = any;
+export type NameObj = { name: string };
+export type Tag = { oldName?: string, name: string };
+export type IdNamePair = { id: number, name: string };
 export type CoverType = `${MediaType}-covers` | "profile-covers" | "profile-back-covers";
 
-export type IdNamePair = { id: number, name: string };
 
-export type NameObj = { name: string };
+export type MediaInfo = {
+    id: number;
+    name: string;
+    duration?: number;
+    imageCover: string;
+    releaseDate: string;
+    inUserList?: boolean;
+    customCover: string | null;
+};
+
 
 export type AddedMediaDetails = {
     genres: IdNamePair[];
@@ -33,13 +45,10 @@ export type AddedMediaDetails = {
     }[];
 };
 
+
 export type SimpleMedia = {
     mediaId: number,
     mediaName: string,
     mediaCover: string,
     releaseDate: string | null,
 }
-
-export type Tag = { oldName?: string, name: string };
-
-export type StatsCTE = any;

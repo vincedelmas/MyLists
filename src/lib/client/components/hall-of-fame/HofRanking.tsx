@@ -1,13 +1,13 @@
 import {cn} from "@/lib/utils/classnames";
+import {Ban, TrendingUp} from "lucide-react";
 import {getThemeColor} from "@/lib/client/theme";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {HofUserRank} from "@/lib/types/query.options.types";
 import {formatPercent} from "@/lib/utils/formatting/number";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {Ban, ChartNoAxesColumnIncreasing, TrendingUp} from "lucide-react";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 interface HofRankingProps {
@@ -19,15 +19,11 @@ export const HofRanking = ({ userRanks }: HofRankingProps) => {
     return (
         <section className="h-full rounded-xl border p-5 shadow-xs sm:p-6">
             <div>
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    <ChartNoAxesColumnIncreasing className="size-4" aria-hidden="true"/>
-                    Your standing
-                </div>
-                <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
-                    Across every list
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                    You, across every list
                 </h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    Your position in each of the six media types.
+                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                    Your position in each of the six media types
                 </p>
 
                 <div className="mt-6 grid grid-cols-2 gap-y-5">

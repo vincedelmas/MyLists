@@ -27,7 +27,7 @@ import {adminImportIssuesOptions, adminImportsOptions} from "@/lib/client/react-
 export const Route = createFileRoute("/_admin/admin/imports")({
     validateSearch: adminImportsSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context, deps: { search } }) => context.queryClient.ensureQueryData(adminImportsOptions(search)),
+    loader: ({ context, deps: { search } }) => context.queryClient.query({ ...adminImportsOptions(search), staleTime: "static" }),
     component: AdminImportsPage,
 });
 

@@ -4,7 +4,6 @@ import {MediaType, Status} from "@/lib/utils/enums";
 import {ContinueItem, continueOptions} from "@/lib/client/react-query/query-options/continue.options";
 import {useContinueMediaMutation} from "./continue.mutations";
 
-
 const mocks = vi.hoisted(() => ({ save: vi.fn(), toast: vi.fn(), navigate: vi.fn() }));
 let queryClient: QueryClient;
 
@@ -20,6 +19,7 @@ vi.mock("@tanstack/react-router", () => ({ useNavigate: () => mocks.navigate }))
 vi.mock("@/lib/client/hooks/use-auth", () => ({ useAuth: () => ({ currentUser: { name: "alice" } }) }));
 vi.mock("@/lib/client/components/ui/toast", () => ({ toast: { add: mocks.toast } }));
 vi.mock("@/lib/server/functions/continue", () => ({ postContinueMedia: mocks.save, getContinueMedia: vi.fn() }));
+vi.mock("@/lib/server/functions/profile-pins", () => ({ getProfilePins: vi.fn(), getOwnProfilePins: vi.fn() }));
 vi.mock("@/lib/client/react-query/query-options", async () => ({
     ...await import("@/lib/client/react-query/query-options/continue.options"),
     mediaDetailsOptions: (type: MediaType, id: number) => ({ queryKey: ["details", type, id] }),
@@ -44,42 +44,6 @@ beforeEach(() => {
 afterEach(() => queryClient.clear());
 
 describe("Continue quick updates", () => {
-    it("defers active secondary queries across repeated clicks and fetches fresh data when revisited", async () => {
-        const secondaryKeys = [
-            ["profile", "header", "alice"],
-            ["profile", "summary", "alice"],
-            ["allUpdates", "alice", {}],
-            ["details", MediaType.MANGA, 1],
-            ["userList", MediaType.MANGA, "alice", {}],
-            ["tvSeasons", MediaType.MANGA, 1],
-            ["onOpenHistory", MediaType.MANGA, 1],
-            ["monthly-activity", "alice", "stats", {}],
-            ["year-recap", "alice", 2026, "all"],
-        ];
-        const secondaryQueries = secondaryKeys.map(queryKey => {
-            const queryFn = vi.fn().mockResolvedValue("fresh");
-            const options = { queryKey, queryFn };
-            queryClient.setQueryData(queryKey, "previous");
-            const unsubscribe = new QueryObserver(queryClient, options).subscribe(() => {});
-            return { options, queryFn, unsubscribe };
-        });
-        const mutation = useContinueMediaMutation(item);
-
-        for (const currentChapter of [8, 9]) {
-            mocks.save.mockResolvedValueOnce({ item: { ...item, currentChapter }, completed: false });
-            await mutation.mutateAsync();
-        }
-
-        for (const { options, queryFn, unsubscribe } of secondaryQueries) {
-            expect(queryFn).not.toHaveBeenCalled();
-            expect(queryClient.getQueryData(options.queryKey)).toBe("previous");
-            expect(queryClient.getQueryState(options.queryKey)?.isInvalidated).toBe(true);
-            unsubscribe();
-
-            expect(await queryClient.fetchQuery(options)).toBe("fresh");
-            expect(queryFn).toHaveBeenCalledTimes(1);
-        }
-    });
 
     it("allows the next save while the feed is still loading and ignores an older Continue response", async () => {
         const staleContinue = Promise.withResolvers<typeof initial>();
@@ -88,7 +52,7 @@ describe("Continue quick updates", () => {
         queryClient.setQueryData(feedKey, ["old feed"]);
         const observer = new QueryObserver(queryClient, { queryKey: feedKey, queryFn: () => slowFeed.promise });
         const unsubscribe = observer.subscribe(() => {});
-        const staleFetch = queryClient.fetchQuery({ queryKey, queryFn: () => staleContinue.promise, staleTime: 0 }).catch(() => {});
+        const staleFetch = queryClient.query({ queryKey, queryFn: () => staleContinue.promise, staleTime: 0 }).catch(() => {});
         const mutation = useContinueMediaMutation(item);
 
         for (const currentChapter of [8, 9]) {
@@ -112,7 +76,7 @@ describe("Continue quick updates", () => {
         unsubscribe();
     });
 
-    it("removes a completed card and offers its details without changing another user's preview", async () => {
+it("removes a completed card and offers its details without changing another user's preview", async () => {
         queryClient.setQueryData(continueOptions("bob").queryKey, initial);
         mocks.save.mockResolvedValueOnce({ item: null, completed: true });
         await useContinueMediaMutation(item).mutateAsync();

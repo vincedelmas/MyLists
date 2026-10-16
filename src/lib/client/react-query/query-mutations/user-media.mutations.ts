@@ -10,6 +10,7 @@ import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
 import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
+import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
 import {
     allUpdatesOptions,
@@ -174,6 +175,8 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
                 queryClient.invalidateQueries({ queryKey: ["userList", variables.data.mediaType] }),
                 queryClient.invalidateQueries({ queryKey: ["listFilters", variables.data.mediaType, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: ["tagsView", variables.data.mediaType, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: tagNamesOptions(variables.data.mediaType, false).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", variables.data.mediaType, variables.data.mediaId] }),
             ]);
         }
@@ -246,6 +249,10 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                 invalidations.push(queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }));
             }
 
+            if (variables.payload.type === UpdateType.PLATFORM) {
+                invalidations.push(queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }));
+            }
+
             if (activityUpdate) {
                 invalidations.push(queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }));
             }
@@ -312,6 +319,9 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: continueOptions(currentUser!.name).queryKey }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists"], refetchType: "none" }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 ...(queryOption.queryKey[0] === "details"
                     ? [queryClient.invalidateQueries({ queryKey: queryOption.queryKey })]
@@ -332,16 +342,22 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
             return postEditUserTag({ data: { mediaType, mediaId, tag, action } });
         },
         meta: { ...meta },
-        onSuccess: async (data) => {
+        onSuccess: async (_data, { action }) => {
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: tagNamesOptions(mediaType, false).queryKey }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists"], refetchType: "none" }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }),
-            ]);
 
-            queryClient.setQueryData(tagNamesOptions(mediaType, false).queryKey, (oldData) => {
-                if (!oldData || !data) return;
-                return oldData.map((c) => c?.name).includes(data?.name ?? "") ? oldData : [...oldData, data];
-            });
+                // Per-entry edits refresh when the media dialog closes, keeping the item available to edit.
+                queryClient.invalidateQueries({
+                    queryKey: ["userList", mediaType, currentUser!.name],
+                    refetchType: action === TagAction.ADD || action === TagAction.DELETE_ONE ? "none" : "active",
+                }),
+                queryClient.invalidateQueries({ queryKey: ["details", mediaType] }),
+            ]);
         }
     })
 };

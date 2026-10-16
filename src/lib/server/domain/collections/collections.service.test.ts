@@ -19,7 +19,7 @@ const createService = () => {
         ordered: false,
         title: "Favorites",
         description: null,
-        mediaType: MediaType.MOVIES,
+        mediaTypes: [MediaType.MOVIES],
         privacy: PrivacyType.PUBLIC as PrivacyType,
         ownerPrivacy: PrivacyType.PUBLIC,
     };
@@ -33,6 +33,7 @@ const createService = () => {
             total: 0,
             items: [],
             perPage: 24,
+            filterOptions: { genres: [], tags: [], mediaTypes: [MediaType.MOVIES], mediaFilters: {} },
         }),
         findLikedCollection: vi.fn().mockReturnValue(null),
         incrementViewCount: vi.fn().mockResolvedValue(undefined),
@@ -90,27 +91,14 @@ const createService = () => {
 };
 
 
-describe("CollectionsService.getUserCollections", () => {
-    it("forwards an admin actor to the repository visibility scope", async () => {
-        const { repository, service } = createService();
-
-        const actor = toActor({ id: 20, role: RoleType.ADMIN });
-        await service.getUserCollections(10, actor, MediaType.MOVIES);
-
-        expect(repository.getUserCollections).toHaveBeenCalledWith(10, actor, MediaType.MOVIES);
-    });
-});
-
-
 describe("CollectionsService.getPaginatedUserCollections", () => {
-    it("passes filters and the viewer actor through", async () => {
+    it("requests public collections before enriching previews when the profile is unavailable", async () => {
         const { repository, service } = createService();
-        const filters = { search: "favorites", page: 2, mediaType: MediaType.MOVIES };
+        const actor = toActor();
 
-        const actor = toActor({ id: 20, role: RoleType.USER });
-        await service.getPaginatedUserCollections(10, filters, actor);
+        await service.getPaginatedUserCollections(10, { page: 1 }, actor, true);
 
-        expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, actor, filters);
+        expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, actor, { page: 1 }, true);
     });
 });
 
@@ -131,22 +119,15 @@ describe("CollectionsService authorization", () => {
                 type: "restricted",
             });
 
+        expect(() => service.recordCollectionView(7, actor)).toThrow(UnauthorizedError);
+        expect(() => service.searchCollectionFilters({
+            collectionId: 7, mediaType: MediaType.MOVIES, field: "actors", query: "Actor",
+        }, actor)).toThrow(UnauthorizedError);
+
         expect(repository.getCollectionItems).not.toHaveBeenCalled();
         expect(repository.getPaginatedCollectionItems).not.toHaveBeenCalled();
         expect(repository.incrementViewCount).not.toHaveBeenCalled();
         expect(authorizationService.getCollectionCapabilities).not.toHaveBeenCalled();
-    });
-
-    it("returns capabilities produced by the authorization service", async () => {
-        const { authorizationService, capabilities, collection, repository, service } = createService();
-        const actor = toActor({ id: 20, role: RoleType.USER });
-
-        const result = await service.getCollectionDetails(7, "read", actor);
-
-        expect(authorizationService.decideCollection).toHaveBeenCalledWith(actor, "read", collection);
-        expect(authorizationService.getCollectionCapabilities).toHaveBeenCalledWith(actor, collection);
-        expect(repository.findLikedCollection).toHaveBeenCalledWith(20, 7);
-        expect(result.capabilities).toEqual(capabilities);
     });
 
     it("loads read-mode collection items in pages of 24", async () => {
@@ -159,16 +140,29 @@ describe("CollectionsService authorization", () => {
             total: 50,
             items: [],
             perPage: 24,
+            filterOptions: { genres: [], tags: [], mediaTypes: [MediaType.MOVIES], mediaFilters: {} },
         });
 
-        const result = await service.getCollectionDetails(7, "read", actor, 2);
+        const result = await service.getCollectionDetails(7, "read", actor, { page: 2 });
 
-        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, 2);
+        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, [MediaType.MOVIES], { page: 2 }, undefined, false);
         expect(repository.getCollectionItems).not.toHaveBeenCalled();
         expect(result).toMatchObject({ page: 2, pages: 3, total: 50, perPage: 24 });
+        expect(repository.incrementViewCount).not.toHaveBeenCalled();
+        await service.recordCollectionView(7, actor);
+        expect(repository.incrementViewCount).toHaveBeenCalledExactlyOnceWith(7);
     });
 
-    it("keeps all items available in edit mode", async () => {
+    it("loads lazy facet options after authorization without counting another page view", async () => {
+        const { repository, authorizationService, collection, service } = createService();
+        const actor = toActor({ id: 20, role: RoleType.USER });
+        await service.getCollectionDetails(7, "read", actor, {}, true);
+        expect(authorizationService.decideCollection).toHaveBeenCalledWith(actor, "read", collection);
+        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, [MediaType.MOVIES], {}, 20, true);
+        expect(repository.incrementViewCount).not.toHaveBeenCalled();
+    });
+
+    it("keeps all items available in edit mode without counting a page view", async () => {
         const { repository, service } = createService();
         const actor = toActor({ id: 10, role: RoleType.USER });
 
@@ -176,6 +170,7 @@ describe("CollectionsService authorization", () => {
 
         expect(repository.getCollectionItems).toHaveBeenCalledWith(7);
         expect(repository.getPaginatedCollectionItems).not.toHaveBeenCalled();
+        expect(repository.incrementViewCount).not.toHaveBeenCalled();
     });
 
     it("rejects collection updates before any write for unauthorized viewers", async () => {
@@ -188,7 +183,7 @@ describe("CollectionsService authorization", () => {
             title: "Changed",
             ordered: false,
             privacy: PrivacyType.PUBLIC,
-            items: [{ mediaId: 1 }],
+            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }],
         })).toThrow(FormattedError);
 
         expect(repository.updateCollection).not.toHaveBeenCalled();
@@ -224,7 +219,7 @@ describe("CollectionsService authorization", () => {
             title: "Changed",
             ordered: false,
             privacy: PrivacyType.PRIVATE,
-            items: [{ mediaId: 1 }],
+            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }],
         })).toThrow(FormattedError);
         await expect(() => service.deleteCollection(7, actor)).toThrow(FormattedError);
 
@@ -244,7 +239,7 @@ describe("CollectionsService authorization", () => {
             title: "Moderated",
             ordered: false,
             privacy: PrivacyType.PRIVATE,
-            items: [{ mediaId: 1 }],
+            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }],
         });
         await service.deleteCollection(7, actor);
 

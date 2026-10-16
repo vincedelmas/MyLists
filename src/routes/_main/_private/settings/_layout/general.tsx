@@ -2,13 +2,13 @@ import {useId, useState} from "react";
 import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {handleServerFormErrors} from "@/lib/client/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
 import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
+import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -75,22 +75,12 @@ function GeneralSettingsPage() {
                                     The name users see, and who can access your profile.
                                 </p>
                             </div>
-                            <Controller
+                            <FormTextField
                                 name="username"
+                                label="Username"
                                 control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
-                                        <FieldLabel htmlFor={`${fieldId}-username`}>
-                                            Username
-                                        </FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={`${fieldId}-username`}
-                                            aria-invalid={fieldState.invalid}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                )}
+                                id={`${fieldId}-username`}
+                                disabled={generalSettingsMutation.isPending}
                             />
                             <Controller
                                 name="privacy"

@@ -1,16 +1,6 @@
-import {ActivityKind, MediaType, UpdateType} from "@/lib/utils/enums";
 import {DeltaStats} from "@/lib/types/stats.types";
-
-
-export type MediaInfo = {
-    id: number;
-    name: string;
-    duration?: number;
-    imageCover: string;
-    releaseDate: string;
-    inUserList?: boolean;
-    customCover: string | null;
-}
+import type {ActivitySort} from "@/lib/schemas/activity.schema";
+import {ActivityKind, MediaType, UpdateType} from "@/lib/utils/enums";
 
 
 export type MonthlyActivityEditor = {
@@ -69,6 +59,7 @@ export type PaginatedMonthlyActivityFilter = {
     perPage?: number;
     endMonth: string;
     startMonth: string;
+    sort?: ActivitySort;
     hiddenOnly?: boolean;
     mediaType?: MediaType;
     activityKind?: ActivityKind;

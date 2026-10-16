@@ -3,6 +3,7 @@ import {toDateInputValue} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, eq, gte, inArray, isNotNull, notExists} from "drizzle-orm";
 import {collectionItems, dailyMediadle} from "@/lib/server/database/schema";
+import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
 
@@ -62,18 +63,24 @@ export class MediaMaintenanceRepository {
     }
 
     static removeMediaByIds(mediaType: MediaType, mediaIds: number[]) {
-        const { mediaTable, deleteDependents } = getServerMediaDefinition(mediaType).repository.tables;
+        const definition = getServerMediaDefinition(mediaType);
+        const { mediaTable, tagTable, deleteDependents } = definition.repository.tables;
+
+        createMediaTagQueries(definition).removeMediaAssignments(mediaIds);
 
         // Delete on other tables
         for (const table of deleteDependents) {
+            if (table === tagTable) continue;
             getDbClient()
                 .delete(table)
-                .where(inArray(table.mediaId, mediaIds)).run();
+                .where(inArray(table.mediaId, mediaIds))
+                .run();
         }
 
         // Delete on main table
         getDbClient()
             .delete(mediaTable)
-            .where(inArray(mediaTable.id, mediaIds)).run();
+            .where(inArray(mediaTable.id, mediaIds))
+            .run();
     }
 }

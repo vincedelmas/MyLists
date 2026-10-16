@@ -1,7 +1,6 @@
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {profileHeaderSearchSchema} from "@/lib/schemas";
 import {createFileRoute, Outlet} from "@tanstack/react-router";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {profileHeaderOptions} from "@/lib/client/react-query/query-options";
 import {ProfileHeader} from "@/lib/client/components/user-profile/ProfileHeader";
 
@@ -11,15 +10,17 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header")
     context: ({ params: { username } }) => ({
         profileHeaderQueryOptions: profileHeaderOptions(username),
     }),
-    loader: ({ context }) => context.queryClient.fetchQuery(context.profileHeaderQueryOptions),
+    loader: ({ context }) => context.queryClient.query(context.profileHeaderQueryOptions),
     component: ProfileTop,
+    head: ({ params: { username } }) => ({
+        meta: [{ title: `${username} Profile - MyLists` }],
+    }),
 });
 
 
 function ProfileTop() {
     const navigate = Route.useNavigate();
     const { usernameNotice } = Route.useSearch();
-    const { username: profileOwner } = Route.useParams();
     const { profileHeaderQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(profileHeaderQueryOptions).data;
 
@@ -28,7 +29,7 @@ function ProfileTop() {
     }
 
     return (
-        <PageTitle title={`${profileOwner} Profile`} onlyHelmet>
+        <>
             <ProfileHeader
                 social={apiData.social}
                 profileUser={apiData.userData}
@@ -36,6 +37,6 @@ function ProfileTop() {
                 showUsernameNotice={usernameNotice === "assigned"}
             />
             <Outlet/>
-        </PageTitle>
+        </>
     );
 }

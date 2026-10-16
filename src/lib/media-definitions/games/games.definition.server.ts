@@ -1,9 +1,27 @@
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
+import {and, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
-import {and, asc, desc, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
-import {createArrayFilter, createListColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+
+
+const tables = {
+    mediaTable: games,
+    listTable: gamesList,
+    genreTable: gamesGenre,
+    tagTable: gamesTags,
+    deleteDependents: [gamesCompanies, gamesPlatforms, gamesGenre, gamesTags],
+};
+
+
+const sortColumns = {
+    ...getCommonMediaSortColumns(tables),
+    playtime: gamesList.playtime,
+    providerRating: games.voteAverage,
+};
 
 
 export const gamesServerDefinition = defineServerMediaDefinition({
@@ -12,13 +30,19 @@ export const gamesServerDefinition = defineServerMediaDefinition({
         coverDirectory: "games-covers",
     },
     repository: {
-        tables: {
-            mediaTable: games,
-            listTable: gamesList,
-            genreTable: gamesGenre,
-            tagTable: gamesTags,
-            deleteDependents: [gamesCompanies, gamesPlatforms, gamesGenre, gamesTags],
-        },
+        sortColumns,
+        filters: defineMediaFilterDefinitions(gamesDefinition, tables, {
+            platforms: {
+                filterColumn: gamesList.platform,
+                optionsTable: gamesList,
+            },
+            companies: {
+                searchable: true,
+                entityTable: gamesCompanies,
+                filterColumn: gamesCompanies.name,
+            },
+        }),
+        tables,
         popularity: {
             eligibility: sql`${games.voteCount} >= 100`,
         },
@@ -28,40 +52,8 @@ export const gamesServerDefinition = defineServerMediaDefinition({
                 imageCover: games.imageCover,
                 ...getTableColumns(gamesList),
             },
-            filters: {
-                platforms: createArrayFilter({
-                    argName: "platforms",
-                    mediaTable: games,
-                    filterColumn: gamesList.platform,
-                }),
-                companies: createArrayFilter({
-                    argName: "companies",
-                    mediaTable: games,
-                    entityTable: gamesCompanies,
-                    filterColumn: gamesCompanies.name,
-                }),
-            },
-            filterOptions: {
-                platforms: createListColOptionsLoader({
-                    listTable: gamesList,
-                    nameColumn: gamesList.platform,
-                }),
-            },
-            defaultSort: "Playtime +",
-            sorts: {
-                "Title A-Z": asc(games.name),
-                "Title Z-A": desc(games.name),
-                "Release Date +": [desc(games.releaseDate), asc(games.name)],
-                "Release Date -": [sql`${games.releaseDate} ASC NULLS LAST`, asc(games.name)],
-                "IGDB Rating +": [desc(games.voteAverage), asc(games.name)],
-                "IGDB Rating -": [asc(games.voteAverage), asc(games.name)],
-                "Recently Added": [desc(gamesList.addedAt), asc(games.name)],
-                "Recently Modified": [desc(gamesList.lastUpdated), asc(games.name)],
-                "Rating +": [desc(gamesList.rating), asc(games.name)],
-                "Rating -": [asc(gamesList.rating), asc(games.name)],
-                "Playtime +": [desc(gamesList.playtime), asc(games.name)],
-                "Playtime -": [asc(gamesList.playtime), asc(games.name)],
-            },
+            defaultSort: getMediaSortLabel(gamesDefinition, gamesDefinition.sorting.default),
+            sorts: createMediaListSorts(gamesDefinition, sortColumns, games.id),
         },
         communityActivity: {
             aggregates: {
@@ -74,7 +66,7 @@ export const gamesServerDefinition = defineServerMediaDefinition({
                 nameColumn: gamesCompanies.name,
                 mediaIdColumn: gamesCompanies.mediaId,
                 getFilter: (name) => {
-                    return and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.developer, true));
+                    return and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.developer, true))!;
                 },
             },
             [JobType.PUBLISHER]: {
@@ -82,7 +74,7 @@ export const gamesServerDefinition = defineServerMediaDefinition({
                 nameColumn: gamesCompanies.name,
                 mediaIdColumn: gamesCompanies.mediaId,
                 getFilter: (name) => {
-                    return and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.publisher, true));
+                    return and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.publisher, true))!;
                 },
             },
         },

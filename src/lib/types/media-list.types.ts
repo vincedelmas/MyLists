@@ -1,18 +1,20 @@
-import {MediaListArgs} from "@/lib/schemas";
+import {MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {IdNamePair, NameObj} from "@/lib/types/media-common.types";
-import {ListFiltersOptionsType} from "@/lib/types/query.options.types";
-import {GamesPlatformsEnum, JobType, MediaType, RatingSystemType} from "@/lib/utils/enums";
+import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 
 
 export type EpsPerSeasonType = { season: number, episodes: number };
+export type MediaMetadataFilterOptions = Partial<Record<MediaMetadataFilterKey, NameObj[]>>;
+export type ExpandedListFilters = { tags: NameObj[]; genres: NameObj[] } & MediaMetadataFilterOptions;
 
 
-export type ExpandedListFilters = {
-    genres: NameObj[];
-    tags: NameObj[];
-    langs?: NameObj[];
-    platforms?: { name: GamesPlatformsEnum }[];
-};
+export type ScopedMediaFilterOptions<TagOption extends NameObj = NameObj> = Partial<Record<MediaType, MediaMetadataFilterOptions
+    & { genres?: NameObj[]; tags?: TagOption[] }>>;
+
+
+export type MediaFilterSearchSource =
+    | { type: "tracking"; username: string }
+    | { type: "collection"; collectionId: number; library?: "in" | "out" };
 
 
 export type MediaListData<TList> = {
@@ -37,26 +39,10 @@ export type MediaListData<TList> = {
 }
 
 
-export type SheetFilterObject = {
-    job?: JobType;
-    title: string;
-    key: keyof MediaListArgs;
-    type: "checkbox" | "search";
-    render?: (name: string, mediaType: MediaType) => string;
-    getItems?: (data: ListFiltersOptionsType) => { name: string }[] | undefined;
-};
-
-
 export type UserTag = {
     totalCount: number;
-    tagId: number;
     tagName: string;
-    medias: {
-        mediaId: number;
-        mediaName: string;
-        mediaCover: string;
-    }[];
-}
+};
 
 
 export type ExportMediaList = {

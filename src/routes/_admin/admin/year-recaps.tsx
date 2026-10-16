@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_admin/admin/year-recaps")({
         yearRecapReleasesQueryOptions: adminYearRecapReleasesOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.yearRecapReleasesQueryOptions);
+        return context.queryClient.query({ ...context.yearRecapReleasesQueryOptions, staleTime: "static" });
     },
     component: YearRecapsAdminPage,
 });

@@ -53,7 +53,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
         const forUser = getMediaStatsUserScope(tagTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
-            .select({ count: countDistinct(tagTable.name) })
+            .select({ count: countDistinct(tagTable.tagId) })
             .from(tagTable)
             .where(and(forUser))
             .get();

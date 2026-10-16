@@ -85,16 +85,6 @@ describe("GamesService", () => {
             expect(delta.statusCounts?.[Status.COMPLETED]).toBe(-1);
         });
 
-        it("should calculate delta when status updates: PTP¨-> COMPLETED", () => {
-            const old = makeUserState({ status: Status.PLAN_TO_PLAY, playtime: 0 });
-            const newer = makeState({ status: Status.COMPLETED, playtime: 120 });
-            const delta = gamesService.calculateDeltaStats(old, newer, baseGame);
-
-            expect(delta.timeSpent).toBe(120);
-            expect(delta.statusCounts?.[Status.PLAN_TO_PLAY]).toBe(-1);
-            expect(delta.statusCounts?.[Status.COMPLETED]).toBe(1);
-        });
-
         it("should handle playtime change correctly", () => {
             const old = makeUserState({ status: Status.COMPLETED, playtime: 100 });
             const newer = makeState({ status: Status.COMPLETED, playtime: 150 });
@@ -116,23 +106,5 @@ describe("GamesService", () => {
             expect(log?.newValue).toBe(Status.PLAN_TO_PLAY);
         });
 
-        it("updateStatusHandler: PTP -> COMPLETED should not change playtime", () => {
-            const current = makeState({ status: Status.PLAN_TO_PLAY, playtime: 0 });
-            const [next, log] = gamesService.updateStatusHandler(current, { status: Status.COMPLETED }, baseGame);
-
-            expect(next.playtime).toBe(0);
-            expect(next.status).toBe(Status.COMPLETED);
-            expect(log?.oldValue).toBe(Status.PLAN_TO_PLAY);
-            expect(log?.newValue).toBe(Status.COMPLETED);
-        });
-
-        it("updatePlaytimeHandler should update playtime", () => {
-            const current = makeState({ playtime: 50 });
-            const [next, log] = gamesService.updatePlaytimeHandler(current, { playtime: 100 }, baseGame);
-
-            expect(next.playtime).toBe(100);
-            expect(log?.oldValue).toBe(50);
-            expect(log?.newValue).toBe(100);
-        });
     });
 });

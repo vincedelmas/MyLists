@@ -117,35 +117,37 @@ export function DataBarChart<TDatum>(props: DataBarChartProps<TDatum>) {
                                 : undefined,
                     }),
                 ],
-                x: {
-                    grid: false,
-                    scale: () => scaleBand<string | number>().padding(0.12),
-                    axis: {
-                        ...chartAxisStyle,
-                        ticks: {
-                            ...chartAxisStyle.ticks,
-                            format: xFormatter,
-                        },
-                        tickLabels: {
-                            ...chartAxisStyle.tickLabels,
-                            fontSize: xTickFontSize,
-                            thin: {
-                                minGap: xTickGap,
-                                priority: "ends",
+                scales: {
+                    x: {
+                        grid: false,
+                        scale: () => scaleBand<string | number>().padding(0.12),
+                        axis: {
+                            ...chartAxisStyle,
+                            ticks: {
+                                ...chartAxisStyle.ticks,
+                                format: xFormatter,
+                            },
+                            tickLabels: {
+                                ...chartAxisStyle.tickLabels,
+                                fontSize: xTickFontSize,
+                                thin: {
+                                    minGap: xTickGap,
+                                    priority: "ends",
+                                },
                             },
                         },
                     },
-                },
-                y: {
-                    nice: true,
-                    grid: showGrid,
-                    scale: scaleLinear,
-                    axis: {
-                        ...chartAxisStyle,
-                        ticks: {
-                            ...chartAxisStyle.ticks,
-                            format: yFormatter,
-                            values: yTickValues,
+                    y: {
+                        nice: true,
+                        grid: showGrid,
+                        scale: scaleLinear,
+                        axis: {
+                            ...chartAxisStyle,
+                            ticks: {
+                                ...chartAxisStyle.ticks,
+                                format: yFormatter,
+                                values: yTickValues,
+                            },
                         },
                     },
                 },
@@ -188,7 +190,7 @@ export function DataBarChart<TDatum>(props: DataBarChartProps<TDatum>) {
                 const title = points[0] ? tooltipTitleFormatter(points[0].xValue) : "";
 
                 return (
-                    <div className="min-w-24 text-sm text-popover-foreground">
+                    <div className="min-w-24 rounded-lg border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
                         <p className={cn("font-medium", visiblePoints.length > 1 && "mb-2")}>
                             {title}
                         </p>

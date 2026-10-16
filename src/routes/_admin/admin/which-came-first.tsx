@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_admin/admin/which-came-first")({
         whichCameFirstQueryOptions: adminWhichCameFirstOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.whichCameFirstQueryOptions);
+        return context.queryClient.query({ ...context.whichCameFirstQueryOptions, staleTime: "static" });
     },
     component: AdminWhichCameFirstPage,
 });

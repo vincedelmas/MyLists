@@ -2,7 +2,7 @@ import {profileSearchSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
 import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
 import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
@@ -14,6 +14,7 @@ import {createMediaTabItems} from "@/lib/client/components/general/media-type-op
 import {continueOptions} from "@/lib/client/react-query/query-options/continue.options";
 import {ProfilePortalGrid} from "@/lib/client/components/user-profile/ProfilePortalGrid";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
+import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
 import {profileOptions, profileRecentFeedOptions, profileSummaryOptions} from "@/lib/client/react-query/query-options";
 
 
@@ -24,13 +25,15 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/"
         continueQueryOptions: continueOptions(username),
         summaryQueryOptions: profileSummaryOptions(username),
         recentFeedQueryOptions: profileRecentFeedOptions(username),
+        pinsQueryOptions: profilePinsOptions(username),
     }),
     loader: async ({ context }) => {
         await Promise.all([
-            context.queryClient.fetchQuery(context.profileQueryOptions),
-            context.queryClient.fetchQuery(context.summaryQueryOptions),
-            context.queryClient.fetchQuery(context.continueQueryOptions),
-            context.queryClient.fetchQuery(context.recentFeedQueryOptions),
+            context.queryClient.query({ ...context.profileQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.summaryQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.continueQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.recentFeedQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.pinsQueryOptions, staleTime: "static" }),
         ]);
     },
     component: ProfileMain,
@@ -38,7 +41,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/"
 
 
 function ProfileMain() {
-    const { profileQueryOptions, recentFeedQueryOptions, summaryQueryOptions, continueQueryOptions } = Route.useRouteContext();
+    const { profileQueryOptions, recentFeedQueryOptions, summaryQueryOptions, continueQueryOptions, pinsQueryOptions } = Route.useRouteContext();
 
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
@@ -47,6 +50,7 @@ function ProfileMain() {
     const apiData = useSuspenseQuery(profileQueryOptions).data;
     const inProgress = useSuspenseQuery(continueQueryOptions).data;
     const recentFeed = useSuspenseQuery(recentFeedQueryOptions).data;
+    const profilePins = useSuspenseQuery(pinsQueryOptions).data;
     const activeMediaTypes = getActiveMediaTypes(summary.userMediaSettings);
 
     const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "overview", size: 15 });
@@ -78,7 +82,7 @@ function ProfileMain() {
             </div>
 
             <div className="space-y-6 max-lg:col-span-3 max-sm:col-span-2 max-sm:space-y-4 max-sm:mt-4">
-                <TabHeader
+                <TabNav
                     tabs={mediaTabs}
                     value={currentTab}
                     renderTrigger={(tab, props) =>
@@ -95,6 +99,7 @@ function ProfileMain() {
                     {currentTab === "overview" ?
                         <OverviewTab
                             key={username}
+                            profilePins={profilePins}
                             perMedia={summary.perMediaSummary}
                             inProgressMedia={inProgress.items}
                             showContinue={apiData.showContinue}

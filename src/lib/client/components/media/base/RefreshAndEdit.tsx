@@ -1,5 +1,5 @@
 import {cn} from "@/lib/utils/classnames";
-import {Link} from "@tanstack/react-router";
+import {Link, useRouter} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Pencil, RefreshCw} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -18,6 +18,7 @@ interface RefreshAndEditProps {
 
 
 export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEditProps) => {
+    const router = useRouter();
     const now = useNow(10_000);
     const { currentUser } = useAuth();
     const isBook = (mediaType === MediaType.BOOKS);
@@ -41,7 +42,9 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
     const refreshDisabled = refreshMutation.isPending || !currentUser || isRefreshCooldown;
 
     const handleRefresh = () => {
-        refreshMutation.mutate({ data: { mediaId, mediaType } });
+        refreshMutation.mutate({ data: { mediaId, mediaType } }, {
+            onSuccess: () => void router.invalidate(),
+        });
     };
 
     return (

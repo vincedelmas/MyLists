@@ -4,9 +4,8 @@ import type {MediaType} from "@/lib/utils/enums";
 import {useDebounce} from "@/lib/client/hooks/use-debounce";
 import type {MediaFilterSearchSource} from "@/lib/types/media-list.types";
 import {SearchSelect} from "@/lib/client/components/general/SearchSelect";
-import {getMediaListSearchFilters} from "@/lib/server/functions/media-lists";
-import {getCollectionSearchFilters} from "@/lib/server/functions/collections";
 import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
+import {mediaFilterSearchOptions} from "@/lib/client/react-query/query-options/media.options";
 import {AppliedSearchFilterChip} from "@/lib/client/components/search/AppliedSearchFilterChip";
 import {Field, FieldDescription, FieldError, FieldLabel} from "@/lib/client/components/ui/field";
 
@@ -31,13 +30,7 @@ export const MediaFilterSearch = ({ label, mediaType, field, source, value, onCh
     const atLimit = maxSelected !== undefined && value.length >= maxSelected;
 
     const { data, isFetching, error: searchError } = useQuery({
-        queryKey: ["mediaFilterSearch", source, mediaType, field, debouncedSearch],
-        queryFn: () => {
-            const data = { mediaType, field, query: debouncedSearch };
-            return source.type === "tracking"
-                ? getMediaListSearchFilters({ data: { ...data, username: source.username } })
-                : getCollectionSearchFilters({ data: { ...data, collectionId: source.collectionId, library: source.library } });
-        },
+        ...mediaFilterSearchOptions(source, mediaType, field, debouncedSearch),
         enabled: !disabled && !atLimit && debouncedSearch.trim().length >= 2,
     });
 

@@ -9,6 +9,8 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
+import {RoleType} from "@/lib/utils/enums";
+import {MCP_READ_SCOPE, MCP_RESOURCE, MCP_WRITE_SCOPE} from "@/lib/server/core/mcp/config";
 
 
 const mailMocks = vi.hoisted(() => ({ sendEmail: vi.fn().mockResolvedValue(undefined) }));
@@ -85,7 +87,7 @@ describe("authentication", () => {
         dbContext.db.update(schema.user).set({ email: "review@example.com", emailVerified: true })
             .where(eq(schema.user.id, userId)).run();
         dbContext.db.delete(schema.user).where(ne(schema.user.email, "review@example.com")).run();
-        dbContext.db.update(schema.user).set({ name: "reviewuser" }).run();
+        dbContext.db.update(schema.user).set({ name: "reviewuser", role: RoleType.USER }).run();
         imageMocks.lookup.mockReset().mockResolvedValue([{ address: "93.184.215.14", family: 4 }]);
         imageMocks.httpsGet.mockReset().mockImplementation((_options, callback) => {
             const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==", "base64");
@@ -198,6 +200,38 @@ describe("authentication", () => {
         expect(response.status).toBe(200);
         expect(dbContext.db.select({ name: schema.user.name }).from(schema.user).get()?.name).toBe("reviewuser");
         expect(imageMocks.httpsGet).not.toHaveBeenCalled();
+    });
+
+    it.each([RoleType.MANAGER, RoleType.ADMIN])("does not allow self-promotion to %s through account updates", async (role) => {
+        const response = await updateUser({ name: "reviewuser", role });
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({ code: "FIELD_NOT_ALLOWED" });
+        expect(dbContext.db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, userId)).get()?.role)
+            .toBe(RoleType.USER);
+    });
+
+    it.each([RoleType.USER, RoleType.MANAGER, RoleType.ADMIN])("does not accept an MCP bearer token as a browser session for a %s", async (role) => {
+        dbContext.db.update(schema.user).set({ role }).where(eq(schema.user.id, userId)).run();
+        const { token } = await auth.api.signJWT({ body: { payload: {
+            sub: String(userId),
+            aud: MCP_RESOURCE,
+            client_id: "test-assistant",
+            scope: `${MCP_READ_SCOPE} ${MCP_WRITE_SCOPE}`,
+            role,
+        } } });
+        const headers = new Headers({ authorization: `Bearer ${token}` });
+
+        expect(await auth.api.getSession({ headers, query: { disableCookieCache: true } })).toBeNull();
+
+        const response = await auth.handler(new Request("http://localhost:3000/api/auth/update-user", {
+            method: "POST",
+            headers: { authorization: `Bearer ${token}`, origin: "http://localhost:3000", "content-type": "application/json" },
+            body: JSON.stringify({ name: "reviewuser", role: RoleType.ADMIN }),
+        }));
+        expect(response.status).toBe(401);
+        expect(dbContext.db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, userId)).get()?.role)
+            .toBe(role);
     });
 
     it.each([

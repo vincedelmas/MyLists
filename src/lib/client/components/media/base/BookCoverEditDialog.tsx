@@ -1,20 +1,20 @@
-import {toast} from "@/lib/client/components/ui/toast";
-import {useId, useState} from "react";
-import {Controller, FormProvider, useForm} from "react-hook-form";
+import {useState} from "react";
+import {PencilLine} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
+import {FormProvider, useForm} from "react-hook-form";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
+import {handleServerFormErrors} from "@/lib/client/forms";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {FieldGroup, FieldSet} from "@/lib/client/components/ui/field";
 import {UpdateBookCoverInput, updateBookCoverSchema} from "@/lib/schemas";
-import {Link2, PencilLine, UploadCloud} from "lucide-react";
 import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {Spinner} from "@/lib/client/components/ui/spinner";
+import {CoverSourceFields} from "@/lib/client/components/media/base/CoverSourceFields";
 import {useUpdateBookCoverMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
-import {handleServerFormErrors} from "@/lib/client/forms";
 
 
 interface BookCoverEditDialogProps {
@@ -24,9 +24,7 @@ interface BookCoverEditDialogProps {
 
 
 export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogProps) => {
-    const fieldId = useId();
     const [open, setOpen] = useState(false);
-    const [fileInputKey, setFileInputKey] = useState(0);
     const [mode, setMode] = useState<"link" | "upload">("link");
     const updateCoverMutation = useUpdateBookCoverMutation(mediaId, { noErrorToast: true });
     const form = useForm<UpdateBookCoverInput>({
@@ -40,27 +38,12 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
 
     const resetForm = () => {
         setMode("link");
-        setFileInputKey((prev) => prev + 1);
         form.reset({ mediaId, imageUrl: undefined, imageFile: undefined });
-    };
-
-    const setImageLinkMode = () => {
-        setMode("link");
-        form.clearErrors(["imageFile", "imageUrl"]);
-        setFileInputKey((prev) => prev + 1);
-        form.setValue("imageFile", undefined);
-    };
-
-    const setImageUploadMode = () => {
-        setMode("upload");
-        form.clearErrors(["imageUrl", "imageFile"]);
-        form.setValue("imageUrl", undefined);
     };
 
     const useSuggestedCover = (suggestedCoverUrl: string) => {
         setMode("link");
         form.clearErrors(["imageFile", "imageUrl"]);
-        setFileInputKey((prev) => prev + 1);
         form.setValue("imageFile", undefined);
         form.setValue("imageUrl", suggestedCoverUrl, { shouldDirty: true, shouldValidate: true });
     };
@@ -79,7 +62,7 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
             onSuccess: () => {
                 resetForm();
                 setOpen(false);
-                toast.add({title: "Cover updated. Thanks for contributing!", type: "success"});
+                toast.add({ title: "Cover updated. Thanks for contributing!", type: "success" });
             },
         });
     };
@@ -102,63 +85,16 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
                         <FieldSet disabled={updateCoverMutation.isPending}>
                             <FieldGroup>
-                            <div className="grid grid-cols-2 gap-3">
-                                <Button type="button" onClick={setImageLinkMode} variant={mode === "link" ? "selected" : "outline"}>
-                                    <Link2 className="size-4"/>{" "}
-                                    Image link
-                                </Button>
-                                <Button type="button" variant={mode === "upload" ? "selected" : "outline"} onClick={setImageUploadMode}>
-                                    <UploadCloud className="size-4"/>{" "}
-                                    Upload image
-                                </Button>
-                            </div>
-                            {mode === "link" ?
-                                <Controller
-                                    name="imageUrl"
-                                    control={form.control}
-                                    render={({field, fieldState}) =>
-                                        <Field data-invalid={fieldState.invalid} data-disabled={updateCoverMutation.isPending}>
-                                            <FieldLabel htmlFor={`${fieldId}-image-url`}>Image URL</FieldLabel>
-                                            <Input
-                                                {...field}
-                                                id={`${fieldId}-image-url`}
-                                                value={field.value ?? ""}
-                                                placeholder="https://example.com/cover.jpg"
-                                                aria-invalid={fieldState.invalid}
-                                                onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
-                                            />
-                                            <FieldError errors={[fieldState.error]}/>
-                                        </Field>
-                                    }
+                                <CoverSourceFields
+                                    mode={mode}
+                                    onModeChange={setMode}
+                                    disabled={updateCoverMutation.isPending}
                                 />
-                                :
-                                <Controller
-                                    name="imageFile"
-                                    control={form.control}
-                                    render={({field: {onChange, onBlur, name, ref}, fieldState}) => (
-                                        <Field data-invalid={fieldState.invalid} data-disabled={updateCoverMutation.isPending}>
-                                            <FieldLabel htmlFor={`${fieldId}-image-file`}>Upload image</FieldLabel>
-                                            <Input
-                                                id={`${fieldId}-image-file`}
-                                                ref={ref}
-                                                type="file"
-                                                name={name}
-                                                onBlur={onBlur}
-                                                accept="image/*"
-                                                key={fileInputKey}
-                                                aria-invalid={fieldState.invalid}
-                                                onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
-                                            />
-                                            <FieldError errors={[fieldState.error]}/>
-                                        </Field>
-                                    )}
+                                <SuggestedBookCover
+                                    open={open}
+                                    mediaName={mediaName}
+                                    onUseCover={useSuggestedCover}
                                 />
-                            }
-                            <SuggestedBookCover
-                                open={open}
-                                mediaName={mediaName}
-                                onUseCover={useSuggestedCover}
-                            />
                             </FieldGroup>
                         </FieldSet>
                         <FormError/>

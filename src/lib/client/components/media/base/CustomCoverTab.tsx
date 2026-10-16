@@ -1,17 +1,17 @@
-import {useId, useState} from "react";
-import {Controller, FormProvider, useForm} from "react-hook-form";
+import {useState} from "react";
+import {ImageOff, X} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
+import {FormProvider, useForm} from "react-hook-form";
 import {Button} from "@/lib/client/components/ui/button";
-import {ImageOff, Link2, UploadCloud, X} from "lucide-react";
+import {handleServerFormErrors} from "@/lib/client/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {FieldGroup, FieldSet} from "@/lib/client/components/ui/field";
 import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {UpdateUserCustomCoverInput, updateUserCustomCoverSchema} from "@/lib/schemas";
+import {CoverSourceFields} from "@/lib/client/components/media/base/CoverSourceFields";
 import {useUpdateCustomCoverMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
-import {handleServerFormErrors} from "@/lib/client/forms";
 
 
 interface CustomCoverTabProps {
@@ -22,8 +22,6 @@ interface CustomCoverTabProps {
 
 
 export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }: CustomCoverTabProps) => {
-    const fieldId = useId();
-    const [fileInputKey, setFileInputKey] = useState(0);
     const [mode, setMode] = useState<"link" | "upload">("link");
     const form = useForm<UpdateUserCustomCoverInput>({
         resolver: zodResolver(updateUserCustomCoverSchema),
@@ -38,7 +36,6 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
 
     const resetForm = () => {
         setMode("link");
-        setFileInputKey((prev) => prev + 1);
         form.reset({
             mediaType,
             remove: false,
@@ -46,19 +43,6 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
             imageFile: undefined,
             mediaId: userMedia.mediaId,
         });
-    };
-
-    const setImageLinkMode = () => {
-        setMode("link");
-        form.clearErrors(["imageFile", "imageUrl"]);
-        setFileInputKey((prev) => prev + 1);
-        form.setValue("imageFile", undefined);
-    };
-
-    const setImageUploadMode = () => {
-        setMode("upload");
-        form.clearErrors(["imageUrl", "imageFile"]);
-        form.setValue("imageUrl", undefined);
     };
 
     const handleSubmit = (data: UpdateUserCustomCoverInput) => {
@@ -123,61 +107,15 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
                 }
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-                <Button type="button" variant={mode === "link" ? "selected" : "outline"} onClick={setImageLinkMode}>
-                    <Link2 className="size-4"/> Cover Link
-                </Button>
-                <Button type="button" variant={mode === "upload" ? "selected" : "outline"} onClick={setImageUploadMode}>
-                    <UploadCloud className="size-4"/> Upload Cover
-                </Button>
-            </div>
-
             <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4 border-b pb-6">
                     <FieldSet disabled={onUpdateMutation.isPending}>
                         <FieldGroup>
-                        {mode === "link" ?
-                            <Controller
-                                name="imageUrl"
-                                control={form.control}
-                                render={({field, fieldState}) =>
-                                    <Field data-invalid={fieldState.invalid} data-disabled={onUpdateMutation.isPending}>
-                                        <FieldLabel htmlFor={`${fieldId}-image-url`}>Cover URL</FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={`${fieldId}-image-url`}
-                                            value={field.value ?? ""}
-                                            placeholder="https://example.com/cover.jpg"
-                                            aria-invalid={fieldState.invalid}
-                                            onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                }
+                            <CoverSourceFields
+                                mode={mode}
+                                onModeChange={setMode}
+                                disabled={onUpdateMutation.isPending}
                             />
-                            :
-                            <Controller
-                                name="imageFile"
-                                control={form.control}
-                                render={({field: {onChange, onBlur, name, ref}, fieldState}) =>
-                                    <Field data-invalid={fieldState.invalid} data-disabled={onUpdateMutation.isPending}>
-                                        <FieldLabel htmlFor={`${fieldId}-image-file`}>Upload Cover</FieldLabel>
-                                        <Input
-                                            id={`${fieldId}-image-file`}
-                                            ref={ref}
-                                            type="file"
-                                            name={name}
-                                            onBlur={onBlur}
-                                            accept="image/*"
-                                            key={fileInputKey}
-                                            aria-invalid={fieldState.invalid}
-                                            onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                }
-                            />
-                        }
                         </FieldGroup>
                     </FieldSet>
                     <FormError/>

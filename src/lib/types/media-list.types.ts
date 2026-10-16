@@ -1,19 +1,20 @@
-import {IdNamePair, NameObj} from "@/lib/types/media-common.types";
 import {MediaType, RatingSystemType} from "@/lib/utils/enums";
+import {IdNamePair, NameObj} from "@/lib/types/media-common.types";
 import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 
 
 export type EpsPerSeasonType = { season: number, episodes: number };
-
-
 export type MediaMetadataFilterOptions = Partial<Record<MediaMetadataFilterKey, NameObj[]>>;
-export type ScopedMediaFilterOptions<TagOption extends NameObj = NameObj> = Partial<Record<MediaType, MediaMetadataFilterOptions & { genres?: NameObj[]; tags?: TagOption[] }>>;
+export type ExpandedListFilters = { tags: NameObj[]; genres: NameObj[] } & MediaMetadataFilterOptions;
 
 
-export type ExpandedListFilters = {
-    genres: NameObj[];
-    tags: NameObj[];
-} & MediaMetadataFilterOptions;
+export type ScopedMediaFilterOptions<TagOption extends NameObj = NameObj> = Partial<Record<MediaType, MediaMetadataFilterOptions
+    & { genres?: NameObj[]; tags?: TagOption[] }>>;
+
+
+export type MediaFilterSearchSource =
+    | { type: "tracking"; username: string }
+    | { type: "collection"; collectionId: number; library?: "in" | "out" };
 
 
 export type MediaListData<TList> = {

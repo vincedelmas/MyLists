@@ -368,16 +368,17 @@ function CollectionViewer() {
 
                 {filtersOpen &&
                     <MediaBrowseFiltersSheet
-                        personal={!isAnonymous}
-                        personalLabel="Your tracking"
                         filters={filters}
                         open={filtersOpen}
+                        personal={!isAnonymous}
                         onApply={handleFilterChange}
+                        personalLabel="Your tracking"
                         onOpenChange={setFiltersOpen}
                         error={filterOptionsQuery.error}
                         isPending={filterOptionsQuery.isPending}
                         onRetry={() => void filterOptionsQuery.refetch()}
                         options={filterOptionsQuery.data?.filterOptions ?? apiData.filterOptions}
+                        searchSource={{ type: "collection", collectionId, library: filters.library }}
                     />
                 }
             </div>

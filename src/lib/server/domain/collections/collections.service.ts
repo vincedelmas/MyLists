@@ -12,7 +12,7 @@ import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {Actor, AuthorizationService, CollectionAction, collectionPolicy} from "@/lib/server/authorization";
-import {type CommunitySearch, createCollectionSchema, type UserCollectionsSearch} from "@/lib/schemas/collections.schema";
+import {type CollectionFilterSearch, type CommunitySearch, createCollectionSchema, type UserCollectionsSearch} from "@/lib/schemas/collections.schema";
 
 
 export class CollectionsService {
@@ -87,6 +87,11 @@ export class CollectionsService {
     recordCollectionView(collectionId: number, actor: Actor) {
         this._getAuthorizedCollection(collectionId, "read", actor);
         return this.repository.incrementViewCount(collectionId);
+    }
+
+    searchCollectionFilters(search: CollectionFilterSearch, actor: Actor) {
+        this._getAuthorizedCollection(search.collectionId, "read", actor);
+        return this.repository.searchCollectionFilters(search, actor.kind === "user" ? actor.id : undefined);
     }
 
     async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType, pinnedOnly = false) {

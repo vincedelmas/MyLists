@@ -33,6 +33,7 @@ export const moviesServerDefinition = defineServerMediaDefinition({
         sortColumns,
         filters: defineMediaFilterDefinitions(moviesDefinition, tables, {
             actors: {
+                searchable: true,
                 entityTable: moviesActors,
                 filterColumn: moviesActors.name,
             },
@@ -40,6 +41,7 @@ export const moviesServerDefinition = defineServerMediaDefinition({
                 filterColumn: movies.originalLanguage,
             },
             directors: {
+                searchable: true,
                 filterColumn: movies.directorName,
             },
         }),

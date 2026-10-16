@@ -233,18 +233,19 @@ export const DynamicListEditor = ({ listId, initialSpec, initialTagNames = {}, o
                                         errors={errors}
                                         tagNames={tagNames}
                                         mediaType={mediaType}
+                                        username={currentUser!.name}
                                         optionsError={filterOptions.isError}
                                         options={filterOptions.data?.mediaFilters[mediaType]}
                                         filters={spec.filters.mediaFilters?.[mediaType] ?? {}}
                                         disabled={saveMutation.isPending || filterOptions.isPending}
                                         onRetryOptions={() => void filterOptions.refetch()}
-                                        onChange={next => setSpec(current => ({
-                                            ...current,
+                                        onChange={next => setSpec(curr => ({
+                                            ...curr,
                                             filters: {
-                                                ...current.filters,
+                                                ...curr.filters,
                                                 mediaFilters: {
-                                                    ...current.filters.mediaFilters,
-                                                    [mediaType]: { ...current.filters.mediaFilters?.[mediaType], ...next },
+                                                    ...curr.filters.mediaFilters,
+                                                    [mediaType]: { ...curr.filters.mediaFilters?.[mediaType], ...next },
                                                 },
                                             },
                                         }))}

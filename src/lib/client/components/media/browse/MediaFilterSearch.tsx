@@ -2,10 +2,11 @@ import {useId, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import type {MediaType} from "@/lib/utils/enums";
 import {useDebounce} from "@/lib/client/hooks/use-debounce";
+import type {MediaFilterSearchSource} from "@/lib/types/media-list.types";
 import {SearchSelect} from "@/lib/client/components/general/SearchSelect";
 import {getMediaListSearchFilters} from "@/lib/server/functions/media-lists";
+import {getCollectionSearchFilters} from "@/lib/server/functions/collections";
 import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
-import {searchMediaFilterOptions} from "@/lib/client/components/media/browse/filter-search";
 import {AppliedSearchFilterChip} from "@/lib/client/components/search/AppliedSearchFilterChip";
 import {Field, FieldDescription, FieldError, FieldLabel} from "@/lib/client/components/ui/field";
 
@@ -14,33 +15,33 @@ interface MediaFilterSearchProps {
     label: string;
     error?: string;
     value: string[];
-    options: string[];
     disabled?: boolean;
+    mediaType: MediaType;
     maxSelected?: number;
+    field: MediaMetadataFilterKey;
+    source: MediaFilterSearchSource;
     onChange: (values: string[]) => void;
-    listSearch?: {
-        username: string;
-        mediaType: MediaType;
-        field: MediaMetadataFilterKey;
-    };
 }
 
 
-export const MediaFilterSearch = ({ label, options, listSearch, value, onChange, disabled, error, maxSelected }: MediaFilterSearchProps) => {
+export const MediaFilterSearch = ({ label, mediaType, field, source, value, onChange, disabled, error, maxSelected }: MediaFilterSearchProps) => {
     const fieldId = useId();
     const [search, setSearch] = useState("");
-    const debouncedSearch = useDebounce(search, listSearch ? 400 : 150);
+    const debouncedSearch = useDebounce(search, 400);
     const atLimit = maxSelected !== undefined && value.length >= maxSelected;
 
     const { data, isFetching, error: searchError } = useQuery({
-        queryKey: ["listFilterSearch", listSearch, debouncedSearch],
-        queryFn: () => getMediaListSearchFilters({ data: { ...listSearch!, query: debouncedSearch } }),
-        enabled: !!listSearch && !disabled && !atLimit && debouncedSearch.trim().length >= 2,
+        queryKey: ["mediaFilterSearch", source, mediaType, field, debouncedSearch],
+        queryFn: () => {
+            const data = { mediaType, field, query: debouncedSearch };
+            return source.type === "tracking"
+                ? getMediaListSearchFilters({ data: { ...data, username: source.username } })
+                : getCollectionSearchFilters({ data: { ...data, collectionId: source.collectionId, library: source.library } });
+        },
+        enabled: !disabled && !atLimit && debouncedSearch.trim().length >= 2,
     });
 
-    const results = listSearch
-        ? (data ?? []).map(item => item.name).filter(option => !value.includes(option))
-        : searchMediaFilterOptions(options.filter(option => !value.includes(option)), debouncedSearch).slice(0, 8);
+    const results = (data ?? []).map(item => item.name).filter(option => !value.includes(option));
 
     return (
         <Field data-invalid={!!error} data-disabled={disabled}>
@@ -60,8 +61,8 @@ export const MediaFilterSearch = ({ label, options, listSearch, value, onChange,
                 placeholder={`Search ${label.toLowerCase()}...`}
                 onSelect={option => onChange([...value, option])}
                 isPending={isFetching || search !== debouncedSearch}
+                emptyMessage={`No matching ${label.toLowerCase()} here.`}
                 aria-describedby={error ? `${fieldId}-error` : atLimit ? `${fieldId}-limit` : undefined}
-                emptyMessage={listSearch || options.length ? `No matching ${label.toLowerCase()} here.` : `No ${label.toLowerCase()} available yet.`}
             />
 
             {atLimit &&

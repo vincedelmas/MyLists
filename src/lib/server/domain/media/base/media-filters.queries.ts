@@ -19,6 +19,7 @@ type MediaFilterArgs = MediaCommonFilterArgs & MediaMetadataFilters & { userId?:
 
 type FilterDefinition = {
     personal?: boolean;
+    searchable?: boolean;
     isActive: (args: MediaFilterArgs) => boolean;
     getCondition: (args: MediaFilterArgs) => SQL;
     getOptions?: (scope: MediaFilterOptionsScope) => NameObj[];
@@ -26,6 +27,7 @@ type FilterDefinition = {
 
 
 type ArrayFilterDefinition = {
+    searchable?: boolean;
     splitValues?: boolean;
     filterColumn: SQLiteColumn;
     argName: keyof MediaFilterArgs;
@@ -51,8 +53,9 @@ export const getMediaNameSearchCondition = (mediaTable: BaseMediaTables["mediaTa
 };
 
 
-const createArrayFilter = ({ argName, entityTable, filterColumn, mediaTable, optionsTable, splitValues }: ArrayFilterDefinition): FilterDefinition => {
+const createArrayFilter = ({ argName, entityTable, filterColumn, mediaTable, optionsTable, splitValues, searchable }: ArrayFilterDefinition): FilterDefinition => {
     return {
+        searchable,
         personal: optionsTable !== undefined,
 
         isActive: (args) => {
@@ -208,7 +211,7 @@ export const getMediaMetadataFilterOptions = (definition: AnyMediaRepositoryDefi
     const options: Partial<Record<MediaMetadataFilterKey, NameObj[]>> = {};
 
     for (const [key, filter] of Object.entries(definition.filters.metadata)) {
-        if (fields && !fields.includes(key as MediaMetadataFilterKey)) {
+        if (fields ? !fields.includes(key as MediaMetadataFilterKey) : filter.searchable) {
             continue;
         }
 
@@ -218,6 +221,13 @@ export const getMediaMetadataFilterOptions = (definition: AnyMediaRepositoryDefi
     }
 
     return options;
+};
+
+
+export const searchMediaMetadataFilterOptions = (definition: AnyMediaRepositoryDefinition, scope: MediaFilterOptionsScope, field: MediaMetadataFilterKey, query: string) => {
+    const filter = definition.filters.metadata[field];
+    if (!filter?.searchable || !filter.getOptions) throw new FormattedError("This search filter is not available for this media type.");
+    return filter.getOptions({ ...scope, query });
 };
 
 

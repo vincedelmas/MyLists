@@ -9,22 +9,43 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
+import type {CollectionFilterSearch} from "@/lib/schemas/collections.schema";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
 import {Actor, profileCollectionVisibilityCondition} from "@/lib/server/authorization";
 import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
-import {getMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {mediaTags, collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
 import {and, asc, count, desc, eq, getTableColumns, inArray, isNotNull, isNull, like, max, or, sql, type SQL} from "drizzle-orm";
 import {collectionContainsMediaType, getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
+import {getMediaMetadataFilterOptions, searchMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 type CollectionTrackingItem = MediaListDataByType[MediaType]["items"][number];
 
 
 const communityCollectionOrder = [desc(collections.likeCount), desc(collections.viewCount), desc(collections.id)];
+
+
+const getCollectionFilterMediaIds = (collectionId: number, mediaType: MediaType, viewerId: number | undefined, library?: MediaBrowseFilters["library"]) => {
+    if (library && viewerId === undefined) {
+        throw new FormattedError("Sign in to filter by your own list.");
+    }
+
+    const { listTable } = getServerMediaDefinition(mediaType).repository.tables;
+
+    return getDbClient()
+        .select({ mediaId: collectionItems.mediaId })
+        .from(collectionItems)
+        .leftJoin(listTable, and(eq(listTable.mediaId, collectionItems.mediaId), viewerId === undefined
+            ? sql`FALSE` : eq(listTable.userId, viewerId)))
+        .where(and(
+            eq(collectionItems.collectionId, collectionId), eq(collectionItems.mediaType, mediaType),
+            library === "in" ? isNotNull(listTable.userId) : undefined,
+            library === "out" ? isNull(listTable.userId) : undefined,
+        ));
+};
 
 
 const collectionSelection = {
@@ -125,6 +146,12 @@ export class CollectionsRepository {
             .where(eq(collectionItems.collectionId, collectionId))
             .orderBy(asc(collectionItems.orderIndex))
             .all();
+    }
+
+    static searchCollectionFilters({ collectionId, mediaType, field, query, library }: CollectionFilterSearch, viewerId?: number) {
+        const definition = getServerMediaDefinition(mediaType).repository;
+        const mediaIds = getCollectionFilterMediaIds(collectionId, mediaType, viewerId, library).getSQL();
+        return searchMediaMetadataFilterOptions(definition, { mediaIds, userId: viewerId }, field, query);
     }
 
     static async getPaginatedCollectionItems(collectionId: number, mediaTypes: MediaType[], filters: MediaBrowseFilters, viewerId?: number, includeFilterOptions = false) {
@@ -232,19 +259,8 @@ export class CollectionsRepository {
         if (includeFilterOptions && filterMediaTypes.length) {
             const sources = filterMediaTypes.map(mediaType => {
                 const definition = getServerMediaDefinition(mediaType).repository;
-                const { listTable, tagTable, genreTable } = definition.tables;
-
-                const sourceMediaIds = db
-                    .select({ mediaId: collectionItems.mediaId })
-                    .from(collectionItems)
-                    .leftJoin(listTable, and(eq(listTable.mediaId, collectionItems.mediaId), viewerId === undefined
-                        ? sql`FALSE`
-                        : eq(listTable.userId, viewerId))
-                    ).where(and(
-                        eq(collectionItems.collectionId, collectionId), eq(collectionItems.mediaType, mediaType),
-                        filters.library === "in" ? isNotNull(listTable.userId) : undefined,
-                        filters.library === "out" ? isNull(listTable.userId) : undefined,
-                    ));
+                const { tagTable, genreTable } = definition.tables;
+                const sourceMediaIds = getCollectionFilterMediaIds(collectionId, mediaType, viewerId, filters.library);
 
                 filterOptions.mediaFilters[mediaType] = getMediaMetadataFilterOptions(definition, {
                     userId: viewerId,

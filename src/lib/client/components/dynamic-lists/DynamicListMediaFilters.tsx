@@ -7,16 +7,17 @@ import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
 import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
-import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
 import {MediaSpecificFilters} from "@/lib/client/components/media/browse/MediaSpecificFilters";
 import {DynamicListTagFilters} from "@/lib/client/components/dynamic-lists/DynamicListTagFilters";
 import {DynamicListEditorSection} from "@/lib/client/components/dynamic-lists/DynamicListEditorFields";
+import {MediaFilterCheckboxGroup} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
 
 
 type DynamicListMediaFilterValues = NonNullable<NonNullable<DynamicListSpec["filters"]["mediaFilters"]>[MediaType]>;
 
 
 interface DynamicListMediaFiltersProps {
+    username: string;
     disabled: boolean;
     mediaType: MediaType;
     optionsError: boolean;
@@ -30,8 +31,8 @@ interface DynamicListMediaFiltersProps {
 
 
 export const DynamicListMediaFilters = (props: DynamicListMediaFiltersProps) => {
-    const { mediaType, filters, options, tagNames, errors, disabled, optionsError, onRetryOptions, onChange } = props;
-    
+    const { username, mediaType, filters, options, tagNames, errors, disabled, optionsError, onRetryOptions, onChange } = props;
+
     const errorPrefix = `filters.mediaFilters.${mediaType}.`;
     const scopedErrors = Object.fromEntries(Object.entries(errors)
         .filter(([key]) => key.startsWith(errorPrefix))
@@ -46,13 +47,13 @@ export const DynamicListMediaFilters = (props: DynamicListMediaFiltersProps) => 
                 title="Media rules"
                 description="These rules apply only to this media type. Other types keep their own rules."
             >
-                <MediaFilterSearch
-                    label="Genres"
+                <MediaFilterCheckboxGroup
+                    title="Genres"
                     disabled={disabled}
                     error={scopedErrors.genres}
-                    value={filters.genres ?? []}
+                    selected={filters.genres ?? []}
                     maxSelected={MAX_MEDIA_FILTER_VALUES}
-                    options={options?.genres?.map(item => item.name) ?? []}
+                    items={options?.genres?.map(item => item.name) ?? []}
                     onChange={genres => onChange({ genres: genres.length ? genres : undefined })}
                 />
 
@@ -73,6 +74,7 @@ export const DynamicListMediaFilters = (props: DynamicListMediaFiltersProps) => 
                     mediaType={mediaType}
                     options={options ?? {}}
                     maxSelected={MAX_MEDIA_FILTER_VALUES}
+                    searchSource={{ type: "tracking", username }}
                 />
 
                 {optionsError &&

@@ -102,7 +102,7 @@ it("uses the viewer's tracking data for collection filters and never the collect
 
     it("shares metadata facets with lists before pagination and lazily exposes source-scoped options", async () => {
         dbContext.db.insert(schema.moviesActors).values([
-            { mediaId: 55, name: "Rare actor" }, { mediaId: 56, name: "Outside actor" },
+            { mediaId: 55, name: "Rare actor" }, { mediaId: 56, name: "Outside actor" }, { mediaId: 2, name: "Untracked actor" },
         ]).run();
         const filters: MediaBrowseFilters = { mediaFilters: { movies: { actors: ["Rare actor"], directors: ["Test director"] } } };
         const result = await collections.getCollectionDetails(collectionId, "read", viewer, filters);
@@ -112,9 +112,13 @@ it("uses the viewer's tracking data for collection filters and never the collect
 
         const before = CollectionsRepository.getCollectionById(collectionId)!.viewCount;
         const options = await collections.getCollectionDetails(collectionId, "read", toActor(), {}, true);
-        expect(options.filterOptions).toMatchObject({ mediaFilters: { movies: { actors: [
-            { name: "Rare actor" }, { name: "Test actor" }, { name: "Test actor alternate" },
-        ] } } });
+        expect(options.filterOptions).not.toHaveProperty("mediaFilters.movies.actors");
+        const search = { collectionId, mediaType: MediaType.MOVIES, field: "actors" as const, query: "actor" };
+        expect(collections.searchCollectionFilters(search, toActor())).toEqual([
+            { name: "Rare actor" }, { name: "Test actor" }, { name: "Test actor alternate" }, { name: "Untracked actor" },
+        ]);
+        expect(collections.searchCollectionFilters({ ...search, query: "Untracked", library: "out" }, viewer)).toEqual([{ name: "Untracked actor" }]);
+        expect(collections.searchCollectionFilters({ ...search, query: "Untracked", library: "in" }, viewer)).toEqual([]);
         expect(options.filterOptions.genres).toEqual(["Drama", "Rare", "Science fiction"]);
         expect(options.filterOptions.tags).toEqual([]);
         expect(CollectionsRepository.getCollectionById(collectionId)!.viewCount).toBe(before);

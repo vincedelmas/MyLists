@@ -36,6 +36,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
                 filterColumn: books.language,
             },
             authors: {
+                searchable: true,
                 entityTable: booksAuthors,
                 filterColumn: booksAuthors.name,
             },

@@ -46,14 +46,17 @@ export const seriesServerDefinition = defineServerMediaDefinition({
         sortColumns,
         filters: defineMediaFilterDefinitions(seriesDefinition, tables, {
             actors: {
+                searchable: true,
                 entityTable: seriesActors,
                 filterColumn: seriesActors.name,
             },
             networks: {
+                searchable: true,
                 entityTable: seriesNetwork,
                 filterColumn: seriesNetwork.name,
             },
             creators: {
+                searchable: true,
                 filterColumn: series.createdBy,
                 splitValues: true,
             },

@@ -6,9 +6,9 @@ import {Separator} from "@/lib/client/components/ui/separator";
 import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
-import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
 import {getMediaCommonFilterKeys} from "@/lib/client/components/media/browse/media-filter.utils";
 import {DYNAMIC_LIST_STATUS_OPTIONS} from "@/lib/client/components/dynamic-lists/dynamic-list.config";
+import {MediaFilterCheckboxGroup} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
 import {createMediaBrowseStatusOptions} from "@/lib/client/components/media/browse/media-browse.config";
 import {DynamicListEditorSection, DynamicListEditorSelect} from "@/lib/client/components/dynamic-lists/DynamicListEditorFields";
 import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
@@ -154,10 +154,10 @@ export const DynamicListCommonFilters = (props: DynamicListCommonFiltersProps) =
                     </FieldDescription>
 
                     {availableFilters.has("genres") &&
-                        <MediaFilterSearch
-                            label="Genres"
-                            value={filters.genres}
-                            options={genreOptions}
+                        <MediaFilterCheckboxGroup
+                            title="Genres"
+                            items={genreOptions}
+                            selected={filters.genres}
                             error={errors["filters.genres"]}
                             maxSelected={MAX_MEDIA_FILTER_VALUES}
                             disabled={disabled || optionsLoading}

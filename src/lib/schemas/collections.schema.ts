@@ -1,6 +1,7 @@
 import * as z from "zod";
 import {PrivacyType} from "@/lib/utils/enums";
 import {mediaBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
+import {mediaListSearchFiltersSchema} from "@/lib/schemas/media-lists.schema";
 import {
     coercedPositiveIntFieldSchema,
     mediaTypeFieldSchema,
@@ -15,6 +16,7 @@ import {
 export type CreateCollection = z.infer<typeof createCollectionSchema>;
 export type CommunitySearch = z.infer<typeof collectionsBrowseFiltersSchema>;
 export type UserCollectionsSearch = z.infer<typeof userCollectionsSearchSchema>;
+export type CollectionFilterSearch = z.infer<typeof collectionFilterSearchSchema>;
 
 
 const collectionItemSchema = z.object({
@@ -46,6 +48,10 @@ export const collectionIdSchema = z.object({
 export const collectionDetailsReadSchema = mediaBrowseFiltersSchema.extend({
     includeFilterOptions: z.boolean().optional(),
     collectionId: coercedPositiveIntFieldSchema,
+});
+
+export const collectionFilterSearchSchema = mediaListSearchFiltersSchema.extend(collectionIdSchema.shape).extend({
+    library: mediaBrowseFiltersSchema.shape.library,
 });
 
 export const collectionsBrowseFiltersSchema = paginationSchema.extend({

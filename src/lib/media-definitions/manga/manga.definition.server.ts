@@ -34,10 +34,12 @@ export const mangaServerDefinition = defineServerMediaDefinition({
         sortColumns,
         filters: defineMediaFilterDefinitions(mangaDefinition, tables, {
             authors: {
+                searchable: true,
                 entityTable: mangaAuthors,
                 filterColumn: mangaAuthors.name,
             },
             publishers: {
+                searchable: true,
                 filterColumn: manga.publishers,
             },
         }),

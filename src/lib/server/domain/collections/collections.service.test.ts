@@ -120,6 +120,9 @@ describe("CollectionsService authorization", () => {
             });
 
         expect(() => service.recordCollectionView(7, actor)).toThrow(UnauthorizedError);
+        expect(() => service.searchCollectionFilters({
+            collectionId: 7, mediaType: MediaType.MOVIES, field: "actors", query: "Actor",
+        }, actor)).toThrow(UnauthorizedError);
 
         expect(repository.getCollectionItems).not.toHaveBeenCalled();
         expect(repository.getPaginatedCollectionItems).not.toHaveBeenCalled();

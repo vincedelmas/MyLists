@@ -41,16 +41,19 @@ export const animeServerDefinition = defineServerMediaDefinition({
         },
         filters: defineMediaFilterDefinitions(animeDefinition, tables, {
             actors: {
+                searchable: true,
                 entityTable: animeActors,
                 filterColumn: animeActors.name,
             },
             networks: {
+                searchable: true,
                 entityTable: animeNetwork,
                 filterColumn: animeNetwork.name,
             },
             creators: {
-                filterColumn: anime.createdBy,
+                searchable: true,
                 splitValues: true,
+                filterColumn: anime.createdBy,
             },
             langs: {
                 filterColumn: anime.originCountry,

@@ -262,6 +262,7 @@ function DynamicListPage() {
                     isPending={filterOptionsQuery.isPending}
                     allowHideCommon={!isOwner && !!currentUser}
                     onRetry={() => void filterOptionsQuery.refetch()}
+                    searchSource={{ type: "tracking", username: owner.username }}
                     options={{ ...(filterOptionsQuery.data?.results.filterOptions ?? results.filterOptions), mediaTypes: results.mediaTypes }}
                 />
             }

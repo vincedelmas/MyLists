@@ -1,25 +1,25 @@
 import type {MediaType} from "@/lib/utils/enums";
 import {FieldGroup} from "@/lib/client/components/ui/field";
-import type {MediaMetadataFilterOptions} from "@/lib/types/media-list.types";
 import type {MediaMetadataFilters} from "@/lib/media-definitions/definition.registry";
 import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
 import {getMediaFilterDefinitions} from "@/lib/client/components/media/browse/media-filter.utils";
+import type {MediaFilterSearchSource, MediaMetadataFilterOptions} from "@/lib/types/media-list.types";
 import {MediaFilterCheckboxGroup} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
 
 
 interface MediaSpecificFiltersProps {
-    username?: string;
     disabled?: boolean;
     mediaType: MediaType;
     maxSelected?: number;
     filters: MediaMetadataFilters;
     errors?: Record<string, string>;
     options: MediaMetadataFilterOptions;
+    searchSource: MediaFilterSearchSource;
     onChange: (filters: Partial<MediaMetadataFilters>) => void;
 }
 
 
-export const MediaSpecificFilters = ({ mediaType, username, options, filters, maxSelected, disabled, errors, onChange }: MediaSpecificFiltersProps) => (
+export const MediaSpecificFilters = ({ mediaType, searchSource, options, filters, maxSelected, disabled, errors, onChange }: MediaSpecificFiltersProps) => (
     <FieldGroup>
         {getMediaFilterDefinitions(mediaType).map(filter => {
             const values = filters[filter.key] ?? [];
@@ -31,12 +31,13 @@ export const MediaSpecificFilters = ({ mediaType, username, options, filters, ma
                         value={values}
                         key={filter.key}
                         onChange={update}
+                        field={filter.key}
                         disabled={disabled}
                         label={filter.title}
+                        source={searchSource}
+                        mediaType={mediaType}
                         maxSelected={maxSelected}
                         error={errors?.[filter.key]}
-                        options={options[filter.key]?.map(item => item.name) ?? []}
-                        listSearch={username ? { mediaType, username, field: filter.key } : undefined}
                     />
                 );
             }

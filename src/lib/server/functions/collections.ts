@@ -4,6 +4,7 @@ import {getContainer} from "@/lib/server/core/container";
 import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     collectionDetailsReadSchema,
+    collectionFilterSearchSchema,
     collectionIdSchema,
     collectionMediaItemActionSchema,
     collectionsBrowseFiltersSchema,
@@ -40,6 +41,15 @@ export const getReadCollectionDetails = createServerFn({ method: "GET" })
         const container = await getContainer();
         const collectionService = container.services.collections;
         return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser), filters, includeFilterOptions);
+    });
+
+
+export const getCollectionSearchFilters = createServerFn({ method: "GET" })
+    .middleware([publicAuthMiddleware])
+    .validator(collectionFilterSearchSchema)
+    .handler(async ({ data, context: { currentUser } }) => {
+        const container = await getContainer();
+        return container.services.collections.searchCollectionFilters(data, toActor(currentUser));
     });
 
 

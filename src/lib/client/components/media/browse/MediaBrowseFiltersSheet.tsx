@@ -5,7 +5,6 @@ import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {type MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
-import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
 import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
 import {MediaTagBrowser} from "@/lib/client/components/media/browse/MediaTagBrowser";
 import {MediaTagFilters} from "@/lib/client/components/media/browse/MediaTagFilters";
@@ -13,6 +12,7 @@ import {MediaTypeFilterTabs} from "@/lib/client/components/media/browse/MediaTyp
 import {MediaSpecificFilters} from "@/lib/client/components/media/browse/MediaSpecificFilters";
 import {getMediaCommonFilterKeys} from "@/lib/client/components/media/browse/media-filter.utils";
 import {MediaFilterCheckbox} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
+import type {MediaFilterSearchSource, ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
 import {MediaGenreFilter, MediaPersonalFilters} from "@/lib/client/components/media/browse/MediaCommonFilters";
 import {MediaFiltersSheet, type MediaFiltersTab} from "@/lib/client/components/media/browse/MediaFiltersSheet";
 import {Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
@@ -30,6 +30,7 @@ interface MediaBrowseFiltersSheetProps {
     personalLabel?: string;
     allowHideCommon?: boolean;
     onOpenChange: (open: boolean) => void;
+    searchSource: MediaFilterSearchSource;
     onApply: (filters: AdvancedFilters) => void;
     filters: MediaBrowseFilters & { hideCommon?: boolean };
     options: {
@@ -50,6 +51,7 @@ export const MediaBrowseFiltersSheet = (props: MediaBrowseFiltersSheetProps) => 
         onApply,
         options,
         personal,
+        searchSource,
         onOpenChange,
         isPending = false,
         allowHideCommon = false,
@@ -267,6 +269,7 @@ export const MediaBrowseFiltersSheet = (props: MediaBrowseFiltersSheetProps) => 
                                         onChange={genres => update({ genres: genres.length ? genres : undefined })}
                                     />
                                     <MediaSpecificFilters
+                                        searchSource={searchSource}
                                         filters={scoped}
                                         onChange={update}
                                         mediaType={mediaType}

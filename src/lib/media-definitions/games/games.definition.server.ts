@@ -37,6 +37,7 @@ export const gamesServerDefinition = defineServerMediaDefinition({
                 optionsTable: gamesList,
             },
             companies: {
+                searchable: true,
                 entityTable: gamesCompanies,
                 filterColumn: gamesCompanies.name,
             },

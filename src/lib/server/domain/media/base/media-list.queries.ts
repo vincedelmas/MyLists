@@ -1,4 +1,3 @@
-import {FormattedError} from "@/lib/utils/error-classes";
 import {mediaTags, user} from "@/lib/server/database/schema";
 import type {IdNamePair} from "@/lib/types/media-common.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -13,7 +12,8 @@ import {
     getMediaCommonFilterConditions,
     getMediaMetadataFilterConditions,
     getMediaMetadataFilterOptions,
-    getMediaNameSearchCondition
+    getMediaNameSearchCondition,
+    searchMediaMetadataFilterOptions
 } from "@/lib/server/domain/media/base/media-filters.queries";
 
 
@@ -67,18 +67,13 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
         },
 
         async getSearchListFilters(userId: number, query: string, field: MediaMetadataFilterKey) {
-            const filter = definition.filters.metadata[field];
-            if (!filter?.getOptions) {
-                throw new FormattedError("This filter is not available for this media type.");
-            }
-
             const mediaIds = getDbClient()
                 .select({ mediaId: listTable.mediaId })
                 .from(listTable)
                 .where(eq(listTable.userId, userId))
                 .getSQL();
 
-            return filter.getOptions({ mediaIds, userId, query });
+            return searchMediaMetadataFilterOptions(definition, { mediaIds, userId }, field, query);
         },
 
         async getUserFavorites(userId: number, limit = 7) {

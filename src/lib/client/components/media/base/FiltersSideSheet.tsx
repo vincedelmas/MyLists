@@ -135,9 +135,9 @@ export const FiltersSideSheet = (props: FiltersSideSheetProps) => {
                             />
                             <MediaSpecificFilters
                                 mediaType={mediaType}
-                                username={username}
                                 options={listFilters!}
                                 filters={currentFilters}
+                                searchSource={{ type: "tracking", username }}
                                 onChange={next => setDraft(current => ({ ...current, ...next }))}
                             />
                             <FieldSet>

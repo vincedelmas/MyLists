@@ -1,7 +1,7 @@
 import {UpdateType} from "@/lib/utils/enums";
-import {KeyboardEvent, useState} from "react";
 import {Input} from "@/lib/client/components/ui/input";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
+import {useNumericEdit} from "@/lib/client/components/media/base/use-numeric-edit";
 import {toActivityDisplayValue, toActivityStoredValue} from "@/lib/utils/media/activity";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
@@ -13,67 +13,33 @@ interface UpdatePlaytimeProps {
 
 
 export const UpdatePlaytime = ({ playtimeInMin, updatePlaytime }: UpdatePlaytimeProps) => {
-    const maxPlaytimeHours = 30000;
+    const maxPlaytimeHours = 30_000;
     const playtimeInHours = toActivityDisplayValue(gamesDefinition.identity.mediaType, playtimeInMin);
-    const [currentValue, setCurrentValue] = useState(playtimeInHours.toString());
 
-    const validateAndMutate = () => {
-        if (currentValue.trim() === "") {
-            setCurrentValue(playtimeInHours.toString());
-            return;
-        }
+    const input = useNumericEdit({
+        value: playtimeInHours,
+        validate: (value) => value >= 0 && value <= maxPlaytimeHours,
+        onCommit: async (value) => {
+            const playtime = Math.round(toActivityStoredValue(gamesDefinition.identity.mediaType, value));
+            if (playtime === playtimeInMin) return false;
 
-        const parsedValue = Number(currentValue);
-        if (Number.isNaN(parsedValue) || !Number.isFinite(parsedValue)) {
-            setCurrentValue(playtimeInHours.toString());
-            return;
-        }
-        if (parsedValue < 0 || parsedValue > maxPlaytimeHours) {
-            setCurrentValue(playtimeInHours.toString());
-            return;
-        }
-
-        const nextPlaytimeInMin = Math.round(toActivityStoredValue(gamesDefinition.identity.mediaType, parsedValue));
-        if (nextPlaytimeInMin === playtimeInMin) {
-            setCurrentValue(playtimeInHours.toString());
-            return;
-        }
-
-        updatePlaytime.mutate({ payload: { type: UpdateType.PLAYTIME, playtime: nextPlaytimeInMin } }, {
-            onError: () => {
-                setCurrentValue(playtimeInHours.toString());
-            },
-            onSuccess: (data) => {
-                if (!data) {
-                    setCurrentValue(playtimeInHours.toString());
-                }
-            },
-        });
-    };
-
-    const handleOnKeyDown = (ev: KeyboardEvent<HTMLInputElement>) => {
-        if (ev.key === "Enter") {
-            ev.preventDefault();
-            ev.currentTarget.blur();
-        }
-    };
+            return Boolean(await updatePlaytime.mutateAsync({ payload: { type: UpdateType.PLAYTIME, playtime } }));
+        },
+    });
 
     return (
         <div className="flex justify-between items-center">
             <div>Playtime ({gamesDefinition.statistics.durationDistribution.unit})</div>
             <Input
+                {...input}
                 min={0}
                 step={1}
                 type="number"
                 inputMode="numeric"
-                value={currentValue}
                 max={maxPlaytimeHours}
-                onKeyDown={handleOnKeyDown}
                 aria-label="Playtime (hours)"
                 className="w-34 h-7 rounded-md"
                 disabled={updatePlaytime.isPending}
-                onBlur={() => validateAndMutate()}
-                onChange={(ev) => setCurrentValue(ev.target.value)}
             />
         </div>
     );

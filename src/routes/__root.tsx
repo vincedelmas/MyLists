@@ -58,7 +58,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en" className="dark" data-theme="dark" style={{ colorScheme: "dark" }}>
+        // Browser extensions can add attributes to <html> before React hydrates it.
+        <html lang="en" className="dark" data-theme="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
         <head>
             <HeadContent/>
         </head>

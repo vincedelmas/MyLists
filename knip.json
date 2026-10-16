@@ -24,9 +24,6 @@
         "@fontsource-variable/noto-sans-jp",
         "pino-pretty"
     ],
-    "ignoreFiles": [
-        "src/lib/client/components/user-profile/**"
-    ],
     "ignoreBinaries": [
         "flock"
     ],

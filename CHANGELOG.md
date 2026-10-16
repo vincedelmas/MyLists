@@ -1,5 +1,44 @@
 # Changelog
 
+## [3.10.0](https://github.com/vincedelmas/MyLists/compare/v3.9.0...v3.10.0) (2026-10-16)
+
+
+### Features
+
+* **collections:** keep editor actions visible while scrolling ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **collections:** support multiple media types in a single collection ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **filters:** browse tags without searching and share filtering controls across list views ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **games:** load HLTB times asynchronously ([d020c7e](https://github.com/vincedelmas/MyLists/commit/d020c7e2428c7197331655cf1b587a2b02cc3f14))
+* **lists:** add saved dynamic lists with live results, presets and per-media filtering ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **lists:** introduce dynamic lists and unified media browsing ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **lists:** unify browsing for tracking lists, dynamic lists, collections and continue lists ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **mcp:** connect assistants through OAuth with read-only or write access and connection management ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **mcp:** enable read-only SQL analysis of the connected user's media and activity ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **mcp:** support catalog search, media tracking, tags and dynamic list creation ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **profile:** pin collections and dynamic lists to profiles and filter browsing to pinned items ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+
+
+### Bug Fixes
+
+* **auth:** prevent logout redirect races on private pages ([bed90e7](https://github.com/vincedelmas/MyLists/commit/bed90e7636ed14b749b34b4e957cb1632e013dee))
+* **charts:** update bar chart scale configuration and improve tooltip styling ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **collections:** clear items when changing media type ([6de6201](https://github.com/vincedelmas/MyLists/commit/6de6201c75500338fefd18ac0085b02214bb42d5))
+* **media:** synchronize numeric editors when incoming values change ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* preserve nav search query when changing provider ([0f58bad](https://github.com/vincedelmas/MyLists/commit/0f58bad6c89eb05143ab9d7790fa55b78d212adf))
+* **search:** display game release years in navigation search results ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **year-recap:** make recap copy more natural ([911d304](https://github.com/vincedelmas/MyLists/commit/911d304cace744a9e377ba21c5ae8b4d8e66307f))
+
+
+### Performance Improvements
+
+* **profile:** batch pinned dynamic list counts and skip unnecessary cover loading ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+
+
+### Code Refactoring
+
+* **tags:** normalize tag assignments and remove synchronization triggers ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+* **ui:** consolidate accessible tabs, form fields, loading states, alerts and shared media controls ([602045e](https://github.com/vincedelmas/MyLists/commit/602045e0d2b1ef8ccfc08911e36164d02699517c))
+
 ## [3.9.0](https://github.com/vincedelmas/MyLists/compare/v3.8.0...v3.9.0) (2026-09-30)
 
 

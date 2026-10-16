@@ -35,9 +35,9 @@ test("creates, ranks, annotates and copies a collection across every media type 
     for (const item of mixedMedia) {
         await type.click();
         await page.getByRole("option", { name: new RegExp(`^${item.mediaType}$`, "i") }).click();
-        await form.getByRole("searchbox", { name: `Search ${item.mediaType} to add`, exact: true }).fill("Mixed");
-        await expect(page.getByRole("button", { name: /^Add Mixed/ })).toHaveCount(1);
-        await page.getByRole("button", { name: `Add ${item.name}`, exact: true }).click();
+        await form.getByRole("combobox", { name: `Search ${item.mediaType} to add`, exact: true }).fill("Mixed");
+        await expect(page.getByRole("option")).toHaveCount(1);
+        await page.getByRole("option", { name: new RegExp(item.name) }).click();
         await expect(form.getByRole("button", { name: `Remove ${item.name}`, exact: true })).toBeVisible();
     }
     await expect(form.getByText("6 media", { exact: true })).toBeVisible();
@@ -47,8 +47,8 @@ test("creates, ranks, annotates and copies a collection across every media type 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await expect(form.getByRole("button", { name: "Create collection", exact: true })).toBeInViewport();
     const duplicate = mixedMedia.at(-1)!;
-    await form.getByRole("searchbox", { name: `Search ${duplicate.mediaType} to add`, exact: true }).fill("Mixed");
-    await page.getByRole("button", { name: `Add ${duplicate.name}`, exact: true }).click();
+    await form.getByRole("combobox", { name: `Search ${duplicate.mediaType} to add`, exact: true }).fill("Mixed");
+    await page.getByRole("option", { name: new RegExp(duplicate.name) }).click();
     await expect(page.getByText("That media is already in your collection.", { exact: true })).toBeVisible();
     await expect(form.getByText("6 media", { exact: true })).toBeVisible();
 

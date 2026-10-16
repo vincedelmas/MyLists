@@ -3,8 +3,8 @@ import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 
 
 interface MediaSearchResultProps {

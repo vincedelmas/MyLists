@@ -3,24 +3,16 @@ import {useDebounce} from "@/lib/client/hooks/use-debounce";
 import {useOnClickOutside} from "@/lib/client/hooks/use-clicked-outside";
 
 
-interface UseSearchLogicOptions {
-    debounceMs?: number;
-    onReset?: () => void;
-    outsideClickEnabled?: boolean;
-    resetOnOutsideClick?: boolean;
-}
-
-
-export function useSearchContainer({ onReset, debounceMs = 400, outsideClickEnabled = true, resetOnOutsideClick = true }: UseSearchLogicOptions = {}) {
+export function useNavbarSearch(onReset: () => void) {
     const [search, setSearch] = useState("");
     const [isOpen, setIsOpen] = useState(false);
-    const debouncedSearch = useDebounce(search, debounceMs);
+    const debouncedSearch = useDebounce(search, 400);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const reset = () => {
         setSearch("");
         setIsOpen(false);
-        onReset?.();
+        onReset();
     };
 
     const handleInputChange = (value: string) => {
@@ -30,23 +22,13 @@ export function useSearchContainer({ onReset, debounceMs = 400, outsideClickEnab
         }
     };
 
-    const selectValue = (value: string) => {
-        setSearch(value);
-        setIsOpen(false);
-    };
-
-    useOnClickOutside(containerRef, () => {
-        if (!outsideClickEnabled) return;
-        if (resetOnOutsideClick) reset();
-        else setIsOpen(false);
-    });
+    useOnClickOutside(containerRef, () => setIsOpen(false));
 
     return {
         reset,
         search,
         isOpen,
         setIsOpen,
-        selectValue,
         containerRef,
         debouncedSearch,
         setSearch: handleInputChange,

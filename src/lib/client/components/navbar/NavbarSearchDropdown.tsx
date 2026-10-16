@@ -1,12 +1,12 @@
 import {ReactNode} from "react";
-import {cn} from "@/lib/utils/classnames";
 import {SearchX} from "lucide-react";
+import {cn} from "@/lib/utils/classnames";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {displayContainerError} from "@/lib/client/error-display";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 
 
-interface SearchContainerProps {
+interface NavbarSearchDropdownProps {
     search: string;
     isOpen: boolean;
     isPending: boolean;
@@ -14,27 +14,21 @@ interface SearchContainerProps {
     hasResults: boolean;
     children: ReactNode;
     error?: Error | null;
-    emptyMessage?: string;
     debouncedSearch: string;
-    minSearchLength?: number;
-    position?: "top" | "bottom";
 }
 
 
-export const SearchContainer = (props: SearchContainerProps) => {
-    const {
-        search, isOpen, isPending, hasResults, debouncedSearch,
-        children, className, error, emptyMessage, position = "bottom", minSearchLength = 2
-    } = props;
+export const NavbarSearchDropdown = (props: NavbarSearchDropdownProps) => {
+    const { search, isOpen, isPending, hasResults, debouncedSearch, children, className, error } = props;
 
-    if (!isOpen || search.trim().length === 0 || debouncedSearch.trim().length < minSearchLength) {
+    if (!isOpen || search.trim().length === 0 || debouncedSearch.trim().length < 2) {
         return null;
     }
 
     return (
         <div className={cn(
             "absolute z-50 w-full bg-background border rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200",
-            position === "bottom" ? "top-full mt-1" : "bottom-full mb-1", className)}
+            "top-full mt-1", className)}
         >
             {isPending &&
                 <div className="flex items-center justify-center p-6">
@@ -52,7 +46,7 @@ export const SearchContainer = (props: SearchContainerProps) => {
                 <EmptyState
                     icon={SearchX}
                     className="py-4"
-                    message={emptyMessage || `No results found for '${debouncedSearch}'`}
+                    message={`No results found for '${debouncedSearch}'`}
                 />
             }
 

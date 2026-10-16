@@ -1,23 +1,26 @@
+import {useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {useDebounce} from "@/lib/client/hooks/use-debounce";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
+import {displayContainerError} from "@/lib/client/error-display";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
-import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CountdownTimer} from "@/lib/client/components/moviedle/CountdownTimer";
-import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {MediadleLeaderboard} from "@/lib/client/components/moviedle/MediadleLeaderboard";
 import {useMoviedleGuessMutation} from "@/lib/client/react-query/query-mutations/mediadle.mutations";
 import {dailyMediadleOptions, mediadleLeaderboardOptions, mediadleSuggestionsOptions} from "@/lib/client/react-query/query-options";
-import {Award, ChartNoAxesColumnIncreasing, Check, Clapperboard, Clock3, Flame, Gauge, PartyPopper, SkipForward, Target, ThumbsDown, Trophy} from "lucide-react";
+import {Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxStatus} from "@/lib/client/components/ui/combobox";
+import {Award, ChartNoAxesColumnIncreasing, Check, Clapperboard, Clock3, Flame, Gauge, PartyPopper, SearchX, SkipForward, Target, ThumbsDown, Trophy} from "lucide-react";
 
 
 // Explicit constant for skipped guesses (lol c'est sale)
@@ -41,21 +44,24 @@ function MediadlePage() {
     const { dailyMediadleQueryOptions, mediadleLeaderboardQueryOptions } = Route.useRouteContext();
 
     const { currentUser, isAnonymous } = useAuth();
+    const [search, setSearch] = useState("");
     const makeGuessMutation = useMoviedleGuessMutation();
+    const debouncedSearch = useDebounce(search, 400);
+    const [searchOpen, setSearchOpen] = useState(false);
     const leaderboard = useSuspenseQuery(mediadleLeaderboardQueryOptions).data;
     const { userData, ...mediadleData } = useSuspenseQuery(dailyMediadleQueryOptions).data;
-    const { search, setSearch, selectValue, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer();
+    const { data: suggestions = [], isFetching, error } = useQuery(mediadleSuggestionsOptions(debouncedSearch));
 
-    const { data: suggestions = [], isLoading, error } = useQuery(mediadleSuggestionsOptions(debouncedSearch));
+    const isSearching = search.trim() !== debouncedSearch.trim() || isFetching;
+    const availableSuggestions = isSearching || error ? [] : suggestions;
     const coverSrc = mediadleData.result?.nonPixelatedCover ?? `data:image/png;base64,${mediadleData.pixelatedCover}`;
-
-    const handleSearchClick = (input: string) => {
-        selectValue(input);
-    };
 
     const handleMutation = (guessValue: string) => {
         makeGuessMutation.mutate({ data: { guess: guessValue } }, {
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                setSearch("");
+                setSearchOpen(false);
+            },
         });
     };
 
@@ -153,11 +159,13 @@ function MediadlePage() {
                                             </div>
                                         </div>
                                         :
-                                        <div ref={containerRef} className="flex w-full flex-col gap-4">
+                                        <div className="flex w-full flex-col gap-4">
                                             <div className="flex flex-col gap-1.5">
                                                 <div className="flex justify-between text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                                     <span>Attempts</span>
-                                                    <span>{userData?.attempts ?? 0} / {mediadleData.maxAttempts}</span>
+                                                    <span>
+                                                        {userData?.attempts ?? 0} / {mediadleData.maxAttempts}
+                                                    </span>
                                                 </div>
                                                 <div className="flex h-1.5 gap-1.5" aria-hidden="true">
                                                     {Array.from({ length: mediadleData.maxAttempts }).map((_, idx) => {
@@ -174,43 +182,73 @@ function MediadlePage() {
                                                     })}
                                                 </div>
                                             </div>
-                                            <div className="relative">
-                                                <SearchInput
-                                                    value={search}
+                                            <Combobox<typeof suggestions[number]>
+                                                value={null}
+                                                filter={null}
+                                                inputValue={search}
+                                                autoHighlight={true}
+                                                items={availableSuggestions}
+                                                onOpenChange={setSearchOpen}
+                                                itemToStringLabel={item => item.name}
+                                                open={searchOpen && search.trim().length >= 1}
+                                                onInputValueChange={(value, details) => {
+                                                    if (details.reason !== "input-change" && details.reason !== "item-press") {
+                                                        details.cancel();
+                                                        return;
+                                                    }
+                                                    setSearch(value);
+                                                }}
+                                            >
+                                                <ComboboxInput
+                                                    aria-label="Search for a film"
                                                     placeholder="Search for a film..."
-                                                    onChange={(ev) => setSearch(ev.target.value)}
+                                                    onKeyDown={ev => {
+                                                        if (ev.key === "Enter" && isSearching && !ev.nativeEvent.isComposing) {
+                                                            ev.preventDefault();
+                                                            ev.preventBaseUIHandler();
+                                                        }
+                                                    }}
                                                 />
-                                                <SearchContainer
-                                                    error={error}
-                                                    position="top"
-                                                    search={search}
-                                                    isOpen={isOpen}
-                                                    minSearchLength={1}
-                                                    isPending={isLoading}
-                                                    debouncedSearch={debouncedSearch}
-                                                    hasResults={!!suggestions?.length}
-                                                >
-                                                    <div className="flex max-h-60 flex-col overflow-y-auto scrollbar-thin">
-                                                        {suggestions?.map((item) =>
-                                                            <button
-                                                                key={item.id}
-                                                                type="button"
-                                                                onClick={() => handleSearchClick(item.name)}
-                                                                className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-accent"
-                                                            >
-                                                                <ProfileIcon
-                                                                    fallbackSize="text-xs"
-                                                                    className="size-9 border"
-                                                                    user={{ image: null, name: item.name! }}
-                                                                />
+                                                <ComboboxContent side="top" className="max-h-60">
+                                                    <ComboboxStatus>
+                                                        {isSearching &&
+                                                            <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
+                                                                <Spinner aria-hidden="true"/> Searching…
+                                                            </div>
+                                                        }
+                                                        {!isSearching && error &&
+                                                            <div className="p-4 text-center text-sm text-destructive">
+                                                                {displayContainerError({ error })}
+                                                            </div>
+                                                        }
+                                                    </ComboboxStatus>
+                                                    <ComboboxEmpty>
+                                                        {!isSearching && !error &&
+                                                            <EmptyState
+                                                                icon={SearchX}
+                                                                className="py-4"
+                                                                message={`No results found for '${debouncedSearch}'`}
+                                                            />
+                                                        }
+                                                    </ComboboxEmpty>
+                                                    <ComboboxList>
+                                                        {(item: typeof suggestions[number]) =>
+                                                            <ComboboxItem key={item.id} value={item}>
+                                                                <span aria-hidden="true">
+                                                                    <ProfileIcon
+                                                                        fallbackSize="text-xs"
+                                                                        className="size-9 border"
+                                                                        user={{ image: null, name: item.name }}
+                                                                    />
+                                                                </span>
                                                                 <span className="text-left text-sm font-medium">
                                                                     {item.name}
                                                                 </span>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </SearchContainer>
-                                            </div>
+                                                            </ComboboxItem>
+                                                        }
+                                                    </ComboboxList>
+                                                </ComboboxContent>
+                                            </Combobox>
                                             <div className="flex gap-2">
                                                 <Button className="flex-1" variant="secondary" onClick={onSkipClick}>
                                                     <SkipForward className="size-3.5" data-icon="inline-start"/>
@@ -267,6 +305,7 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
                 isAnonymous={isAnonymous}
                 description="Sign in to keep your game history, streaks, and win rate."
             />
+
             <div className={cn("flex flex-col transition-all", isAnonymous && "pointer-events-none select-none blur-xs")}>
                 <div className="p-5 pb-7 sm:p-6 sm:pb-8">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -305,10 +344,7 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
                                 {
                                     label: "Avg. attempts",
                                     icon: <Gauge className="size-4"/>,
-                                    value: formatNumber(userData?.stats?.averageAttempts ?? 0, {
-                                        fractionDigits: 2,
-                                        locale: "en",
-                                    }),
+                                    value: formatNumber(userData?.stats?.averageAttempts ?? 0, { fractionDigits: 2, locale: "en" }),
                                 },
                             ]}
                         />
@@ -324,6 +360,7 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
                             Wins by attempt
                         </span>
                     </div>
+
                     <div className="flex flex-col gap-4">
                         {[1, 2, 3, 4, 5].map((num) => {
                             const count = frequencyMap[num] ?? 0;
@@ -331,7 +368,9 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
 
                             return (
                                 <div key={num} className="flex items-center gap-3 text-sm">
-                                    <span className="w-2 font-mono text-xs text-muted-foreground">{num}</span>
+                                    <span className="w-2 font-mono text-xs text-muted-foreground">
+                                        {num}
+                                    </span>
                                     <div className="relative flex h-7 flex-1 items-center overflow-hidden rounded-md bg-muted/50 ring-1 ring-foreground/5">
                                         <div
                                             style={{ width: `${Math.max(percentage, 8)}%` }}

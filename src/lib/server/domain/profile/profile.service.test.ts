@@ -53,7 +53,7 @@ describe("profile customization", () => {
     it("preserves previous customization if either setting cannot be saved", async () => {
         const highlights = createDefaultHighlightedMediaSettings();
         ProfileRepository.upsertProfileCustomSetting(1, "highlightedMedia", highlights);
-        sqlite.exec(`CREATE TRIGGER fail_visibility BEFORE INSERT ON profile_custom
+        sqlite.run(`CREATE TRIGGER fail_visibility BEFORE INSERT ON profile_custom
             WHEN NEW.key = 'showContinue'
             BEGIN SELECT RAISE(ABORT, 'visibility failure'); END`);
 

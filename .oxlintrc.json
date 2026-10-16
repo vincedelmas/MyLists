@@ -38,6 +38,7 @@
         "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": "warn",
         "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": "warn",
         "typescript/ban-ts-comment": "error",
+        "typescript/no-deprecated": "error",
         "typescript/no-duplicate-enum-values": "error",
         "typescript/no-empty-object-type": "error",
         "typescript/no-explicit-any": "error",
@@ -151,7 +152,6 @@
                 "**/*.{ts,tsx}"
             ],
             "rules": {
-                "no-redeclare": "error",
                 "no-shadow": "off",
                 "no-unused-vars": [
                     "warn",

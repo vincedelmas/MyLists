@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_admin/admin/admin-tasks")({
         tasksQueryOptions: adminTasksOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.tasksQueryOptions);
+        return context.queryClient.query({ ...context.tasksQueryOptions, staleTime: "static" });
     },
     component: AdminTasksPage,
 });

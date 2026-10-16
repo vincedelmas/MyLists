@@ -123,7 +123,7 @@ describe("collection likes after account deletion", () => {
 
     it.each(["manual", "inactive"] as const)("rolls back count changes and lifecycle updates if %s deletion fails", type => {
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_user_delete BEFORE DELETE ON ${getTableName(schema.user)}
+        sqlite.run(`CREATE TRIGGER fail_user_delete BEFORE DELETE ON ${getTableName(schema.user)}
             WHEN OLD.id = 1 BEGIN SELECT RAISE(ABORT, 'account deletion failure'); END`);
 
         expect(() => service.deleteUserAccount({
@@ -156,7 +156,7 @@ describe("collection likes after account deletion", () => {
     it("rolls back the whole bulk cleanup if deleting one of its accounts fails", async () => {
         dbContext.db.update(schema.user).set({ emailVerified: false }).where(sql`${schema.user.id} IN (1, 2)`).run();
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_user_delete BEFORE DELETE ON ${getTableName(schema.user)}
+        sqlite.run(`CREATE TRIGGER fail_user_delete BEFORE DELETE ON ${getTableName(schema.user)}
             WHEN OLD.id = 2 BEGIN SELECT RAISE(ABORT, 'account deletion failure'); END`);
 
         await expect(AccountRepository.deleteNonActivatedOldUsers()).rejects.toThrow();

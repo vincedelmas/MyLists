@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_main/_viewer/which-came-first")({
         whichCameFirstQueryOptions: whichCameFirstOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.whichCameFirstQueryOptions);
+        return context.queryClient.query({ ...context.whichCameFirstQueryOptions, staleTime: "static" });
     },
     component: WhichCameFirstPage,
 });

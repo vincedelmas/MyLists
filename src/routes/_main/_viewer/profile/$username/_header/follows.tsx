@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/f
         followsQueryOptions: followsOptions(username),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.followsQueryOptions);
+        return context.queryClient.query({ ...context.followsQueryOptions, staleTime: "static" });
     },
     component: ProfileFollows,
 });

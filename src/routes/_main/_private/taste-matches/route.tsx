@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_main/_private/taste-matches")({
         tasteMatchesQueryOptions: tasteMatchesOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.tasteMatchesQueryOptions);
+        return context.queryClient.query({ ...context.tasteMatchesQueryOptions, staleTime: "static" });
     },
     component: TasteMatchesPage,
 });

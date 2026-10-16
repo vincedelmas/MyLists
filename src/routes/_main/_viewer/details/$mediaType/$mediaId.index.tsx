@@ -37,9 +37,9 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
         communityActivityQueryOptions: mediaCommunityActivityOptions(mediaId, mediaType, { page: 1, perPage: 8 }),
     }),
     loader: async ({ context }) => {
-        await context.queryClient.ensureQueryData(context.mediaDetailsQueryOptions);
-        void context.queryClient.prefetchQuery(context.communityCollectionsQueryOptions);
-        void context.queryClient.prefetchQuery(context.communityActivityQueryOptions);
+        await context.queryClient.query({ ...context.mediaDetailsQueryOptions, staleTime: "static" });
+        void context.queryClient.query(context.communityCollectionsQueryOptions).catch(() => {});
+        void context.queryClient.query(context.communityActivityQueryOptions).catch(() => {});
     },
     component: MediaDetailsPage,
 });

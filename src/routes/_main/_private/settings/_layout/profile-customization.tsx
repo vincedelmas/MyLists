@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/profile-c
         profileCustomQueryOptions: profileCustomOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.profileCustomQueryOptions);
+        return context.queryClient.query({ ...context.profileCustomQueryOptions, staleTime: "static" });
     },
     component: ProfileCustomForm,
 });

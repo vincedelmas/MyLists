@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_admin/admin/api-monitoring")({
         apiMonitoringQueryOptions: adminApiMonitoringOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.apiMonitoringQueryOptions);
+        return context.queryClient.query({ ...context.apiMonitoringQueryOptions, staleTime: "static" });
     },
     component: ApiMonitoringPage,
 });

@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/danger")(
         accountSecurityOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.accountSecurityOptions);
+        return context.queryClient.query({ ...context.accountSecurityOptions, staleTime: "static" });
     },
     component: DangerForm,
 });

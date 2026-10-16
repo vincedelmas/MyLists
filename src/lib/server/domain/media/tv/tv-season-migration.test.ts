@@ -12,31 +12,31 @@ describe("TV season-state migration", () => {
         try {
             db.transaction(() => {
                 for (const migration of migrations.slice(0, seasonalIndex)) {
-                    for (const statement of migration.sql) db.exec(statement);
+                    for (const statement of migration.sql) db.run(statement);
                 }
             })();
-            db.exec(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (1, 'migrating', 'migration@example.com', 1, '2025-01-01', '2025-01-01')`);
+            db.run(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (1, 'migrating', 'migration@example.com', 1, '2025-01-01', '2025-01-01')`);
             for (const kind of ["series", "anime"]) {
-                db.exec(`INSERT INTO ${kind} (id, api_id, name, image_cover, duration, total_seasons, total_episodes) VALUES (1, 1, 'Show', 'show.jpg', 30, 2, 16)`);
+                db.run(`INSERT INTO ${kind} (id, api_id, name, image_cover, duration, total_seasons, total_episodes) VALUES (1, 1, 'Show', 'show.jpg', 30, 2, 16)`);
                 // Array positions historically follow sorted metadata, even for non-consecutive numbers.
-                db.exec(`INSERT INTO ${kind}_episodes_per_season (media_id, season, episodes) VALUES (1, 1, 8), (1, 3, 8)`);
-                db.exec(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, total, redo, rating) VALUES (1, 1, 1, 'Completed', 3, 8, 40, '[1,2]', 8.5)`);
-                db.exec(`INSERT INTO ${kind} (id, api_id, name, image_cover, duration, total_seasons, total_episodes) VALUES (2, 2, 'Shrunk show', 'show.jpg', 30, 1, 8)`);
-                db.exec(`INSERT INTO ${kind}_episodes_per_season (media_id, season, episodes) VALUES (2, 1, 8)`);
-                db.exec(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, total, redo, rating) VALUES (2, 1, 2, 'Completed', 1, 8, 8, '[0,2]', 0)`);
+                db.run(`INSERT INTO ${kind}_episodes_per_season (media_id, season, episodes) VALUES (1, 1, 8), (1, 3, 8)`);
+                db.run(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, total, redo, rating) VALUES (1, 1, 1, 'Completed', 3, 8, 40, '[1,2]', 8.5)`);
+                db.run(`INSERT INTO ${kind} (id, api_id, name, image_cover, duration, total_seasons, total_episodes) VALUES (2, 2, 'Shrunk show', 'show.jpg', 30, 1, 8)`);
+                db.run(`INSERT INTO ${kind}_episodes_per_season (media_id, season, episodes) VALUES (2, 1, 8)`);
+                db.run(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, total, redo, rating) VALUES (2, 1, 2, 'Completed', 1, 8, 8, '[0,2]', 0)`);
             }
             for (const kind of ["series", "anime"]) {
                 for (const [id, rating] of [[3, "NULL"], [4, "8.25"]]) {
-                    db.exec(`INSERT INTO ${kind} (id, api_id, name, image_cover, duration, total_seasons, total_episodes)
+                    db.run(`INSERT INTO ${kind} (id, api_id, name, image_cover, duration, total_seasons, total_episodes)
                         VALUES (${id}, ${id}, 'Rated show', 'show.jpg', 30, 1, 8)`);
-                    db.exec(`INSERT INTO ${kind}_episodes_per_season (media_id, season, episodes) VALUES (${id}, 1, 8)`);
-                    db.exec(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, total, redo, rating)
+                    db.run(`INSERT INTO ${kind}_episodes_per_season (media_id, season, episodes) VALUES (${id}, 1, 8)`);
+                    db.run(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, total, redo, rating)
                         VALUES (${id}, 1, ${id}, 'Completed', 1, 8, 8, '[0]', ${rating})`);
                 }
-                db.exec(`INSERT INTO user_media_settings (user_id, media_type, active) VALUES (1, '${kind}', 1)`);
+                db.run(`INSERT INTO user_media_settings (user_id, media_type, active) VALUES (1, '${kind}', 1)`);
             }
-            db.exec("PRAGMA foreign_keys=ON");
-            db.transaction(() => { for (const statement of migrations[seasonalIndex].sql) db.exec(statement); })();
+            db.run("PRAGMA foreign_keys=ON");
+            db.transaction(() => { for (const statement of migrations[seasonalIndex].sql) db.run(statement); })();
             for (const kind of ["series", "anime"]) {
                 expect(db.query(`SELECT season, redo, rating FROM ${kind}_list_seasons WHERE list_id = 1 ORDER BY season`).all()).toEqual([
                     { season: 1, redo: 1, rating: 8.5 }, { season: 3, redo: 2, rating: 8.5 },
@@ -51,8 +51,8 @@ describe("TV season-state migration", () => {
                 expect(db.query(`SELECT rating FROM ${kind}_list_seasons WHERE list_id = 4`).get()).toEqual({ rating: 8.25 });
                 expect(db.query(`SELECT entries_rated, sum_entries_rated, total_redo FROM user_media_settings WHERE media_type = '${kind}'`).get())
                     .toEqual({ entries_rated: 3, sum_entries_rated: 16.8, total_redo: 3 });
-                expect(() => db.exec(`UPDATE ${kind}_list_seasons SET redo = 101 WHERE list_id = 1`)).toThrow();
-                expect(() => db.exec(`UPDATE ${kind}_list_seasons SET rating = 11 WHERE list_id = 1`)).toThrow();
+                expect(() => db.run(`UPDATE ${kind}_list_seasons SET redo = 101 WHERE list_id = 1`)).toThrow();
+                expect(() => db.run(`UPDATE ${kind}_list_seasons SET rating = 11 WHERE list_id = 1`)).toThrow();
             }
             expect(db.query("PRAGMA foreign_key_check").all()).toEqual([]);
         }
@@ -78,10 +78,10 @@ describe.each(["series", "anime"])("%s unwatched season rating migration", kind 
         try {
             db.transaction(() => {
                 for (const migration of migrations.slice(0, seasonalIndex)) {
-                    for (const statement of migration.sql) db.exec(statement);
+                    for (const statement of migration.sql) db.run(statement);
                 }
             })();
-            db.exec(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES
+            db.run(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES
                 (1, 'migrating', 'migration@example.com', 1, '2025-01-01', '2025-01-01'),
                 (2, 'unwatched', 'unwatched@example.com', 1, '2025-01-01', '2025-01-01')`);
             for (const [index, scenario] of scenarios.entries()) {
@@ -94,19 +94,19 @@ describe.each(["series", "anime"])("%s unwatched season rating migration", kind 
                 db.query(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, total, redo, rating)
                     VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?)`).run(id, id, scenario.status, scenario.season, scenario.episode, total, JSON.stringify(scenario.redo), scenario.rating);
             }
-            db.exec(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, redo, rating)
+            db.run(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, redo, rating)
                 VALUES (100, 2, 1, 'Plan to Watch', 1, 0, '[0,0,0,0]', 9)`);
-            db.exec(`INSERT INTO user_media_settings (user_id, media_type, active) VALUES (1, '${kind}', 1), (2, '${kind}', 1), (1, 'movies', 1)`);
-            db.exec("PRAGMA foreign_keys=ON");
+            db.run(`INSERT INTO user_media_settings (user_id, media_type, active) VALUES (1, '${kind}', 1), (2, '${kind}', 1), (1, 'movies', 1)`);
+            db.run("PRAGMA foreign_keys=ON");
             db.transaction(() => {
                 for (const migration of migrations.slice(seasonalIndex, ratingCleanupIndex)) {
-                    for (const statement of migration.sql) db.exec(statement);
+                    for (const statement of migration.sql) db.run(statement);
                 }
             })();
             const listsBefore = db.query<Record<string, unknown>, []>(`SELECT * FROM ${kind}_list ORDER BY id`).all();
             const movieStatsBefore = db.query("SELECT * FROM user_media_settings WHERE media_type = 'movies'").get();
 
-            db.transaction(() => { for (const statement of migrations[ratingCleanupIndex].sql) db.exec(statement); })();
+            db.transaction(() => { for (const statement of migrations[ratingCleanupIndex].sql) db.run(statement); })();
 
             for (const [index, scenario] of scenarios.entries()) {
                 const id = index + 1;
@@ -137,23 +137,23 @@ describe.each(["series", "anime"])("%s unwatched season rating migration", kind 
         try {
             db.transaction(() => {
                 for (const migration of migrations.slice(0, ratingCleanupIndex)) {
-                    for (const statement of migration.sql) db.exec(statement);
+                    for (const statement of migration.sql) db.run(statement);
                 }
             })();
-            db.exec("PRAGMA foreign_keys=ON");
-            db.exec(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at)
+            db.run("PRAGMA foreign_keys=ON");
+            db.run(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at)
                 VALUES (1, 'migrating', 'migration@example.com', 1, '2025-01-01', '2025-01-01')`);
-            db.exec(`INSERT INTO ${kind} (id, api_id, name, image_cover, duration, total_seasons, total_episodes)
+            db.run(`INSERT INTO ${kind} (id, api_id, name, image_cover, duration, total_seasons, total_episodes)
                 VALUES (1, 1, 'Changed seasons', 'show.jpg', 30, 3, 36)`);
-            db.exec(`INSERT INTO ${kind}_episodes_per_season (media_id, season, episodes) VALUES (1, 1, 12), (1, 3, 12), (1, 5, 12)`);
-            db.exec(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, total, rating)
+            db.run(`INSERT INTO ${kind}_episodes_per_season (media_id, season, episodes) VALUES (1, 1, 12), (1, 3, 12), (1, 5, 12)`);
+            db.run(`INSERT INTO ${kind}_list (id, user_id, media_id, status, current_season, current_episode, total, rating)
                 VALUES (1, 1, 1, 'Dropped', 3, 2, 14, ${scenario.previous})`);
-            db.exec(`INSERT INTO ${kind}_list_seasons (list_id, season, redo, rating)
+            db.run(`INSERT INTO ${kind}_list_seasons (list_id, season, redo, rating)
                 VALUES (1, 1, 0, ${scenario.first}), (1, 3, 0, ${scenario.second}), (1, 5, 0, 10), (1, 7, 1, 10)`);
-            db.exec(`INSERT INTO user_media_settings (user_id, media_type, active, entries_rated, sum_entries_rated, average_rating)
+            db.run(`INSERT INTO user_media_settings (user_id, media_type, active, entries_rated, sum_entries_rated, average_rating)
                 VALUES (1, '${kind}', 1, 1, ${scenario.previous}, ${scenario.previous})`);
 
-            db.transaction(() => { for (const statement of migrations[ratingCleanupIndex].sql) db.exec(statement); })();
+            db.transaction(() => { for (const statement of migrations[ratingCleanupIndex].sql) db.run(statement); })();
 
             expect(db.query(`SELECT season, redo, rating FROM ${kind}_list_seasons ORDER BY season`).all()).toEqual([
                 { season: 1, redo: 0, rating: scenario.first }, { season: 3, redo: 0, rating: scenario.second },

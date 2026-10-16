@@ -110,27 +110,27 @@ describe("collection pins migration", () => {
         try {
             expect(migrationIndex).toBeGreaterThan(0);
             db.transaction(() => {
-                for (const migration of migrations.slice(0, migrationIndex)) for (const statement of migration.sql) db.exec(statement);
+                for (const migration of migrations.slice(0, migrationIndex)) for (const statement of migration.sql) db.run(statement);
             })();
-            db.exec("PRAGMA foreign_keys=ON");
-            db.exec("INSERT INTO user (id,name,email,email_verified,created_at,updated_at) VALUES (1,'owner','owner@example.invalid',1,'2026-01-01','2026-01-01')");
+            db.run("PRAGMA foreign_keys=ON");
+            db.run("INSERT INTO user (id,name,email,email_verified,created_at,updated_at) VALUES (1,'owner','owner@example.invalid',1,'2026-01-01','2026-01-01')");
             db.query("INSERT INTO smart_views (user_id,spec,profile_position) VALUES (1,?,2)").run(JSON.stringify(spec));
-            db.exec("INSERT INTO collections (id,owner_id,title,privacy) VALUES (1,1,'Existing collection','private')");
-            db.exec("INSERT INTO collection_items (collection_id,media_id,media_type,order_index,annotation) VALUES (1,5,'movies',1,'Existing annotation')");
-            db.exec("INSERT INTO collection_likes (user_id,collection_id) VALUES (1,1)");
+            db.run("INSERT INTO collections (id,owner_id,title,privacy) VALUES (1,1,'Existing collection','private')");
+            db.run("INSERT INTO collection_items (collection_id,media_id,media_type,order_index,annotation) VALUES (1,5,'movies',1,'Existing annotation')");
+            db.run("INSERT INTO collection_likes (user_id,collection_id) VALUES (1,1)");
             const collection = db.query<Record<string, unknown>, []>("SELECT * FROM collections").get();
             const dynamic = db.query("SELECT * FROM smart_views").get();
             const items = db.query("SELECT * FROM collection_items").all();
             const likes = db.query("SELECT * FROM collection_likes").all();
-            db.transaction(() => { for (const statement of migrations[migrationIndex].sql) db.exec(statement); })();
+            db.transaction(() => { for (const statement of migrations[migrationIndex].sql) db.run(statement); })();
             expect(db.prepare("SELECT * FROM collections").get()).toEqual({ ...collection, profile_position: null });
             expect(db.query("SELECT * FROM smart_views").get()).toEqual(dynamic);
             expect(db.query("SELECT * FROM collection_items").all()).toEqual(items);
             expect(db.query("SELECT * FROM collection_likes").all()).toEqual(likes);
             expect(db.query("PRAGMA foreign_key_check").all()).toEqual([]);
-            expect(() => db.exec("UPDATE collections SET profile_position=0")).toThrow();
-            db.exec("UPDATE collections SET profile_position=1");
-            expect(() => db.exec("INSERT INTO collections(owner_id,title,profile_position) VALUES (1,'Duplicate',1)")).toThrow();
+            expect(() => db.run("UPDATE collections SET profile_position=0")).toThrow();
+            db.run("UPDATE collections SET profile_position=1");
+            expect(() => db.run("INSERT INTO collections(owner_id,title,profile_position) VALUES (1,'Duplicate',1)")).toThrow();
         }
         finally { db.close(); }
     });

@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_admin/admin/error-logs")({
         logFilesQueryOptions: adminLogFilesOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.logFilesQueryOptions);
+        return context.queryClient.query({ ...context.logFilesQueryOptions, staleTime: "static" });
     },
     component: AdminRuntimeLogsPage,
 });

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header")
     context: ({ params: { username } }) => ({
         profileHeaderQueryOptions: profileHeaderOptions(username),
     }),
-    loader: ({ context }) => context.queryClient.fetchQuery(context.profileHeaderQueryOptions),
+    loader: ({ context }) => context.queryClient.query(context.profileHeaderQueryOptions),
     component: ProfileTop,
 });
 

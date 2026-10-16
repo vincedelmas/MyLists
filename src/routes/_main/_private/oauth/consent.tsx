@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_main/_private/oauth/consent")({
     }),
     loader: async ({ context }) => ({
         oauthQuery: context.oauthQuery,
-        request: await context.queryClient.fetchQuery(mcpConsentRequestOptions(context.oauthQuery)),
+        request: await context.queryClient.query(mcpConsentRequestOptions(context.oauthQuery)),
     }),
     component: McpConsentPage,
 });

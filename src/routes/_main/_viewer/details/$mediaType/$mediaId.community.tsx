@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
         communityActivityQueryOptions: mediaCommunityActivityOptions(mediaId, mediaType, { page: search.page ?? 1, perPage: 24 }),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.communityActivityQueryOptions);
+        return context.queryClient.query({ ...context.communityActivityQueryOptions, staleTime: "static" });
     },
     component: MediaCommunityActivityPage,
 });

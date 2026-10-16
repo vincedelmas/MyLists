@@ -33,7 +33,7 @@ const mediaRowValidatorMap = {
     [MediaType.GAMES]: gamesMyListsCSVRowSchema,
     [MediaType.BOOKS]: booksMyListsCSVRowSchema,
     [MediaType.MANGA]: mangaMyListsCSVRowSchema,
-} satisfies Record<MediaType, z.ZodTypeAny>;
+} satisfies Record<MediaType, z.ZodType>;
 
 
 const parseApiProvider = (value: string | undefined) => {

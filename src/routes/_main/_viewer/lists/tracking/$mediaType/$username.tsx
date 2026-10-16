@@ -34,8 +34,8 @@ export const Route = createFileRoute("/_main/_viewer/lists/tracking/$mediaType/$
         userListHeaderQueryOptions: userListHeaderOption(mediaType, username),
     }),
     loader: async ({ context }) => {
-        await context.queryClient.ensureQueryData(context.userListHeaderQueryOptions);
-        return context.queryClient.ensureQueryData(context.mediaListQueryOptions);
+        await context.queryClient.query({ ...context.userListHeaderQueryOptions, staleTime: "static" });
+        return context.queryClient.query({ ...context.mediaListQueryOptions, staleTime: "static" });
     },
     component: TrackingListPage,
 });

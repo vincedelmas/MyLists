@@ -133,7 +133,7 @@ describe("progress corrections", () => {
     it("rolls back the correction along with progress when history writing fails", () => {
         progress(120);
         const before = snapshot();
-        sqlite.exec("CREATE TRIGGER fail_history BEFORE INSERT ON user_media_update BEGIN SELECT RAISE(ABORT, 'history failure'); END");
+        sqlite.run("CREATE TRIGGER fail_history BEFORE INSERT ON user_media_update BEGIN SELECT RAISE(ABORT, 'history failure'); END");
         expect(() => progress(100)).toThrow("history failure");
         expect(snapshot()).toEqual(before);
     });

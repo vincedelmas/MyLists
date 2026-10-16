@@ -143,7 +143,7 @@ it("clamps time until maintenance without changing other users or media types", 
         tracking.addMediaToList({ ...action, status: Status.COMPLETED });
         await service.updateMediaEditableFields(1, { duration: 120 });
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_stats BEFORE INSERT ON ${getTableName(schema.userMediaStatsHistory)}
+        sqlite.run(`CREATE TRIGGER fail_stats BEFORE INSERT ON ${getTableName(schema.userMediaStatsHistory)}
             BEGIN SELECT RAISE(ABORT, 'statistics failure'); END`);
 
         expect(() => tracking.removeMediaFromList(action)).toThrow();

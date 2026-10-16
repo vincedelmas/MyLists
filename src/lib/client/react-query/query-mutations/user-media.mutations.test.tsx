@@ -147,7 +147,7 @@ describe("list filter freshness", () => {
 
             expect(fetchTags).toHaveBeenCalledTimes(1);
             expect(queryClient.getQueryData(tagsKey)).toEqual([]);
-            expect(await queryClient.fetchQuery(namesOptions)).toEqual([]);
+            expect(await queryClient.query(namesOptions)).toEqual([]);
             expect(server.tagNames).toHaveBeenCalledTimes(1);
             expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);
             expect(queryClient.getQueryState(otherMediaKey)?.isInvalidated).toBe(false);
@@ -177,7 +177,7 @@ describe("list filter freshness", () => {
 
         expect(queryClient.getQueryState(namesKey)?.isInvalidated).toBe(true);
         server.tagNames.mockResolvedValueOnce(tags);
-        expect(await queryClient.fetchQuery(tagNamesOptions(MediaType.MOVIES, true))).toEqual(tags);
+        expect(await queryClient.query(tagNamesOptions(MediaType.MOVIES, true))).toEqual(tags);
         expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
         expect(queryClient.getQueryState(detailsKey)?.isInvalidated).toBe(true);
         expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);

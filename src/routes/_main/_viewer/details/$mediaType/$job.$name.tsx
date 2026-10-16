@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$na
         jobDetailsQueryOptions: jobDetailsOptions(mediaType, job, name, filters),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.jobDetailsQueryOptions);
+        return context.queryClient.query({ ...context.jobDetailsQueryOptions, staleTime: "static" });
     },
     component: JobInfoPage,
 });

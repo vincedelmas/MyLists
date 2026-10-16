@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/h
         allUpdatesQueryOptions: allUpdatesOptions(username, search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.allUpdatesQueryOptions);
+        return context.queryClient.query({ ...context.allUpdatesQueryOptions, staleTime: "static" });
     },
     component: AllUpdates,
 });

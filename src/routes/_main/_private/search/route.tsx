@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_main/_private/search")({
     loader: ({ context, deps: { search } }) => {
         const { query = "", apiProvider = ApiProviderType.TMDB, advancedFilters } = search;
         if (!hasSearchCriteria(query, apiProvider, advancedFilters)) return;
-        return context.queryClient.ensureQueryData(context.searchQueryOptions);
+        return context.queryClient.query({ ...context.searchQueryOptions, staleTime: "static" });
     },
     component: SearchPage,
 });

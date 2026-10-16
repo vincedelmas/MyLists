@@ -457,7 +457,7 @@ it("matches all requested tags and excludes any owner tag while ignoring other u
             mediaFilters: { movies: { tagRules: [{ tags: [id] }] } },
         } };
         const saved = dynamicListsRepository.create(1, savedSpec);
-        sqlite.exec("CREATE TRIGGER fail_tag_rule_cleanup BEFORE UPDATE ON smart_views BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END");
+        sqlite.run("CREATE TRIGGER fail_tag_rule_cleanup BEFORE UPDATE ON smart_views BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END");
 
         expect(() => tags.editUserTag(1, { name: "Keep" }, TagAction.DELETE_ALL)).toThrow("cleanup failed");
         expect(() => createMediaQueries(definition).removeMediaFromUserList(1, 1)).toThrow("cleanup failed");

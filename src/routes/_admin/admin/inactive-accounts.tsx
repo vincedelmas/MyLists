@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_admin/admin/inactive-accounts")({
         inactiveAccountsQueryOptions: inactiveAccountDeletionsAdminOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.inactiveAccountsQueryOptions);
+        return context.queryClient.query({ ...context.inactiveAccountsQueryOptions, staleTime: "static" });
     },
     component: InactiveAccountsPage,
 });

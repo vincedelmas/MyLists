@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/email-pas
         accountSecurityOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.accountSecurityOptions);
+        return context.queryClient.query({ ...context.accountSecurityOptions, staleTime: "static" });
     },
     component: EmailAndPasswordPage,
 });

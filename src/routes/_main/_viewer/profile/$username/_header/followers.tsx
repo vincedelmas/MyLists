@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/f
         followersQueryOptions: followersOptions(username),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.followersQueryOptions);
+        return context.queryClient.query({ ...context.followersQueryOptions, staleTime: "static" });
     },
     component: ProfileFollowers,
 });

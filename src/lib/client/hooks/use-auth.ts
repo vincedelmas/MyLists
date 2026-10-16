@@ -23,7 +23,7 @@ export const useAuth = () => {
     };
 
     const completeSignIn = async (redirectTo: string) => {
-        const signedInUser = await queryClient.fetchQuery({ ...authQueryOptions, staleTime: 0 });
+        const signedInUser = await queryClient.query({ ...authQueryOptions, staleTime: 0 });
         if (!signedInUser) throw new Error("The session could not be loaded after sign-in.");
 
         await clearApplicationData();

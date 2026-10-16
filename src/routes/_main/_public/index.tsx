@@ -14,7 +14,7 @@ import {ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDollarSign, Code, Do
 
 export const Route = createFileRoute("/_main/_public/")({
     context: () => ({ randomProfileQueryOptions: randomPublicProfile }),
-    loader: ({ context }) => context.queryClient.ensureQueryData(context.randomProfileQueryOptions),
+    loader: ({ context }) => context.queryClient.query({ ...context.randomProfileQueryOptions, staleTime: "static" }),
     component: HomePage,
     head: () => ({
         links: addSeoLinks({ canonical: "/" }),

@@ -135,7 +135,7 @@ describe("TvRepository season refresh", () => {
         const beforeMedia = db.select().from(series).all();
         const beforeList = db.select().from(seriesList).all();
         const beforeSeasons = db.select().from(seriesEpisodesPerSeason).all();
-        sqlite.exec(`CREATE TRIGGER fail_seasons BEFORE INSERT ON ${getTableName(seriesEpisodesPerSeason)}
+        sqlite.run(`CREATE TRIGGER fail_seasons BEFORE INSERT ON ${getTableName(seriesEpisodesPerSeason)}
             BEGIN SELECT RAISE(ABORT, 'season failure'); END`);
 
         const ingestion = createMediaIngestionService({

@@ -113,7 +113,7 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
 
     it("rolls back season writes and aggregates when statistics fail", () => {
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_stats BEFORE INSERT ON user_media_stats_history BEGIN SELECT RAISE(ABORT, 'stats failed'); END`);
+        sqlite.run(`CREATE TRIGGER fail_stats BEFORE INSERT ON user_media_stats_history BEGIN SELECT RAISE(ABORT, 'stats failed'); END`);
         expect(() => update({ type: UpdateType.RATING, rating: 9 })).toThrow();
         expect(snapshot()).toEqual(before);
         expect(() => update({ type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 1 }] })).toThrow();
@@ -151,7 +151,7 @@ it("validates every targeted season and scopes edits to the owner", () => {
 
     it("rolls back the parent import when seasonal insertion fails", async () => {
         tracking.removeMediaFromList(action);
-        sqlite.exec(`CREATE TRIGGER fail_season BEFORE INSERT ON ${getTableName(seasonStateTable)} BEGIN SELECT RAISE(ABORT, 'season failed'); END`);
+        sqlite.run(`CREATE TRIGGER fail_season BEFORE INSERT ON ${getTableName(seasonStateTable)} BEGIN SELECT RAISE(ABORT, 'season failed'); END`);
         await expect(service.bulkInsertUserMedia([{ userId: 1, mediaId: 1, status: Status.COMPLETED, currentSeason: 3, currentEpisode: 8,
             seasons: [1, 2, 3].map(season => ({ season, rating: 8, redo: 0 })),
         }])).rejects.toThrow();

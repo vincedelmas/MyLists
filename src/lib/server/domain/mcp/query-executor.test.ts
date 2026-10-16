@@ -7,7 +7,7 @@ import {executeSnapshotQuery} from "./query-executor";
 
 const createSnapshot = (count = 3, title = "Movie") => {
     using db = new Database(":memory:");
-    db.exec("CREATE TABLE entries(media_id INTEGER PRIMARY KEY, title TEXT, rating REAL)");
+    db.run("CREATE TABLE entries(media_id INTEGER PRIMARY KEY, title TEXT, rating REAL)");
     const insert = db.prepare("INSERT INTO entries VALUES (?, ?, ?)");
     db.transaction(() => {
         for (let id = 1; id <= count; id++) insert.run(id, title, id % 10);

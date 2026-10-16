@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_main/_viewer/collections/discover")({
         communityCollectionsQueryOptions: communityCollectionsOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.communityCollectionsQueryOptions);
+        return context.queryClient.query({ ...context.communityCollectionsQueryOptions, staleTime: "static" });
     },
     component: CollectionsDiscoverPage,
 });

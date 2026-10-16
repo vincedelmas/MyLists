@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$m
         editMediaDetailsQueryOptions: editMediaDetailsOptions(mediaType, mediaId),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.editMediaDetailsQueryOptions);
+        return context.queryClient.query({ ...context.editMediaDetailsQueryOptions, staleTime: "static" });
     },
     component: MediaEditPage,
 });

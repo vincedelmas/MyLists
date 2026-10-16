@@ -13,8 +13,8 @@ export const Route = createFileRoute("/_main/_viewer/activity/$username/_header/
     }),
     loader: async ({ context }) => {
         await Promise.all([
-            context.queryClient.ensureQueryData(context.activityQueryOptions),
-            context.queryClient.ensureQueryData(context.activityStatsQueryOptions),
+            context.queryClient.query({ ...context.activityQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.activityStatsQueryOptions, staleTime: "static" }),
         ]);
     },
     component: MonthlyActivityPage,

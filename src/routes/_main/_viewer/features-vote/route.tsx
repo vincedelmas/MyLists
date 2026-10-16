@@ -31,7 +31,7 @@ import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/l
 export const Route = createFileRoute("/_main/_viewer/features-vote")({
     validateSearch: featureVotesSearchSchema,
     context: () => ({ featureVotesQueryOptions: featureVotesOptions }),
-    loader: ({ context }) => context.queryClient.ensureQueryData(context.featureVotesQueryOptions),
+    loader: ({ context }) => context.queryClient.query({ ...context.featureVotesQueryOptions, staleTime: "static" }),
     component: FeatureVotesPage,
 });
 

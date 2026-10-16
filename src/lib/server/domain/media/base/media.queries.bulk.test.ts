@@ -89,7 +89,7 @@ describe("Shared media persistence and list queries", () => {
             id: 1000 + index, apiId: 10000 + index, name: `Batch movie ${index}`, imageCover: "movie.jpg", duration: 120,
         }));
         db.insert(movies).values(media).run();
-        sqlite.exec(`CREATE TRIGGER fail_later_batch BEFORE INSERT ON movies_list
+        sqlite.run(`CREATE TRIGGER fail_later_batch BEFORE INSERT ON movies_list
             WHEN NEW.media_id = 1200 BEGIN SELECT RAISE(ABORT, 'later batch failed'); END`);
 
         await expect(repository.bulkInsertUserMedia(media.map(({ id }) => ({

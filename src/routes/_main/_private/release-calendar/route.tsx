@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_main/_private/release-calendar")({
     loader: ({ context: { queryClient }, deps: { date, view } }) => {
         const currentUser = queryClient.getQueryData(authOptions.queryKey)!;
         const { startDate, endDate } = getReleaseCalendarPeriod(date, view);
-        return queryClient.ensureQueryData(releaseCalendarOptions(currentUser.name, { startDate, endDate }));
+        return queryClient.query({ ...releaseCalendarOptions(currentUser.name, { startDate, endDate }), staleTime: "static" });
     },
     component: ReleaseCalendarPage,
 });

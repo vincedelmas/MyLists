@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_main/_viewer/platform-stats")({
         platformStatsQueryOptions: platformStatsOptions(search.activeTab),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.platformStatsQueryOptions);
+        return context.queryClient.query({ ...context.platformStatsQueryOptions, staleTime: "static" });
     },
     component: PlatformStatsPage,
 });

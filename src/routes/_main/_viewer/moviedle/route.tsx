@@ -30,8 +30,8 @@ export const Route = createFileRoute("/_main/_viewer/moviedle")({
         mediadleLeaderboardQueryOptions: mediadleLeaderboardOptions,
     }),
     loader: ({ context }) => Promise.all([
-        context.queryClient.ensureQueryData(context.dailyMediadleQueryOptions),
-        context.queryClient.ensureQueryData(context.mediadleLeaderboardQueryOptions),
+        context.queryClient.query({ ...context.dailyMediadleQueryOptions, staleTime: "static" }),
+        context.queryClient.query({ ...context.mediadleLeaderboardQueryOptions, staleTime: "static" }),
     ]),
     component: MediadlePage,
 });

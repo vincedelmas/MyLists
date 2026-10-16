@@ -21,7 +21,7 @@ import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTit
 export const Route = createFileRoute("/_main/_viewer/lists/continue/$username")({
     validateSearch: mediaTabSearchSchema,
     loader: ({ params: { username }, context: { queryClient } }) => {
-        return queryClient.ensureQueryData(continueOptions(username));
+        return queryClient.query({ ...continueOptions(username), staleTime: "static" });
     },
     component: ContinuePage,
 });

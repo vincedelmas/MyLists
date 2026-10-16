@@ -130,11 +130,13 @@ export const BrowseAppliedFilters = (props: BrowseAppliedFiltersProps) => {
     }
 
     if (filters.mediaType) {
-        const label = filters.mediaType === "series" ? "TV series" : capitalize(filters.mediaType);
-
         groups.push({
-            key: "mediaType", label: "Type", items: [{
-                key: "mediaType", label, removeLabel: `Remove ${filters.mediaType === "series" ? "TV series" : filters.mediaType}`,
+            label: "Type",
+            key: "mediaType",
+            items: [{
+                key: "mediaType",
+                label: capitalize(filters.mediaType),
+                removeLabel: `Remove ${filters.mediaType}`,
                 onRemove: () => onRemove("mediaType"),
             }],
         });

@@ -27,7 +27,7 @@ describe("withTransaction with Bun SQLite", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        sqlite.exec("CREATE TABLE entries (id INTEGER PRIMARY KEY)");
+        sqlite.run("CREATE TABLE entries (id INTEGER PRIMARY KEY)");
         dbContext.db = drizzle(sqlite);
     });
 
@@ -96,20 +96,20 @@ describe("withTransaction with Bun SQLite", () => {
         const filename = join(directory, "database.sqlite");
         sqlite.close();
         sqlite = new Database(filename);
-        sqlite.exec("PRAGMA journal_mode = WAL; CREATE TABLE entries (id INTEGER PRIMARY KEY)");
+        sqlite.run("PRAGMA journal_mode = WAL; CREATE TABLE entries (id INTEGER PRIMARY KEY)");
         dbContext.db = drizzle(sqlite);
         const other = new Database(filename);
-        other.exec("PRAGMA busy_timeout = 0");
+        other.run("PRAGMA busy_timeout = 0");
 
         try {
             withTransaction(() => {
                 // Even before our first read, another connection cannot take the writer slot.
-                expect(() => other.exec("BEGIN IMMEDIATE")).toThrow("database is locked");
+                expect(() => other.run("BEGIN IMMEDIATE")).toThrow("database is locked");
                 getDbClient().insert(entries).values({ id: 1 }).run();
                 expect(other.query("SELECT * FROM entries").all()).toEqual([]);
             });
 
-            other.exec("INSERT INTO entries VALUES (2)");
+            other.run("INSERT INTO entries VALUES (2)");
             expect(other.query("SELECT * FROM entries ORDER BY id").all()).toEqual([{ id: 1 }, { id: 2 }]);
         }
         finally {

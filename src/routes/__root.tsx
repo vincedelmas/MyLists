@@ -27,8 +27,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     }),
     beforeLoad: async ({ context }) => {
         await Promise.all([
-            context.queryClient.ensureQueryData(context.authQueryOptions),
-            context.queryClient.ensureQueryData(context.authMethodsQueryOptions),
+            context.queryClient.query({ ...context.authQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.authMethodsQueryOptions, staleTime: "static" }),
         ]);
     },
     head: () => ({

@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_main/_viewer/trends")({
         trendsQueryOptions: trendsOptions,
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.trendsQueryOptions);
+        return context.queryClient.query({ ...context.trendsQueryOptions, staleTime: "static" });
     },
     component: TrendsPage,
 });

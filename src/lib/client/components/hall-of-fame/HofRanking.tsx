@@ -1,13 +1,13 @@
 import {cn} from "@/lib/utils/classnames";
+import {Ban, TrendingUp} from "lucide-react";
 import {getThemeColor} from "@/lib/client/theme";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {HofUserRank} from "@/lib/types/query.options.types";
 import {formatPercent} from "@/lib/utils/formatting/number";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {Ban, ChartNoAxesColumnIncreasing, TrendingUp} from "lucide-react";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 interface HofRankingProps {

@@ -52,7 +52,7 @@ describe("Continue quick updates", () => {
         queryClient.setQueryData(feedKey, ["old feed"]);
         const observer = new QueryObserver(queryClient, { queryKey: feedKey, queryFn: () => slowFeed.promise });
         const unsubscribe = observer.subscribe(() => {});
-        const staleFetch = queryClient.fetchQuery({ queryKey, queryFn: () => staleContinue.promise, staleTime: 0 }).catch(() => {});
+        const staleFetch = queryClient.query({ queryKey, queryFn: () => staleContinue.promise, staleTime: 0 }).catch(() => {});
         const mutation = useContinueMediaMutation(item);
 
         for (const currentChapter of [8, 9]) {

@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_main/_viewer/achievements/$username/_hea
         achievementQueryOptions: achievementOptions(username),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.achievementQueryOptions);
+        return context.queryClient.query({ ...context.achievementQueryOptions, staleTime: "static" });
     },
     component: AchievementPage,
 });

@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
             : undefined,
     }),
     loader: async ({ context, params: { username }, deps: { search } }) => {
-        const releases = await context.queryClient.ensureQueryData(context.yearRecapReleasesQueryOptions);
+        const releases = await context.queryClient.query({ ...context.yearRecapReleasesQueryOptions, staleTime: "static" });
 
         if (search.recap) {
             if (!releases.some(({ year, isAvailable }) => year === search.recap && isAvailable)) {
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
                 });
             }
 
-            const recap = await context.queryClient.ensureQueryData(context.yearRecapQueryOptions!);
+            const recap = await context.queryClient.query({ ...context.yearRecapQueryOptions!, staleTime: "static" });
 
             if (search.activeTab !== "overview" && !recap.availableMediaTypes.includes(search.activeTab)) {
                 throw redirect({
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
         }
 
         try {
-            await context.queryClient.ensureQueryData(context.userStatsQueryOptions!);
+            await context.queryClient.query({ ...context.userStatsQueryOptions!, staleTime: "static" });
         }
         catch (error) {
             if (search.activeTab !== "overview" && error instanceof InactiveMediaTypeError) {

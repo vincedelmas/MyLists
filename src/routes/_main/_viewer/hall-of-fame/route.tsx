@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_main/_viewer/hall-of-fame")({
         hallOfFameQueryOptions: hallOfFameOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.hallOfFameQueryOptions);
+        return context.queryClient.query({ ...context.hallOfFameQueryOptions, staleTime: "static" });
     },
     component: HallOfFamePage,
 });
@@ -50,12 +50,6 @@ function HallOfFamePage() {
     const apiData = useSuspenseQuery(hallOfFameQueryOptions).data;
     const { page = 1, sorting = "normalized", search = "" } = filters;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<HallOfFameSearch>({ search, options: { resetScroll: false } });
-
-    const rankingDescription = sorting === "normalized"
-        ? "Overall ranking balances progress across every active media type."
-        : sorting === "profile"
-            ? "Profile level follows total tracked time across every list."
-            : `${capitalize(sorting)} ranking follows tracked time in that type.`;
 
     return (
         <PageTitle title="Hall of Fame" onlyHelmet>

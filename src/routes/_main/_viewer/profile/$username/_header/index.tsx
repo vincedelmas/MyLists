@@ -29,11 +29,11 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/"
     }),
     loader: async ({ context }) => {
         await Promise.all([
-            context.queryClient.fetchQuery(context.profileQueryOptions),
-            context.queryClient.fetchQuery(context.summaryQueryOptions),
-            context.queryClient.fetchQuery(context.continueQueryOptions),
-            context.queryClient.fetchQuery(context.recentFeedQueryOptions),
-            context.queryClient.fetchQuery(context.pinsQueryOptions),
+            context.queryClient.query({ ...context.profileQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.summaryQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.continueQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.recentFeedQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.pinsQueryOptions, staleTime: "static" }),
         ]);
     },
     component: ProfileMain,

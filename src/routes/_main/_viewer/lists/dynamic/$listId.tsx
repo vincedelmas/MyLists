@@ -23,10 +23,10 @@ import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {DynamicListActions} from "@/lib/client/components/dynamic-lists/DynamicListActions";
 import {MediaBrowseFiltersSheet} from "@/lib/client/components/media/browse/MediaBrowseFiltersSheet";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
+import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {createMediaBrowseStatusOptions} from "@/lib/client/components/media/browse/media-browse.config";
 import {dynamicListSearchSchema, type DynamicListRuntimeFilters} from "@/lib/schemas/dynamic-lists.schema";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
-import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {removeMediaBrowseFilter, type MediaBrowseFilterKey, type MediaBrowseFilterScope} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_main/_viewer/lists/dynamic/$listId")({
     validateSearch: dynamicListSearchSchema,
     loaderDeps: ({ search: { page, view: _display, ...filters } }) => ({ page, filters }),
     loader: ({ params: { listId }, deps: { page, filters }, context: { queryClient } }) => {
-        return queryClient.fetchQuery(dynamicListOptions(listId, page, filters));
+        return queryClient.query({ ...dynamicListOptions(listId, page, filters), staleTime: "static" });
     },
     component: DynamicListPage,
 });

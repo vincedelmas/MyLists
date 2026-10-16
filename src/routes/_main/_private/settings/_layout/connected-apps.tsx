@@ -16,7 +16,7 @@ const endpoint = new URL("/api/mcp", clientEnv.VITE_BASE_URL).href;
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/connected-apps")({
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(connectedAppsOptions);
+        return context.queryClient.query({ ...connectedAppsOptions, staleTime: "static" });
     },
     component: ConnectedAppsPage,
 });

@@ -44,7 +44,7 @@ export function AuthSessionSync() {
             if (event.key !== AUTH_SYNC_STORAGE_KEY || !event.newValue) return;
             if (event.newValue === JSON.stringify({ userId: currentUserId })) return;
 
-            await queryClient.fetchQuery({ ...authOptions, staleTime: 0 });
+            await queryClient.query({ ...authOptions, staleTime: 0 });
             await queryClient.cancelQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
 
             queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });

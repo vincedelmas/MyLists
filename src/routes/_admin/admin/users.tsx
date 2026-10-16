@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_admin/admin/users")({
         usersQueryOptions: userAdminOptions(search),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.usersQueryOptions);
+        return context.queryClient.query({ ...context.usersQueryOptions, staleTime: "static" });
     },
     component: UserManagementPage,
 })

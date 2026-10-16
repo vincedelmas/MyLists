@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_main/_viewer/lists/collections/$collecti
         collectionDetailsQueryOptions: collectionDetailsReadOptions(collectionId, filters),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.collectionDetailsQueryOptions);
+        return context.queryClient.query({ ...context.collectionDetailsQueryOptions, staleTime: "static" });
     },
     component: CollectionViewer,
 });

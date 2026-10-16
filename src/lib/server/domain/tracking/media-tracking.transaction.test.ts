@@ -143,7 +143,7 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
             tracking.addMediaToList({ ...action, status: Status.WATCHING });
             tracking.updateUserMedia({ ...action, payload: { type: UpdateType.TV, currentEpisode: 7 } });
             const before = snapshot();
-            sqlite.exec(`CREATE TRIGGER fail_completion BEFORE INSERT ON ${getTableName(schema.userMediaUpdate)}
+            sqlite.run(`CREATE TRIGGER fail_completion BEFORE INSERT ON ${getTableName(schema.userMediaUpdate)}
                 WHEN NEW.update_type = 'status'
                 BEGIN SELECT RAISE(ABORT, 'completion failure'); END`);
 
@@ -174,7 +174,7 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
 
     it("rolls back every earlier write when the final history insert fails", () => {
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_history BEFORE INSERT ON ${getTableName(schema.userMediaUpdate)}
+        sqlite.run(`CREATE TRIGGER fail_history BEFORE INSERT ON ${getTableName(schema.userMediaUpdate)}
             BEGIN SELECT RAISE(ABORT, 'history failure'); END`);
 
         expect(() => tracking.addMediaToList({ ...action, status: Status.COMPLETED })).toThrow();
@@ -184,7 +184,7 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
     it("restores an existing list entry and all derived records after an update fails", () => {
         tracking.addMediaToList({ ...action, status: Status.PLAN_TO_WATCH });
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_history BEFORE INSERT ON ${getTableName(schema.userMediaUpdate)}
+        sqlite.run(`CREATE TRIGGER fail_history BEFORE INSERT ON ${getTableName(schema.userMediaUpdate)}
             BEGIN SELECT RAISE(ABORT, 'history failure'); END`);
 
         expect(() => tracking.updateUserMedia({ ...action, payload: { type: UpdateType.STATUS, status: Status.COMPLETED } })).toThrow();
@@ -194,7 +194,7 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
     it("restores the list and statistics when removing activity fails", () => {
         tracking.addMediaToList({ ...action, status: Status.COMPLETED });
         const before = snapshot();
-        sqlite.exec(`CREATE TRIGGER fail_activity BEFORE DELETE ON ${getTableName(schema.userMediaMonthlyActivity)}
+        sqlite.run(`CREATE TRIGGER fail_activity BEFORE DELETE ON ${getTableName(schema.userMediaMonthlyActivity)}
             BEGIN SELECT RAISE(ABORT, 'activity failure'); END`);
 
         expect(() => tracking.removeMediaFromList(action)).toThrow();

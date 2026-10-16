@@ -31,8 +31,8 @@ export const Route = createFileRoute("/_admin/admin/collections-overview")({
     }),
     loader: async ({ context }) => {
         await Promise.all([
-            context.queryClient.ensureQueryData(context.collectionsOverviewQueryOptions),
-            context.queryClient.ensureQueryData(context.collectionsQueryOptions),
+            context.queryClient.query({ ...context.collectionsOverviewQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.collectionsQueryOptions, staleTime: "static" }),
         ]);
     },
     component: AdminCollectionsOverviewPage,

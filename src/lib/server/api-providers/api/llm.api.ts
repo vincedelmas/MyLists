@@ -23,7 +23,7 @@ export const createLlmApi = async () => {
     const http = await createApiHttpClient(config);
 
     return {
-        async llmBookGenresCall(content: string, schema: z.Schema): Promise<LLMResponse> {
+        async llmBookGenresCall(content: string, schema: z.ZodType): Promise<LLMResponse> {
             if (!serverEnv.LLM_API_KEY) {
                 throw new FormattedError("Book genre enrichment is unavailable because the LLM integration is not configured.");
             }

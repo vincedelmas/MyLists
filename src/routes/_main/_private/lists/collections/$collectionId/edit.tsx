@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_main/_private/lists/collections/$collect
         collectionDetailsQueryOptions: collectionDetailsEditOptions(collectionId),
     }),
     loader: ({ context }) => {
-        return context.queryClient.fetchQuery({ ...context.collectionDetailsQueryOptions, staleTime: 0 });
+        return context.queryClient.query({ ...context.collectionDetailsQueryOptions, staleTime: 0 });
     },
     component: CollectionEditPage,
 });

@@ -31,8 +31,8 @@ export const Route = createFileRoute("/_main/_viewer/lists/$username")({
     }),
     loader: async ({ context }) => {
         await Promise.all([
-            context.queryClient.ensureQueryData(context.viewsQueryOptions),
-            context.queryClient.ensureQueryData(context.collectionsQueryOptions),
+            context.queryClient.query({ ...context.viewsQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.collectionsQueryOptions, staleTime: "static" }),
         ]);
     },
     component: ListsPage,

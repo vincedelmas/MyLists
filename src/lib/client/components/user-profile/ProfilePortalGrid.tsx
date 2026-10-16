@@ -1,5 +1,7 @@
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
-import {Activity, ArrowUpRight, ChartNoAxesColumn, LibraryBig} from "lucide-react";
+import {Activity, ChartNoAxesColumn, LibraryBig} from "lucide-react";
+import {NavigationArrow, navigationCardClassName} from "@/lib/client/components/general/NavigationArrow";
 
 
 interface ProfilePortalGridProps {
@@ -7,28 +9,16 @@ interface ProfilePortalGridProps {
 }
 
 
-const portalClassName = `group rounded-xl border border-border/70 outline-none transition-all duration-200
-hover:-translate-y-0.5 hover:border-brand/30 hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/50`;
+const portalClassName = cn(navigationCardClassName, "rounded-xl border border-border/70 outline-none focus-visible:ring-3 focus-visible:ring-ring/50");
 
 
-const Arrow = () => (
-    <ArrowUpRight
-        aria-hidden="true"
-        className="size-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200
-        group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground
-        group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 group-focus-visible:text-foreground"
-    />
-);
-
-
-// Selected profile navigation. Other preserved alternatives remain available alongside this component.
 export const ProfilePortalGrid = ({ username }: ProfilePortalGridProps) => {
     return (
         <nav aria-label={`Explore ${username}'s profile`} className="grid grid-cols-2 gap-2">
             <Link
                 to="/lists/$username"
                 params={{ username }}
-                className={`${portalClassName} col-span-2 flex items-center gap-3 p-3`}
+                className={cn(portalClassName, "col-span-2 flex items-center gap-3 p-3")}
             >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
                     <LibraryBig aria-hidden="true" className="size-4"/>
@@ -41,18 +31,18 @@ export const ProfilePortalGrid = ({ username }: ProfilePortalGridProps) => {
                         Lists, dynamic lists and collections
                     </span>
                 </span>
-                <Arrow/>
+                <NavigationArrow/>
             </Link>
 
             <Link
                 params={{ username }}
                 to="/activity/$username"
                 search={{ year: undefined, month: undefined }}
-                className={`${portalClassName} flex min-h-22 flex-col justify-between p-3`}
+                className={cn(portalClassName, "flex min-h-22 flex-col justify-between p-3")}
             >
                 <span className="flex items-center justify-between">
                     <Activity aria-hidden="true" className="size-4 text-brand"/>
-                    <Arrow/>
+                    <NavigationArrow/>
                 </span>
                 <span>
                     <span className="block text-sm font-semibold">
@@ -67,11 +57,11 @@ export const ProfilePortalGrid = ({ username }: ProfilePortalGridProps) => {
             <Link
                 to="/stats/$username"
                 params={{ username }}
-                className={`${portalClassName} flex min-h-22 flex-col justify-between p-3`}
+                className={cn(portalClassName, "flex min-h-22 flex-col justify-between p-3")}
             >
                 <span className="flex items-center justify-between">
                     <ChartNoAxesColumn aria-hidden="true" className="size-4 text-brand"/>
-                    <Arrow/>
+                    <NavigationArrow/>
                 </span>
                 <span>
                     <span className="block text-sm font-semibold">

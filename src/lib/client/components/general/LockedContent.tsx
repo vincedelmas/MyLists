@@ -37,7 +37,7 @@ export const LockedContent = ({ isAnonymous, title, description, showAuthButtons
                         <Link
                             to="/login"
                             search={{ redirect: location.href }}
-                            className={cn(buttonVariants({ variant: "outline" }))}
+                            className={buttonVariants({ variant: "outline" })}
                         >
                             Login
                         </Link>

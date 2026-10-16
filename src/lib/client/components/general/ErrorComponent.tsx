@@ -1,6 +1,5 @@
 import React from "react";
 import {clientEnv} from "@/env/client";
-import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {Home, RefreshCw, TriangleAlert} from "lucide-react";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
@@ -63,7 +62,7 @@ export const ErrorComponent = ({ title, icon, text, footerText }: ErrorComponent
                             <RefreshCw data-icon="inline-start"/>
                             Try again
                         </Button>
-                        <Link to="/" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
+                        <Link to="/" className={buttonVariants({ variant: "outline", size: "lg" })}>
                             <Home data-icon="inline-start"/>
                             Back to MyLists
                         </Link>

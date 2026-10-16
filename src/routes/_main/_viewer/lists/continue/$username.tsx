@@ -1,4 +1,3 @@
-import {cn} from "@/lib/utils/classnames";
 import {mediaTabSearchSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -158,7 +157,7 @@ function ContinuePage() {
                                         params={{ username }}
                                         to="/lists/continue/$username"
                                         search={{ activeTab: undefined }}
-                                        className={cn(buttonVariants({ variant: "hover" }))}
+                                        className={buttonVariants({ variant: "hover" })}
                                     >
                                         View all in progress
                                     </Link>

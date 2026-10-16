@@ -47,7 +47,7 @@ export const OverviewTab = (props: OverviewTabProps) => {
         : getFeelingIcon(rating, { size: 22, className: "mt-0.5" });
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <section className="overflow-hidden rounded-xl border shadow-xs">
                 <div className="p-5 sm:p-6">
                     <CompactStatsGrid

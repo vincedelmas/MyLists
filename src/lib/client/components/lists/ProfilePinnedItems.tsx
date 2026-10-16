@@ -6,6 +6,7 @@ import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ArrowUpRight, Layers3, LibraryBig, Pin} from "lucide-react";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import type {ProfilePinsData} from "@/lib/client/react-query/query-options/profile-pins.options";
+import {NavigationArrow, navigationCardClassName} from "@/lib/client/components/general/NavigationArrow";
 
 
 interface ProfilePinnedItemsProps {
@@ -33,7 +34,7 @@ export const ProfilePinnedItems = ({ pins, isCurrent }: ProfilePinnedItemsProps)
                     <Link
                         to="/lists/$username"
                         params={{ username: currentUser!.name }}
-                        className={cn(buttonVariants({ variant: "hover", size: "sm" }))}
+                        className={buttonVariants({ variant: "hover", size: "sm" })}
                     >
                         Manage
                         <ArrowUpRight data-icon="inline-end" aria-hidden="true"/>
@@ -53,25 +54,35 @@ export const ProfilePinnedItems = ({ pins, isCurrent }: ProfilePinnedItemsProps)
                         <article key={`${item.kind}:${item.kind === "dynamic" ? item.view.id : item.collection.id}`} className="min-w-0">
                             <Link
                                 {...target}
-                                aria-label={title}
                                 title={title}
-                                className="group flex min-w-0 flex-col gap-1 rounded-lg border border-border/70 p-2.5 outline-none transition-colors hover:border-brand/30 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+                                aria-label={title}
+                                className={cn(navigationCardClassName, "flex min-w-0 flex-col gap-1 rounded-lg border border-border/70 " +
+                                    "p-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring")}
                             >
                                 <div className="flex min-w-0 items-center gap-2">
                                     <Icon className="size-3.5 shrink-0 text-brand" aria-hidden="true"/>
-                                    <h3 className="min-w-0 flex-1 truncate text-sm font-medium group-hover:text-brand">
+                                    <h3 className="min-w-0 flex-1 truncate text-sm font-medium">
                                         {title}
                                     </h3>
-                                    <ArrowUpRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true"/>
+                                    <NavigationArrow className="size-3"/>
                                 </div>
                                 <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                                    <span className="shrink-0 tabular-nums">{formatNumber(count)} media</span>
+                                    <span className="shrink-0 tabular-nums">
+                                        {formatNumber(count)} media
+                                    </span>
                                     <span aria-hidden="true">·</span>
-                                    <span className="truncate">{item.kind === "dynamic" ? "Dynamic list" : "Collection"}</span>
+                                    <span className="truncate">
+                                        {item.kind === "dynamic" ? "Dynamic list" : "Collection"}
+                                    </span>
                                     {item.kind === "collection" &&
-                                        <span className="ml-auto shrink-0" role="img" aria-label={`${item.collection.privacy} collection`}
-                                              title={`${item.collection.privacy} collection`}>
-                                            <PrivacyIcon type={item.collection.privacy}/>
+                                        <span
+                                            className="ml-auto shrink-0" role="img"
+                                            title={`${item.collection.privacy} collection`}
+                                            aria-label={`${item.collection.privacy} collection`}
+                                        >
+                                            <PrivacyIcon
+                                                type={item.collection.privacy}
+                                            />
                                         </span>
                                     }
                                 </div>

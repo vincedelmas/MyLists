@@ -1,17 +1,20 @@
 import {Pin} from "lucide-react";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
 import type {MediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {ActionsMenu} from "@/lib/client/components/general/ActionsMenu";
+import {ListCoverStrip} from "@/lib/client/components/lists/ListCoverStrip";
 import {DynamicListBadges} from "@/lib/client/components/dynamic-lists/DynamicListBadges";
 import {DynamicListActions} from "@/lib/client/components/dynamic-lists/DynamicListActions";
-import {ListCoverStrip} from "@/lib/client/components/lists/ListCoverStrip";
+import {navigationCardClassName} from "@/lib/client/components/general/NavigationArrow";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {dynamicListSummaryOptions, type DynamicListRecord, type DynamicListSummary} from "@/lib/client/react-query/query-options/dynamic-lists.options";
 
 
-type DynamicListCardProps = { view: DynamicListRecord; activeMediaTypes: readonly MediaType[] } & ({ isOwner?: true; preview?: DynamicListSummary } | { isOwner: boolean; preview: DynamicListSummary });
+type DynamicListCardProps = { view: DynamicListRecord; activeMediaTypes: readonly MediaType[] }
+    & ({ isOwner?: true; preview?: DynamicListSummary } | { isOwner: boolean; preview: DynamicListSummary });
 
 
 export const DynamicListCard = ({ view, activeMediaTypes, isOwner = true, preview: suppliedPreview }: DynamicListCardProps) => {
@@ -24,7 +27,7 @@ export const DynamicListCard = ({ view, activeMediaTypes, isOwner = true, previe
         : previewQuery.isError ? "Count unavailable" : "Loading media…";
 
     return (
-        <Card className="relative min-w-0 gap-0 py-0 transition-shadow hover:ring-brand hover:shadow-sm sm:flex-row" role="article" aria-label={view.spec.title}>
+        <Card className={cn(navigationCardClassName, "relative min-w-0 gap-0 py-0 sm:flex-row")} role="article">
             <Link
                 search={{ page: 1 }}
                 to="/lists/dynamic/$listId"
@@ -39,8 +42,12 @@ export const DynamicListCard = ({ view, activeMediaTypes, isOwner = true, previe
             <div className="pointer-events-none flex min-w-0 flex-1 flex-col gap-3 py-4 sm:py-5">
                 <CardHeader className="min-w-0 gap-y-2" title={view.spec.title}>
                     <CardTitle className="flex min-w-0 items-center gap-2">
-                        {view.profilePosition !== null && <Pin className="size-3.5 shrink-0 fill-brand/20 text-brand" aria-label="Pinned to profile"/>}
-                        <span className="truncate">{view.spec.title}</span>
+                        {view.profilePosition !== null &&
+                            <Pin className="size-3.5 shrink-0 fill-brand/20 text-brand"/>
+                        }
+                        <span className="truncate">
+                            {view.spec.title}
+                        </span>
                     </CardTitle>
                     <CardDescription>
                         {countLabel}
@@ -49,7 +56,9 @@ export const DynamicListCard = ({ view, activeMediaTypes, isOwner = true, previe
                     {isOwner &&
                         <CardAction className="pointer-events-auto relative">
                             <ActionsMenu label={`Actions for ${view.spec.title}`}>
-                                <DynamicListActions view={view}/>
+                                <DynamicListActions
+                                    view={view}
+                                />
                             </ActionsMenu>
                         </CardAction>
                     }

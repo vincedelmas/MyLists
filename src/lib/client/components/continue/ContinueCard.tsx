@@ -63,7 +63,7 @@ export const ContinueCard = ({ item, compact = false, readOnly = false }: { item
                     <div className="pointer-events-auto flex items-center gap-2 pt-1">
                         <Button
                             size="xs"
-                            className="min-h-11 min-w-0 flex-1 sm:min-h-6 pointer-coarse:min-h-11"
+                            className="min-h-7 min-w-0 flex-1 sm:min-h-6"
                             disabled={update.isPending || !progress.update}
                             onClick={() => update.mutate()}
                         >

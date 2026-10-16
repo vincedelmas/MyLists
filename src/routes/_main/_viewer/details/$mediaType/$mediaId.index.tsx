@@ -1,5 +1,4 @@
 import {Suspense} from "react";
-import {cn} from "@/lib/utils/classnames";
 import {ExternalLink, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
@@ -125,7 +124,7 @@ function MediaDetailsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={media.providerData.url}
-                                className={cn(buttonVariants({ size: "lg", variant: "tame", className: "w-full" }))}
+                                className={buttonVariants({ size: "lg", variant: "tame", className: "w-full" })}
                             >
                                 View on {media.providerData.name} <ExternalLink/>
                             </a>

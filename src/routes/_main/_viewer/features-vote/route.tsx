@@ -1,5 +1,4 @@
 import {useId, useState} from "react";
-import {cn} from "@/lib/utils/classnames";
 import {FeatureStatus} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -255,7 +254,7 @@ function FeatureVotesPage() {
                             <a
                                 target="_blank"
                                 rel="noreferrer"
-                                className={cn(buttonVariants({ variant: "outline" }))}
+                                className={buttonVariants({ variant: "outline" })}
                                 href="https://github.com/Crossoufire/MyLists/discussions"
                             >
                                 GitHub discussions

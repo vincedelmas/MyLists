@@ -1,3 +1,4 @@
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import type {CommunitySearch} from "@/lib/schemas";
 import {List, ListOrdered, Pin} from "lucide-react";
@@ -10,6 +11,7 @@ import type {CollectionSummaryData} from "@/lib/client/react-query/query-options
 import {CollectionStats} from "@/lib/client/components/collections/CollectionStats";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {CollectionActions} from "@/lib/client/components/collections/CollectionActions";
+import {navigationCardClassName} from "@/lib/client/components/general/NavigationArrow";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
 
@@ -28,7 +30,7 @@ export const CollectionCard = ({ collection, communitySearch, showOwner = true }
         </ActionsMenu>;
 
     return (
-        <Card className="relative min-w-0 gap-0 py-0 transition-shadow hover:ring-brand hover:shadow-sm sm:flex-row" role="article" aria-label={collection.title}>
+        <Card className={cn(navigationCardClassName, "relative min-w-0 gap-0 py-0 sm:flex-row")} role="article" aria-label={collection.title}>
             <Link
                 to="/lists/collections/$collectionId"
                 params={{ collectionId: collection.id }}
@@ -47,8 +49,15 @@ export const CollectionCard = ({ collection, communitySearch, showOwner = true }
             <div className="pointer-events-none flex min-w-0 flex-1 flex-col gap-3 py-4 sm:py-5">
                 <CardHeader className="min-w-0 gap-y-2" title={collection.title}>
                     <CardTitle className="flex min-w-0 items-center gap-2">
-                        {collection.profilePosition !== null && <Pin className="size-3.5 shrink-0 fill-brand/20 text-brand" aria-label="Pinned to profile"/>}
-                        <span className="truncate">{collection.title}</span>
+                        {collection.profilePosition !== null &&
+                            <Pin
+                                aria-label="Pinned to profile"
+                                className="size-3.5 shrink-0 fill-brand/20 text-brand"
+                            />
+                        }
+                        <span className="truncate">
+                            {collection.title}
+                        </span>
                     </CardTitle>
                     <CardDescription>
                         {formatNumber(collection.itemsCount)} media

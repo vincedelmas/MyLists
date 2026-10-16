@@ -36,7 +36,7 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
     }));
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <section className="overflow-hidden rounded-xl border shadow-xs">
                 <div className="p-5 sm:p-6">
                     <CompactStatsGrid

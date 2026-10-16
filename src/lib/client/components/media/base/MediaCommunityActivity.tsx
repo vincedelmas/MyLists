@@ -60,7 +60,7 @@ export const MediaCommunityActivity = ({ mediaId, mediaType, queryOptions }: Com
                     <Link
                         params={{ mediaType, mediaId }}
                         to="/details/$mediaType/$mediaId/community"
-                        className={cn(buttonVariants({ variant: "hover", size: "sm" }))}
+                        className={buttonVariants({ variant: "hover", size: "sm" })}
                     >
                         View all
                         <ArrowUpRight data-icon="inline-end"/>

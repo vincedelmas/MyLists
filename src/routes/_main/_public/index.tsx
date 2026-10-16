@@ -149,7 +149,7 @@ function HomePage() {
                                 <Link
                                     to="/profile/$username"
                                     params={{ username: randomProfile.name }}
-                                    className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+                                    className={buttonVariants({ variant: "outline", size: "lg" })}
                                 >
                                     See a random profile
                                     <ArrowRight data-icon="inline-end"/>
@@ -289,7 +289,7 @@ function HomePage() {
                             </span>
                         </CardHeader>
                         <CardFooter className="flex items-center gap-2">
-                            <Link to="/moviedle" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                            <Link to="/moviedle" className={buttonVariants({ variant: "outline", size: "sm" })}>
                                 Play today's Moviedle
                                 <ArrowRight data-icon="inline-end"/>
                             </Link>
@@ -340,7 +340,7 @@ function HomePage() {
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     href={principle.href}
-                                                    className={cn("-ml-2", buttonVariants({ variant: "hover", size: "sm" }))}
+                                                    className={buttonVariants({ variant: "hover", size: "sm", className: "-ml-2" })}
                                                 >
                                                     View the source
                                                     <ArrowUpRight data-icon="inline-end"/>
@@ -451,7 +451,7 @@ function HomePage() {
                                 <Link
                                     to="/profile/$username"
                                     params={{ username: randomProfile.name }}
-                                    className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
+                                    className={buttonVariants({ variant: "outline", size: "lg", className: "w-full" })}
                                 >
                                     See a random profile
                                     <ArrowRight data-icon="inline-end"/>

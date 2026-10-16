@@ -1,5 +1,4 @@
 import {useId} from "react";
-import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Controller, useForm} from "react-hook-form";
@@ -128,7 +127,7 @@ export const EmailVerificationPanel = ({ status, redirect, defaultEmail, verific
                         {mutation.isPending ? "Sending email…" : "Resend verification email"}
                     </Button>
                 </form>
-                <Link to="/login" search={{ redirect }} className={cn(buttonVariants({ variant: "outline" }))}>
+                <Link to="/login" search={{ redirect }} className={buttonVariants({ variant: "outline" })}>
                     Go to sign in
                 </Link>
             </EmptyContent>

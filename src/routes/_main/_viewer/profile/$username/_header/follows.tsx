@@ -1,18 +1,15 @@
-import {cn} from "@/lib/utils/classnames";
+import {UserX} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {toast} from "@/lib/client/components/ui/toast";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {followsOptions} from "@/lib/client/react-query/query-options";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
-import {useFollowMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/follows")({
@@ -31,8 +28,8 @@ function ProfileFollows() {
     const { username: profileOwner } = Route.useParams();
     const { followsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(followsQueryOptions).data;
-
     const isViewingOwnProfile = currentUser?.name === profileOwner;
+
     return (
         <PageTitle
             title="Follows"
@@ -125,80 +122,17 @@ function FollowCard({ follow, currentUsername, profileOwner, isViewingOwnProfile
                                 You
                             </Button>
                             :
-                            <FollowActionButton
+                            <FollowButton
                                 targetUserId={follow.id}
-                                profileOwner={profileOwner}
+                                profileUsername={profileOwner}
                                 followStatus={follow.myFollowStatus}
-                                isViewingOwnProfile={isViewingOwnProfile}
+                                followLabel={isViewingOwnProfile ? "Follow Back" : "Follow"}
+                                className="w-auto flex-1 font-medium"
                             />
                         }
                     </>
                 }
             </div>
         </div>
-    );
-}
-
-
-interface FollowActionButtonProps {
-    targetUserId: number;
-    profileOwner: string;
-    isViewingOwnProfile: boolean;
-    followStatus: SocialState | null;
-}
-
-
-function FollowActionButton({ targetUserId, followStatus, profileOwner, isViewingOwnProfile }: FollowActionButtonProps) {
-    const followMutation = useFollowMutation(profileOwner);
-    const unfollowMutation = useUnfollowMutation(profileOwner);
-    const isPending = followMutation.isPending || unfollowMutation.isPending;
-
-    const handleClick = () => {
-        const mutation = followStatus ? unfollowMutation : followMutation;
-
-        mutation.mutate({ data: { targetUserId } }, {
-            onError: () => toast.add({ title: "Sorry, an error occurred...", type: "error", priority: "high" })
-        });
-    };
-
-    const variant = followStatus === SocialState.ACCEPTED
-        ? "selected" : followStatus === SocialState.REQUESTED
-            ? "secondary" : "outline";
-
-    return (
-        <LoadingButton
-            variant={variant}
-            onClick={handleClick}
-            isLoading={isPending}
-            aria-label={isPending ? "Updating follow status" : undefined}
-            className={cn("group flex-1 font-medium transition-all", followStatus && "hover:bg-destructive/30 hover:text-foreground")}
-        >
-            {!isPending && (
-                followStatus === SocialState.ACCEPTED ?
-                    <>
-                        <span className="flex items-center gap-2 group-hover:hidden">
-                            <UserCheck className="size-3.5"/> Following
-                        </span>
-                        <span className="hidden items-center gap-2 group-hover:flex">
-                            <UserX className="size-3.5"/> Unfollow
-                        </span>
-                    </>
-                    :
-                    followStatus === SocialState.REQUESTED ?
-                        <>
-                            <span className="flex items-center gap-2 group-hover:hidden">
-                                <Clock className="size-3.5"/> Requested
-                            </span>
-                            <span className="hidden items-center gap-2 group-hover:flex">
-                                <UserX className="size-3.5"/> Cancel request
-                            </span>
-                        </>
-                        :
-                        <>
-                            <UserPlus className="size-3.5"/>
-                            {isViewingOwnProfile ? "Follow Back" : "Follow"}
-                        </>
-            )}
-        </LoadingButton>
     );
 }

@@ -113,6 +113,7 @@ const UserResult = ({ item, currentUserId, onNavigate }: UserResultProps) => {
                     user={{ name: item.name, image: item.image }}
                     className="size-12 border-2 shadow-sm transition-transform duration-200 group-hover/result:scale-[1.03]"
                 />
+
                 <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold leading-snug group-hover/result:text-brand">
                         {item.name}
@@ -132,11 +133,9 @@ const UserResult = ({ item, currentUserId, onNavigate }: UserResultProps) => {
             {currentUserId && !isCurrentUser &&
                 <FollowButton
                     profileUsername={item.name}
+                    targetUserId={Number(item.id)}
+                    followStatus={item.followStatus}
                     className="h-8 w-24 px-2.5 text-xs"
-                    social={{
-                        followId: Number(item.id),
-                        followStatus: item.followStatus ? { status: item.followStatus } : null,
-                    }}
                 />
             }
         </div>

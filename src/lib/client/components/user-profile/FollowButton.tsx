@@ -1,25 +1,23 @@
 import {cn} from "@/lib/utils/classnames";
 import {SocialState} from "@/lib/utils/enums";
 import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
-import {ProfileHeaderOptionsType} from "@/lib/types/query.options.types";
 import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {useFollowMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-
-
-interface FollowButtonProps {
-    className?: string;
-    profileUsername: string;
-    social: {
-        followId: ProfileHeaderOptionsType["social"]["followId"];
-        followStatus?: Pick<NonNullable<ProfileHeaderOptionsType["social"]["followStatus"]>, "status"> | null;
-    };
-}
 
 
 type FollowAction = "follow" | "unfollow";
 
 
-const getButtonConfig = (status?: SocialState) => {
+interface FollowButtonProps {
+    className?: string;
+    targetUserId: number;
+    followLabel?: string;
+    profileUsername: string;
+    followStatus?: SocialState | null;
+}
+
+
+const getButtonConfig = (status: SocialState | null | undefined, followLabel: string) => {
     switch (status) {
         case SocialState.ACCEPTED:
             return {
@@ -46,8 +44,8 @@ const getButtonConfig = (status?: SocialState) => {
                 className: "",
                 Icon: UserPlus,
                 HoverIcon: null,
-                label: "Follow",
                 hoverLabel: null,
+                label: followLabel,
                 variant: "outline" as const,
                 action: "follow" as FollowAction,
             };
@@ -55,15 +53,16 @@ const getButtonConfig = (status?: SocialState) => {
 };
 
 
-export const FollowButton = ({ profileUsername, social, className }: FollowButtonProps) => {
+export const FollowButton = ({ targetUserId, followStatus, profileUsername, followLabel = "Follow", className }: FollowButtonProps) => {
     const followMutation = useFollowMutation(profileUsername);
-    const config = getButtonConfig(social.followStatus?.status);
+    const config = getButtonConfig(followStatus, followLabel);
+
     const unfollowMutation = useUnfollowMutation(profileUsername);
     const isPending = followMutation.isPending || unfollowMutation.isPending;
 
     const handleClick = () => {
         const mutation = (config.action === "follow") ? followMutation : unfollowMutation;
-        mutation.mutate({ data: { targetUserId: social.followId } });
+        mutation.mutate({ data: { targetUserId } });
     };
 
     return (

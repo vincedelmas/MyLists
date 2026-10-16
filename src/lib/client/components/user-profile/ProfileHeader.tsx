@@ -92,8 +92,9 @@ export const ProfileHeader = ({ profileUser, social, showUsernameNotice, onDismi
                     </div>
                     {(!isCurrent && isConnected) &&
                         <FollowButton
-                            social={social}
+                            targetUserId={social.followId}
                             profileUsername={profileUser.name}
+                            followStatus={social.followStatus?.status}
                         />
                     }
                 </div>
@@ -151,8 +152,9 @@ export const ProfileHeader = ({ profileUser, social, showUsernameNotice, onDismi
                         <div className="mb-5 px-8">
                             {(!isCurrent && isConnected) &&
                                 <FollowButton
-                                    social={social}
+                                    targetUserId={social.followId}
                                     profileUsername={profileUser.name}
+                                    followStatus={social.followStatus?.status}
                                 />
                             }
                         </div>
@@ -165,7 +167,7 @@ export const ProfileHeader = ({ profileUser, social, showUsernameNotice, onDismi
 
 
 const UsernameNotice = ({ username, onDismiss }: { username: string; onDismiss: () => void }) => (
-    <Popover open onOpenChange={(_, eventDetails) => eventDetails.cancel()}>
+    <Popover open={true} onOpenChange={(_, evDetails) => evDetails.cancel()}>
         <PopoverTrigger
             render={
                 <Button
@@ -183,9 +185,9 @@ const UsernameNotice = ({ username, onDismiss }: { username: string; onDismiss: 
                 type="button"
                 size="icon-xs"
                 variant="ghost"
+                onClick={onDismiss}
                 className="absolute top-2 right-2"
                 aria-label="Dismiss username notice"
-                onClick={onDismiss}
             >
                 <X aria-hidden="true"/>
             </Button>

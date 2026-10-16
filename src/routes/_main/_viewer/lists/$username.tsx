@@ -4,13 +4,13 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {listsSearchSchema} from "@/lib/schemas/lists.schema";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
-import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {Layers3, LibraryBig, ListOrdered, LockKeyhole, Plus} from "lucide-react";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
@@ -20,15 +20,14 @@ import {createMediaSelectItems} from "@/lib/client/components/general/media-type
 import {Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
 import {listsCollectionsOptions, userListViewsOptions} from "@/lib/client/react-query/query-options/lists.options";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {cn} from "@/lib/utils/classnames";
 
 
 export const Route = createFileRoute("/_main/_viewer/lists/$username")({
     validateSearch: listsSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    context: ({ params: { username }, deps: { search: { kind: _kind, dynamicPage, page, perPage, ...filters } } }) => ({
-        viewsQueryOptions: userListViewsOptions({ username, ...filters, dynamicPage }),
-        collectionsQueryOptions: listsCollectionsOptions({ username, ...filters, page, perPage }),
+    context: ({ params: { username }, deps: { search: { kind, dynamicPage, page, perPage, ...filters } } }) => ({
+        viewsQueryOptions: userListViewsOptions({ username, ...filters, dynamicPage, pinnedOnly: kind === "pinned" }),
+        collectionsQueryOptions: listsCollectionsOptions({ username, ...filters, page, perPage, pinnedOnly: kind === "pinned" }),
     }),
     loader: async ({ context }) => {
         await Promise.all([
@@ -45,6 +44,7 @@ const kindItems = [
     { value: "presets", label: "Tracking lists" },
     { value: "dynamic", label: "Dynamic lists" },
     { value: "collections", label: "Collections" },
+    { value: "pinned", label: "Only pinned" },
 ];
 
 
@@ -74,13 +74,13 @@ function ListsPage() {
         && (!filters.mediaType || (filters.mediaType !== MediaType.MOVIES && presets.some(preset => preset.mediaType === filters.mediaType)));
 
     const showPresets = canReadTracking && (!filters.kind || filters.kind === "presets");
-    const showDynamic = canReadTracking && (!filters.kind || filters.kind === "dynamic");
+    const showDynamic = canReadTracking && (!filters.kind || filters.kind === "dynamic" || filters.kind === "pinned");
 
-    const showCollections = !filters.kind || filters.kind === "collections";
+    const showCollections = !filters.kind || filters.kind === "collections" || filters.kind === "pinned";
     const showDynamicSection = showDynamic && (isOwner || viewsQuery.data.total > 0);
     const showCollectionsSection = showCollections && (isOwner || collections.total > 0);
 
-    const hasFilters = query.length > 0 || filters.mediaType !== undefined;
+    const hasFilters = query.length > 0 || filters.mediaType !== undefined || filters.kind === "pinned";
     const hasResults = (showPresets && (visiblePresets.length > 0 || showContinue))
         || (showDynamic && viewsQuery.data.total > 0) || (showCollections && collections.total > 0);
 
@@ -245,7 +245,7 @@ function ListsPage() {
                                     </EmptyTitle>
                                     <EmptyDescription>
                                         {hasFilters
-                                            ? "Try another search or media type."
+                                            ? "Try another search or filter."
                                             : "Create a dynamic list to group media with rules that follow your tracking progress."
                                         }
                                     </EmptyDescription>
@@ -307,7 +307,7 @@ function ListsPage() {
                                     </EmptyTitle>
                                     <EmptyDescription>
                                         {hasFilters
-                                            ? "Try another search or media type."
+                                            ? "Try another search or filter."
                                             : "Create a collection to group media and arrange them your way."
                                         }
                                     </EmptyDescription>
@@ -328,7 +328,7 @@ function ListsPage() {
                             </EmptyTitle>
                             <EmptyDescription>
                                 {query || filters.mediaType
-                                    ? "Try another search or media type."
+                                    ? "Try another search or filter."
                                     : isOwner
                                         ? "Create a list or collection to organize your media."
                                         : "No lists or collections to show."

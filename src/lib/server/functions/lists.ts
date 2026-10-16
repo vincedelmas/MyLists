@@ -14,7 +14,7 @@ import {dynamicListsRepository} from "@/lib/server/domain/dynamic-lists/dynamic-
 export const getUserListViews = createServerFn({ method: "GET" })
     .middleware([publicPreviewMiddleware])
     .validator(userListViewsSearchSchema)
-    .handler(async ({ data: { search, mediaType, dynamicPage = 1 }, context: { targetUser, currentUser } }) => {
+    .handler(async ({ data: { search, mediaType, pinnedOnly, dynamicPage = 1 }, context: { targetUser, currentUser } }) => {
         if (mcpRequestContext.getStore()) {
             throw new FormattedError("Lists are only available on the web app.");
         }
@@ -25,7 +25,7 @@ export const getUserListViews = createServerFn({ method: "GET" })
         const query = search?.trim().toLocaleLowerCase() ?? "";
         const views = decision.allowed
             ? dynamicListsRepository.getAll(targetUser.id)
-                .filter(view => view.spec.title.toLocaleLowerCase().includes(query))
+                .filter(view => (!pinnedOnly || view.profilePosition !== null) && view.spec.title.toLocaleLowerCase().includes(query))
             : [];
 
         const summaries = mediaType ? getDynamicListSummaries(targetUser.id, views) : undefined;

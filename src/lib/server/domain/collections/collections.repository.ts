@@ -398,6 +398,7 @@ export class CollectionsRepository {
             publicOnly ? eq(collections.privacy, PrivacyType.PUBLIC) : undefined,
             eq(collections.ownerId, targetUserId),
             params.mediaType ? collectionContainsMediaType(params.mediaType) : undefined,
+            params.pinnedOnly ? isNotNull(collections.profilePosition) : undefined,
         );
 
         return paginate({

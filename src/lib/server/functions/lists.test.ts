@@ -196,6 +196,20 @@ describe("lists hub privacy", () => {
         expect(mocks.getSummary).toHaveBeenNthCalledWith(2, 10, pinned.spec);
     });
 
+    it("filters pinned dynamic lists before pagination and drops them after unpinning", async () => {
+        const pinned = { ...view, id: 31, profilePosition: 1 };
+        mocks.getAllViews.mockReturnValue([view, pinned]);
+
+        const result = await getUserListViews({ data: { username: "list-owner", pinnedOnly: true, dynamicPage: 2 } });
+
+        expect(result).toMatchObject({ total: 1, page: 1, pages: 1, views: [{ ...pinned, preview }] });
+        expect(mocks.getSummary).toHaveBeenCalledTimes(1);
+
+        mocks.getAllViews.mockReturnValue([view, { ...pinned, profilePosition: null }]);
+        await expect(getUserListViews({ data: { username: "list-owner", pinnedOnly: true } }))
+            .resolves.toMatchObject({ total: 0, views: [] });
+    });
+
     it("paginates dynamic lists eight at a time and only loads summaries for that page", async () => {
         const views = Array.from({ length: 20 }, (_, index) => ({ ...view, id: 30 + index }));
         mocks.getAllViews.mockReturnValue(views);

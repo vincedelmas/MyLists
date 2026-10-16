@@ -4,7 +4,7 @@ import {coercedPositiveIntFieldSchema, usernameFieldSchema} from "@/lib/schemas/
 
 
 export const listsSearchSchema = collectionsBrowseFiltersSchema.extend({
-    kind: z.enum(["presets", "dynamic", "collections"]).optional().catch(undefined),
+    kind: z.enum(["presets", "dynamic", "collections", "pinned"]).optional().catch(undefined),
     dynamicPage: coercedPositiveIntFieldSchema.optional().catch(undefined),
 });
 
@@ -14,6 +14,7 @@ export const userListViewsSearchSchema = listsSearchSchema.pick({
     dynamicPage: true,
 }).extend({
     username: usernameFieldSchema,
+    pinnedOnly: z.boolean().optional(),
 });
 
 export type UserListViewsSearch = z.infer<typeof userListViewsSearchSchema>;

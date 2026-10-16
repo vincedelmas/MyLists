@@ -55,6 +55,7 @@ export const collectionsBrowseFiltersSchema = paginationSchema.extend({
 
 export const userCollectionsSearchSchema = collectionsBrowseFiltersSchema.extend({
     username: usernameFieldSchema,
+    pinnedOnly: z.boolean().optional(),
 });
 
 export const collectionBrowseSearchSchema = mediaBrowseFiltersSchema.extend({

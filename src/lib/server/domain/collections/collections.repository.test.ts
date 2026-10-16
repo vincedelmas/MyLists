@@ -358,7 +358,24 @@ it("hydrates the viewer's full tracking rows for every media type without exposi
         expect(absentType.filterOptions).toEqual(scoped.filterOptions);
     });
 
-it("filters restricted and private collections in SQL when only public summaries are allowed", async () => {
+    it("filters pinned collections before pagination while preserving visibility and media filters", async () => {
+        const movieId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
+        const bookId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.BOOKS, mediaId: 1 }] });
+        service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.MOVIES, mediaId: 2 }] });
+        const privateId = service.createCollection({ ...collectionData, privacy: PrivacyType.PRIVATE, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
+        for (const [index, id] of [movieId, bookId, privateId].entries()) {
+            dbContext.db.update(schema.collections).set({ profilePosition: index + 1 }).where(eq(schema.collections.id, id)).run();
+        }
+
+        const result = await service.getPaginatedUserCollections(1, { pinnedOnly: true, mediaType: MediaType.MOVIES, page: 1 }, toActor(), true);
+        expect(result).toMatchObject({ total: 1, page: 1, pages: 1, items: [{ id: movieId }] });
+
+        dbContext.db.update(schema.collections).set({ profilePosition: null }).where(eq(schema.collections.id, movieId)).run();
+        await expect(service.getPaginatedUserCollections(1, { pinnedOnly: true, mediaType: MediaType.MOVIES }, toActor(), true))
+            .resolves.toMatchObject({ total: 0, items: [] });
+    });
+
+    it("filters restricted and private collections in SQL when only public summaries are allowed", async () => {
         dbContext.db.update(schema.user).set({ privacy: PrivacyType.PRIVATE }).where(eq(schema.user.id, 1)).run();
         const publicId = service.createCollection({ ...collectionData, items: [{ mediaType: MediaType.BOOKS, mediaId: 1 }] });
         service.createCollection({ ...collectionData, privacy: PrivacyType.RESTRICTED, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });

@@ -9,10 +9,16 @@ interface NumericEditOptions {
 
 
 export const useNumericEdit = ({ value, validate, onCommit }: NumericEditOptions) => {
-    const [draft, setDraft] = useState(value.toString());
+    const [input, setInput] = useState({ value, draft: value.toString(), editing: false });
+
+    if (input.value !== value) {
+        setInput({ ...input, value, draft: input.editing ? input.draft : value.toString() });
+    }
+
+    const draft = input.draft;
 
     const reset = () => {
-        return setDraft(value.toString());
+        setInput(current => ({ ...current, draft: current.value.toString() }));
     }
 
     const commit = async () => {
@@ -33,8 +39,15 @@ export const useNumericEdit = ({ value, validate, onCommit }: NumericEditOptions
 
     return {
         value: draft,
-        onBlur: () => void commit(),
-        onChange: (ev: ChangeEvent<HTMLInputElement>) => setDraft(ev.target.value),
+        onFocus: () => setInput(current => ({ ...current, editing: true })),
+        onBlur: () => {
+            setInput(current => ({ ...current, editing: false }));
+            void commit();
+        },
+        onChange: (ev: ChangeEvent<HTMLInputElement>) => {
+            const draft = ev.target.value;
+            setInput(current => ({ ...current, draft }));
+        },
         onKeyDown: (ev: KeyboardEvent<HTMLInputElement>) => {
             if (ev.key === "Enter") {
                 ev.preventDefault();

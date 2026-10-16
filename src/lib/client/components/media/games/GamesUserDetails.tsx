@@ -30,7 +30,6 @@ export const GamesUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
             {userMedia.status !== Status.PLAN_TO_PLAY &&
                 <>
                     <UpdatePlaytime
-                        key={userMedia.playtime ?? 0}
                         playtimeInMin={userMedia.playtime ?? 0}
                         updatePlaytime={updateUserMediaMutation}
                     />

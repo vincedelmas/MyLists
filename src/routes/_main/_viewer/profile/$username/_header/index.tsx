@@ -2,7 +2,7 @@ import {profileSearchSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
 import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
 import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
@@ -82,7 +82,7 @@ function ProfileMain() {
             </div>
 
             <div className="space-y-6 max-lg:col-span-3 max-sm:col-span-2 max-sm:space-y-4 max-sm:mt-4">
-                <TabHeader
+                <TabNav
                     tabs={mediaTabs}
                     value={currentTab}
                     renderTrigger={(tab, props) =>

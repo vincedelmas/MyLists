@@ -1,7 +1,7 @@
 import {FileSpreadsheet} from "lucide-react";
 import {useIsMutating} from "@tanstack/react-query";
 import {importSearchSchema} from "@/lib/schemas/imports.schema";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {createFileRoute, Link, Outlet, useLocation} from "@tanstack/react-router";
 import {ExistingImportsPanel} from "@/lib/client/components/user-settings/ExistingImportsPanel";
 
@@ -43,7 +43,7 @@ function SettingsImportsLayout() {
     return (
         <div className="flex flex-col gap-8 -mt-2">
             <section className="flex flex-col gap-4">
-                <TabHeader
+                <TabNav
                     tabs={sourceTabs}
                     value={activeTab.id}
                     renderTrigger={(tab, props) =>

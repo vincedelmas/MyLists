@@ -5,7 +5,7 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
@@ -66,7 +66,7 @@ function ContinuePage() {
                         : `What ${username} is currently watching, reading and playing.`
                     }
                     navigation={
-                        <TabHeader
+                        <TabNav
                             tabs={tabs}
                             value={currentTab}
                             triggerClassName="max-sm:px-3"

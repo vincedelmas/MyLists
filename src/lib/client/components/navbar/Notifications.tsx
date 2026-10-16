@@ -11,8 +11,8 @@ import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {Bell, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/lib/client/components/ui/tabs";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {formatCalendarRelativeDate, formatDate, formatRelativeTime} from "@/lib/utils/formatting/date";
 import {notificationsCountOptions, notificationsOptions} from "@/lib/client/react-query/query-options";
@@ -39,9 +39,9 @@ export const Notifications = () => {
         }
     };
 
-    const handleTabChange = async (newTab: string) => {
+    const handleTabChange = async (newTab: NotifTab) => {
         await handleMarkAsRead(activeTab);
-        setActiveTab(newTab as NotifTab);
+        setActiveTab(newTab);
     };
 
     const handleOpenChange = async (isOpen: boolean) => {
@@ -50,39 +50,6 @@ export const Notifications = () => {
         }
         setOpen(isOpen);
     };
-
-    const tabs: TabItem<NotifTab>[] = [
-        {
-            id: "media",
-            label: (
-                <div className="flex items-center gap-2">
-                    Media
-                    {!!counts?.media &&
-                        <Badge variant="secondary">
-                            {counts.media}
-                        </Badge>
-                    }
-                </div>
-            ),
-            isAccent: true,
-            icon: <Play className="size-4"/>
-        },
-        {
-            id: "social",
-            isAccent: true,
-            label: (
-                <div className="flex items-center gap-2">
-                    Social
-                    {!!counts?.social &&
-                        <Badge variant="secondary">
-                            {counts.social}
-                        </Badge>
-                    }
-                </div>
-            ),
-            icon: <Users className="size-4"/>
-        },
-    ]
 
     return (
         <Popover modal={isBelowLg} open={open} onOpenChange={handleOpenChange}>
@@ -93,55 +60,70 @@ export const Notifications = () => {
                 </Badge>
             </PopoverTrigger>
             <PopoverContent className="p-0 w-82 max-h-76 overflow-y-auto scrollbar-thin max-sm:max-h-88" align="end">
-                <TabHeader
-                    tabs={tabs}
-                    value={activeTab}
-                    onValueChange={handleTabChange}
-                />
+                <Tabs value={activeTab} onValueChange={handleTabChange}>
+                    <TabsList aria-label="Notification categories">
+                        <TabsTrigger value="media" accent>
+                            <Play data-icon="inline-start" aria-hidden="true"/> Media
+                            {!!counts?.media &&
+                                <Badge variant="secondary">
+                                    {counts.media}
+                                </Badge>
+                            }
+                        </TabsTrigger>
+                        <TabsTrigger value="social" accent>
+                            <Users data-icon="inline-start" aria-hidden="true"/> Social
+                            {!!counts?.social &&
+                                <Badge variant="secondary">
+                                    {counts.social}
+                                </Badge>
+                            }
+                        </TabsTrigger>
+                    </TabsList>
 
-                <div className="px-3 py-2">
-                    {activeTab === "media" && (
-                        isLoading ?
-                            <div className="flex items-center justify-center py-10 px-6">
-                                <Spinner className="size-6"/>
-                            </div>
-                            :
-                            notifications?.length === 0 ?
-                                <EmptyState
-                                    className="py-6"
-                                    icon={MessageCircleOff}
-                                    message="No media notifications"
-                                />
+                    <TabsContent value="media" className="px-3 py-2">
+                        {activeTab === "media" && (isLoading ?
+                                <div className="flex items-center justify-center py-10 px-6">
+                                    <Spinner className="size-6"/>
+                                </div>
                                 :
-                                notifications?.map((notif) =>
-                                    <MediaNotificationItem
-                                        key={`media-${notif.id}`}
-                                        notif={notif as MediaNotif}
+                                notifications?.length === 0 ?
+                                    <EmptyState
+                                        className="py-6"
+                                        icon={MessageCircleOff}
+                                        message="No media notifications"
                                     />
-                                )
-                    )}
+                                    :
+                                    notifications?.map((notif) =>
+                                        <MediaNotificationItem
+                                            key={`media-${notif.id}`}
+                                            notif={notif as MediaNotif}
+                                        />
+                                    )
+                        )}
+                    </TabsContent>
 
-                    {activeTab === "social" && (
-                        isLoading ?
-                            <div className="flex items-center justify-center py-10 px-6">
-                                <Spinner className="size-6"/>
-                            </div>
-                            :
-                            notifications?.length === 0 ?
-                                <EmptyState
-                                    className="py-6"
-                                    icon={MessageCircleOff}
-                                    message="No social notifications"
-                                />
+                    <TabsContent value="social" className="px-3 py-2">
+                        {activeTab === "social" && (isLoading ?
+                                <div className="flex items-center justify-center py-10 px-6">
+                                    <Spinner className="size-6"/>
+                                </div>
                                 :
-                                notifications?.map((notif) =>
-                                    <SocialNotificationItem
-                                        key={`social-${notif.id}`}
-                                        notification={notif as SocialNotif}
+                                notifications?.length === 0 ?
+                                    <EmptyState
+                                        className="py-6"
+                                        icon={MessageCircleOff}
+                                        message="No social notifications"
                                     />
-                                )
-                    )}
-                </div>
+                                    :
+                                    notifications?.map((notif) =>
+                                        <SocialNotificationItem
+                                            key={`social-${notif.id}`}
+                                            notification={notif as SocialNotif}
+                                        />
+                                    )
+                        )}
+                    </TabsContent>
+                </Tabs>
             </PopoverContent>
         </Popover>
     );

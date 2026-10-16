@@ -7,7 +7,7 @@ import {compareDateInputs} from "@/lib/utils/formatting/date";
 import {TrendGrid} from "@/lib/client/components/trends/TrendGrid";
 import {TrendHero} from "@/lib/client/components/trends/TrendHero";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {trendsOptions} from "@/lib/client/react-query/query-options";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {TREND_MEDIA_TYPES, trendsSearchSchema} from "@/lib/schemas";
@@ -63,7 +63,7 @@ function TrendsPage() {
                     description="The movies, series and games drawing the most attention this week."
                     asideValue={<>{formatNumber(filteredTrends.length)} {filteredTrends.length === 1 ? "title" : "titles"}</>}
                     navigation={
-                        <TabHeader
+                        <TabNav
                             tabs={mediaTabs}
                             value={activeTab}
                             triggerClassName="max-sm:px-3"

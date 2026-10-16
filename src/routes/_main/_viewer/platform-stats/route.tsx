@@ -5,7 +5,7 @@ import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {platformStatsOptions} from "@/lib/client/react-query/query-options";
@@ -52,7 +52,7 @@ function PlatformStatsPage() {
                     asideLabel={isOverview ? "Total time tracked" : `${capitalize(apiData.mediaType)} time tracked`}
                     description="A look at what people are tracking, rating and enjoying across MyLists."
                     navigation={
-                        <TabHeader
+                        <TabNav
                             tabs={mediaTabs}
                             value={activeTab}
                             triggerClassName="max-sm:px-3"

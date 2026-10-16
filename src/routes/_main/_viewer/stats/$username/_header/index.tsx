@@ -11,7 +11,7 @@ import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {createFileRoute, Link, redirect} from "@tanstack/react-router";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {TabNav, TabItem} from "@/lib/client/components/general/TabNav";
 import {CalendarRange, ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
 import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
@@ -204,7 +204,7 @@ function StatsNavigation({ mediaTabs, releases }: StatsNavigationProps) {
 
     return (
         <>
-            <TabHeader
+            <TabNav
                 tabs={mediaTabs}
                 value={activeTab}
                 trailing={

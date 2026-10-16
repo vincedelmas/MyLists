@@ -19,7 +19,7 @@ import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {TabNav, TabItem} from "@/lib/client/components/general/TabNav";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
@@ -286,7 +286,7 @@ function FeatureVotesPage() {
                         onChange={(ev) => setSearchQuery(ev.target.value)}
                     />
 
-                    <TabHeader
+                    <TabNav
                         tabs={statusTabs}
                         value={activeTab}
                         triggerClassName="max-sm:px-3"

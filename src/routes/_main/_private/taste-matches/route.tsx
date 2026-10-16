@@ -7,7 +7,7 @@ import {Switch} from "@/lib/client/components/ui/switch";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -69,7 +69,7 @@ function TasteMatchesPage() {
                     description="Find people whose ratings are closest to yours."
                     asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "match" : "matches"}</>}
                     navigation={
-                        <TabHeader
+                        <TabNav
                             tabs={mediaTabs}
                             value={currentActiveTab}
                             triggerClassName="max-sm:px-3"

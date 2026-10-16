@@ -6,7 +6,6 @@ import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {buttonVariants} from "@/lib/client/components/ui/button";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -30,6 +29,7 @@ export const Route = createFileRoute("/_main/_viewer/collections/discover")({
         return context.queryClient.query({ ...context.communityCollectionsQueryOptions, staleTime: "static" });
     },
     component: CollectionsDiscoverPage,
+    head: () => ({ meta: [{ title: "Community collections - MyLists" }] }),
 });
 
 
@@ -45,98 +45,96 @@ function CollectionsDiscoverPage() {
     const mediaTypeItems = createMediaSelectItems(ALL_MEDIA_TYPES, { leading: "all", leadingLabel: "All types" });
 
     return (
-        <PageTitle title="Community collections" onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    asideIcon={UsersRound}
-                    eyebrowIcon={ListOrdered}
-                    title="Community collections"
-                    eyebrow="Made by the community"
-                    asideLabel={hasFilters ? "Collections found" : "Shared collections"}
-                    description="Browse collections that people on MyLists have chosen to share."
-                    asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "collection" : "collections"}</>}
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                asideIcon={UsersRound}
+                eyebrowIcon={ListOrdered}
+                title="Community collections"
+                eyebrow="Made by the community"
+                asideLabel={hasFilters ? "Collections found" : "Shared collections"}
+                description="Browse collections that people on MyLists have chosen to share."
+                asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "collection" : "collections"}</>}
+            />
+
+            <div className="grid grid-cols-[minmax(0,1fr)_11rem_auto] items-center gap-3 pt-4 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+                <SearchInput
+                    value={localSearch}
+                    onChange={handleInputChange}
+                    placeholder="Search collections..."
+                    aria-label="Search community collections"
+                    className="w-full min-w-0 max-sm:col-span-2"
                 />
 
-                <div className="grid grid-cols-[minmax(0,1fr)_11rem_auto] items-center gap-3 pt-4 max-sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <SearchInput
-                        value={localSearch}
-                        onChange={handleInputChange}
-                        placeholder="Search collections..."
-                        aria-label="Search community collections"
-                        className="w-full min-w-0 max-sm:col-span-2"
-                    />
-
-                    <div className={cn("w-full", isAnonymous && "max-sm:col-span-2")}>
-                        <Select
-                            items={mediaTypeItems}
-                            value={mediaType ?? "all"}
-                            onValueChange={(value) => {
-                                if (value !== null) {
-                                    void updateFilters({
-                                        page: 1,
-                                        mediaType: value === "all" ? undefined : value as MediaType,
-                                    });
-                                }
-                            }}
-                        >
-                            <SelectTrigger aria-label="Filter by media type" className="w-full capitalize">
-                                <SelectValue/>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    {mediaTypeItems.map((item) =>
-                                        <SelectItem key={item.value} value={item.value} className="capitalize">
-                                            {item.label}
-                                        </SelectItem>
-                                    )}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {!isAnonymous &&
-                        <Link
-                            to="/lists/collections/create"
-                            className={buttonVariants({ className: "whitespace-nowrap" })}
-                        >
-                            <Plus data-icon="inline-start"/>
-                            New collection
-                        </Link>
-                    }
+                <div className={cn("w-full", isAnonymous && "max-sm:col-span-2")}>
+                    <Select
+                        items={mediaTypeItems}
+                        value={mediaType ?? "all"}
+                        onValueChange={(value) => {
+                            if (value !== null) {
+                                void updateFilters({
+                                    page: 1,
+                                    mediaType: value === "all" ? undefined : value as MediaType,
+                                });
+                            }
+                        }}
+                    >
+                        <SelectTrigger aria-label="Filter by media type" className="w-full capitalize">
+                            <SelectValue/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                {mediaTypeItems.map((item) =>
+                                    <SelectItem key={item.value} value={item.value} className="capitalize">
+                                        {item.label}
+                                    </SelectItem>
+                                )}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
                 </div>
 
-                <div className="flex items-center justify-between gap-4 pb-4 pt-6">
-                    <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        {hasFilters ? "Filtered collections" : "Popular collections"}
-                    </h2>
-                    {apiData.pages > 1 &&
-                        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                            Page {page} / {apiData.pages}
-                        </span>
-                    }
-                </div>
-
-                {apiData.items.length === 0
-                    ?
-                    <EmptyState
-                        iconSize={40}
-                        icon={LibraryBig}
-                        className="rounded-xl border py-20 shadow-xs"
-                        message={search ? `No public collections found for “${search}”.` : "No public collections found."}
-                    />
-                    :
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {apiData.items.map((collection) =>
-                            <CollectionCard key={collection.id} collection={collection} communitySearch={filters}/>
-                        )}
-                    </div>
+                {!isAnonymous &&
+                    <Link
+                        to="/lists/collections/create"
+                        className={buttonVariants({ className: "whitespace-nowrap" })}
+                    >
+                        <Plus data-icon="inline-start"/>
+                        New collection
+                    </Link>
                 }
-                <Pagination
-                    currentPage={page}
-                    totalPages={apiData.pages}
-                    onChangePage={(nextPage) => updateFilters({ page: nextPage })}
-                />
             </div>
-        </PageTitle>
+
+            <div className="flex items-center justify-between gap-4 pb-4 pt-6">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    {hasFilters ? "Filtered collections" : "Popular collections"}
+                </h2>
+                {apiData.pages > 1 &&
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                        Page {page} / {apiData.pages}
+                    </span>
+                }
+            </div>
+
+            {apiData.items.length === 0
+                ?
+                <EmptyState
+                    iconSize={40}
+                    icon={LibraryBig}
+                    className="rounded-xl border py-20 shadow-xs"
+                    message={search ? `No public collections found for “${search}”.` : "No public collections found."}
+                />
+                :
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {apiData.items.map((collection) =>
+                        <CollectionCard key={collection.id} collection={collection} communitySearch={filters}/>
+                    )}
+                </div>
+            }
+            <Pagination
+                currentPage={page}
+                totalPages={apiData.pages}
+                onChangePage={(nextPage) => updateFilters({ page: nextPage })}
+            />
+        </div>
     );
 }

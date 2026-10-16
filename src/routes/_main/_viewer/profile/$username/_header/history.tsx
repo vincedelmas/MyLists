@@ -6,7 +6,6 @@ import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {SimpleSearch, simpleSearchSchema} from "@/lib/schemas";
 import {Payload} from "@/lib/client/components/general/Payload";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {DataTable} from "@/lib/client/components/general/DataTable";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
@@ -29,6 +28,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/h
         return context.queryClient.query({ ...context.allUpdatesQueryOptions, staleTime: "static" });
     },
     component: AllUpdates,
+    head: () => ({ meta: [{ title: "History - MyLists" }] }),
 });
 
 
@@ -132,38 +132,48 @@ function AllUpdates() {
     });
 
     return (
-        <PageTitle title="History" subtitle={isCurrent ? "All of your media feeds." : `All the feeds of ${username}.`}>
-            <div className="w-full max-w-5xl mx-auto mt-4">
-                <div className="flex justify-between items-center pb-3">
-                    <div className="flex items-center gap-2">
-                        <SearchInput
-                            className="w-55"
-                            value={localSearch}
-                            onChange={handleInputChange}
-                            placeholder="Search by name..."
+        <div className="flex flex-col mx-auto mb-8 pt-6">
+            <header>
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    History
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                    {isCurrent ? "All of your media feeds." : `All the feeds of ${username}.`}
+                </p>
+            </header>
+            <div className="mt-6">
+                <div className="w-full max-w-5xl mx-auto mt-4">
+                    <div className="flex justify-between items-center pb-3">
+                        <div className="flex items-center gap-2">
+                            <SearchInput
+                                className="w-55"
+                                value={localSearch}
+                                onChange={handleInputChange}
+                                placeholder="Search by name..."
+                            />
+                        </div>
+                        {(isCurrent && Object.keys(rowSelected).length !== 0) &&
+                            <Button
+                                onClick={deleteSelectedRows}
+                                disabled={Object.keys(rowSelected).length === 0 || deleteUpdateMutation.isPending}
+                            >
+                                Delete Selected
+                            </Button>
+                        }
+                    </div>
+                    <DataTable
+                        table={table}
+                        getIsRowSelected={(row) => row.getIsSelected()}
+                        getRowClassName={(row) => deleteUpdateMutation.isPending && row.getIsSelected() ? "opacity-50" : undefined}
+                    />
+                    <div className="mt-3">
+                        <TablePagination
+                            table={table}
+                            selectedRowCount={table.getSelectedRowModel().rows.length}
                         />
                     </div>
-                    {(isCurrent && Object.keys(rowSelected).length !== 0) &&
-                        <Button
-                            onClick={deleteSelectedRows}
-                            disabled={Object.keys(rowSelected).length === 0 || deleteUpdateMutation.isPending}
-                        >
-                            Delete Selected
-                        </Button>
-                    }
-                </div>
-                <DataTable
-                    table={table}
-                    getIsRowSelected={(row) => row.getIsSelected()}
-                    getRowClassName={(row) => deleteUpdateMutation.isPending && row.getIsSelected() ? "opacity-50" : undefined}
-                />
-                <div className="mt-3">
-                    <TablePagination
-                        table={table}
-                        selectedRowCount={table.getSelectedRowModel().rows.length}
-                    />
                 </div>
             </div>
-        </PageTitle>
+        </div>
     );
 }

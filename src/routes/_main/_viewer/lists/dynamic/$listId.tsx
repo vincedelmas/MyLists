@@ -7,23 +7,22 @@ import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
+import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
+import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {DynamicListBadges} from "@/lib/client/components/dynamic-lists/DynamicListBadges";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
 import {DynamicListResults} from "@/lib/client/components/dynamic-lists/DynamicListResults";
-import {dynamicListOptions} from "@/lib/client/react-query/query-options/dynamic-lists.options";
-import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {DynamicListActions} from "@/lib/client/components/dynamic-lists/DynamicListActions";
+import {dynamicListOptions} from "@/lib/client/react-query/query-options/dynamic-lists.options";
 import {MediaBrowseFiltersSheet} from "@/lib/client/components/media/browse/MediaBrowseFiltersSheet";
-import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
-import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {createMediaBrowseStatusOptions} from "@/lib/client/components/media/browse/media-browse.config";
 import {dynamicListSearchSchema, type DynamicListRuntimeFilters} from "@/lib/schemas/dynamic-lists.schema";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
@@ -43,6 +42,9 @@ export const Route = createFileRoute("/_main/_viewer/lists/dynamic/$listId")({
         return queryClient.query({ ...dynamicListOptions(listId, page, filters), staleTime: "static" });
     },
     component: DynamicListPage,
+    head: ({ loaderData }) => ({
+        meta: loaderData ? [{ title: `${loaderData.view.spec.title} - MyLists` }] : [],
+    }),
 });
 
 
@@ -105,7 +107,7 @@ function DynamicListPage() {
     };
 
     return (
-        <PageTitle title={view.spec.title} onlyHelmet>
+        <>
             <div className="flex min-w-0 flex-col gap-6 pt-8 pb-12">
                 <PageHeader
                     asideIcon={Layers3}
@@ -266,6 +268,6 @@ function DynamicListPage() {
                     options={{ ...(filterOptionsQuery.data?.results.filterOptions ?? results.filterOptions), mediaTypes: results.mediaTypes }}
                 />
             }
-        </PageTitle>
+        </>
     );
 }

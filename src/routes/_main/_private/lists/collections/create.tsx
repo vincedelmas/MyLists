@@ -6,7 +6,6 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {createFileRoute} from "@tanstack/react-router";
 import {handleServerFormErrors} from "@/lib/client/forms";
 import {formatNumber} from "@/lib/utils/formatting/number";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
 import {type CreateCollection, createCollectionSchema} from "@/lib/schemas";
@@ -16,6 +15,7 @@ import {useCreateCollectionMutation} from "@/lib/client/react-query/query-mutati
 
 export const Route = createFileRoute("/_main/_private/lists/collections/create")({
     component: CollectionCreatePage,
+    head: () => ({ meta: [{ title: "Create a collection - MyLists" }] }),
 });
 
 
@@ -47,27 +47,25 @@ function CollectionCreatePage() {
     };
 
     return (
-        <PageTitle title="Create a collection" onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    asideIcon={Layers3}
-                    title="Create a collection"
-                    asideLabel="In this collection"
-                    asideValue={<>{formatNumber(items.length)} media</>}
-                    eyebrow={<ListsBackLink username={currentUser!.name}/>}
-                    description="Bring your favorites together, from a movie marathon to a universe spanning books, games and more."
-                />
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                asideIcon={Layers3}
+                title="Create a collection"
+                asideLabel="In this collection"
+                asideValue={<>{formatNumber(items.length)} media</>}
+                eyebrow={<ListsBackLink username={currentUser!.name}/>}
+                description="Bring your favorites together, from a movie marathon to a universe spanning books, games and more."
+            />
 
-                <div className="pt-6">
-                    <CollectionEditor
-                        form={form}
-                        onSubmit={handleSubmit}
-                        submitLabel="Create collection"
-                        isSubmitting={createMutation.isPending}
-                        onCancel={() => void navigate({ to: "/lists/$username", params: { username: currentUser!.name } })}
-                    />
-                </div>
+            <div className="pt-6">
+                <CollectionEditor
+                    form={form}
+                    onSubmit={handleSubmit}
+                    submitLabel="Create collection"
+                    isSubmitting={createMutation.isPending}
+                    onCancel={() => void navigate({ to: "/lists/$username", params: { username: currentUser!.name } })}
+                />
             </div>
-        </PageTitle>
+        </div>
     );
 }

@@ -6,19 +6,18 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {jobDetailsOptions} from "@/lib/client/react-query/query-options";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {getMediaConfig} from "@/lib/client/components/media/media-config";
+import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
 import {MediaBrowseResults} from "@/lib/client/components/media/browse/MediaBrowseResults";
+import type {MediaBrowseFilterKey} from "@/lib/client/components/media/browse/media-filter.utils";
 import {MEDIA_BROWSE_LIBRARY_OPTIONS} from "@/lib/client/components/media/browse/media-browse.config";
 import {mediaCatalogBrowseSearchSchema, type MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
-import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
-import type {MediaBrowseFilterKey} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$name")({
@@ -36,6 +35,9 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$na
     loader: ({ context }) => {
         return context.queryClient.query({ ...context.jobDetailsQueryOptions, staleTime: "static" });
     },
+    head: ({ params: { name, mediaType } }) => ({
+        meta: [{ title: `${name}'s ${capitalize(mediaType)} - MyLists` }],
+    }),
     component: JobInfoPage,
 });
 
@@ -79,81 +81,78 @@ function JobInfoPage() {
     };
 
     return (
-        <PageTitle title={`${name}'s ${capitalize(mediaType)}`} onlyHelmet>
-            <div className="mb-8 flex min-w-0 flex-col pt-8">
-                <PageHeader
-                    title={name}
-                    asideIcon={MediaIcon}
-                    eyebrowIcon={JobIcon}
-                    eyebrow={`${label} · ${capitalize(mediaType)}`}
-                    asideLabel={`In this ${sectionTitle.toLowerCase()}`}
-                    description={`${capitalize(mediaType)} ${descriptionVerb} ${name}${descriptionSuffix}.`}
-                    asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "title" : "titles"}</>}
+        <div className="mb-8 flex min-w-0 flex-col pt-8">
+            <PageHeader
+                title={name}
+                asideIcon={MediaIcon}
+                eyebrowIcon={JobIcon}
+                eyebrow={`${label} · ${capitalize(mediaType)}`}
+                asideLabel={`In this ${sectionTitle.toLowerCase()}`}
+                description={`${capitalize(mediaType)} ${descriptionVerb} ${name}${descriptionSuffix}.`}
+                asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "title" : "titles"}</>}
+            />
+
+            <div className="flex flex-col gap-4 pb-5 pt-4">
+                <MediaBrowseToolbar
+                    isGrid={isGrid}
+                    search={searchInput.localSearch}
+                    searchLabel={"Search these titles"}
+                    onSearchChange={searchInput.handleInputChange}
+                    searchPlaceholder={`Search this ${sectionTitle.toLowerCase()}...`}
+                    onGridClick={() => void navigate({
+                        replace: true,
+                        search: prev => ({ ...prev, display: isGrid ? "table" : "grid" }),
+                    })}
+                    selects={[
+                        ...(!isAnonymous ? [
+                            {
+                                key: "list",
+                                label: "Filter by list",
+                                value: filters.library ?? "all",
+                                items: MEDIA_BROWSE_LIBRARY_OPTIONS,
+                                onChange: (library: string) => handleFilterChange({
+                                    library: library === "all" ? undefined : library as MediaCatalogBrowseFilters["library"],
+                                }),
+                            },
+                        ] : []),
+                        {
+                            key: "sorting",
+                            items: sortingOptions,
+                            label: "Sort these titles",
+                            value: filters.sorting && filters.sorting !== "default" ? filters.sorting : "release_oldest",
+                            onChange: (sorting: string) => handleFilterChange({ sorting: sorting as MediaCatalogBrowseFilters["sorting"] }),
+                        },
+                    ]}
                 />
 
-                <div className="flex flex-col gap-4 pb-5 pt-4">
-                    <MediaBrowseToolbar
-                        isGrid={isGrid}
-                        search={searchInput.localSearch}
-                        searchLabel={"Search these titles"}
-                        onSearchChange={searchInput.handleInputChange}
-                        searchPlaceholder={`Search this ${sectionTitle.toLowerCase()}...`}
-                        onGridClick={() => void navigate({
-                            replace: true,
-                            search: prev => ({ ...prev, display: isGrid ? "table" : "grid" }),
-                        })}
-                        selects={[
-                            ...(!isAnonymous ? [
-                                {
-                                    key: "list",
-                                    label: "Filter by list",
-                                    value: filters.library ?? "all",
-                                    items: MEDIA_BROWSE_LIBRARY_OPTIONS,
-                                    onChange: (library: string) => handleFilterChange({
-                                        library: library === "all" ? undefined : library as MediaCatalogBrowseFilters["library"],
-                                    }),
-                                },
-                            ] : []),
-                            {
-                                key: "sorting",
-                                items: sortingOptions,
-                                label: "Sort these titles",
-                                value: filters.sorting && filters.sorting !== "default" ? filters.sorting : "release_oldest",
-                                onChange: (sorting: string) => handleFilterChange({ sorting: sorting as MediaCatalogBrowseFilters["sorting"] }),
-                            },
-                        ]}
-                    />
-
-                    <BrowseAppliedFilters
-                        filters={filters}
-                        total={apiData.total}
-                        totalPages={apiData.pages}
-                        onReset={handleResetFilters}
-                        onRemove={handleRemoveFilter}
-                    />
-                </div>
-
-                {apiData.items.length > 0 ?
-                    <MediaBrowseResults
-                        showMembership={!isAnonymous}
-                        display={isGrid ? "grid" : "table"}
-                        items={apiData.items.map(item => ({ ...item, mediaType, title: item.mediaName }))}
-                    />
-                    :
-                    <EmptyState
-                        icon={JobIcon}
-                        className="rounded-xl border py-16"
-                        message="No titles match these filters."
-                    />
-                }
-
-                <Pagination
+                <BrowseAppliedFilters
+                    filters={filters}
+                    total={apiData.total}
                     totalPages={apiData.pages}
-                    onChangePage={onPageChange}
-                    currentPage={filters.page ?? 1}
+                    onReset={handleResetFilters}
+                    onRemove={handleRemoveFilter}
                 />
             </div>
 
-        </PageTitle>
+            {apiData.items.length > 0 ?
+                <MediaBrowseResults
+                    showMembership={!isAnonymous}
+                    display={isGrid ? "grid" : "table"}
+                    items={apiData.items.map(item => ({ ...item, mediaType, title: item.mediaName }))}
+                />
+                :
+                <EmptyState
+                    icon={JobIcon}
+                    className="rounded-xl border py-16"
+                    message="No titles match these filters."
+                />
+            }
+
+            <Pagination
+                totalPages={apiData.pages}
+                onChangePage={onPageChange}
+                currentPage={filters.page ?? 1}
+            />
+        </div>
     );
 }

@@ -7,7 +7,6 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {Field, FieldError} from "@/lib/client/components/ui/field";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -38,6 +37,7 @@ export const Route = createFileRoute("/_main/_private/search")({
         return context.queryClient.query({ ...context.searchQueryOptions, staleTime: "static" });
     },
     component: SearchPage,
+    head: () => ({ meta: [{ title: "Search - MyLists" }] }),
 });
 
 
@@ -167,131 +167,129 @@ function SearchPage() {
     };
 
     return (
-        <PageTitle title="Search" onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    title="Search"
-                    asideIcon={Database}
-                    eyebrowIcon={ScanSearch}
-                    eyebrow="Find something"
-                    asideLabel="Searching in"
-                    asideValue={selectedProviderLabel}
-                    description="Find movies, TV shows, books, games, manga, and people."
-                />
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                title="Search"
+                asideIcon={Database}
+                eyebrowIcon={ScanSearch}
+                eyebrow="Find something"
+                asideLabel="Searching in"
+                asideValue={selectedProviderLabel}
+                description="Find movies, TV shows, books, games, manga, and people."
+            />
 
-                <FormProvider {...form}>
-                    <div className="space-y-6">
-                        <form onSubmit={form.handleSubmit(commitSearch)} className="space-y-5">
-                            <div className="grid grid-cols-[9rem_minmax(0,1fr)_auto] items-start gap-3 pt-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
-                                <Controller
-                                    name="apiProvider"
-                                    control={form.control}
-                                    render={({ field }) =>
-                                        <div className="max-sm:col-span-2">
-                                            <Select value={field.value} items={searchProviderItems} onValueChange={handleProviderChange}>
-                                                <SelectTrigger aria-label="Search provider" className="w-full">
-                                                    <SelectValue/>
-                                                </SelectTrigger>
-                                                <SelectContent align="start">
-                                                    <SelectGroup>
-                                                        {searchProviderItems.map((item) =>
-                                                            <SelectItem key={item.value} value={item.value}>
-                                                                {item.label}
-                                                            </SelectItem>
-                                                        )}
-                                                    </SelectGroup>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    }
-                                />
+            <FormProvider {...form}>
+                <div className="space-y-6">
+                    <form onSubmit={form.handleSubmit(commitSearch)} className="space-y-5">
+                        <div className="grid grid-cols-[9rem_minmax(0,1fr)_auto] items-start gap-3 pt-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+                            <Controller
+                                name="apiProvider"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <div className="max-sm:col-span-2">
+                                        <Select value={field.value} items={searchProviderItems} onValueChange={handleProviderChange}>
+                                            <SelectTrigger aria-label="Search provider" className="w-full">
+                                                <SelectValue/>
+                                            </SelectTrigger>
+                                            <SelectContent align="start">
+                                                <SelectGroup>
+                                                    {searchProviderItems.map((item) =>
+                                                        <SelectItem key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                }
+                            />
 
+                            <Controller
+                                name="query"
+                                control={form.control}
+                                render={({ field, fieldState }) =>
+                                    <Field className="min-w-0" data-invalid={fieldState.invalid}>
+                                        <SearchInput
+                                            {...field}
+                                            autoFocus={true}
+                                            aria-invalid={fieldState.invalid}
+                                            aria-label={"Search title or name"}
+                                            inputClassName="placeholder:text-xs sm:placeholder:text-sm"
+                                            placeholder={selectedProvider === ApiProviderType.TMDB
+                                                ? "Title" : definition
+                                                    ? "Title (optional when filters are selected)" : "Title or Name"
+                                            }
+                                            onChange={(ev) => {
+                                                field.onChange(ev);
+                                                form.clearErrors();
+                                            }}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                }
+                            />
+                            <Button type="submit">
+                                <Search data-icon="inline-start"/>
+                                Search
+                            </Button>
+                        </div>
+
+                        {definition && SearchFilterPanel && draftFilters &&
+                            <section className="rounded-xl border p-4 shadow-xs sm:p-5">
                                 <Controller
-                                    name="query"
+                                    name="advancedFilters"
                                     control={form.control}
-                                    render={({ field, fieldState }) =>
-                                        <Field className="min-w-0" data-invalid={fieldState.invalid}>
-                                            <SearchInput
-                                                {...field}
-                                                autoFocus={true}
-                                                aria-invalid={fieldState.invalid}
-                                                aria-label={"Search title or name"}
-                                                inputClassName="placeholder:text-xs sm:placeholder:text-sm"
-                                                placeholder={selectedProvider === ApiProviderType.TMDB
-                                                    ? "Title" : definition
-                                                        ? "Title (optional when filters are selected)" : "Title or Name"
-                                                }
-                                                onChange={(ev) => {
-                                                    field.onChange(ev);
-                                                    form.clearErrors();
+                                    render={({ field }) => {
+                                        if (!field.value) return <></>;
+
+                                        return (
+                                            <SearchFilterPanel
+                                                filters={field.value}
+                                                onChange={(filters) => {
+                                                    field.onChange(filters);
+                                                    form.clearErrors("root");
                                                 }}
                                             />
-                                            <FieldError errors={[fieldState.error]}/>
-                                        </Field>
-                                    }
+                                        );
+                                    }}
                                 />
-                                <Button type="submit">
-                                    <Search data-icon="inline-start"/>
-                                    Search
-                                </Button>
-                            </div>
-
-                            {definition && SearchFilterPanel && draftFilters &&
-                                <section className="rounded-xl border p-4 shadow-xs sm:p-5">
-                                    <Controller
-                                        name="advancedFilters"
-                                        control={form.control}
-                                        render={({ field }) => {
-                                            if (!field.value) return <></>;
-
-                                            return (
-                                                <SearchFilterPanel
-                                                    filters={field.value}
-                                                    onChange={(filters) => {
-                                                        field.onChange(filters);
-                                                        form.clearErrors("root");
-                                                    }}
-                                                />
-                                            );
-                                        }}
-                                    />
-                                </section>
-                            }
-                        </form>
-
-                        {isViewingAppliedProvider && AppliedFilterChips && advancedFilters && appliedFilterCount > 0 &&
-                            <div className="flex flex-wrap items-center gap-2" aria-label="Applied filters">
-                                <span className="text-xs font-medium text-muted-foreground">
-                                    Applied filters
-                                </span>
-
-                                <AppliedFilterChips
-                                    filters={advancedFilters}
-                                    onChange={handleAppliedFiltersChange}
-                                />
-
-                                <Button type="button" size="xs" variant="hover" onClick={() => void handleClearFilters()}>
-                                    Clear all
-                                </Button>
-                            </div>
+                            </section>
                         }
+                    </form>
 
-                        {hasSubmittedSearch ?
-                            <SearchResultsQuery
-                                page={page}
-                                onPageChange={handlePageChange}
+                    {isViewingAppliedProvider && AppliedFilterChips && advancedFilters && appliedFilterCount > 0 &&
+                        <div className="flex flex-wrap items-center gap-2" aria-label="Applied filters">
+                            <span className="text-xs font-medium text-muted-foreground">
+                                Applied filters
+                            </span>
+
+                            <AppliedFilterChips
+                                filters={advancedFilters}
+                                onChange={handleAppliedFiltersChange}
                             />
-                            :
-                            <EmptyState
-                                icon={Search}
-                                className="min-h-48 rounded-xl border px-4 py-12 text-center shadow-xs"
-                                message="Choose a media type, add a title or filters, then search."
-                            />
-                        }
-                    </div>
-                </FormProvider>
-            </div>
-        </PageTitle>
+
+                            <Button type="button" size="xs" variant="hover" onClick={() => void handleClearFilters()}>
+                                Clear all
+                            </Button>
+                        </div>
+                    }
+
+                    {hasSubmittedSearch ?
+                        <SearchResultsQuery
+                            page={page}
+                            onPageChange={handlePageChange}
+                        />
+                        :
+                        <EmptyState
+                            icon={Search}
+                            className="min-h-48 rounded-xl border px-4 py-12 text-center shadow-xs"
+                            message="Choose a media type, add a title or filters, then search."
+                        />
+                    }
+                </div>
+            </FormProvider>
+        </div>
     );
 }
 

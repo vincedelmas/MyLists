@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_main/_private/lists/dynamic/create")({
         preset: z.number().int().min(0).max(DYNAMIC_LIST_PRESETS.length - 1).optional().catch(undefined),
     }),
     component: DynamicListCreatePage,
+    head: () => ({ meta: [{ title: "Create a dynamic list - MyLists" }] }),
 });
 
 

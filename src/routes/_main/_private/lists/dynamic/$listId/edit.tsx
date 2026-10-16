@@ -16,6 +16,9 @@ export const Route = createFileRoute("/_main/_private/lists/dynamic/$listId/edit
     validateSearch: dynamicListSearchSchema,
     loader: ({ params: { listId }, context: { queryClient } }) => queryClient.query({ ...dynamicListEditorOptions(listId), staleTime: 0 }),
     component: DynamicListEditPage,
+    head: ({ loaderData }) => ({
+        meta: loaderData ? [{ title: `Edit ${loaderData.spec.title} - MyLists` }] : [],
+    }),
 });
 
 

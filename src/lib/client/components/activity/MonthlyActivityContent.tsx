@@ -5,7 +5,6 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -346,21 +345,19 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
     );
 
     return (
-        <PageTitle title={`${periodLabel} activity for ${username}`} onlyHelmet>
-            <div className="mb-8 flex flex-col pt-8">
-                <PageHeader
-                    eyebrow="Month by month"
-                    asideIcon={CalendarDays}
-                    asideValue={periodLabel}
-                    eyebrowIcon={CalendarDays}
-                    asideLabel="Current period"
-                    navigation={calendarNavigation}
-                    title={`${username}'s activity`}
-                    description={`See what ${username} watched, read, played, month by month.`}
-                />
+        <div className="mb-8 flex flex-col pt-8">
+            <PageHeader
+                eyebrow="Month by month"
+                asideIcon={CalendarDays}
+                asideValue={periodLabel}
+                eyebrowIcon={CalendarDays}
+                asideLabel="Current period"
+                navigation={calendarNavigation}
+                title={`${username}'s activity`}
+                description={`See what ${username} watched, read, played, month by month.`}
+            />
 
-                {activityContent}
-            </div>
-        </PageTitle>
+            {activityContent}
+        </div>
     );
 }

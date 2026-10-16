@@ -4,7 +4,6 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {followsOptions} from "@/lib/client/react-query/query-options";
@@ -20,6 +19,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/f
         return context.queryClient.query({ ...context.followsQueryOptions, staleTime: "static" });
     },
     component: ProfileFollows,
+    head: () => ({ meta: [{ title: "Follows - MyLists" }] }),
 });
 
 
@@ -31,31 +31,38 @@ function ProfileFollows() {
     const isViewingOwnProfile = currentUser?.name === profileOwner;
 
     return (
-        <PageTitle
-            title="Follows"
-            subtitle={isViewingOwnProfile ? "People you subscribe to their updates." : `People followed by ${profileOwner}`}
-        >
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {apiData.follows.map((follow) =>
-                    <FollowCard
-                        key={follow.id}
-                        follow={follow}
-                        profileOwner={profileOwner}
-                        currentUsername={currentUser?.name}
-                        isViewingOwnProfile={isViewingOwnProfile}
-                    />
-                )}
-            </div>
-
-            {apiData.follows.length === 0 &&
-                <div className="flex flex-col items-center justify-center pt-20 text-center">
-                    <EmptyState
-                        icon={UserX}
-                        message="No Follows Found."
-                    />
+        <div className="flex flex-col mx-auto mb-8 pt-6">
+            <header>
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    Follows
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                    {isViewingOwnProfile ? "People you subscribe to their updates." : `People followed by ${profileOwner}`}
+                </p>
+            </header>
+            <div className="mt-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {apiData.follows.map((follow) =>
+                        <FollowCard
+                            key={follow.id}
+                            follow={follow}
+                            profileOwner={profileOwner}
+                            currentUsername={currentUser?.name}
+                            isViewingOwnProfile={isViewingOwnProfile}
+                        />
+                    )}
                 </div>
-            }
-        </PageTitle>
+
+                {apiData.follows.length === 0 &&
+                    <div className="flex flex-col items-center justify-center pt-20 text-center">
+                        <EmptyState
+                            icon={UserX}
+                            message="No Follows Found."
+                        />
+                    </div>
+                }
+            </div>
+        </div>
     );
 }
 

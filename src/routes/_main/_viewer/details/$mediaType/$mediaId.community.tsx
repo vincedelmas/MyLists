@@ -1,7 +1,7 @@
 import {Activity} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas";
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
         return context.queryClient.query({ ...context.communityActivityQueryOptions, staleTime: "static" });
     },
     component: MediaCommunityActivityPage,
+    head: () => ({ meta: [{ title: "Community Activity - MyLists" }] }),
 });
 
 
@@ -40,32 +41,40 @@ function MediaCommunityActivityPage() {
     };
 
     return (
-        <PageTitle title="Community Activity" subtitle={`${apiData.total} users for this media`}>
-            {apiData.total === 0 ?
-                <EmptyState
-                    iconSize={40}
-                    icon={Activity}
-                    className="py-20"
-                    message="No visible community activity found for this media."
-                />
-                :
-                <div className="space-y-4">
-                    <CommunityActivityStats
-                        stats={apiData.stats}
-                        mediaType={mediaType}
+        <div className="flex flex-col mx-auto mb-8 pt-6">
+            <PageHeader
+                eyebrow="Media community"
+                eyebrowIcon={Activity}
+                title="Community Activity"
+                description={`${apiData.total} users for this media`}
+            />
+            <div className="mt-6">
+                {apiData.total === 0 ?
+                    <EmptyState
+                        iconSize={40}
+                        icon={Activity}
+                        className="py-20"
+                        message="No visible community activity found for this media."
                     />
-                    <CommunityActivityList
-                        variant="viewAll"
-                        items={apiData.items}
-                        mediaType={mediaType}
-                    />
-                    <Pagination
-                        totalPages={apiData.pages}
-                        onChangePage={onPageChange}
-                        currentPage={filters.page ?? 1}
-                    />
-                </div>
-            }
-        </PageTitle>
+                    :
+                    <div className="space-y-4">
+                        <CommunityActivityStats
+                            stats={apiData.stats}
+                            mediaType={mediaType}
+                        />
+                        <CommunityActivityList
+                            variant="viewAll"
+                            items={apiData.items}
+                            mediaType={mediaType}
+                        />
+                        <Pagination
+                            totalPages={apiData.pages}
+                            onChangePage={onPageChange}
+                            currentPage={filters.page ?? 1}
+                        />
+                    </div>
+                }
+            </div>
+        </div>
     );
 }

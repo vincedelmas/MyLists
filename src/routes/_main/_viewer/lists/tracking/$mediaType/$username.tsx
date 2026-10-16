@@ -4,7 +4,6 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Header} from "@/lib/client/components/media/base/Header";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {MediaLevel} from "@/lib/client/components/general/MediaLevel";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -38,6 +37,9 @@ export const Route = createFileRoute("/_main/_viewer/lists/tracking/$mediaType/$
         return context.queryClient.query({ ...context.mediaListQueryOptions, staleTime: "static" });
     },
     component: TrackingListPage,
+    head: ({ params: { username, mediaType } }) => ({
+        meta: [{ title: `${username} ${capitalize(mediaType)} - MyLists` }],
+    }),
 });
 
 
@@ -106,114 +108,112 @@ function TrackingListPage() {
     };
 
     return (
-        <PageTitle title={`${username} ${capitalize(mediaType)}`} onlyHelmet>
-            <div className="mb-8 flex min-w-0 flex-col gap-4 pt-8">
-                <PageHeader
-                    eyebrow={<ListsBackLink username={username}/>}
-                    asideLabel={`${capitalize(mediaType)} level`}
-                    title={isCurrent ? `Your ${capitalize(mediaType)}` : `${username}'s ${capitalize(mediaType)}`}
-                    description={isCurrent
-                        ? "Everything you track here, with your ratings and progress."
-                        : `Everything ${username} tracks here, with their ratings and progress.`
-                    }
-                    asideValue={
-                        <MediaLevel
-                            className="text-lg"
-                            mediaType={mediaType}
-                            timeSpentMin={timeSpent}
-                            containerClassName="mx-0"
-                        />
-                    }
-                />
-
-                <Header
-                    trailing={<QuickActions username={username} mediaType={mediaType}/>}
-                    isGrid={isGrid}
-                    filters={filters}
-                    onGridClick={handleGridToggle}
-                    pagination={apiData.results.pagination}
-                    allStatuses={getMediaDefinition(mediaType).statuses}
-                    onSortChange={({ sorting }) => handleFilterChange({ sorting })}
-                    onStatusChange={({ status }) => handleFilterChange({ status })}
-                    onFilterClick={() => {
-                        setFiltersTab("filters");
-                        setFiltersPanelOpen(true);
-                    }}
-                />
-
-                <ListAppliedFilters
-                    filters={filters}
-                    mediaType={mediaType}
-                    totalItems={apiData.results.pagination.totalItems}
-                    totalPages={apiData.results.pagination.totalPages}
-                    onFilterRemove={(filters) => handleFilterChange(filters)}
-                />
-
-                <div className="animate-in fade-in duration-500">
-                    {isGrid ?
-                        <MediaGrid
-                            isCurrent={isCurrent}
-                            mediaType={mediaType}
-                            mediaItems={apiData.results.items}
-                            queryOption={mediaListQueryOptions}
-                        />
-                        :
-                        <MediaTable
-                            filters={filters}
-                            mediaType={mediaType}
-                            isCurrent={isCurrent}
-                            results={apiData.results}
-                            queryOption={mediaListQueryOptions}
-                            onChangePage={(filters) => handleFilterChange(filters)}
-                        />
-                    }
-                </div>
-
-                {isGrid &&
-                    <div className="mt-8">
-                        <Pagination
-                            currentPage={apiData.results.pagination.page}
-                            totalPages={apiData.results.pagination.totalPages}
-                            onChangePage={(page) => handleFilterChange({ page })}
-                        />
-                    </div>
+        <div className="mb-8 flex min-w-0 flex-col gap-4 pt-8">
+            <PageHeader
+                eyebrow={<ListsBackLink username={username}/>}
+                asideLabel={`${capitalize(mediaType)} level`}
+                title={isCurrent ? `Your ${capitalize(mediaType)}` : `${username}'s ${capitalize(mediaType)}`}
+                description={isCurrent
+                    ? "Everything you track here, with your ratings and progress."
+                    : `Everything ${username} tracks here, with their ratings and progress.`
                 }
+                asideValue={
+                    <MediaLevel
+                        className="text-lg"
+                        mediaType={mediaType}
+                        timeSpentMin={timeSpent}
+                        containerClassName="mx-0"
+                    />
+                }
+            />
 
-                <FiltersSideSheet
-                    filters={filters}
-                    username={username}
-                    mediaType={mediaType}
-                    isCurrent={isCurrent}
-                    activeTab={filters.filtersTab ?? filtersTab}
-                    open={filtersPanelOpen || filters.filtersTab !== undefined}
-                    onTabChange={tab => {
-                        setFiltersTab(tab);
-                        if (filters.filtersTab) {
-                            void navigate({ search: prev => ({ ...prev, filtersTab: tab }), replace: true, resetScroll: false });
-                        }
-                    }}
-                    onOpenChange={open => {
-                        setFiltersPanelOpen(open);
-                        if (!open && filters.filtersTab) {
-                            void navigate({ search: prev => ({ ...prev, filtersTab: undefined }), replace: true, resetScroll: false });
-                        }
-                    }}
-                    onTagChange={({ oldName, newName }) => {
-                        void navigate({
-                            resetScroll: false,
-                            search: prev => {
-                                if (!prev.tags?.includes(oldName)) return prev;
-                                const tags = prev.tags?.flatMap(name => name === oldName ? newName ? [newName] : [] : [name]);
-                                return { ...prev, tags: tags?.length ? tags : undefined, page: 1 };
-                            },
-                        });
-                    }}
-                    onFilterApply={advancedFilters => void navigate({
-                        resetScroll: false,
-                        search: prev => ({ ...prev, ...advancedFilters, filtersTab: undefined, page: 1 }),
-                    })}
-                />
+            <Header
+                trailing={<QuickActions username={username} mediaType={mediaType}/>}
+                isGrid={isGrid}
+                filters={filters}
+                onGridClick={handleGridToggle}
+                pagination={apiData.results.pagination}
+                allStatuses={getMediaDefinition(mediaType).statuses}
+                onSortChange={({ sorting }) => handleFilterChange({ sorting })}
+                onStatusChange={({ status }) => handleFilterChange({ status })}
+                onFilterClick={() => {
+                    setFiltersTab("filters");
+                    setFiltersPanelOpen(true);
+                }}
+            />
+
+            <ListAppliedFilters
+                filters={filters}
+                mediaType={mediaType}
+                totalItems={apiData.results.pagination.totalItems}
+                totalPages={apiData.results.pagination.totalPages}
+                onFilterRemove={(filters) => handleFilterChange(filters)}
+            />
+
+            <div className="animate-in fade-in duration-500">
+                {isGrid ?
+                    <MediaGrid
+                        isCurrent={isCurrent}
+                        mediaType={mediaType}
+                        mediaItems={apiData.results.items}
+                        queryOption={mediaListQueryOptions}
+                    />
+                    :
+                    <MediaTable
+                        filters={filters}
+                        mediaType={mediaType}
+                        isCurrent={isCurrent}
+                        results={apiData.results}
+                        queryOption={mediaListQueryOptions}
+                        onChangePage={(filters) => handleFilterChange(filters)}
+                    />
+                }
             </div>
-        </PageTitle>
+
+            {isGrid &&
+                <div className="mt-8">
+                    <Pagination
+                        currentPage={apiData.results.pagination.page}
+                        totalPages={apiData.results.pagination.totalPages}
+                        onChangePage={(page) => handleFilterChange({ page })}
+                    />
+                </div>
+            }
+
+            <FiltersSideSheet
+                filters={filters}
+                username={username}
+                mediaType={mediaType}
+                isCurrent={isCurrent}
+                activeTab={filters.filtersTab ?? filtersTab}
+                open={filtersPanelOpen || filters.filtersTab !== undefined}
+                onTabChange={tab => {
+                    setFiltersTab(tab);
+                    if (filters.filtersTab) {
+                        void navigate({ search: prev => ({ ...prev, filtersTab: tab }), replace: true, resetScroll: false });
+                    }
+                }}
+                onOpenChange={open => {
+                    setFiltersPanelOpen(open);
+                    if (!open && filters.filtersTab) {
+                        void navigate({ search: prev => ({ ...prev, filtersTab: undefined }), replace: true, resetScroll: false });
+                    }
+                }}
+                onTagChange={({ oldName, newName }) => {
+                    void navigate({
+                        resetScroll: false,
+                        search: prev => {
+                            if (!prev.tags?.includes(oldName)) return prev;
+                            const tags = prev.tags?.flatMap(name => name === oldName ? newName ? [newName] : [] : [name]);
+                            return { ...prev, tags: tags?.length ? tags : undefined, page: 1 };
+                        },
+                    });
+                }}
+                onFilterApply={advancedFilters => void navigate({
+                    resetScroll: false,
+                    search: prev => ({ ...prev, ...advancedFilters, filtersTab: undefined, page: 1 }),
+                })}
+            />
+        </div>
     );
 }

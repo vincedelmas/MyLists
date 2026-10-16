@@ -5,7 +5,6 @@ import {formatNumber} from "@/lib/utils/formatting/number";
 import {listsSearchSchema} from "@/lib/schemas/lists.schema";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {buttonVariants} from "@/lib/client/components/ui/button";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
@@ -30,12 +29,16 @@ export const Route = createFileRoute("/_main/_viewer/lists/$username")({
         collectionsQueryOptions: listsCollectionsOptions({ username, ...filters, page, perPage, pinnedOnly: kind === "pinned" }),
     }),
     loader: async ({ context }) => {
-        await Promise.all([
+        const [views] = await Promise.all([
             context.queryClient.query({ ...context.viewsQueryOptions, staleTime: "static" }),
             context.queryClient.query({ ...context.collectionsQueryOptions, staleTime: "static" }),
         ]);
+        return { isOwner: views.isOwner };
     },
     component: ListsPage,
+    head: ({ loaderData, params: { username } }) => ({
+        meta: loaderData ? [{ title: `${loaderData.isOwner ? "Your" : username + "'s"} lists & collections - MyLists` }] : [],
+    }),
 });
 
 
@@ -85,259 +88,257 @@ function ListsPage() {
         || (showDynamic && viewsQuery.data.total > 0) || (showCollections && collections.total > 0);
 
     return (
-        <PageTitle title={`${isOwner ? "Your" : username + "'s"} lists & collections`} onlyHelmet>
-            <div className="flex min-w-0 flex-col gap-8 pt-8 pb-12">
-                <PageHeader
-                    eyebrowIcon={LibraryBig}
-                    title="Lists & collections"
-                    eyebrow={isOwner ? "Your library" : `${username}'s library`}
-                    description={isOwner
-                        ? "Follow your progress, explore your dynamic lists and revisit your collections."
-                        : `Explore ${username}'s tracking lists and collections.`
-                    }
-                />
+        <div className="flex min-w-0 flex-col gap-8 pt-8 pb-12">
+            <PageHeader
+                eyebrowIcon={LibraryBig}
+                title="Lists & collections"
+                eyebrow={isOwner ? "Your library" : `${username}'s library`}
+                description={isOwner
+                    ? "Follow your progress, explore your dynamic lists and revisit your collections."
+                    : `Explore ${username}'s tracking lists and collections.`
+                }
+            />
 
-                <div className="flex flex-wrap items-center gap-3 -mt-4">
-                    <SearchInput
-                        value={localSearch}
-                        onChange={handleInputChange}
-                        className="min-w-0 flex-1 basis-64"
-                        aria-label="Search lists & collections"
-                        placeholder="Search lists & collections…"
-                    />
-                    <Select
-                        items={kindItems}
-                        value={filters.kind ?? "all"}
-                        onValueChange={value => {
-                            if (value !== null) {
-                                updateFilters({ kind: value === "all" ? undefined : value as typeof filters.kind, page: 1, dynamicPage: 1 });
-                            }
-                        }}
-                    >
-                        <SelectTrigger aria-label="Filter by kind" className="w-[175px] max-sm:grow">
-                            <SelectValue/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                {kindItems.map(item =>
-                                    <SelectItem key={item.value} value={item.value}>
-                                        {item.label}
-                                    </SelectItem>
-                                )}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <Select
-                        items={mediaItems}
-                        value={filters.mediaType ?? "all"}
-                        onValueChange={value => {
-                            if (value !== null) {
-                                updateFilters({ mediaType: value === "all" ? undefined : value as MediaType, page: 1, dynamicPage: 1 });
-                            }
-                        }}
-                    >
-                        <SelectTrigger aria-label="Filter by media type" className="w-[150px] max-sm:grow">
-                            <SelectValue/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>{mediaItems.map(item =>
+            <div className="flex flex-wrap items-center gap-3 -mt-4">
+                <SearchInput
+                    value={localSearch}
+                    onChange={handleInputChange}
+                    className="min-w-0 flex-1 basis-64"
+                    aria-label="Search lists & collections"
+                    placeholder="Search lists & collections…"
+                />
+                <Select
+                    items={kindItems}
+                    value={filters.kind ?? "all"}
+                    onValueChange={value => {
+                        if (value !== null) {
+                            updateFilters({ kind: value === "all" ? undefined : value as typeof filters.kind, page: 1, dynamicPage: 1 });
+                        }
+                    }}
+                >
+                    <SelectTrigger aria-label="Filter by kind" className="w-[175px] max-sm:grow">
+                        <SelectValue/>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            {kindItems.map(item =>
                                 <SelectItem key={item.value} value={item.value}>
                                     {item.label}
                                 </SelectItem>
                             )}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+                <Select
+                    items={mediaItems}
+                    value={filters.mediaType ?? "all"}
+                    onValueChange={value => {
+                        if (value !== null) {
+                            updateFilters({ mediaType: value === "all" ? undefined : value as MediaType, page: 1, dynamicPage: 1 });
+                        }
+                    }}
+                >
+                    <SelectTrigger aria-label="Filter by media type" className="w-[150px] max-sm:grow">
+                        <SelectValue/>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>{mediaItems.map(item =>
+                            <SelectItem key={item.value} value={item.value}>
+                                {item.label}
+                            </SelectItem>
+                        )}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
 
-                    <QuickActions
-                        username={username}
-                    />
-                </div>
+                <QuickActions
+                    username={username}
+                />
+            </div>
 
-                {!canReadTracking && <Empty className="border">
+            {!canReadTracking && <Empty className="border">
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <LockKeyhole/>
+                    </EmptyMedia>
+                    <EmptyTitle>
+                        Tracking lists are private
+                    </EmptyTitle>
+                    <EmptyDescription>
+                        This profile limits access to its tracking lists. You can browse any <b>public</b> collections from this profile.
+                    </EmptyDescription>
+                </EmptyHeader>
+            </Empty>}
+
+            {showPresets && (visiblePresets.length > 0 || showContinue) &&
+                <TrackingListsSection
+                    username={username}
+                    presets={visiblePresets}
+                    showContinue={showContinue}
+                    mediaType={filters.mediaType}
+                />
+            }
+
+            {showDynamicSection &&
+                <section aria-labelledby="dynamic-lists-title" className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <h2 id="dynamic-lists-title" className="flex items-center gap-2 text-lg font-semibold">
+                                <Layers3 className="size-5 text-brand"/>
+                                Dynamic lists
+                            </h2>
+                            <InfoPopover label="About dynamic lists" title="What is a dynamic list?" iconClassName="mt-0.5">
+                                <div className="space-y-3 text-sm text-muted-foreground font-normal">
+                                    <p>
+                                        A dynamic list is a saved view of the media you track.
+                                        Choose rules like: status, rating or tags, and combine one or more media types.
+                                    </p>
+                                    <p>
+                                        Results update as your tracking changes.
+                                        For example, show movies and series that have been in Plan to Watch for more than six months.
+                                    </p>
+                                </div>
+                            </InfoPopover>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            {viewsQuery.data.total > 0 &&
+                                <span className="text-sm tabular-nums text-muted-foreground">
+                                    {formatNumber(viewsQuery.data.total)} dynamic {viewsQuery.data.total === 1 ? "list" : "lists"}
+                                </span>
+                            }
+                            {isOwner &&
+                                <Link to="/lists/dynamic/create" className={buttonVariants({ size: "sm" })}>
+                                    <Plus data-icon="inline-start"/>
+                                    Create dynamic list
+                                </Link>
+                            }
+                        </div>
+                    </div>
+                    {views.length > 0 ?
+                        <>
+                            <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+                                {views.map(view =>
+                                    <DynamicListCard
+                                        view={view}
+                                        key={view.id}
+                                        isOwner={isOwner}
+                                        preview={view.preview}
+                                        activeMediaTypes={activeMediaTypes}
+                                    />
+                                )}
+                            </div>
+                            <Pagination
+                                currentPage={viewsQuery.data.page}
+                                totalPages={viewsQuery.data.pages}
+                                onChangePage={dynamicPage => updateFilters({ dynamicPage })}
+                            />
+                        </>
+                        :
+                        <Empty className="min-h-40 border">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <Layers3/>
+                                </EmptyMedia>
+                                <EmptyTitle>
+                                    {hasFilters
+                                        ? "No matching dynamic lists"
+                                        : "No dynamic lists yet"
+                                    }
+                                </EmptyTitle>
+                                <EmptyDescription>
+                                    {hasFilters
+                                        ? "Try another search or filter."
+                                        : "Create a dynamic list to group media with rules that follow your tracking progress."
+                                    }
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    }
+                </section>
+            }
+
+            {showCollectionsSection &&
+                <section aria-labelledby="collections-title" className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h2 id="collections-title" className="flex items-center gap-2 text-lg font-semibold">
+                            <ListOrdered className="size-5 text-brand"/>
+                            Collections
+                        </h2>
+                        <div className="flex flex-wrap items-center gap-3">
+                            {collections.total > 0 &&
+                                <span className="text-sm tabular-nums text-muted-foreground">
+                                    {formatNumber(collections.total)} collections
+                                </span>
+                            }
+                            {isOwner &&
+                                <Link to="/lists/collections/create" className={buttonVariants({ size: "sm" })}>
+                                    <Plus data-icon="inline-start"/>
+                                    Create collection
+                                </Link>
+                            }
+                        </div>
+                    </div>
+                    {collections.total > 0 ?
+                        <>
+                            <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+                                {collections.items.map(collection =>
+                                    <CollectionCard
+                                        showOwner={false}
+                                        key={collection.id}
+                                        collection={collection}
+                                    />
+                                )}
+                            </div>
+                            <Pagination
+                                currentPage={collections.page}
+                                totalPages={collections.pages}
+                                onChangePage={page => updateFilters({ page })}
+                            />
+                        </>
+                        :
+                        <Empty className="min-h-40 border">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <ListOrdered/>
+                                </EmptyMedia>
+                                <EmptyTitle>
+                                    {hasFilters
+                                        ? "No matching collections"
+                                        : "No collections yet"
+                                    }
+                                </EmptyTitle>
+                                <EmptyDescription>
+                                    {hasFilters
+                                        ? "Try another search or filter."
+                                        : "Create a collection to group media and arrange them your way."
+                                    }
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    }
+                </section>
+            }
+
+            {!hasResults && canReadTracking && !showDynamicSection && !showCollectionsSection &&
+                <Empty className="min-h-60 border">
                     <EmptyHeader>
                         <EmptyMedia variant="icon">
-                            <LockKeyhole/>
+                            <LibraryBig/>
                         </EmptyMedia>
                         <EmptyTitle>
-                            Tracking lists are private
+                            Nothing here yet
                         </EmptyTitle>
                         <EmptyDescription>
-                            This profile limits access to its tracking lists. You can browse any <b>public</b> collections from this profile.
+                            {query || filters.mediaType
+                                ? "Try another search or filter."
+                                : isOwner
+                                    ? "Create a list or collection to organize your media."
+                                    : "No lists or collections to show."
+                            }
                         </EmptyDescription>
                     </EmptyHeader>
-                </Empty>}
-
-                {showPresets && (visiblePresets.length > 0 || showContinue) &&
-                    <TrackingListsSection
-                        username={username}
-                        presets={visiblePresets}
-                        showContinue={showContinue}
-                        mediaType={filters.mediaType}
-                    />
-                }
-
-                {showDynamicSection &&
-                    <section aria-labelledby="dynamic-lists-title" className="flex flex-col gap-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                                <h2 id="dynamic-lists-title" className="flex items-center gap-2 text-lg font-semibold">
-                                    <Layers3 className="size-5 text-brand"/>
-                                    Dynamic lists
-                                </h2>
-                                <InfoPopover label="About dynamic lists" title="What is a dynamic list?" iconClassName="mt-0.5">
-                                    <div className="space-y-3 text-sm text-muted-foreground font-normal">
-                                        <p>
-                                            A dynamic list is a saved view of the media you track.
-                                            Choose rules like: status, rating or tags, and combine one or more media types.
-                                        </p>
-                                        <p>
-                                            Results update as your tracking changes.
-                                            For example, show movies and series that have been in Plan to Watch for more than six months.
-                                        </p>
-                                    </div>
-                                </InfoPopover>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-3">
-                                {viewsQuery.data.total > 0 &&
-                                    <span className="text-sm tabular-nums text-muted-foreground">
-                                        {formatNumber(viewsQuery.data.total)} dynamic {viewsQuery.data.total === 1 ? "list" : "lists"}
-                                    </span>
-                                }
-                                {isOwner &&
-                                    <Link to="/lists/dynamic/create" className={buttonVariants({ size: "sm" })}>
-                                        <Plus data-icon="inline-start"/>
-                                        Create dynamic list
-                                    </Link>
-                                }
-                            </div>
-                        </div>
-                        {views.length > 0 ?
-                            <>
-                                <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-                                    {views.map(view =>
-                                        <DynamicListCard
-                                            view={view}
-                                            key={view.id}
-                                            isOwner={isOwner}
-                                            preview={view.preview}
-                                            activeMediaTypes={activeMediaTypes}
-                                        />
-                                    )}
-                                </div>
-                                <Pagination
-                                    currentPage={viewsQuery.data.page}
-                                    totalPages={viewsQuery.data.pages}
-                                    onChangePage={dynamicPage => updateFilters({ dynamicPage })}
-                                />
-                            </>
-                            :
-                            <Empty className="min-h-40 border">
-                                <EmptyHeader>
-                                    <EmptyMedia variant="icon">
-                                        <Layers3/>
-                                    </EmptyMedia>
-                                    <EmptyTitle>
-                                        {hasFilters
-                                            ? "No matching dynamic lists"
-                                            : "No dynamic lists yet"
-                                        }
-                                    </EmptyTitle>
-                                    <EmptyDescription>
-                                        {hasFilters
-                                            ? "Try another search or filter."
-                                            : "Create a dynamic list to group media with rules that follow your tracking progress."
-                                        }
-                                    </EmptyDescription>
-                                </EmptyHeader>
-                            </Empty>
-                        }
-                    </section>
-                }
-
-                {showCollectionsSection &&
-                    <section aria-labelledby="collections-title" className="flex flex-col gap-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <h2 id="collections-title" className="flex items-center gap-2 text-lg font-semibold">
-                                <ListOrdered className="size-5 text-brand"/>
-                                Collections
-                            </h2>
-                            <div className="flex flex-wrap items-center gap-3">
-                                {collections.total > 0 &&
-                                    <span className="text-sm tabular-nums text-muted-foreground">
-                                        {formatNumber(collections.total)} collections
-                                    </span>
-                                }
-                                {isOwner &&
-                                    <Link to="/lists/collections/create" className={buttonVariants({ size: "sm" })}>
-                                        <Plus data-icon="inline-start"/>
-                                        Create collection
-                                    </Link>
-                                }
-                            </div>
-                        </div>
-                        {collections.total > 0 ?
-                            <>
-                                <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-                                    {collections.items.map(collection =>
-                                        <CollectionCard
-                                            showOwner={false}
-                                            key={collection.id}
-                                            collection={collection}
-                                        />
-                                    )}
-                                </div>
-                                <Pagination
-                                    currentPage={collections.page}
-                                    totalPages={collections.pages}
-                                    onChangePage={page => updateFilters({ page })}
-                                />
-                            </>
-                            :
-                            <Empty className="min-h-40 border">
-                                <EmptyHeader>
-                                    <EmptyMedia variant="icon">
-                                        <ListOrdered/>
-                                    </EmptyMedia>
-                                    <EmptyTitle>
-                                        {hasFilters
-                                            ? "No matching collections"
-                                            : "No collections yet"
-                                        }
-                                    </EmptyTitle>
-                                    <EmptyDescription>
-                                        {hasFilters
-                                            ? "Try another search or filter."
-                                            : "Create a collection to group media and arrange them your way."
-                                        }
-                                    </EmptyDescription>
-                                </EmptyHeader>
-                            </Empty>
-                        }
-                    </section>
-                }
-
-                {!hasResults && canReadTracking && !showDynamicSection && !showCollectionsSection &&
-                    <Empty className="min-h-60 border">
-                        <EmptyHeader>
-                            <EmptyMedia variant="icon">
-                                <LibraryBig/>
-                            </EmptyMedia>
-                            <EmptyTitle>
-                                Nothing here yet
-                            </EmptyTitle>
-                            <EmptyDescription>
-                                {query || filters.mediaType
-                                    ? "Try another search or filter."
-                                    : isOwner
-                                        ? "Create a list or collection to organize your media."
-                                        : "No lists or collections to show."
-                                }
-                            </EmptyDescription>
-                        </EmptyHeader>
-                    </Empty>
-                }
-            </div>
-        </PageTitle>
+                </Empty>
+            }
+        </div>
     );
 }

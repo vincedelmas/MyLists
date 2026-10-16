@@ -3,7 +3,6 @@ import {ApiProviderType} from "@/lib/utils/enums";
 import {addSeo, addSeoLinks} from "@/lib/client/seo";
 import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {
@@ -88,74 +87,72 @@ function FeaturesPage() {
     };
 
     return (
-        <PageTitle title="News & Features" onlyHelmet>
-            <div className="mb-16 flex flex-col pt-8">
-                <PageHeader
-                    eyebrow="What’s new"
-                    title="News & features"
-                    eyebrowIcon={Newspaper}
-                    asideIcon={CalendarDays}
-                    asideLabel="Latest update"
-                    asideValue={LATEST_RELEASE.date}
-                    description="See what changed recently and what you can do with MyLists today."
-                />
+        <div className="mb-16 flex flex-col pt-8">
+            <PageHeader
+                eyebrow="What’s new"
+                title="News & features"
+                eyebrowIcon={Newspaper}
+                asideIcon={CalendarDays}
+                asideLabel="Latest update"
+                asideValue={LATEST_RELEASE.date}
+                description="See what changed recently and what you can do with MyLists today."
+            />
 
-                <ReleaseCard
-                    release={LATEST_RELEASE}
-                />
+            <ReleaseCard
+                release={LATEST_RELEASE}
+            />
 
-                <section className="pt-8">
-                    <div className="flex items-end justify-between gap-8 pb-4 max-sm:flex-col max-sm:items-start max-sm:gap-3">
-                        <div>
-                            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
-                                Explore MyLists
-                            </h2>
-                            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                                The tools available across tracking, statistics, community, customization, and play.
-                            </p>
-                        </div>
-                        <div className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                            {FEATURES_DATA.length} features · {activeCategories.length} areas
-                        </div>
+            <section className="pt-8">
+                <div className="flex items-end justify-between gap-8 pb-4 max-sm:flex-col max-sm:items-start max-sm:gap-3">
+                    <div>
+                        <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+                            Explore MyLists
+                        </h2>
+                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                            The tools available across tracking, statistics, community, customization, and play.
+                        </p>
                     </div>
+                    <div className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                        {FEATURES_DATA.length} features · {activeCategories.length} areas
+                    </div>
+                </div>
 
-                    {activeCategories.map((category, idx) => {
-                        const CategoryIcon = getCategoryIcon(category);
+                {activeCategories.map((category, idx) => {
+                    const CategoryIcon = getCategoryIcon(category);
 
-                        return (
-                            <section
-                                key={category}
-                                className="grid grid-cols-[minmax(13rem,0.34fr)_minmax(0,1fr)] gap-10 py-6 max-lg:grid-cols-1 max-lg:gap-6"
-                            >
-                                <div>
-                                    <div className="flex items-center gap-2 text-brand">
-                                        <CategoryIcon className="size-4" aria-hidden="true"/>
-                                        <span className="text-xs font-semibold tabular-nums">
-                                            {String(idx + 1).padStart(2, "0")}
-                                        </span>
-                                    </div>
-                                    <h3 className="mt-3 text-lg font-semibold tracking-tight text-foreground">
-                                        {category}
-                                    </h3>
-                                    <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                                        {AREA_DESCRIPTIONS[category]}
-                                    </p>
+                    return (
+                        <section
+                            key={category}
+                            className="grid grid-cols-[minmax(13rem,0.34fr)_minmax(0,1fr)] gap-10 py-6 max-lg:grid-cols-1 max-lg:gap-6"
+                        >
+                            <div>
+                                <div className="flex items-center gap-2 text-brand">
+                                    <CategoryIcon className="size-4" aria-hidden="true"/>
+                                    <span className="text-xs font-semibold tabular-nums">
+                                        {String(idx + 1).padStart(2, "0")}
+                                    </span>
                                 </div>
+                                <h3 className="mt-3 text-lg font-semibold tracking-tight text-foreground">
+                                    {category}
+                                </h3>
+                                <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                                    {AREA_DESCRIPTIONS[category]}
+                                </p>
+                            </div>
 
-                                <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
-                                    {groupedFeatures[category]?.map((feature) =>
-                                        <FeatureCard
-                                            feature={feature}
-                                            key={feature.name}
-                                        />
-                                    )}
-                                </div>
-                            </section>
-                        );
-                    })}
-                </section>
-            </div>
-        </PageTitle>
+                            <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
+                                {groupedFeatures[category]?.map((feature) =>
+                                    <FeatureCard
+                                        feature={feature}
+                                        key={feature.name}
+                                    />
+                                )}
+                            </div>
+                        </section>
+                    );
+                })}
+            </section>
+        </div>
     );
 }
 

@@ -1,32 +1,29 @@
-import React from "react";
+import type {ReactNode} from "react";
 import {TriangleAlert, X} from "lucide-react";
+import {Button} from "@/lib/client/components/ui/button";
+import {Alert, AlertAction, AlertDescription} from "@/lib/client/components/ui/alert";
 
 
 interface InlineErrorContainerProps {
-    children: React.ReactNode;
+    children: ReactNode;
     onDismiss?: () => void;
 }
 
 
 export function InlineErrorContainer({ children, onDismiss }: InlineErrorContainerProps) {
-    const [hide, setHide] = React.useState(false);
-
-    if (hide) return null;
-
-    const onHide = () => {
-        setHide(true);
-        onDismiss?.();
-    };
-
     return (
-        <div className="relative flex w-full items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-2.5 text-xs font-medium text-destructive">
-            <TriangleAlert className="shrink-0 size-3.5"/>
-            <div className="w-[90%]">
+        <Alert variant="destructive" className="has-data-[slot=alert-action]:pr-10">
+            <TriangleAlert aria-hidden="true"/>
+            <AlertDescription>
                 {children}
-            </div>
-            <button type="button" onClick={onHide} aria-label="Dismiss error" className="absolute right-2 cursor-pointer">
-                <X className="size-4"/>
-            </button>
-        </div>
+            </AlertDescription>
+            {onDismiss &&
+                <AlertAction>
+                    <Button type="button" variant="ghost" size="icon-xs" onClick={onDismiss} aria-label="Dismiss error">
+                        <X aria-hidden="true"/>
+                    </Button>
+                </AlertAction>
+            }
+        </Alert>
     );
 }

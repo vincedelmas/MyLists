@@ -373,7 +373,7 @@ function MediaListFormPage() {
                     </Button>
                 </div>
                 {downloadListAsCSVMutation.isError &&
-                    <InlineErrorContainer>
+                    <InlineErrorContainer onDismiss={downloadListAsCSVMutation.reset}>
                         Failed to export your list. Please try again later.
                         If the error persists, contact me.
                     </InlineErrorContainer>

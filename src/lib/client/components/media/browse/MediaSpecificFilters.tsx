@@ -1,24 +1,25 @@
 import type {MediaType} from "@/lib/utils/enums";
+import {FieldGroup} from "@/lib/client/components/ui/field";
 import type {MediaMetadataFilterOptions} from "@/lib/types/media-list.types";
 import type {MediaMetadataFilters} from "@/lib/media-definitions/definition.registry";
-import {getMediaFilterDefinitions} from "@/lib/client/components/media/browse/media-filter.utils";
-import {FieldGroup} from "@/lib/client/components/ui/field";
 import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
+import {getMediaFilterDefinitions} from "@/lib/client/components/media/browse/media-filter.utils";
 import {MediaFilterCheckboxGroup} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
 
 
 interface MediaSpecificFiltersProps {
-    mediaType: MediaType;
-    options: MediaMetadataFilterOptions;
-    filters: MediaMetadataFilters;
-    maxSelected?: number;
+    username?: string;
     disabled?: boolean;
+    mediaType: MediaType;
+    maxSelected?: number;
+    filters: MediaMetadataFilters;
     errors?: Record<string, string>;
+    options: MediaMetadataFilterOptions;
     onChange: (filters: Partial<MediaMetadataFilters>) => void;
 }
 
 
-export const MediaSpecificFilters = ({ mediaType, options, filters, maxSelected, disabled, errors, onChange }: MediaSpecificFiltersProps) => (
+export const MediaSpecificFilters = ({ mediaType, username, options, filters, maxSelected, disabled, errors, onChange }: MediaSpecificFiltersProps) => (
     <FieldGroup>
         {getMediaFilterDefinitions(mediaType).map(filter => {
             const values = filters[filter.key] ?? [];
@@ -27,14 +28,15 @@ export const MediaSpecificFilters = ({ mediaType, options, filters, maxSelected,
             if (filter.type === "search") {
                 return (
                     <MediaFilterSearch
-                        key={filter.key}
-                        label={filter.title}
-                        options={options[filter.key]?.map(item => item.name) ?? []}
                         value={values}
+                        key={filter.key}
                         onChange={update}
                         disabled={disabled}
+                        label={filter.title}
                         maxSelected={maxSelected}
                         error={errors?.[filter.key]}
+                        options={options[filter.key]?.map(item => item.name) ?? []}
+                        listSearch={username ? { mediaType, username, field: filter.key } : undefined}
                     />
                 );
             }
@@ -45,14 +47,14 @@ export const MediaSpecificFilters = ({ mediaType, options, filters, maxSelected,
             return (
                 <MediaFilterCheckboxGroup
                     key={filter.key}
-                    title={filter.title}
-                    items={[...new Set([...(items?.map(item => item.name) ?? []), ...values])]}
                     selected={values}
                     onChange={update}
-                    maxSelected={maxSelected}
                     disabled={disabled}
-                    error={errors?.[filter.key]}
+                    title={filter.title}
+                    maxSelected={maxSelected}
                     renderLabel={filter.render}
+                    error={errors?.[filter.key]}
+                    items={[...new Set([...(items?.map(item => item.name) ?? []), ...values])]}
                 />
             );
         })}

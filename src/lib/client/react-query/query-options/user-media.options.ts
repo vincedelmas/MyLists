@@ -1,7 +1,8 @@
-import {queryOptions} from "@tanstack/react-query";
 import {MediaType} from "@/lib/utils/enums";
 import {MediaListArgs} from "@/lib/schemas";
+import {queryOptions} from "@tanstack/react-query";
 import {getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
+import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 import {getMediaListFilters, getMediaListSF, getTagsViewFn, getUserListHeaderSF} from "@/lib/server/functions/media-lists";
 
 
@@ -23,9 +24,9 @@ export const tagsViewOptions = (mediaType: MediaType, username: string) => query
 })
 
 
-export const listFiltersOptions = (mediaType: MediaType, username: string) => queryOptions({
-    queryKey: ["listFilters", mediaType, username],
-    queryFn: () => getMediaListFilters({ data: { mediaType, username } }),
+export const listFiltersOptions = (mediaType: MediaType, username: string, metadataFields: MediaMetadataFilterKey[]) => queryOptions({
+    queryKey: ["listFilters", mediaType, username, metadataFields],
+    queryFn: () => getMediaListFilters({ data: { mediaType, username, metadataFields } }),
     staleTime: Infinity,
 });
 

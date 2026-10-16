@@ -7,16 +7,17 @@ import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import type {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {JobType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
+import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
+import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.queries";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {MediaListArgs, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 import {createMediaCommunityQueries} from "@/lib/server/domain/media/base/media-community.queries";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MediaListArgs, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
 type MediaServiceRepository<TDef extends AnyServerMediaDefinition> = MediaQueries<TDef> & {
@@ -73,8 +74,8 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         return repository.searchByName(query, limit);
     }
 
-    async function getListFilters(userId: number) {
-        return listQueries.getListFilters(userId);
+    async function getListFilters(userId: number, metadataFields?: readonly MediaMetadataFilterKey[]) {
+        return listQueries.getListFilters(userId, metadataFields);
     }
 
     async function getTagNames(userId: number) {
@@ -117,8 +118,8 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         }) satisfies MyListsCSVImport);
     }
 
-    async function getSearchListFilters(userId: number, query: string, job: JobType) {
-        return repository.getSearchListFilters(userId, query, job);
+    async function getSearchListFilters(userId: number, query: string, field: MediaMetadataFilterKey) {
+        return listQueries.getSearchListFilters(userId, query, field);
     }
 
     async function getMediaJobDetails(job: JobType, name: string, filters: MediaCatalogBrowseFilters, userId?: number) {

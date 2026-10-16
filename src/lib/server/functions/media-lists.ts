@@ -56,18 +56,18 @@ export const getTagsViewFn = createServerFn({ method: "GET" })
 export const getMediaListFilters = createServerFn({ method: "GET" })
     .middleware([activeMediaListAuthorizationMiddleware])
     .validator(mediaListFiltersSchema)
-    .handler(async ({ data: { mediaType }, context: { user } }) => {
+    .handler(async ({ data: { mediaType, metadataFields }, context: { user } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.getListFilters(user.id);
+        return mediaService.getListFilters(user.id, metadataFields);
     });
 
 
 export const getMediaListSearchFilters = createServerFn({ method: "GET" })
     .middleware([activeMediaListAuthorizationMiddleware])
     .validator(mediaListSearchFiltersSchema)
-    .handler(async ({ data: { mediaType, query, job }, context: { user } }) => {
+    .handler(async ({ data: { mediaType, query, field }, context: { user } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.getSearchListFilters(user.id, query, job);
+        return mediaService.getSearchListFilters(user.id, query, field);
     });

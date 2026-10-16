@@ -320,8 +320,14 @@ it("loads named options only on request and scopes them to saved owner matches",
         expect(options.movies?.actors).toEqual([{ name: "Saved actor" }]);
         const editorOptions = getDynamicListEditorFilterOptions(1, [MediaType.MOVIES]);
         expect(editorOptions.mediaFilters.movies?.actors).toEqual([{ name: "Excluded actor" }, { name: "Saved actor" }]);
-        const ordinary = await createMediaListQueries(getServerMediaDefinition(MediaType.MOVIES).repository).getListFilters(1);
+        const listQueries = createMediaListQueries(getServerMediaDefinition(MediaType.MOVIES).repository);
+        const ordinary = await listQueries.getListFilters(1);
         expect(ordinary.actors).toEqual(editorOptions.mediaFilters.movies?.actors);
+        expect(await listQueries.getListFilters(1, ["langs"])).not.toHaveProperty("actors");
+        expect(await listQueries.getSearchListFilters(1, "actor", "actors")).toEqual([
+            { name: "Excluded actor" }, { name: "Saved actor" },
+        ]);
+        expect(await listQueries.getSearchListFilters(1, "Saved", "actors")).toEqual([{ name: "Saved actor" }]);
         dbContext.db.update(schema.userMediaSettings).set({ active: false })
             .where(and(eq(schema.userMediaSettings.userId, 1), eq(schema.userMediaSettings.mediaType, MediaType.MOVIES))).run();
         expect(getDynamicListEditorFilterOptions(1, [MediaType.MOVIES]).mediaFilters.movies?.actors).toEqual([]);

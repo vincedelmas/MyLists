@@ -6,12 +6,12 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import type {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
 import type {ScopedMediaFilterValues} from "@/lib/schemas/media-filters.schema";
 import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
-import {and, eq, gte, inArray, isNotNull, like, or, type SQL, sql} from "drizzle-orm";
+import {and, asc, eq, gte, inArray, isNotNull, like, or, type SQL, sql} from "drizzle-orm";
 import type {AnyMediaRepositoryDefinition, BaseMediaTables} from "@/lib/media-definitions/base/media.definition.server";
 import type {MediaCommonFilters, MediaMetadataFilterKey, MediaMetadataFilters} from "@/lib/media-definitions/definition.registry";
 
 
-type MediaFilterOptionsScope = { mediaIds: SQL; userId?: number };
+type MediaFilterOptionsScope = { mediaIds: SQL; userId?: number; query?: string };
 type MediaFilterSource = Omit<ArrayFilterDefinition, "argName" | "mediaTable">;
 type MediaCommonFilterArgs = Omit<MediaCommonFilters, "status"> & { status?: Status[] };
 type MediaFilterArgs = MediaCommonFilterArgs & MediaMetadataFilters & { userId?: number };
@@ -80,21 +80,32 @@ const createArrayFilter = ({ argName, entityTable, filterColumn, mediaTable, opt
             return inArray(mediaTable.id, subQuery);
         },
 
-        getOptions: ({ mediaIds, userId }) => {
+        getOptions: ({ mediaIds, userId, query }) => {
             const table = entityTable ?? optionsTable ?? mediaTable;
             const mediaIdColumn = entityTable?.mediaId ?? optionsTable?.mediaId ?? mediaTable.id;
 
-            const rows = getDbClient()
+            const optionsQuery = getDbClient()
                 .selectDistinct({ name: sql<string>`${filterColumn}` })
                 .from(table)
                 .where(and(
                     sql`${mediaIdColumn} IN (${mediaIds})`, isNotNull(filterColumn),
                     optionsTable ? eq(optionsTable.userId, userId!) : undefined,
-                )).all();
+                    query ? like(filterColumn, `%${query}%`) : undefined,
+                ))
+                .orderBy(asc(filterColumn))
+                .$dynamic();
 
+            if (query && !splitValues) {
+                optionsQuery.limit(8);
+            }
+
+            const rows = optionsQuery.all();
             const names = rows.flatMap(row => splitValues ? row.name.split(",").map(name => name.trim()) : [row.name]);
 
-            return [...new Set(names.filter(Boolean))].sort((a, b) => a.localeCompare(b)).map(name => ({ name }));
+            const matches = [...new Set(names.filter(name => name && (!query || name.toLowerCase().includes(query.toLowerCase()))))]
+                .sort((a, b) => a.localeCompare(b));
+
+            return (query ? matches.slice(0, 8) : matches).map(name => ({ name }));
         },
     };
 };
@@ -193,10 +204,14 @@ export const getMediaMetadataFilterConditions = (definition: AnyMediaRepositoryD
 };
 
 
-export const getMediaMetadataFilterOptions = (definition: AnyMediaRepositoryDefinition, scope: MediaFilterOptionsScope) => {
+export const getMediaMetadataFilterOptions = (definition: AnyMediaRepositoryDefinition, scope: MediaFilterOptionsScope, fields?: readonly MediaMetadataFilterKey[]) => {
     const options: Partial<Record<MediaMetadataFilterKey, NameObj[]>> = {};
 
     for (const [key, filter] of Object.entries(definition.filters.metadata)) {
+        if (fields && !fields.includes(key as MediaMetadataFilterKey)) {
+            continue;
+        }
+
         if (filter.getOptions && (!filter.personal || scope.userId !== undefined)) {
             options[key as MediaMetadataFilterKey] = filter.getOptions(scope);
         }

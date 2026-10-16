@@ -1,3 +1,4 @@
+import {FormattedError} from "@/lib/utils/error-classes";
 import {mediaTags, user} from "@/lib/server/database/schema";
 import type {IdNamePair} from "@/lib/types/media-common.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -6,6 +7,7 @@ import {and, asc, count, eq, inArray, notInArray, sql} from "drizzle-orm";
 import {getMediaTagNames} from "@/lib/server/domain/media/base/media-tag.queries";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import type {ExpandedListFilters, MediaListData} from "@/lib/types/media-list.types";
+import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 import type {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {
     getMediaCommonFilterConditions,
@@ -34,7 +36,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
     const { listQuery, tables: { listTable, mediaTable, genreTable } } = definition;
 
     return {
-        async getListFilters(userId: number): Promise<ExpandedListFilters> {
+        async getListFilters(userId: number, metadataFields?: readonly MediaMetadataFilterKey[]): Promise<ExpandedListFilters> {
             const genresPromise = definition.filters.common.genres
                 ? getDbClient()
                     .selectDistinct({ name: sql<string>`${genreTable.name}` })
@@ -60,8 +62,23 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
             return {
                 tags,
                 genres,
-                ...getMediaMetadataFilterOptions(definition, { mediaIds, userId }),
+                ...getMediaMetadataFilterOptions(definition, { mediaIds, userId }, metadataFields),
             };
+        },
+
+        async getSearchListFilters(userId: number, query: string, field: MediaMetadataFilterKey) {
+            const filter = definition.filters.metadata[field];
+            if (!filter?.getOptions) {
+                throw new FormattedError("This filter is not available for this media type.");
+            }
+
+            const mediaIds = getDbClient()
+                .select({ mediaId: listTable.mediaId })
+                .from(listTable)
+                .where(eq(listTable.userId, userId))
+                .getSQL();
+
+            return filter.getOptions({ mediaIds, userId, query });
         },
 
         async getUserFavorites(userId: number, limit = 7) {

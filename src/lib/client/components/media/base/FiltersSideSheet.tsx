@@ -4,18 +4,18 @@ import React, {useState} from "react";
 import {useIsMutating, useQuery} from "@tanstack/react-query";
 import {MediaType} from "@/lib/utils/enums";
 import {Spinner} from "@/lib/client/components/ui/spinner";
-import type {MediaCommonFilterKey, MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
-import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {MediaFiltersSheet, type MediaFiltersTab} from "@/lib/client/components/media/browse/MediaFiltersSheet";
-import {MediaFilterTags, type MediaTagChange} from "@/lib/client/components/media/browse/MediaFilterTags";
 import {listFiltersOptions} from "@/lib/client/react-query/query-options";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {FieldGroup, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {MediaSpecificFilters} from "@/lib/client/components/media/browse/MediaSpecificFilters";
 import {MediaFilterCheckbox} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
-import {getMediaCommonFilterKeys} from "@/lib/client/components/media/browse/media-filter.utils";
+import {MediaFilterTags, type MediaTagChange} from "@/lib/client/components/media/browse/MediaFilterTags";
+import type {MediaCommonFilterKey, MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
+import {MediaFiltersSheet, type MediaFiltersTab} from "@/lib/client/components/media/browse/MediaFiltersSheet";
 import {MediaGenreFilter, MediaPersonalFilters} from "@/lib/client/components/media/browse/MediaCommonFilters";
+import {getMediaCommonFilterKeys, getMediaFilterDefinitions} from "@/lib/client/components/media/browse/media-filter.utils";
 
 
 type AdvancedListFilters = Pick<MediaListArgs,
@@ -30,18 +30,21 @@ interface FiltersSideSheetProps {
     mediaType: MediaType;
     filters: MediaListArgs;
     activeTab: MediaFiltersTab;
+    onOpenChange: (open: boolean) => void;
     onTabChange: (tab: MediaFiltersTab) => void;
     onTagChange: (change: MediaTagChange) => void;
-    onOpenChange: (open: boolean) => void;
     onFilterApply: (filters: Partial<MediaListArgs>) => void;
 }
 
 
-export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent, activeTab, onTabChange, onTagChange, onOpenChange, onFilterApply }: FiltersSideSheetProps) => {
+export const FiltersSideSheet = (props: FiltersSideSheetProps) => {
+    const { open, filters, username, mediaType, isCurrent, activeTab, onTabChange, onTagChange, onOpenChange, onFilterApply } = props;
+
     const [draft, setDraft] = useState<Partial<AdvancedListFilters>>({});
     const isEditingTags = useIsMutating({ mutationKey: ["userMediaEdit", mediaType] }) > 0;
+    const metadataFields = getMediaFilterDefinitions(mediaType).filter(filter => filter.type === "checkbox").map(filter => filter.key);
     const { data: listFilters, isPending, error } = useQuery({
-        ...listFiltersOptions(mediaType, username), enabled: open && activeTab === "filters",
+        ...listFiltersOptions(mediaType, username, metadataFields), enabled: open && activeTab === "filters",
     });
 
     const currentFilters = { ...filters, ...draft };
@@ -132,6 +135,7 @@ export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent
                             />
                             <MediaSpecificFilters
                                 mediaType={mediaType}
+                                username={username}
                                 options={listFilters!}
                                 filters={currentFilters}
                                 onChange={next => setDraft(current => ({ ...current, ...next }))}

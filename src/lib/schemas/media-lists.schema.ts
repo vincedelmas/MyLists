@@ -1,5 +1,4 @@
 import * as z from "zod";
-import {JobType} from "@/lib/utils/enums";
 import {createMediaFiltersSchema} from "@/lib/media-definitions/base/media-filters";
 import {ALL_MEDIA_TYPES, getMediaDefinition, mediaCommonFilterSchemas, type MediaMetadataFilterKey, type MediaMetadataFilterSchemas} from "@/lib/media-definitions/definition.registry";
 import {
@@ -18,6 +17,8 @@ export type MediaListArgs = z.infer<typeof mediaListArgsSchema>;
 const mediaFilterSchemas = Object.fromEntries(
     ALL_MEDIA_TYPES.flatMap(mediaType => Object.entries(getMediaDefinition(mediaType).filters.metadata)),
 ) as MediaMetadataFilterSchemas;
+
+const metadataFieldSchema = z.enum(Object.keys(mediaFilterSchemas) as [MediaMetadataFilterKey, ...MediaMetadataFilterKey[]]);
 
 
 const mediaListMetadataFiltersSchema = z.strictObject(Object.fromEntries(
@@ -62,10 +63,11 @@ export const mediaListSchema = z.object({
 
 export const mediaListFiltersSchema = z.looseObject({
     mediaType: mediaTypeFieldSchema,
+    metadataFields: z.array(metadataFieldSchema).optional(),
 });
 
 export const mediaListSearchFiltersSchema = z.looseObject({
-    job: z.enum(JobType),
+    field: metadataFieldSchema,
     mediaType: mediaTypeFieldSchema,
-    query: z.string().min(1),
+    query: z.string().trim().min(2).max(100),
 });

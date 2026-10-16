@@ -450,27 +450,6 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         };
     }
 
-    async function getSearchListFilters(userId: number, query: string, job: JobType) {
-        const { tables: { listTable }, jobs } = repoDefinition;
-
-        const jobHandler = jobs[job];
-        if (!jobHandler) throw notFound();
-
-        const { sourceTable, nameColumn, mediaIdColumn, postProcess } = jobHandler;
-
-        const results = await getDbClient()
-            .selectDistinct({ name: sql<string>`${nameColumn}` })
-            .from(sourceTable)
-            .innerJoin(listTable, eq(listTable.mediaId, mediaIdColumn))
-            .where(and(eq(listTable.userId, userId), like(nameColumn, `%${query}%`)));
-
-        if (postProcess) {
-            return postProcess(results);
-        }
-
-        return results;
-    }
-
     return {
         findById,
         findByApiId,
@@ -485,7 +464,6 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         bulkInsertUserMedia,
         getPopularMediaRefs,
         getMediaDetailsByIds,
-        getSearchListFilters,
         getMediaDurationsByIds,
         updateUserMediaDetails,
         downloadMediaListAsCSV,

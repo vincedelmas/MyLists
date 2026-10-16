@@ -93,11 +93,11 @@ export function ImportUploadForm({ defaultValues, children }: ImportUploadFormPr
                                     }
 
                                     <Input
+                                        key={fileInputResetKey}
                                         {...field}
                                         type="file"
                                         className="sr-only"
                                         id={`${fieldId}-file`}
-                                        key={fileInputResetKey}
                                         disabled={isSubmitting}
                                         accept=".csv,text/csv,text/plain"
                                         aria-invalid={fieldState.invalid}

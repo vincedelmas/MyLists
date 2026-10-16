@@ -220,6 +220,14 @@
                 "jsx-a11y/scope": "error",
                 "jsx-a11y/tabindex-no-positive": "error",
                 "react/rules-of-hooks": "error",
+                "react/jsx-key": [
+                    "error",
+                    {
+                        "checkFragmentShorthand": true,
+                        "checkKeyMustBeforeSpread": true,
+                        "warnOnDuplicates": true
+                    }
+                ],
                 "react/exhaustive-deps": "warn"
             },
             "plugins": [

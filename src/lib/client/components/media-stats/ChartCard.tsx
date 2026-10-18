@@ -1,7 +1,7 @@
 import {ReactNode} from "react";
 import {ChartNoAxesColumn} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
 
 type ChartSummaryItem = {
@@ -14,6 +14,7 @@ interface ChartCardProps {
     title: string;
     height: number;
     hasData: boolean;
+    action?: ReactNode;
     children: ReactNode;
     description?: string;
     emptyMessage?: string;
@@ -21,13 +22,20 @@ interface ChartCardProps {
 }
 
 
-export function ChartCard({ title, height, hasData, children, description, summary = [], emptyMessage = "No data to display yet." }: ChartCardProps) {
+export function ChartCard(props: ChartCardProps) {
+    const { title, action, height, hasData, children, description, summary = [], emptyMessage = "No data to display yet." } = props;
+
     return (
         <Card className="min-w-0 overflow-hidden">
             <CardHeader className="min-h-14 gap-1 pb-2">
                 <CardTitle className="text-base">
                     {title}
                 </CardTitle>
+                {action &&
+                    <CardAction>
+                        {action}
+                    </CardAction>
+                }
                 {description &&
                     <CardDescription>
                         {description}

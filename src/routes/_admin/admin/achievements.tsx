@@ -1,20 +1,11 @@
-import {useId, useState} from "react";
-import {AchievementTier} from "@/lib/schemas";
-import {Badge} from "@/lib/client/components/ui/badge";
-import {Input} from "@/lib/client/components/ui/input";
-import {capitalize} from "@/lib/utils/formatting/text";
+import {Award} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
-import {Achievement} from "@/lib/types/achievements.types";
-import {Textarea} from "@/lib/client/components/ui/textarea";
+import {formatNumber} from "@/lib/utils/formatting/number";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
-import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {Field, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {adminAchievementsOptions} from "@/lib/client/react-query/query-options/admin.options";
-import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
-import {useAdminUpdateAchievementMutation, useAdminUpdateTiersMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
+import {AchievementDirectory} from "@/lib/client/components/admin/achievements/AchievementDirectory";
 
 
 export const Route = createFileRoute("/_admin/admin/achievements")({
@@ -25,206 +16,26 @@ export const Route = createFileRoute("/_admin/admin/achievements")({
         return context.queryClient.query({ ...context.achievementsQueryOptions, staleTime: "static" });
     },
     component: AchievementPage,
-})
+});
 
 
 function AchievementPage() {
-    const fieldId = useId();
-    const updateTiersMutation = useAdminUpdateTiersMutation();
-    const [editedName, setEditedName] = useState("");
-    const [editedDesc, setEditedDesc] = useState("");
     const { achievementsQueryOptions } = Route.useRouteContext();
-    const apiData = useSuspenseQuery(achievementsQueryOptions).data;
-    const updateAchievementMutation = useAdminUpdateAchievementMutation();
-    const [editableTiers, setEditableTiers] = useState<AchievementTier[]>([]);
-    const [isTierDialogOpen, setIsTierDialogOpen] = useState(false);
-    const [editAchievementDialogOpen, setEditAchievementDialogOpen] = useState(false);
-    const [editingAchievement, setEditingAchievement] = useState<Achievement | null>(null);
-
-    const editAchievement = (achievement: Achievement) => {
-        setEditedName(achievement.name);
-        setEditingAchievement(achievement);
-        setEditedDesc(achievement.description);
-        setEditAchievementDialogOpen(true);
-    };
-
-    const handleSaveChanges = async () => {
-        if (!editingAchievement) return;
-
-        setEditAchievementDialogOpen(false);
-        updateAchievementMutation.mutate({
-            data: {
-                name: editedName,
-                description: editedDesc,
-                achievementId: editingAchievement.id,
-            }
-        });
-    };
-
-    const handleCancelAchievementEdit = () => {
-        setEditAchievementDialogOpen(false);
-    };
-
-    const editTier = (achievement: Achievement) => {
-        setIsTierDialogOpen(true);
-        setEditingAchievement(achievement);
-        setEditableTiers(achievement.tiers.map(tier => ({ ...tier, criteria: { ...tier.criteria } })));
-    };
-
-    const handleTierCountChange = (tierId: number, value: string) => {
-        const count = parseInt(value, 10);
-
-        setEditableTiers((currentTiers) => currentTiers.map((tier) => (tier.id === tierId) ?
-            {
-                ...tier,
-                criteria: {
-                    count: Number.isFinite(count) ? count : 0
-                }
-            }
-            : tier
-        ));
-    };
-
-    const handleSaveTierChanges = async () => {
-        if (!editingAchievement) return;
-        setIsTierDialogOpen(false);
-        updateTiersMutation.mutate({ data: { tiers: editableTiers } });
-    };
-
-    const handleCancelTierEdit = () => {
-        setIsTierDialogOpen(false);
-    };
+    const achievements = useSuspenseQuery(achievementsQueryOptions).data;
 
     return (
         <DashboardShell>
-            <DashboardHeader
-                heading="Achievements Manager"
-                description="Manage the achievement definitions and associated tiers."
+            <PageHeader
+                eyebrowIcon={Award}
+                title="Achievements"
+                asideLabel="Definitions"
+                eyebrow="Administration"
+                asideValue={formatNumber(achievements.length)}
+                description="Manage achievement names, descriptions, and the thresholds for every tier."
             />
-            <div className="grid gap-6">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {apiData.map((achievement) =>
-                        <Card key={achievement.id}>
-                            <CardHeader>
-                                <CardTitle>{achievement.name}</CardTitle>
-                                <CardAction>
-                                    <Badge variant="outline">
-                                        {capitalize(achievement.mediaType)}
-                                    </Badge>
-                                </CardAction>
-                                <CardDescription className="text-sm">
-                                    {achievement.description}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="w-[60%] h-full">
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold">Achievement Tiers</h3>
-                                    <div className="space-y-2">
-                                        {achievement.tiers.map((tier) =>
-                                            <div key={tier.difficulty} className="grid grid-cols-2 gap-2 text-sm">
-                                                <div>{capitalize(tier.difficulty)}</div>
-                                                <div>Criteria: {tier.criteria.count}</div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </CardContent>
-                            <CardFooter className="flex justify-between">
-                                <Button size="sm" variant="outline" onClick={() => editAchievement(achievement)}>
-                                    Edit Details
-                                </Button>
-                                <Button variant="secondary" size="sm" onClick={() => editTier(achievement)}>
-                                    Edit Tiers
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    )}
-                </div>
-            </div>
-            <Dialog open={editAchievementDialogOpen} onOpenChange={setEditAchievementDialogOpen}>
-                <DialogContent className="sm:max-w-106">
-                    <DialogHeader>
-                        <DialogTitle>Edit Achievement Details</DialogTitle>
-                        <DialogDescription>Modify the core details of the achievement.</DialogDescription>
-                    </DialogHeader>
-                    {editingAchievement &&
-                        <FieldGroup className="py-4">
-                            <Field className="grid grid-cols-4 items-center gap-4" data-disabled={updateAchievementMutation.isPending}>
-                                <FieldLabel htmlFor={`${fieldId}-name`} className="text-right">Name</FieldLabel>
-                                <Input
-                                    id={`${fieldId}-name`}
-                                    value={editedName}
-                                    className="col-span-3"
-                                    disabled={updateAchievementMutation.isPending}
-                                    onChange={(ev) => setEditedName(ev.target.value)}
-                                />
-                            </Field>
-                            <Field className="grid grid-cols-4 items-center gap-4" data-disabled={updateAchievementMutation.isPending}>
-                                <FieldLabel htmlFor={`${fieldId}-description`} className="text-right">Description</FieldLabel>
-                                <Textarea
-                                    id={`${fieldId}-description`}
-                                    value={editedDesc}
-                                    className="col-span-3"
-                                    disabled={updateAchievementMutation.isPending}
-                                    onChange={(ev) => setEditedDesc(ev.target.value)}
-                                />
-                            </Field>
-                        </FieldGroup>
-                    }
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={handleCancelAchievementEdit}
-                            disabled={updateAchievementMutation.isPending}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveChanges} disabled={updateAchievementMutation.isPending || !editedName || !editedDesc}>
-                            Save Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-            <Dialog open={isTierDialogOpen} onOpenChange={setIsTierDialogOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Edit Tiers for: {editingAchievement?.name}</DialogTitle>
-                        <DialogDescription>Adjust the criteria count for each difficulty tier.</DialogDescription>
-                    </DialogHeader>
-                    {editingAchievement && (
-                        <FieldGroup className="py-4">
-                            {editableTiers.map((tier) =>
-                                <Field key={tier.difficulty} className="grid grid-cols-3 items-center gap-4" data-disabled={updateAchievementMutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-tier-${tier.id}`} className="text-right">
-                                        {capitalize(tier.difficulty)}
-                                    </FieldLabel>
-                                    <Input
-                                        min="0"
-                                        type="number"
-                                        className="col-span-2"
-                                        id={`${fieldId}-tier-${tier.id}`}
-                                        value={tier.criteria.count}
-                                        disabled={updateAchievementMutation.isPending}
-                                        onChange={(ev) => handleTierCountChange(tier.id, ev.target.value)}
-                                    />
-                                </Field>
-                            )}
-                        </FieldGroup>
-                    )}
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={handleCancelTierEdit}
-                            disabled={updateAchievementMutation.isPending}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveTierChanges} disabled={updateAchievementMutation.isPending}>
-                            Save Tier Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <AchievementDirectory
+                achievements={achievements}
+            />
         </DashboardShell>
     );
 }

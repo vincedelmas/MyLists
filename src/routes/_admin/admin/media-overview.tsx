@@ -1,10 +1,13 @@
 import {capitalize} from "@/lib/utils/formatting/text";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {ArrowUpFromLine, BadgePlus} from "lucide-react";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
+import {formatNumber} from "@/lib/utils/formatting/number";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
-import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
+import {ArrowLeftRight, BadgePlus, LibraryBig, ListChecks} from "lucide-react";
+import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
+import {StatsSectionHeader} from "@/lib/client/components/media-stats/StatsSectionHeader";
 import {adminMediaOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
 
 
@@ -23,53 +26,79 @@ function MediaDashboardPage() {
     const { mediaOverviewQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(mediaOverviewQueryOptions).data;
 
-    const addedMedia = apiData.addedComparedToLastMonth > 0;
-
     return (
         <DashboardShell>
-            <DashboardHeader
-                heading="User Media Overview"
-                description="Overview of the user media list statistics and evolution."
+            <PageHeader
+                asideValue="This month"
+                eyebrow="Administration"
+                eyebrowIcon={LibraryBig}
+                title="User media overview"
+                asideLabel="Reporting period"
+                description="How users are adding to and updating their media lists across MyLists."
             />
-            <div className="grid gap-4 grid-cols-5 max-sm:grid-cols-2 max-sm:gap-3 mt-4">
-                <StatCard
-                    icon={BadgePlus}
-                    title="Total Added Media"
-                    value={apiData.addedThisMonth}
-                    subtitle={`${addedMedia ? "+" : ""}${apiData.addedComparedToLastMonth} compared to last month`}
+            <section className="my-6 rounded-xl border p-5 shadow-xs sm:p-6" aria-label="Monthly media summary">
+                <CompactStatsGrid
+                    columns={3}
+                    items={[
+                        {
+                            label: "List entries added",
+                            note: "Across all users’ lists",
+                            icon: <BadgePlus className="size-4"/>,
+                            value: formatNumber(apiData.addedThisMonth),
+                        },
+                        {
+                            label: "Media updated",
+                            icon: <ListChecks className="size-4"/>,
+                            value: formatNumber(apiData.updatedThisMonth),
+                            note: "Distinct titles updated in users’ lists",
+                        },
+                        {
+                            label: "Change in additions",
+                            icon: <ArrowLeftRight className="size-4"/>,
+                            note: `${formatNumber(apiData.addedLastMonth)} entries added last month`,
+                            value: formatNumber(apiData.addedComparedToLastMonth, { signDisplay: "exceptZero" }),
+                        },
+                    ]}
                 />
-                {apiData.addedPerMediaType.map((added) => {
-                    const updatedMedia = added.comparedToLastMonth > 0;
-                    return (
-                        <StatCard
-                            icon={BadgePlus}
-                            key={added.mediaType}
-                            value={added.thisMonth}
-                            title={"New Added " + capitalize(added.mediaType)}
-                            subtitle={`${updatedMedia ? "+" : ""}${added.comparedToLastMonth} compared to last month`}
-                        />
-                    );
-                })}
-            </div>
-            <div className="grid gap-4 grid-cols-5 max-sm:grid-cols-2 max-sm:gap-3 mt-4">
-                <StatCard
-                    icon={ArrowUpFromLine}
-                    title="Total Updated Media"
-                    value={apiData.updatedThisMonth}
-                    subtitle="Total media updated this month"
+            </section>
+
+            <section className="pt-6" aria-label="New list entries by media type">
+                <StatsSectionHeader
+                    index="01"
+                    title="New list entries"
+                    description="Entries added this month, with the change compared to last month for each media type."
                 />
-                {apiData.updatedPerMediaType.map((added) => {
-                    return (
-                        <StatCard
-                            key={added.mediaType}
-                            icon={ArrowUpFromLine}
-                            value={added.thisMonth}
-                            subtitle="Updated this month"
-                            title={"Updated " + capitalize(added.mediaType)}
-                        />
-                    );
-                })}
-            </div>
+                <div className="rounded-xl border p-5 shadow-xs sm:p-6">
+                    <CompactStatsGrid
+                        columns={6}
+                        items={apiData.addedPerMediaType.map(({ mediaType, thisMonth, comparedToLastMonth }) => ({
+                            label: capitalize(mediaType),
+                            value: formatNumber(thisMonth),
+                            icon: <MainThemeIcon type={mediaType} size={16}/>,
+                            note: `${formatNumber(comparedToLastMonth, { signDisplay: "exceptZero" })} vs. last month`,
+                        }))}
+                    />
+                </div>
+            </section>
+
+            <section className="pt-10" aria-label="Updated media by media type">
+                <StatsSectionHeader
+                    index="02"
+                    title="Updated media"
+                    description="Distinct titles updated in users’ lists this month. Each title counts once per media type,
+                    even when several users update it."
+                />
+                <div className="rounded-xl border p-5 shadow-xs sm:p-6">
+                    <CompactStatsGrid
+                        columns={6}
+                        items={apiData.updatedPerMediaType.map(({ mediaType, thisMonth }) => ({
+                            label: capitalize(mediaType),
+                            value: formatNumber(thisMonth),
+                            icon: <MainThemeIcon type={mediaType} size={16}/>,
+                        }))}
+                    />
+                </div>
+            </section>
         </DashboardShell>
     );
 }

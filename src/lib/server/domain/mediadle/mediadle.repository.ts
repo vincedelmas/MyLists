@@ -1,11 +1,9 @@
-import {SearchType} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {paginate} from "@/lib/server/database/pagination";
 import {toDateInputValue} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {and, asc, count, desc, eq, gt, gte, isNotNull, lt, notInArray, or, sql} from "drizzle-orm";
 import {dailyMediadle, mediadleStats, movies, user, userMediadleProgress} from "@/lib/server/database/schema";
-import {and, asc, count, desc, eq, getTableColumns, gt, gte, isNotNull, like, lt, notInArray, or, sql} from "drizzle-orm";
 
 
 export class MediadleRepository {
@@ -88,41 +86,6 @@ export class MediadleRepository {
                 rank: (usersAhead?.count ?? 0) + 1,
             },
         };
-    }
-
-    static async getAllUsersStatsForAdmin(data: SearchType) {
-        const search = data.search ?? "";
-        const { items, total, pages } = await paginate({
-            page: data.page,
-            perPage: data.perPage,
-            getTotal: async () => {
-                return getDbClient()
-                    .select({ count: count() })
-                    .from(mediadleStats)
-                    .innerJoin(user, eq(mediadleStats.userId, user.id))
-                    .where(like(user.name, `%${search}%`))
-                    .get()?.count ?? 0;
-            },
-            getItems: ({ limit, offset }) => {
-                return getDbClient()
-                    .select({
-                        name: user.name,
-                        email: user.email,
-                        image: user.image,
-                        createdAt: user.createdAt,
-                        updatedAt: user.updatedAt,
-                        ...getTableColumns(mediadleStats),
-                    })
-                    .from(mediadleStats)
-                    .innerJoin(user, eq(mediadleStats.userId, user.id))
-                    .where(like(user.name, `%${search}%`))
-                    .orderBy(desc(mediadleStats.totalPlayed))
-                    .limit(limit)
-                    .offset(offset);
-            },
-        });
-
-        return { items, total, pages };
     }
 
     static getTodayMoviedle() {

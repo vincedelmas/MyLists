@@ -12,11 +12,12 @@ const singleSeries = "value";
 
 interface DataBarChartProps<TDatum> {
     height: number;
+    barInset?: number;
     ariaLabel: string;
     xTickGap?: number;
-    xTickFontSize?: number;
     className?: string;
     showGrid?: boolean;
+    xTickFontSize?: number;
     data: readonly TDatum[];
     integerYTicks?: boolean;
     y: Channel<TDatum, number>;
@@ -50,7 +51,7 @@ export function DataBarChart<TDatum>(props: DataBarChartProps<TDatum>) {
         tooltipTitleFormatter = xFormatter,
         data, height, ariaLabel, className, seriesOrder,
         mode = "single", showGrid = false, integerYTicks = false,
-        xTickGap = 16, xTickFontSize = chartAxisStyle.tickLabels.fontSize,
+        barInset = 1, xTickGap = 16, xTickFontSize = chartAxisStyle.tickLabels.fontSize,
     } = props;
 
     const chart = useMemo(() => {
@@ -101,7 +102,7 @@ export function DataBarChart<TDatum>(props: DataBarChartProps<TDatum>) {
                 maxFocusDistance: Number.POSITIVE_INFINITY,
                 marks: [
                     barY(data, {
-                        inset: 1,
+                        inset: barInset,
                         radius: mode === "stacked" ? 0 : 4,
                         x: (datum, context) => resolveChannel(x, datum, context),
                         y: (datum, context) => resolveChannel(y, datum, context),
@@ -169,7 +170,7 @@ export function DataBarChart<TDatum>(props: DataBarChartProps<TDatum>) {
             }),
         };
     }, [
-        data, fill, hideZeroTooltipValues, integerYTicks, key, mode, seriesOrder, showGrid,
+        barInset, data, fill, hideZeroTooltipValues, integerYTicks, key, mode, seriesOrder, showGrid,
         tooltipSeriesFormatter, tooltipTitleFormatter, tooltipValueFormatter,
         x, xFormatter, xTickFontSize, xTickGap, y, yFormatter, z,
     ]);

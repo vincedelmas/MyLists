@@ -1,33 +1,59 @@
 import {SearchType} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
-import type {AdminImportsSearch} from "@/lib/schemas/admin.schema";
+import {getAdminMissingCovers} from "@/lib/server/functions/admin";
+import type {AdminMissingCoversSearch} from "@/lib/schemas/admin.schema";
+import type {AdminImportsSearch, AdminListsSearch} from "@/lib/schemas/admin.schema";
 import type {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 import {
     getAdminAchievements,
+    getAdminAllUpdatesHistory,
     getAdminImports,
     getAdminImportIssues,
-    getAdminAllCollections,
+    getAdminLists,
     getAdminAllUsers,
     getAdminApiMonitoringStats,
     getAdminArchivedTasks,
-    getAdminCollectionsOverview,
+    getAdminListsOverview,
     getAdminInactiveAccountDeletions,
     getAdminListLogFiles,
-    getAdminMediadleStats,
     getAdminMediaOverview,
     getAdminMediaRefreshStats,
     getAdminOverview,
     getAdminReadLogFile,
     getAdminTasks,
-    getAdminWhichCameFirstStats,
     getAdminYearRecapReleases,
 } from "@/lib/server/functions/admin";
+
+
+export type AdminUser = AdminUsersData["items"][number];
+export type AdminImportJob = AdminImportsData["items"][number];
+export type AdminUsersData = Awaited<ReturnType<typeof getAdminAllUsers>>;
+export type AdminImportsData = Awaited<ReturnType<typeof getAdminImports>>;
+export type AdminLogFilesData = Awaited<ReturnType<typeof getAdminListLogFiles>>;
+export type AdminMissingCoversData = Awaited<ReturnType<typeof getAdminMissingCovers>>;
+export type AdminArchivedTasksData = Awaited<ReturnType<typeof getAdminArchivedTasks>>;
+export type AdminApiRequestsData = Awaited<ReturnType<typeof getAdminApiMonitoringStats>>;
+export type AdminMediaRefreshData = Awaited<ReturnType<typeof getAdminMediaRefreshStats>>;
+export type AdminUpdateHistoryData = Awaited<ReturnType<typeof getAdminAllUpdatesHistory>>;
+export type AdminInactiveAccountsData = Awaited<ReturnType<typeof getAdminInactiveAccountDeletions>>;
+
+
+export const adminAllUpdatesOptions = (filters: SearchType) => queryOptions({
+    queryKey: ["adminAllUpdates", filters],
+    queryFn: () => getAdminAllUpdatesHistory({ data: filters }),
+});
 
 
 export const adminImportsOptions = (search: AdminImportsSearch) => queryOptions({
     queryKey: ["admin", "imports", search],
     queryFn: () => getAdminImports({ data: search }),
     refetchInterval: 10_000,
+});
+
+
+export const adminMissingCoversOptions = (search: AdminMissingCoversSearch) => queryOptions({
+    queryKey: ["admin", "missing-covers", search],
+    queryFn: () => getAdminMissingCovers({ data: search }),
 });
 
 
@@ -69,33 +95,21 @@ export const adminMediaOverviewOptions = queryOptions({
 });
 
 
-export const adminCollectionsOverviewOptions = queryOptions({
-    queryKey: ["admin", "collections-overview"],
-    queryFn: () => getAdminCollectionsOverview(),
+export const adminListsOverviewOptions = queryOptions({
+    queryKey: ["admin", "lists-overview"],
+    queryFn: () => getAdminListsOverview(),
 });
 
 
-export const adminCollectionsOptions = (search: SearchType) => queryOptions({
-    queryKey: ["admin", "collections", search],
-    queryFn: () => getAdminAllCollections({ data: search }),
+export const adminListsOptions = (search: AdminListsSearch) => queryOptions({
+    queryKey: ["admin", "lists", search],
+    queryFn: () => getAdminLists({ data: search }),
 });
 
 
 export const adminAchievementsOptions = queryOptions({
     queryKey: ["admin", "achievements"],
     queryFn: () => getAdminAchievements(),
-});
-
-
-export const adminMediadleOptions = (search: SearchType) => queryOptions({
-    queryKey: ["admin", "mediadle", search],
-    queryFn: () => getAdminMediadleStats({ data: search }),
-});
-
-
-export const adminWhichCameFirstOptions = queryOptions({
-    queryKey: ["admin", "which-came-first"],
-    queryFn: () => getAdminWhichCameFirstStats(),
 });
 
 

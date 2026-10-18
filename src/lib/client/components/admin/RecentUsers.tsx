@@ -1,26 +1,33 @@
+import {Users} from "lucide-react";
 import {Link} from "@tanstack/react-router";
 import {AdminUserOverview} from "@/lib/types/query.options.types";
+import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 
 
-interface RecentUsersProps {
-    users: AdminUserOverview;
-}
+export function RecentUsers({ users }: { users: AdminUserOverview }) {
+    if (users.length === 0) {
+        return (
+            <EmptyState
+                icon={Users}
+                className="py-8"
+                message="No recent user activity to display."
+            />
+        );
+    }
 
-
-export function RecentUsers({ users }: RecentUsersProps) {
     return (
-        <div className="space-y-5 max-h-86">
+        <ul className="flex max-h-86 flex-col gap-5 overflow-y-auto pr-3 scrollbar-thin">
             {users.map((user) =>
-                <div key={user.id} className="flex items-center">
+                <li key={user.id} className="flex min-w-0 items-center gap-3">
                     <ProfileIcon
                         fallbackSize="text-sm"
-                        className="size-9 border-2"
+                        className="size-9 shrink-0 border-2"
                         user={{ image: user.image, name: user.name }}
                     />
-                    <div className="ml-3 space-y-1">
-                        <p className="text-sm font-medium leading-none">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <p className="truncate text-sm font-medium leading-none">
                             <Link
                                 to="/profile/$username"
                                 params={{ username: user.name }}
@@ -29,17 +36,16 @@ export function RecentUsers({ users }: RecentUsersProps) {
                                 {user.name}
                             </Link>
                         </p>
-                        <p className="text-sm text-muted-foreground max-w-70 truncate" title={user.email}>
+                        <p className="truncate text-sm text-muted-foreground" title={user.email}>
                             {user.email}
                         </p>
                     </div>
-                    <div className="ml-auto text-sm">
-                        <div className="flex items-center gap-2">
-                            <RelativeTime date={user.updatedAt}/>
-                        </div>
-                    </div>
-                </div>
+                    <RelativeTime
+                        date={user.updatedAt}
+                        className="shrink-0 text-xs text-muted-foreground"
+                    />
+                </li>
             )}
-        </div>
-    )
+        </ul>
+    );
 }

@@ -2,7 +2,6 @@ import {useId} from "react";
 import {Link2, UploadCloud} from "lucide-react";
 import {Input} from "@/lib/client/components/ui/input";
 import {Controller, useFormContext} from "react-hook-form";
-import type {UpdateBookCoverInput} from "@/lib/schemas/media-details.schema";
 import {Field, FieldError, FieldLabel} from "@/lib/client/components/ui/field";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 
@@ -16,7 +15,7 @@ interface CoverSourceFieldsProps {
 
 export const CoverSourceFields = ({ mode, onModeChange, disabled }: CoverSourceFieldsProps) => {
     const fieldId = useId();
-    const form = useFormContext<Pick<UpdateBookCoverInput, "imageUrl" | "imageFile">>();
+    const form = useFormContext<{ imageUrl?: string; imageFile?: File }>();
 
     return (
         <>

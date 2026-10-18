@@ -1,58 +1,74 @@
-import {SearchType} from "@/lib/schemas";
+import {getThemeColor} from "@/lib/client/theme";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {TabNav} from "@/lib/client/components/general/TabNav";
 import {DataTable} from "@/lib/client/components/general/DataTable";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
-import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
+import {Copy, Eye, FolderKanban, Heart, ListFilter, Users} from "lucide-react";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {ChevronsUpDown, Copy, Eye, FolderKanban, Heart, UserPlus, Users} from "lucide-react";
+import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
+import {adminListsSearchSchema, type AdminListsSearch} from "@/lib/schemas/admin.schema";
+import {SortableColumnHeader} from "@/lib/client/components/general/SortableColumnHeader";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
+import {adminListsOptions, adminListsOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {ColumnDef, OnChangeFn, rowPaginationFeature, rowSortingFeature, SortingState, tableFeatures, useTable} from "@tanstack/react-table";
 
 
 export const Route = createFileRoute("/_admin/admin/collections-overview")({
-    validateSearch: (search) => search as SearchType,
+    validateSearch: adminListsSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
     context: ({ deps: { search } }) => ({
-        collectionsQueryOptions: adminCollectionsOptions(search),
-        collectionsOverviewQueryOptions: adminCollectionsOverviewOptions,
+        listsQueryOptions: adminListsOptions(search),
+        listsOverviewQueryOptions: adminListsOverviewOptions,
     }),
     loader: async ({ context }) => {
         await Promise.all([
-            context.queryClient.query({ ...context.collectionsOverviewQueryOptions, staleTime: "static" }),
-            context.queryClient.query({ ...context.collectionsQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.listsOverviewQueryOptions, staleTime: "static" }),
+            context.queryClient.query({ ...context.listsQueryOptions, staleTime: "static" }),
         ]);
     },
-    component: AdminCollectionsOverviewPage,
+    component: AdminListsActivityPage,
 });
 
 
 const features = tableFeatures({ rowPaginationFeature, rowSortingFeature });
-const DEFAULT = { search: "", page: 1, sorting: "createdAt" } satisfies SearchType;
+const DEFAULT = { search: "", page: 1, sorting: "createdAt" } satisfies Partial<AdminListsSearch>;
 
 
-function AdminCollectionsOverviewPage() {
+function AdminListsActivityPage() {
+    const { listsOverviewQueryOptions, listsQueryOptions } = Route.useRouteContext();
+
     const filters = Route.useSearch();
     const { search = DEFAULT.search } = filters;
-    const { collectionsOverviewQueryOptions, collectionsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(listsQueryOptions).data;
+    const stats = useSuspenseQuery(listsOverviewQueryOptions).data;
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<AdminListsSearch>({ search, options: { resetScroll: false } });
 
-    const apiData = useSuspenseQuery(collectionsQueryOptions).data;
-    const stats = useSuspenseQuery(collectionsOverviewQueryOptions).data;
-    const newCollections = stats.createdThisMonth.comparedToLastMonth > 0;
-    const sortingState = [{ id: filters?.sorting ?? DEFAULT.sorting, desc: filters?.sortDesc === true }];
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search, options: { resetScroll: false } });
+    const isDynamic = filters.listType === "dynamic";
+    const sortingState = [{ id: filters.sorting ?? DEFAULT.sorting, desc: filters.sortDesc ?? true }];
+
+    const mediaDistribution = [
+        { label: "Collections", counts: stats.collectionsPerMediaType },
+        { label: "Dynamic lists", counts: stats.dynamicLists.perMediaType },
+    ].flatMap(({ label, counts }) => counts.map(entry => ({ ...entry, listType: label })));
+
+    const creationData = stats.createdPerMonth.flatMap(row => [
+        { month: row.month, listType: "Collections", count: row.collections },
+        { month: row.month, listType: "Dynamic lists", count: row.dynamicLists },
+    ]);
+
     const { pagination, onPaginationChange } = useTablePagination({
         page: filters.page,
         pageSize: filters.perPage ?? 12,
@@ -66,50 +82,48 @@ function AdminCollectionsOverviewPage() {
 
     const columns: ColumnDef<typeof features, typeof apiData.items[number]>[] = [
         {
-            accessorKey: "mediaTypes",
-            header: "Media types",
             enableSorting: false,
+            header: "Media types",
+            accessorKey: "mediaTypes",
             cell: ({ row: { original } }) => (
-                <div className="flex flex-wrap gap-1">
-                    {original.mediaTypes.map(mediaType => (
-                        <Badge key={mediaType} variant="outline">
-                            <MainThemeIcon type={mediaType} data-icon="inline-start"/>
-                            {capitalize(mediaType)}
-                        </Badge>
-                    ))}
+                <div className="flex flex-wrap gap-1.5">
+                    {original.mediaTypes.map(mediaType =>
+                        <MainThemeIcon
+                            key={mediaType}
+                            type={mediaType}
+                            data-icon="inline-start"
+                        />
+                    )}
                 </div>
             ),
         },
         {
-            accessorKey: "privacy",
-            header: ({ column }) => (
-                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
-                    Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
-            ),
-            cell: ({ row: { original } }) => <PrivacyIcon type={original.privacy} className="size-3.5"/>,
-        },
-        {
             accessorKey: "title",
             header: ({ column }) => (
-                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
-                    Collection <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
+                <SortableColumnHeader column={column}>
+                    List
+                </SortableColumnHeader>
             ),
             cell: ({ row: { original } }) => (
                 <div className="truncate line-clamp-1">
-                    <Link to="/lists/collections/$collectionId" params={{ collectionId: original.id }}>
-                        {original.title}
-                    </Link>
+                    {isDynamic ?
+                        <Link to="/lists/dynamic/$listId" params={{ listId: original.id }}>
+                            {original.title}
+                        </Link>
+                        :
+                        <Link to="/lists/collections/$collectionId" params={{ collectionId: original.id }}>
+                            {original.title}
+                        </Link>
+                    }
                 </div>
             ),
         },
         {
             accessorKey: "ownerName",
             header: ({ column }) => (
-                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
-                    User <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
+                <SortableColumnHeader column={column}>
+                    Creator
+                </SortableColumnHeader>
             ),
             cell: ({ row: { original } }) => (
                 <Link to="/profile/$username" params={{ username: original.ownerName }}>
@@ -125,43 +139,59 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "viewCount",
             header: ({ column }) => (
-                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
-                    Views <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
+                <SortableColumnHeader column={column}>
+                    Views
+                </SortableColumnHeader>
             ),
             cell: ({ row: { original } }) => formatNumber(original.viewCount),
         },
         {
             accessorKey: "likeCount",
             header: ({ column }) => (
-                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
-                    Likes <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
+                <SortableColumnHeader column={column}>
+                    Likes
+                </SortableColumnHeader>
             ),
             cell: ({ row: { original } }) => formatNumber(original.likeCount),
         },
         {
             accessorKey: "copiedCount",
             header: ({ column }) => (
-                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
-                    Copies <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
+                <SortableColumnHeader column={column}>
+                    Copies
+                </SortableColumnHeader>
             ),
             cell: ({ row: { original } }) => formatNumber(original.copiedCount),
         },
         {
             accessorKey: "createdAt",
             header: ({ column }) => (
-                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
-                    Created <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
+                <SortableColumnHeader column={column}>
+                    Created
+                </SortableColumnHeader>
             ),
             cell: ({ row: { original } }) => <RelativeTime date={original.createdAt}/>,
+        },
+        {
+            accessorKey: "privacy",
+            header: ({ column }) => (
+                <SortableColumnHeader column={column}>
+                    Visibility
+                </SortableColumnHeader>
+            ),
+            cell: ({ row: { original } }) => (
+                <span title={isDynamic ? `Inherited from owner’s ${original.privacy} profile` : capitalize(original.privacy)}>
+                    <PrivacyIcon
+                        className="size-3.5"
+                        type={original.privacy}
+                    />
+                </span>
+            ),
         },
     ];
 
     const table = useTable({
-        columns,
+        features,
         onSortingChange,
         onPaginationChange,
         enableSorting: true,
@@ -169,128 +199,199 @@ function AdminCollectionsOverviewPage() {
         manualPagination: true,
         data: apiData.items ?? [],
         rowCount: apiData.total ?? 0,
-        features,
         state: { pagination, sorting: sortingState },
+        columns: isDynamic ? columns.filter(column => !("accessorKey" in column) ||
+            !["itemsCount", "viewCount", "likeCount", "copiedCount"].includes(String(column.accessorKey))) : columns,
     });
 
     return (
         <DashboardShell>
-            <DashboardHeader
-                heading="Collections Usage"
-                description="Track collection creation, privacy choices, and actual engagement."
+            <PageHeader
+                title="Lists activity"
+                eyebrow="Administration"
+                eyebrowIcon={FolderKanban}
+                description="Creation and usage of collections and dynamic lists across MyLists."
             />
-            <div className="space-y-4">
-                <div className="grid gap-4 grid-cols-4 max-sm:grid-cols-2 max-sm:gap-3">
-                    <StatCard
-                        icon={FolderKanban}
-                        title="Total Collections"
-                        subtitle="All collections created"
-                        value={formatNumber(stats.totalCollections)}
+
+            <section className="my-6 rounded-xl border p-5 shadow-xs sm:p-6" aria-label="List statistics">
+                <CompactStatsGrid
+                    columns={4}
+                    items={[
+                        {
+                            value: formatNumber(stats.totalCollections),
+                            label: "Collections", icon: <FolderKanban className="size-4"/>,
+                            note: `${formatNumber(stats.createdThisMonth.count)} new this month 
+                            / ${formatNumber(stats.createdThisMonth.comparedToLastMonth, { signDisplay: "exceptZero" })}
+                             vs. last month`,
+                        },
+                        {
+                            value: formatNumber(stats.dynamicLists.total),
+                            label: "Dynamic lists", icon: <ListFilter className="size-4"/>,
+                            note: `${formatNumber(stats.dynamicLists.createdThisMonth)} new this month 
+                            / ${formatNumber(stats.dynamicLists.comparedToLastMonth, { signDisplay: "exceptZero" })} vs. last month`,
+                        },
+                        {
+                            label: "Collection creators",
+                            icon: <Users className="size-4"/>,
+                            value: formatNumber(stats.uniqueOwners),
+                        },
+                        {
+                            label: "Dynamic list creators",
+                            icon: <Users className="size-4"/>,
+                            value: formatNumber(stats.dynamicLists.uniqueOwners),
+                        },
+                        {
+                            label: "Collection Views",
+                            icon: <Eye className="size-4"/>,
+                            value: formatNumber(stats.totalViews),
+                        },
+                        {
+                            label: "Collection Likes",
+                            icon: <Heart className="size-4"/>,
+                            value: formatNumber(stats.totalLikes),
+                        },
+                        {
+                            label: "Collection Copies",
+                            icon: <Copy className="size-4"/>,
+                            value: formatNumber(stats.totalCopies),
+                        },
+                    ]}
+                />
+            </section>
+
+            <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+                <ChartCard
+                    height={300}
+                    title="Lists created per month"
+                    emptyMessage="No lists have been created yet."
+                    hasData={creationData.some(row => row.count > 0)}
+                    description="Collections and dynamic lists created each month."
+                    summary={creationData.map(row => ({ label: `${row.month} · ${row.listType}`, value: formatNumber(row.count) }))}
+                >
+                    <div className="mb-4 flex flex-wrap gap-4 text-xs text-muted-foreground" aria-label="List types legend">
+                        <span className="flex items-center gap-2">
+                            <span className="size-2 rounded-full bg-brand"/>
+                            Collections
+                        </span>
+                        <span className="flex items-center gap-2">
+                            <span className="size-2 rounded-full bg-muted-foreground"/>
+                            Dynamic lists
+                        </span>
+                    </div>
+                    <DataBarChart
+                        x="month"
+                        y="count"
+                        z="listType"
+                        height={300}
+                        mode="stacked"
+                        integerYTicks={true}
+                        data={creationData}
+                        tooltipValueFormatter={formatNumber}
+                        ariaLabel="Collections and dynamic lists created per month"
+                        fill={row => row.listType === "Collections" ? "var(--brand)" : "var(--muted-foreground)"}
                     />
-                    <StatCard
-                        icon={UserPlus}
-                        title="Created This Month"
-                        value={formatNumber(stats.createdThisMonth.count)}
-                        subtitle={`${newCollections ? "+" : ""}${formatNumber(stats.createdThisMonth.comparedToLastMonth)} compared to last month`}
+                </ChartCard>
+                <ChartCard
+                    height={300}
+                    title="Media mix"
+                    emptyMessage="No media types to display yet."
+                    hasData={mediaDistribution.some(row => row.count > 0)}
+                    summary={mediaDistribution.map(row => ({ label: `${row.listType} · ${capitalize(row.mediaType)}`, value: formatNumber(row.count) }))}
+                    description="Mixed collections & dynamic contribute to each selected type."
+                >
+                    <div className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground" aria-label="Media types legend">
+                        {ALL_MEDIA_TYPES.map(mediaType =>
+                            <span key={mediaType} className="flex items-center gap-1.5 capitalize">
+                                <MainThemeIcon type={mediaType} size={14}/>
+                                {mediaType}
+                            </span>
+                        )}
+                    </div>
+                    <DataBarChart
+                        y="count"
+                        x="listType"
+                        height={300}
+                        z="mediaType"
+                        mode="stacked"
+                        integerYTicks={true}
+                        data={mediaDistribution}
+                        seriesOrder={[...ALL_MEDIA_TYPES]}
+                        tooltipSeriesFormatter={capitalize}
+                        tooltipValueFormatter={formatNumber}
+                        fill={row => getThemeColor(row.mediaType)}
+                        ariaLabel="Media types across collections and dynamic lists"
                     />
-                    <StatCard
-                        icon={Users}
-                        title="Unique Creators"
-                        value={formatNumber(stats.uniqueOwners)}
-                        subtitle="Users who created at least one collection"
-                    />
-                    <StatCard
-                        icon={Eye}
-                        title="Total Views"
-                        value={formatNumber(stats.totalViews)}
-                        subtitle="Views across all collections"
-                    />
-                    <StatCard
-                        icon={Heart}
-                        title="Total Likes"
-                        value={formatNumber(stats.totalLikes)}
-                        subtitle="Likes across all collections"
-                    />
-                    <StatCard
-                        icon={Copy}
-                        title="Total Copies"
-                        value={formatNumber(stats.totalCopies)}
-                        subtitle="How often collections were copied"
-                    />
-                    {stats.collectionsPerPrivacy.map((pv) =>
-                        <StatCard
-                            key={pv.privacy}
-                            value={formatNumber(pv.count)}
-                            title={capitalize(pv.privacy) + " Collections"}
-                            icon={<PrivacyIcon type={pv.privacy} className="size-4"/>}
-                            subtitle={"Collections with privacy set to " + pv.privacy}
-                        />
-                    )}
-                </div>
-                <div className="grid gap-4 grid-cols-7 max-sm:grid-cols-2 max-sm:gap-3">
-                    <Card className="col-span-4 max-sm:col-span-5">
-                        <CardHeader>
-                            <CardTitle>Collections Growth</CardTitle>
-                            <CardDescription>Collections Created Per Month</CardDescription>
-                        </CardHeader>
-                        <CardContent className="mt-3">
-                            <DataBarChart
-                                x="month"
-                                y="count"
-                                height={350}
-                                data={stats.createdPerMonth}
-                                fill="var(--muted-foreground)"
-                                ariaLabel="Collections created per month"
-                                tooltipValueFormatter={(value) => formatNumber(value)}
-                            />
-                        </CardContent>
-                    </Card>
-                    <Card className="col-span-3 max-sm:col-span-5">
-                        <CardHeader>
-                            <CardTitle>By Media Type</CardTitle>
-                            <CardDescription>
-                                Collections containing each type. Mixed collections appear under every type they contain.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            {stats.collectionsPerMediaType.map((entry) =>
-                                <div key={entry.mediaType} className="flex items-center font-semibold justify-between rounded-lg border px-3 py-2">
-                                    <span className="flex gap-2 items-center text-sm text-muted-foreground capitalize">
-                                        <MainThemeIcon type={entry.mediaType}/>{" "}
-                                        {entry.mediaType}
-                                    </span>
-                                    <span className="text-sm">
-                                        {formatNumber(entry.count)}
-                                    </span>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>All Collections</CardTitle>
-                        <CardDescription>List of Every Created Collection</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between max-sm:flex-col max-sm:items-start max-sm:gap-2">
-                            <SearchInput
-                                className="w-72"
-                                value={localSearch}
-                                onChange={handleInputChange}
-                                placeholder="Search collections or users..."
-                            />
-                            <div className="text-sm text-muted-foreground font-medium">
-                                {apiData.total} collections
-                            </div>
-                        </div>
-                        <DataTable table={table} emptyMessage="No collections found."/>
-                        <TablePagination
-                            table={table}
-                        />
-                    </CardContent>
-                </Card>
+                </ChartCard>
             </div>
+
+            <Card className="my-6 min-w-0">
+                <CardHeader>
+                    <CardTitle>
+                        Browse lists
+                    </CardTitle>
+                    <CardDescription>
+                        Search by list title or creator. Dynamic list visibility follows the creator’s profile.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex min-w-0 flex-col gap-4">
+                    <TabNav
+                        value={filters.listType}
+                        tabs={[
+                            {
+                                id: "collections",
+                                label: "Collections",
+                                icon: <FolderKanban className="size-4"/>,
+                            },
+                            {
+                                id: "dynamic",
+                                label: "Dynamic lists",
+                                icon: <ListFilter className="size-4"/>,
+                            },
+                        ] as const}
+                        renderTrigger={(tab, props) =>
+                            <Link
+                                {...props}
+                                resetScroll={false}
+                                to="/admin/collections-overview"
+                                search={{ ...filters, listType: tab.id, page: 1, sorting: "createdAt", sortDesc: true }}
+                            />
+                        }
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <SearchInput
+                            value={localSearch}
+                            aria-label="Search lists"
+                            onChange={handleInputChange}
+                            className="w-full sm:max-w-72"
+                            placeholder="Search lists or users…"
+                        />
+                        <span className="text-sm text-muted-foreground">
+                            {formatNumber(apiData.total)} {isDynamic ? "dynamic list" : "collection"}{apiData.total !== 1 && "s"}
+                        </span>
+                    </div>
+
+                    {!isDynamic &&
+                        <div className="flex flex-wrap gap-2" aria-label="Collection visibility">
+                            {stats.collectionsPerPrivacy.map(({ privacy, count }) =>
+                                <Badge key={privacy} variant="outline">
+                                    <PrivacyIcon type={privacy}/>
+                                    {capitalize(privacy)} {formatNumber(count)}
+                                </Badge>
+                            )}
+                        </div>
+                    }
+
+                    <DataTable
+                        table={table}
+                        ariaLabel="Saved lists"
+                        emptyMessage={isDynamic ? "No dynamic lists found." : "No collections found."}
+                    />
+
+                    <TablePagination
+                        table={table}
+                    />
+                </CardContent>
+            </Card>
         </DashboardShell>
     );
 }

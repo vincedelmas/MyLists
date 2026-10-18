@@ -1,5 +1,5 @@
-import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {Link, useRouterState} from "@tanstack/react-router";
 import {
     Sidebar,
     SidebarContent,
@@ -9,18 +9,17 @@ import {
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
-    SidebarMenuItem,
+    SidebarMenuItem
 } from "@/lib/client/components/ui/sidebar";
 import {
     Archive,
     Award,
     CalendarRange,
     CircleX,
-    Film,
     FolderKanban,
-    GitCompareArrows,
     History,
     Home,
+    ImageOff,
     ListCheck,
     Play,
     Radio,
@@ -32,8 +31,49 @@ import {
 } from "lucide-react";
 
 
+const navigation = [
+    {
+        title: "Overview", items: [
+            { title: "Dashboard", to: "/admin/overview", icon: Home },
+            { title: "Media activity", to: "/admin/media-overview", icon: Play },
+            { title: "Lists activity", to: "/admin/collections-overview", icon: FolderKanban },
+        ]
+    },
+    {
+        title: "Users & community", items: [
+            { title: "Users", to: "/admin/users", icon: Users },
+            { title: "Inactive accounts", to: "/admin/inactive-accounts", icon: UserRoundX },
+            { title: "Achievements", to: "/admin/achievements", icon: Award },
+            { title: "Year recaps", to: "/admin/year-recaps", icon: CalendarRange },
+        ]
+    },
+    {
+        title: "Media catalog", items: [
+            { title: "Missing covers", to: "/admin/missing-covers", icon: ImageOff },
+            { title: "Update history", to: "/admin/history", icon: History },
+            { title: "Metadata refreshes", to: "/admin/media-refresh", icon: RefreshCw },
+        ]
+    },
+    {
+        title: "Operations", items: [
+            { title: "Tasks", to: "/admin/admin-tasks", icon: ListCheck },
+            { title: "Task archive", to: "/admin/archived-tasks", icon: Archive },
+            { title: "Imports", to: "/admin/imports", icon: Upload },
+        ]
+    },
+    {
+        title: "Monitoring", items: [
+            { title: "API requests", to: "/admin/api-monitoring", icon: Radio },
+            { title: "Application logs", to: "/admin/error-logs", icon: CircleX },
+        ]
+    },
+] as const;
+
+
 export function AdminSidebar() {
     const { currentUser } = useAuth();
+    const pathname = useRouterState({ select: state => state.location.pathname });
+
     if (!currentUser) return null;
 
     return (
@@ -44,199 +84,35 @@ export function AdminSidebar() {
                         <Settings className="size-4"/>
                     </div>
                     <div className="font-semibold">
-                        Admin Dashboard
+                        Administration
                     </div>
                 </div>
             </SidebarHeader>
             <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Main & Users</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin">
-                                            <Home className="size-4"/>
-                                            <span>Overview</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/media-overview">
-                                            <Play className="size-4"/>
-                                            <span>User Media</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/collections-overview">
-                                            <FolderKanban className="size-4"/>
-                                            <span>Collections Usage</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/users">
-                                            <Users className="size-4"/>
-                                            <span>Users Management</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/year-recaps">
-                                            <CalendarRange className="size-4"/>
-                                            <span>Year Recaps</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/inactive-accounts">
-                                            <UserRoundX className="size-4"/>
-                                            <span>Inactive Accounts</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Content</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/history">
-                                            <History className="size-4"/>
-                                            <span>Media History</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/achievements">
-                                            <Award className="size-4"/>
-                                            <span>Achievements</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/mediadle">
-                                            <Film className="size-4"/>
-                                            <span>Mediadle Stats</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/which-came-first">
-                                            <GitCompareArrows className="size-4"/>
-                                            <span>WCF Stats</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Tasks</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/admin-tasks">
-                                            <ListCheck className="size-4"/>
-                                            <span>Admin Tasks</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/archived-tasks">
-                                            <Archive className="size-4"/>
-                                            <span>Archived Tasks</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Monitoring</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/imports">
-                                            <Upload/>
-                                            <span>Imports</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/media-refresh">
-                                            <RefreshCw className="size-4"/>
-                                            <span>Refresh Monitoring</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/api-monitoring">
-                                            <Radio className="size-4"/>
-                                            <span>API Monitoring</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    render={
-                                        <Link to="/admin/error-logs">
-                                            <CircleX className="size-4"/>
-                                            <span>Runtime Logs</span>
-                                        </Link>
-                                    }
-                                />
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                {navigation.map(group =>
+                    <SidebarGroup key={group.title}>
+                        <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {group.items.map(item =>
+                                    <SidebarMenuItem key={item.to}>
+                                        <SidebarMenuButton
+                                            isActive={pathname === item.to}
+                                            render={
+                                                <Link to={item.to}>
+                                                    <item.icon/>
+                                                    <span>
+                                                        {item.title}
+                                                    </span>
+                                                </Link>
+                                            }
+                                        />
+                                    </SidebarMenuItem>
+                                )}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                )}
             </SidebarContent>
         </Sidebar>
     );

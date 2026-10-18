@@ -1,22 +1,16 @@
-import {SearchType} from "@/lib/schemas";
+import {History} from "lucide-react";
+import {searchTypeSchema} from "@/lib/schemas";
+import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {createFileRoute, Link} from "@tanstack/react-router";
-import {Payload} from "@/lib/client/components/general/Payload";
-import {DataTable} from "@/lib/client/components/general/DataTable";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {SearchInput} from "@/lib/client/components/general/SearchInput";
-import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
-import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
-import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
+import {formatNumber} from "@/lib/utils/formatting/number";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
-import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {adminAllUpdatesOptions} from "@/lib/client/react-query/query-options";
-import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {ColumnDef, rowPaginationFeature, tableFeatures, useTable} from "@tanstack/react-table";
+import {adminAllUpdatesOptions} from "@/lib/client/react-query/query-options/admin.options";
+import {UpdateHistoryTable} from "@/lib/client/components/admin/update-history/UpdateHistoryTable";
 
 
 export const Route = createFileRoute("/_admin/admin/history")({
-    validateSearch: (search) => search as SearchType,
+    validateSearch: searchTypeSchema,
     loaderDeps: ({ search }) => ({ search }),
     context: ({ deps: { search } }) => ({
         adminHistoryQueryOptions: adminAllUpdatesOptions(search),
@@ -28,107 +22,25 @@ export const Route = createFileRoute("/_admin/admin/history")({
 });
 
 
-const features = tableFeatures({ rowPaginationFeature });
-const DEFAULT = { search: "", page: 1 } satisfies SearchType;
-
-
 function AdminGlobalHistory() {
     const filters = Route.useSearch();
-    const { search = DEFAULT.search } = filters;
     const { adminHistoryQueryOptions } = Route.useRouteContext();
-    const apiData = useSuspenseQuery(adminHistoryQueryOptions).data;
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search, options: { resetScroll: false } });
-
-    const { pagination, onPaginationChange } = useTablePagination({
-        pageSize: 25,
-        page: filters.page,
-        onPageChange: (page) => updateFilters({ page }),
-    });
-
-    const historyColumns: ColumnDef<typeof features, typeof apiData.items[number]>[] = [
-        {
-            accessorKey: "username",
-            header: "User",
-            cell: ({ row: { original } }) => {
-                return (
-                    <Link
-                        className="font-medium hover:underline"
-                        to="/profile/$username"
-                        params={{ username: original.username! }}
-                    >
-                        {original.username}
-                    </Link>
-                );
-            },
-        },
-        {
-            accessorKey: "mediaName",
-            header: "Media",
-            cell: ({ row: { original } }) => {
-                return (
-                    <div className="flex items-center gap-3">
-                        <MainThemeIcon
-                            size={15}
-                            type={original.mediaType}
-                        />
-                        <Link
-                            to="/details/$mediaType/$mediaId"
-                            params={{ mediaType: original.mediaType, mediaId: original.mediaId }}
-                            className="hover:underline"
-                        >
-                            {original.mediaName}
-                        </Link>
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: "update",
-            header: "Update",
-            cell: ({ row }) => <Payload update={row.original}/>,
-        },
-        {
-            accessorKey: "timestamp",
-            header: "Date",
-            cell: ({ row }) => <RelativeTime date={row.original.timestamp}/>,
-        },
-    ];
-
-    const table = useTable({
-        onPaginationChange,
-        state: { pagination },
-        manualPagination: true,
-        columns: historyColumns,
-        data: apiData?.items ?? [],
-        rowCount: apiData?.total ?? 0,
-        features,
-    });
+    const history = useSuspenseQuery(adminHistoryQueryOptions).data;
 
     return (
         <DashboardShell>
-            <DashboardHeader
-                heading="Media Updates History"
-                description="Track all media updates from all users."
+            <PageHeader
+                eyebrowIcon={History}
+                title="Update history"
+                eyebrow="Administration"
+                asideValue={formatNumber(history.total)}
+                asideLabel={filters.search ? "Matching updates" : "Recorded updates"}
+                description="Review media list changes across all accounts, including status and progress updates."
             />
-
-            <div className="flex flex-col gap-4 mt-4">
-                <div className="flex items-center gap-4">
-                    <SearchInput
-                        className="w-64"
-                        value={localSearch}
-                        onChange={handleInputChange}
-                        placeholder="Search by media name..."
-                    />
-                </div>
-
-                <DataTable
-                    table={table}
-                    className="bg-card"
-                />
-                <TablePagination
-                    table={table}
-                />
-            </div>
+            <UpdateHistoryTable
+                history={history}
+                filters={filters}
+            />
         </DashboardShell>
     );
 }

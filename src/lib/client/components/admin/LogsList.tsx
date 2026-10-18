@@ -1,50 +1,75 @@
-import {useState} from "react";
+import {useId, useState} from "react";
 import {cn} from "@/lib/utils/classnames";
-import {TaskLog} from "@/lib/types/tasks.types";
+import type {TaskLog} from "@/lib/types/tasks.types";
+import {Button} from "@/lib/client/components/ui/button";
 import {formatDateTime} from "@/lib/utils/formatting/date";
-import {AlertTriangle, ChevronDown, XCircle} from "lucide-react";
+import {AlertTriangle, ChevronDown, Info, XCircle} from "lucide-react";
+
+
+const logLevels = {
+    info: {
+        icon: Info,
+        color: "text-muted-foreground",
+    },
+    warn: {
+        icon: AlertTriangle,
+        color: "text-warning",
+    },
+    error: {
+        icon: XCircle,
+        color: "text-destructive",
+    },
+};
 
 
 export function LogsList({ logs }: { logs: TaskLog[] }) {
+    const contentId = useId();
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div>
-            <button
-                type="button"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-2 text-sm font-medium mb-2 hover:text-foreground/80 transition-colors"
+        <div className="min-w-0">
+            <Button
+                size="sm"
+                variant="ghost"
+                className="mb-2"
+                aria-expanded={isExpanded}
+                aria-controls={contentId}
+                onClick={() => setIsExpanded(current => !current)}
             >
-                <ChevronDown className={cn("size-4 transition-transform", !isExpanded && "-rotate-90")}/>
-                Warnings & Errors ({logs.length})
-            </button>
+                <ChevronDown
+                    data-icon="inline-start"
+                    className={isExpanded ? undefined : "-rotate-90"}
+                />
+                Logs ({logs.length})
+            </Button>
             {isExpanded &&
-                <div className="border rounded-md divide-y max-h-100 overflow-auto scrollbar-thin">
-                    {logs.map((log, i) => {
-                        const isError = log.level === "error";
-                        const Icon = isError ? XCircle : AlertTriangle;
+                <div id={contentId} className="max-h-100 divide-y overflow-auto rounded-lg border scrollbar-thin">
+                    {logs.map((log, index) => {
+                        const config = logLevels[log.level];
+                        const Icon = config.icon;
 
                         return (
-                            <div key={i} className="p-2 flex items-start gap-2 text-sm">
+                            <div key={index} className="flex items-start gap-2 p-3 text-sm">
                                 <Icon
-                                    className={cn("size-4 mt-0.5 shrink-0", isError ? "text-destructive" : "text-warning")}
+                                    aria-label={log.level}
+                                    className={cn("mt-0.5 size-4 shrink-0", config.color)}
                                 />
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-xs text-muted-foreground font-mono">
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-baseline gap-2">
+                                        <span className="font-mono text-xs text-muted-foreground">
                                             {formatDateTime(log.time, { seconds: true })}
                                         </span>
                                         {log.step &&
-                                            <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                                            <span className="rounded bg-muted px-1.5 py-0.5 text-xs wrap-break-word">
                                                 {log.step}
                                             </span>
                                         }
                                     </div>
-                                    <p className={cn(isError ? "text-destructive" : "text-warning")}>
+                                    <p className={cn("wrap-break-word whitespace-pre-wrap", config.color)}>
                                         {log.message}
                                     </p>
                                     {log.data &&
-                                        <pre className="text-xs mt-1 text-muted-foreground overflow-auto">
+                                        <pre className="mt-1 overflow-auto text-xs text-muted-foreground">
                                             {JSON.stringify(log.data, null, 2)}
                                         </pre>
                                     }

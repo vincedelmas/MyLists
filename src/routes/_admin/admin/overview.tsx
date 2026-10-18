@@ -1,13 +1,15 @@
 import {capitalize} from "@/lib/utils/formatting/text";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {formatNumber} from "@/lib/utils/formatting/number";
 import {Smile, Star, UserCheck, UserPlus, Users} from "lucide-react";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {RecentUsers} from "@/lib/client/components/admin/RecentUsers";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
+import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
 import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
-import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
+import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {adminOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
@@ -27,86 +29,86 @@ function OverviewPage() {
     const { overviewQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(overviewQueryOptions).data;
 
-    const newUsers = apiData.newUsers.comparedToLastMonth > 0;
-
     return (
         <DashboardShell>
-            <DashboardHeader
-                heading="Users Overview"
-                description="Overview of the user statistics and growth of MyLists."
+            <PageHeader
+                eyebrowIcon={Users}
+                title="Users overview"
+                eyebrow="Administration"
+                description="Registration, activity, and account preferences across MyLists."
             />
-            <div className="space-y-4">
-                <div className="grid gap-4 grid-cols-4 max-sm:grid-cols-2 max-sm:gap-3">
-                    <StatCard
-                        icon={Users}
-                        title="Total Users"
-                        value={apiData.totalUsers.count}
-                        subtitle="Users that registered"
+            <section className="my-6 rounded-xl border p-5 shadow-xs sm:p-6" aria-label="User statistics">
+                <CompactStatsGrid
+                    columns={4}
+                    items={[
+                        {
+                            label: "Total users",
+                            icon: <Users className="size-4"/>,
+                            value: formatNumber(apiData.totalUsers.count),
+                        },
+                        {
+                            label: "New users this month",
+                            icon: <UserPlus className="size-4"/>,
+                            value: formatNumber(apiData.newUsers.count),
+                            note: `${formatNumber(apiData.newUsers.comparedToLastMonth, { signDisplay: "exceptZero" })} compared to last month`,
+                        },
+                        {
+                            label: "Active users this month",
+                            icon: <UserCheck className="size-4"/>,
+                            value: formatNumber(apiData.usersSeenThisMonth.count),
+                        },
+                        {
+                            label: "Score ratings",
+                            icon: <Star className="size-4"/>,
+                            value: formatNumber(apiData.scoreRatingUsers.count),
+                        },
+                        {
+                            label: "Feeling ratings",
+                            icon: <Smile className="size-4"/>,
+                            value: formatNumber(apiData.feelingRatingUsers.count),
+                        },
+                        ...apiData.usersPerPrivacy.map(({ privacy, count }) => ({
+                            value: formatNumber(count),
+                            label: `${capitalize(privacy)} profiles`,
+                            icon: <PrivacyIcon type={privacy} className="size-4"/>,
+                        })),
+                    ]}
+                />
+            </section>
+            <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,3fr)]">
+                <ChartCard
+                    height={350}
+                    title="User growth"
+                    emptyMessage="No registrations to display yet."
+                    description="Cumulative registered users by month"
+                    hasData={apiData.cumulativeUsersPerMonth.length > 0}
+                >
+                    <DataBarChart
+                        x="month"
+                        y="count"
+                        height={350}
+                        integerYTicks
+                        fill="var(--brand)"
+                        tooltipValueFormatter={formatNumber}
+                        ariaLabel="Cumulative users per month"
+                        data={apiData.cumulativeUsersPerMonth}
                     />
-                    <StatCard
-                        icon={UserPlus}
-                        title="New Users"
-                        value={apiData.newUsers.count}
-                        subtitle={`${newUsers ? "+" : ""}${apiData.newUsers.comparedToLastMonth} compared to last month`}
-                    />
-                    <StatCard
-                        icon={UserCheck}
-                        title="Unique Users This Month"
-                        subtitle="Unique users seen this month"
-                        value={apiData.usersSeenThisMonth.count}
-                    />
-                    <StatCard
-                        icon={Star}
-                        title="Score Rating Users"
-                        value={apiData.scoreRatingUsers.count}
-                        subtitle="Users using the score rating system"
-                    />
-                    <StatCard
-                        icon={Smile}
-                        title="Feeling Rating Users"
-                        value={apiData.feelingRatingUsers.count}
-                        subtitle="Users using the feeling rating system"
-                    />
-                    {apiData.usersPerPrivacy.map((privacyValue) =>
-                        <StatCard
-                            key={privacyValue.privacy}
-                            value={privacyValue.count}
-                            title={capitalize(privacyValue.privacy) + " Users"}
-                            subtitle={"Users with privacy set to " + privacyValue.privacy}
-                            icon={<PrivacyIcon type={privacyValue.privacy} className="size-4"/>}
+                </ChartCard>
+                <Card className="min-w-0">
+                    <CardHeader>
+                        <CardTitle>
+                            Recently active users
+                        </CardTitle>
+                        <CardDescription>
+                            Accounts ordered by their latest activity
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <RecentUsers
+                            users={apiData.recentUsers}
                         />
-                    )}
-                </div>
-                <div className="grid gap-4 grid-cols-7 max-sm:grid-cols-2 max-sm:gap-3">
-                    <Card className="col-span-4 max-sm:col-span-5">
-                        <CardHeader>
-                            <CardTitle>User Growth</CardTitle>
-                            <CardDescription>Cumulative number of users per month</CardDescription>
-                        </CardHeader>
-                        <CardContent className="mt-3">
-                            <DataBarChart
-                                x="month"
-                                y="count"
-                                height={350}
-                                fill="var(--brand)"
-                                data={apiData.cumulativeUsersPerMonth}
-                                ariaLabel="Cumulative users per month"
-                                tooltipValueFormatter={(value) => String(value)}
-                            />
-                        </CardContent>
-                    </Card>
-                    <Card className="col-span-3 max-sm:col-span-5 pr-3">
-                        <CardHeader>
-                            <CardTitle>Recent Users</CardTitle>
-                            <CardDescription>Latest user activity on MyLists</CardDescription>
-                        </CardHeader>
-                        <CardContent className="mt-3 overflow-y-auto scrollbar-thin pr-3">
-                            <RecentUsers
-                                users={apiData.recentUsers}
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </DashboardShell>
     );

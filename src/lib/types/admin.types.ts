@@ -1,3 +1,6 @@
+import type {MediaType} from "@/lib/utils/enums";
+
+
 type MediaRefreshRange = "30d" | "90d" | "1y" | "all";
 type ApiMonitoringRange = "24h" | "7d" | "30d" | "90d" | "all";
 
@@ -8,11 +11,13 @@ export type AdminMediaRefreshStatsParams = {
     dailyRange?: MediaRefreshRange;
 };
 
+
 export type AdminApiMonitoringParams = {
     recentPage?: number;
     range?: ApiMonitoringRange;
     dailyRange?: Exclude<ApiMonitoringRange, "24h">;
 };
+
 
 export type ProviderApiRollup = {
     total: number;
@@ -22,4 +27,12 @@ export type ProviderApiRollup = {
     maxSecondBurst: number;
     durationMsTotal: number;
     statusCounts: Record<string, number>;
+};
+
+
+export type AdminMissingCoverMedia = {
+    name: string;
+    mediaId: number;
+    mediaType: MediaType;
+    releaseDate: string | null;
 };

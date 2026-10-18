@@ -11,6 +11,7 @@ import {createRateLimiter} from "@/lib/server/core/rate-limiter";
 import {getAllTasksMetadata, getTask} from "@/lib/server/tasks/registry";
 import {listAdminLogFiles, readAdminLogFile} from "@/lib/server/core/admin-logs-reader";
 import {clearAdminCookie, isAdminAuthenticated, setAdminCookie, verifyAdminPassword} from "@/lib/server/core/admin-auth";
+import {adminMissingCoversSchema, adminUpdateMediaCoverSchema, adminListsSearchSchema} from "@/lib/schemas/admin.schema";
 import {requiredAuthAndAdminRoleMiddleware, requiredAuthAndAdminTokenMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     adminApiMonitoringSchema,
@@ -28,6 +29,22 @@ import {
 
 
 let adminAuthRateLimiter: ReturnType<typeof createRateLimiter> | undefined;
+
+export const getAdminMissingCovers = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(adminMissingCoversSchema)
+    .handler(async ({ data }) => {
+        const { services } = await getContainer();
+        return services.admin.getMissingCovers(data);
+    });
+
+export const postAdminUpdateMediaCover = createServerFn({ method: "POST" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator((data) => adminUpdateMediaCoverSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
+    .handler(async ({ data }) => {
+        const { services } = await getContainer();
+        await services.admin.updateMissingCover(data);
+    });
 
 
 export const getAdminImports = createServerFn({ method: "GET" })
@@ -120,20 +137,20 @@ export const getAdminMediaOverview = createServerFn({ method: "GET" })
     });
 
 
-export const getAdminCollectionsOverview = createServerFn({ method: "GET" })
+export const getAdminListsOverview = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
         const adminService = await getContainer().then((c) => c.services.admin);
-        return adminService.getCollectionsOverviewForAdmin();
+        return adminService.getListsOverviewForAdmin();
     });
 
 
-export const getAdminAllCollections = createServerFn({ method: "GET" })
+export const getAdminLists = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .validator(searchTypeSchema)
+    .validator(adminListsSearchSchema)
     .handler(async ({ data }) => {
         const adminService = await getContainer().then((c) => c.services.admin);
-        return adminService.getPaginatedCollectionsForAdmin(data);
+        return adminService.getPaginatedListsForAdmin(data);
     });
 
 
@@ -160,23 +177,6 @@ export const getAdminAchievements = createServerFn({ method: "GET" })
     .handler(async () => {
         const achievementService = await getContainer().then((c) => c.services.achievements);
         return achievementService.getAllAchievements();
-    });
-
-
-export const getAdminMediadleStats = createServerFn({ method: "GET" })
-    .middleware([requiredAuthAndAdminTokenMiddleware])
-    .validator(searchTypeSchema)
-    .handler(async ({ data }) => {
-        const mediadleService = await getContainer().then((c) => c.services.mediadle);
-        return mediadleService.getAllUsersStatsForAdmin(data);
-    });
-
-
-export const getAdminWhichCameFirstStats = createServerFn({ method: "GET" })
-    .middleware([requiredAuthAndAdminTokenMiddleware])
-    .handler(async () => {
-        const whichCameFirstService = await getContainer().then((c) => c.services.whichCameFirst);
-        return whichCameFirstService.getAdminStats();
     });
 
 

@@ -4,7 +4,7 @@ import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {postEditMediaDetails, postUpdateBookCover, refreshMediaDetails, resolveExternalMedia} from "@/lib/server/functions/media-details";
 
 
-export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) => {
+export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number, onSuccess?: () => void) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -14,11 +14,13 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) =
         },
         onSuccess: async () => {
             await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["admin", "missing-covers"] }),
                 queryClient.invalidateQueries({ queryKey: ["release-calendar"] }),
                 queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId] }),
                 queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey }),
             ]);
+            onSuccess?.();
         },
     });
 };

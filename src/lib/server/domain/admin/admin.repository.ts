@@ -2,9 +2,12 @@ import {SearchType} from "@/lib/schemas";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {ProviderApiRollup} from "@/lib/types/admin.types";
+import {dynamicLists} from "@/lib/server/database/schema";
 import {formatMonthYear} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
+import type {AdminMissingCoverMedia} from "@/lib/types/admin.types";
+import type {AdminMissingCoversSearch} from "@/lib/schemas/admin.schema";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
@@ -14,6 +17,58 @@ import {apiCallRollup, collectionItems, collections, mediaRefreshLog, taskHistor
 
 
 export class AdminRepository {
+    static async getMissingCovers({ mediaType, search, ...pagination }: AdminMissingCoversSearch) {
+        const mediaTypes = mediaType ? [mediaType] : ALL_MEDIA_TYPES;
+
+        const queries = mediaTypes.map(mt => {
+            const { mediaTable } = getServerMediaDefinition(mt).repository.tables;
+
+            const where = and(
+                eq(mediaTable.imageCover, "default.jpg"), search
+                    ? like(mediaTable.name, `%${search}%`)
+                    : undefined
+            );
+
+            return sql`select
+                ${mediaTable.id} as mediaId,
+                ${mt} as mediaType,
+                ${mediaTable.name} as name,
+                ${mediaTable.releaseDate} as releaseDate
+                from ${mediaTable} where ${where}`;
+        });
+
+        const missing = sql.join(queries, sql` union all `);
+
+        return paginate({
+            ...pagination,
+            getTotal: () => getDbClient().all<{ total: number }>(sql`select count(*) as total from (${missing})`)[0].total,
+            getItems: async ({ limit, offset }) => getDbClient().all<AdminMissingCoverMedia>(sql`
+                select * from (${missing}) order by name collate nocase, mediaType, mediaId limit ${limit} offset ${offset}
+            `),
+        });
+    }
+
+    static hasMissingCover(mediaType: MediaType, mediaId: number) {
+        const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
+
+        return !!getDbClient()
+            .select({ id: mediaTable.id })
+            .from(mediaTable)
+            .where(and(eq(mediaTable.id, mediaId), eq(mediaTable.imageCover, "default.jpg")))
+            .get();
+    }
+
+    static updateMissingCover(mediaType: MediaType, mediaId: number, imageCover: string) {
+        const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
+
+        return getDbClient()
+            .update(mediaTable)
+            .set({ imageCover })
+            .where(and(eq(mediaTable.id, mediaId), eq(mediaTable.imageCover, "default.jpg")))
+            .returning({ id: mediaTable.id })
+            .get();
+    }
+
     static async getUserMediaAddedAndUpdatedForAdmin(mediaType: MediaType) {
         const { listTable } = getServerMediaDefinition(mediaType).repository.tables;
 
@@ -82,9 +137,8 @@ export class AdminRepository {
     }
 
     static async getCollectionsOverview() {
-        const now = new Date();
-        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+        const currentMonthStart = sql`datetime('now', 'start of month')`;
+        const previousMonthStart = sql`datetime('now', '-1 month', 'start of month')`;
 
         const result = getDbClient()
             .select({
@@ -97,9 +151,9 @@ export class AdminRepository {
                 privateCount: sql<number>`sum(case when ${collections.privacy} = ${PrivacyType.PRIVATE} then 1 else 0 end)`.as("privateCount"),
                 restrictedCount: sql<number>`sum(case when ${collections.privacy} = ${PrivacyType.RESTRICTED} then 1 else 0 end)`.as("restrictedCount"),
                 createdThisMonth: sql<number>`sum(case when ${collections.createdAt} >= ${currentMonthStart} then 1 else 0 end)`.as("createdThisMonth"),
-                createdPreviousMonth: sql<number>`sum(case 
-                    when ${collections.createdAt} >= ${previousMonthStart} 
-                    and ${collections.createdAt} < ${currentMonthStart} 
+                createdPreviousMonth: sql<number>`sum(case
+                    when ${collections.createdAt} >= ${previousMonthStart}
+                    and ${collections.createdAt} < ${currentMonthStart}
                     then 1 else 0 end
                 )`.as("createdPreviousMonth"),
             })
@@ -135,20 +189,124 @@ export class AdminRepository {
         };
     }
 
-    static async getCollectionsCreatedPerMonth() {
+    static async getListsCreatedPerMonth() {
         const results = getDbClient()
-            .all<{ month: string; count: number }>(sql`
-                SELECT COUNT(*) as count,
-                    strftime('%Y-%m', ${collections.createdAt}) as month
-                FROM ${collections}
-                GROUP BY strftime('%Y-%m', ${collections.createdAt})
+            .all<{ month: string; collections: number; dynamicLists: number }>(sql`
+                SELECT 
+                    month, 
+                    sum(collections) as collections, 
+                    sum(dynamicLists) as dynamicLists
+                FROM (
+                    SELECT 
+                        strftime('%Y-%m', ${collections.createdAt}) as month, 
+                        count(*) as collections, 
+                        0 as dynamicLists
+                    FROM ${collections} GROUP BY month
+                    UNION ALL
+                    SELECT 
+                        strftime('%Y-%m', ${dynamicLists.createdAt}) as month, 
+                        0 as collections, 
+                        count(*) as dynamicLists
+                    FROM ${dynamicLists} GROUP BY month
+                ) GROUP BY month 
                 ORDER BY month ASC
             `);
 
         return results.map((row) => ({
-            count: Number(row.count),
+            collections: Number(row.collections),
+            dynamicLists: Number(row.dynamicLists),
             month: formatMonthYear(row.month),
         }));
+    }
+
+    static async getDynamicListsOverview() {
+        const result = getDbClient().select({
+            total: count(),
+            uniqueOwners: countDistinct(dynamicLists.userId),
+            createdThisMonth: sql<number>`coalesce(sum(case when ${dynamicLists.createdAt} >= datetime('now', 'start of month') then 1 else 0 end), 0)`,
+            createdPreviousMonth: sql<number>`coalesce(sum(case when ${dynamicLists.createdAt} >= datetime('now', '-1 month', 'start of month')
+                and ${dynamicLists.createdAt} < datetime('now', 'start of month') then 1 else 0 end), 0)`,
+        }).from(dynamicLists).get()!;
+
+        const mediaCounts = getDbClient().all<{ mediaType: MediaType; count: number }>(sql`
+            SELECT media.value as mediaType, count(*) as count
+            FROM ${dynamicLists}, json_each(case
+                when json_extract(${dynamicLists.spec}, '$.mediaTypes') = 'all' then ${JSON.stringify(ALL_MEDIA_TYPES)}
+                else json_extract(${dynamicLists.spec}, '$.mediaTypes') end) media
+            GROUP BY media.value
+        `);
+
+        return {
+            ...result,
+            perMediaType: ALL_MEDIA_TYPES.map(mt => ({ mediaType: mt, count: mediaCounts.find(e => e.mediaType === mt)?.count ?? 0 })),
+        };
+    }
+
+    static async getPaginatedDynamicListsForAdmin(data: SearchType) {
+        const search = data.search?.trim();
+        const title = sql<string>`json_extract(${dynamicLists.spec}, '$.title')`;
+
+        const where = search
+            ? or(like(title, `%${search}%`), like(user.name, `%${search}%`))
+            : undefined;
+
+        const sorting = resolveSorting(
+            data.sorting,
+            ["id", "title", "ownerName", "privacy", "createdAt"] as const,
+            "createdAt",
+        );
+
+        const orderColumn = {
+            id: dynamicLists.id,
+            title,
+            ownerName: user.name,
+            privacy: user.privacy,
+            createdAt: dynamicLists.createdAt,
+        }[sorting];
+
+        return paginate({
+            page: data.page,
+            defaultPerPage: 12,
+            perPage: data.perPage,
+            getTotal: () => {
+                return getDbClient()
+                    .select({ count: count() })
+                    .from(dynamicLists)
+                    .innerJoin(user, eq(user.id, dynamicLists.userId))
+                    .where(where)
+                    .get()!.count;
+            },
+            getItems: async ({ limit, offset }) => {
+                const rows = getDbClient()
+                    .select({
+                        id: dynamicLists.id,
+                        ownerId: user.id,
+                        ownerName: user.name,
+                        ownerImage: user.image,
+                        privacy: user.privacy,
+                        spec: dynamicLists.spec,
+                        createdAt: dynamicLists.createdAt,
+                        updatedAt: dynamicLists.updatedAt,
+                    }).from(dynamicLists)
+                    .innerJoin(user, eq(user.id, dynamicLists.userId))
+                    .where(where)
+                    .orderBy(data.sortDesc === false ? asc(orderColumn) : desc(orderColumn), desc(dynamicLists.id))
+                    .limit(limit)
+                    .offset(offset)
+                    .all();
+
+                return rows.map(({ spec, ...row }) => ({
+                    ...row,
+                    ordered: false,
+                    viewCount: null,
+                    likeCount: null,
+                    itemsCount: null,
+                    copiedCount: null,
+                    title: spec.title,
+                    mediaTypes: spec.mediaTypes === "all" ? [...ALL_MEDIA_TYPES] : spec.mediaTypes,
+                }));
+            },
+        });
     }
 
     static async getPaginatedCollectionsForAdmin(data: SearchType) {

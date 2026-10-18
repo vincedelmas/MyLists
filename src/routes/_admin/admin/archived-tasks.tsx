@@ -1,10 +1,10 @@
 import {Archive} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {TaskCard} from "@/lib/client/components/admin/TaskCard";
-import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {formatNumber} from "@/lib/utils/formatting/number";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {TaskArchive} from "@/lib/client/components/admin/tasks/TaskArchive";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
-import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {adminArchivedTasksOptions} from "@/lib/client/react-query/query-options/admin.options";
 
 
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_admin/admin/archived-tasks")({
         return context.queryClient.query({ ...context.archivedTasksQueryOptions, staleTime: "static" });
     },
     component: AdminArchivedTasksPage,
-})
+});
 
 
 function AdminArchivedTasksPage() {
@@ -25,25 +25,17 @@ function AdminArchivedTasksPage() {
 
     return (
         <DashboardShell>
-            <DashboardHeader heading="Archived Tasks" description="Manage and execute maintenance and background tasks."/>
-            <div>
-                {archivedTasks.length === 0 ?
-                    <EmptyState
-                        icon={Archive}
-                        className="py-8"
-                        message="No archived tasks found."
-                    />
-                    :
-                    <div className="space-y-4">
-                        {archivedTasks.map((task) =>
-                            <TaskCard
-                                task={task}
-                                key={task.id}
-                            />
-                        )}
-                    </div>
-                }
-            </div>
+            <PageHeader
+                title="Task archive"
+                eyebrowIcon={Archive}
+                eyebrow="Administration"
+                asideLabel="Archived runs"
+                asideValue={formatNumber(archivedTasks.length)}
+                description="Review task outcomes, timings, logs, and step details."
+            />
+            <TaskArchive
+                tasks={archivedTasks}
+            />
         </DashboardShell>
     );
 }

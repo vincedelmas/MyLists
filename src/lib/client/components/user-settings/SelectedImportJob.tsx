@@ -1,14 +1,14 @@
 import {RefreshCw, Trash2} from "lucide-react";
-import type {ImportSearch} from "@/lib/schemas/imports.schema";
 import {ImportJobStatus} from "@/lib/utils/enums";
 import {useNavigate} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {formatDateTime} from "@/lib/utils/formatting/date";
-import {Progress} from "@/lib/client/components/ui/progress";
+import type {ImportSearch} from "@/lib/schemas/imports.schema";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
+import {ImportJobProgress} from "@/lib/client/components/imports/ImportJobProgress";
 import {ImportStatusBadge} from "@/lib/client/components/imports/ImportStatusBadge";
 import {ImportJobIssuesTable} from "@/lib/client/components/imports/ImportJobIssuesTable";
 import {importJobIssuesOptions, importJobOptions} from "@/lib/client/react-query/query-options";
@@ -33,11 +33,10 @@ const terminalStatuses = new Set<string>([
 
 export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobProps) {
     const confirm = useConfirm();
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const deleteMutation = useDeleteImportJobMutation(jobId);
-    const navigate = useNavigate();
     const { data: job, refetch, isFetching, isLoading, isError } = useQuery(importJobOptions(jobId));
-
     const issueQuery = useQuery(importJobIssuesOptions(jobId, { page, perPage: 25 }, !!job && job.failedCount + job.skippedCount > 0));
 
     if (isLoading) {
@@ -58,7 +57,6 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
 
     const isTerminal = terminalStatuses.has(job.status);
     const issueCount = job.failedCount + job.skippedCount;
-    const progress = job.totalCount ? Math.round((job.processedCount / job.totalCount) * 100) : 0;
 
     const onRefreshClick = () => {
         void Promise.all([
@@ -67,7 +65,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
             queryClient.invalidateQueries({ queryKey: importJobIssuesQueryKey(jobId) }),
         ]);
     };
-    
+
     const handleDelete = async () => {
         if (!await confirm({
             variant: "destructive",
@@ -98,12 +96,16 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                         />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        {job.nextAttemptAt ? `Paused. Automatic retry after ${formatDateTime(job.nextAttemptAt)}.`
-                            : job.status === ImportJobStatus.PROCESSING ? "Currently processing."
-                                : job.status === ImportJobStatus.QUEUED ? job.jobsAhead
+                        {job.nextAttemptAt
+                            ? `Paused. Automatic retry after ${formatDateTime(job.nextAttemptAt)}.`
+                            : job.status === ImportJobStatus.PROCESSING
+                                ? "Currently processing."
+                                : job.status === ImportJobStatus.QUEUED
+                                    ? job.jobsAhead
                                         ? `${job.jobsAhead} job${job.jobsAhead > 1 ? "s" : ""} ahead.`
                                         : "Next in queue. Waiting for processing to start."
-                                    : isTerminal ? "Import finished." : "Validating your file."}
+                                    : isTerminal ? "Import finished." : "Validating your file."
+                        }
                     </p>
                 </div>
 
@@ -121,37 +123,16 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                 </div>
             </div>
 
-            <Progress
-                value={progress}
-                color="var(--primary)"
+            <ImportJobProgress
+                job={job}
+                jobId={jobId}
             />
-
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-                <ImportMetric
-                    label="Processed"
-                    value={`${job.processedCount}/${job.totalCount}`}
-                />
-                <ImportMetric
-                    label="Completed"
-                    value={job.completedCount}
-                />
-                <ImportMetric
-                    label="Skipped"
-                    value={job.skippedCount}
-                />
-                <ImportMetric
-                    label="Failed"
-                    value={job.failedCount}
-                />
-                <ImportMetric
-                    value={issueCount}
-                    label="Need a review"
-                />
-            </div>
 
             {job.error &&
                 <Alert variant={job.nextAttemptAt ? "default" : "destructive"}>
-                    <AlertDescription>{job.error}</AlertDescription>
+                    <AlertDescription>
+                        {job.error}
+                    </AlertDescription>
                 </Alert>
             }
 
@@ -159,10 +140,15 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                 <ImportJobIssuesTable
                     issueQuery={issueQuery}
                     onPageChange={nextPage => {
-                        void navigate({ to: ".", search: (prev: ImportSearch) => ({ ...prev, page: nextPage, jobId }), resetScroll: false });
+                        void navigate({
+                            to: ".", search: (prev: ImportSearch) => ({
+                                ...prev, page: nextPage, jobId,
+                            }), resetScroll: false
+                        });
                     }}
                 />
-                : !job.error &&
+                :
+                !job.error &&
                 <div className="rounded-xl border bg-muted/20 p-5 text-sm text-muted-foreground">
                     {isTerminal ? "No skipped or failed rows for this import." : "No row issues reported so far."}
                 </div>
@@ -170,15 +156,3 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
         </div>
     );
 }
-
-
-const ImportMetric = ({ label, value }: { label: string; value: number | string }) => (
-    <div className="rounded-xl border bg-background/60 p-3">
-        <p className="text-xs text-muted-foreground">
-            {label}
-        </p>
-        <p className="mt-1 text-lg font-semibold">
-            {value}
-        </p>
-    </div>
-);

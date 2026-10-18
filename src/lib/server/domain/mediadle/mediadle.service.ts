@@ -1,17 +1,12 @@
-import {SearchType} from "@/lib/schemas";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {pixelateImage} from "@/lib/server/domain/mediadle/image-pixelation";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {pixelateImage} from "@/lib/server/domain/mediadle/image-pixelation";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
 
 
 export class MediadleService {
     constructor(private repository: typeof MediadleRepository) {
-    }
-
-    async getAllUsersStatsForAdmin(data: SearchType) {
-        return this.repository.getAllUsersStatsForAdmin(data);
     }
 
     getLeaderboard(currentUserId?: number) {

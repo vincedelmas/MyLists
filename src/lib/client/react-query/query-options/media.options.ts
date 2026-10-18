@@ -1,8 +1,7 @@
+import {Pagination} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
 import {JobType, MediaType} from "@/lib/utils/enums";
-import {Pagination, SearchType} from "@/lib/schemas";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
-import {getAdminAllUpdatesHistory} from "@/lib/server/functions/admin";
 import type {MediaFilterSearchSource} from "@/lib/types/media-list.types";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
 import {getMediaListSearchFilters} from "@/lib/server/functions/media-lists";
@@ -78,12 +77,6 @@ export const gameCompatiblePlatformsOptions = (mediaId: number, enabled: boolean
     queryFn: () => getGameCompatiblePlatforms({ data: { mediaType: MediaType.GAMES, mediaId } }),
     staleTime: 10 * 60 * 1000,
     enabled,
-});
-
-
-export const adminAllUpdatesOptions = (filters: SearchType) => queryOptions({
-    queryKey: ["adminAllUpdates", filters],
-    queryFn: () => getAdminAllUpdatesHistory({ data: filters }),
 });
 
 

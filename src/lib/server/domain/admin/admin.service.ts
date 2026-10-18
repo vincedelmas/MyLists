@@ -1,19 +1,46 @@
 import {serverEnv} from "@/env/server";
-import {SearchType} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
 import {logger} from "@/lib/server/core/logger";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
 import {FormattedError} from "@/lib/utils/error-classes";
+import type {AdminListsSearch} from "@/lib/schemas/admin.schema";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
-import {getYearRecapReleaseStatus} from "@/lib/server/domain/year-recap/release-status";
 import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
 import {getRollupKey, PENDING_ROLLUPS_KEY} from "@/lib/server/core/cache-keys";
+import {getYearRecapReleaseStatus} from "@/lib/server/domain/year-recap/release-status";
+import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {YEAR_RECAP_FIRST_YEAR, YearRecapReleaseMode} from "@/lib/types/year-recap.types";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
+import type {AdminMissingCoversSearch, AdminUpdateMediaCover} from "@/lib/schemas/admin.schema";
 
 
 export class AdminService {
     constructor(private repository: typeof AdminRepository) {
+    }
+
+    async getMissingCovers(search: AdminMissingCoversSearch) {
+        return this.repository.getMissingCovers(search);
+    }
+
+    async updateMissingCover({ mediaType, mediaId, imageUrl, imageFile }: AdminUpdateMediaCover) {
+        const { coverDirectory: dirSaveName } = getServerMediaDefinition(mediaType).identity;
+
+        if (!this.repository.hasMissingCover(mediaType, mediaId)) {
+            throw new FormattedError("This media no longer needs a cover. Refresh the queue to continue.");
+        }
+
+        const imageCover = imageFile
+            ? await saveUploadedImage({ file: imageFile, dirSaveName })
+            : await saveImageFromUrl({ imageUrl, dirSaveName });
+
+        if (imageCover === "default.jpg") {
+            throw new FormattedError("Could not save this cover. Please choose another image.");
+        }
+
+        if (!this.repository.updateMissingCover(mediaType, mediaId, imageCover)) {
+            throw new FormattedError("A cover has already been added to this media. Refresh the queue to continue.");
+        }
     }
 
     async saveTaskToDb(data: SaveTaskToDb) {
@@ -76,10 +103,11 @@ export class AdminService {
         };
     }
 
-    async getCollectionsOverviewForAdmin() {
-        const [overview, createdPerMonth] = await Promise.all([
+    async getListsOverviewForAdmin() {
+        const [overview, dynamicLists, createdPerMonth] = await Promise.all([
             this.repository.getCollectionsOverview(),
-            this.repository.getCollectionsCreatedPerMonth(),
+            this.repository.getDynamicListsOverview(),
+            this.repository.getListsCreatedPerMonth(),
         ]);
 
         return {
@@ -95,11 +123,17 @@ export class AdminService {
                 count: overview.createdThisMonth,
                 comparedToLastMonth: overview.createdThisMonth - overview.createdPreviousMonth,
             },
+            dynamicLists: {
+                ...dynamicLists,
+                comparedToLastMonth: dynamicLists.createdThisMonth - dynamicLists.createdPreviousMonth,
+            },
         };
     }
 
-    async getPaginatedCollectionsForAdmin(data: SearchType) {
-        return this.repository.getPaginatedCollectionsForAdmin(data);
+    async getPaginatedListsForAdmin(data: AdminListsSearch) {
+        return data.listType === "dynamic"
+            ? this.repository.getPaginatedDynamicListsForAdmin(data)
+            : this.repository.getPaginatedCollectionsForAdmin(data);
     }
 
     async logMediaRefresh(params: { userId: number; mediaType: MediaType; apiId: number | string }) {

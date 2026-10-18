@@ -1,6 +1,8 @@
 import {SearchType} from "@/lib/schemas";
+import type {MediaType} from "@/lib/utils/enums";
 import {toast} from "@/lib/client/components/ui/toast";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
+import {mediaDetailsOptions} from "@/lib/client/react-query/query-options/media.options";
 import {adminAchievementsOptions, adminArchivedTasksOptions, adminYearRecapReleasesOptions, userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {
     postAdminDeleteArchivedTask,
@@ -9,7 +11,35 @@ import {
     postAdminUpdateTiers,
     postAdminUpdateUser,
     postAdminUpdateYearRecapRelease,
+    postAdminUpdateMediaCover,
+    postImpersonateUser,
 } from "@/lib/server/functions/admin";
+
+
+export const useAdminImpersonateUserMutation = () => {
+    return useMutation({
+        mutationFn: postImpersonateUser,
+    });
+}
+
+
+export const useAdminUpdateMediaCoverMutation = (mediaType: MediaType, mediaId: number, onSuccess?: () => void) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: postAdminUpdateMediaCover,
+        meta: { noErrorToast: true, successToastMessage: "Cover saved." },
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["admin", "missing-covers"] }),
+                queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey }),
+                queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
+                queryClient.invalidateQueries({ queryKey: ["release-calendar"] }),
+            ]);
+            onSuccess?.();
+        },
+    });
+};
 
 
 export const useAdminUpdateYearRecapReleaseMutation = () => {
@@ -76,9 +106,17 @@ export const useAdminUpdateTiersMutation = () => {
 
 
 export const useAdminTriggerTaskMutation = (meta?: MutationMeta) => {
+    const queryClient = useQueryClient();
+
     return useMutation({
         mutationFn: postAdminTriggerTask,
         meta: { ...meta },
+        onSuccess: (_data, { data: { taskName } }) => {
+            toast.add({ title: `Task ${taskName} completed`, type: "success" });
+        },
+        onSettled: async () => {
+            await queryClient.invalidateQueries({ queryKey: adminArchivedTasksOptions.queryKey })
+        },
     });
 };
 

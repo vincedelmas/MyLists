@@ -1,18 +1,19 @@
 import React from "react";
-import type {UseQueryResult} from "@tanstack/react-query";
 import {ImportItemStatus} from "@/lib/utils/enums";
-import {AlertTriangle} from "lucide-react";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {AlertTriangle, CheckCircle2} from "lucide-react";
+import type {UseQueryResult} from "@tanstack/react-query";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import type {getImportJobIssues} from "@/lib/server/functions/imports";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 
 
 interface ImportJobIssuesTableProps {
-    issueQuery: Pick<UseQueryResult<Awaited<ReturnType<typeof getImportJobIssues>>>, "data" | "isLoading" | "isError">;
     onPageChange: (page: number) => void;
+    issueQuery: Pick<UseQueryResult<Awaited<ReturnType<typeof getImportJobIssues>>>, "data" | "isLoading" | "isError">;
 }
 
 
@@ -41,7 +42,7 @@ export function ImportJobIssuesTable({ issueQuery, onPageChange }: ImportJobIssu
                     :
                     <>
                         <div className="overflow-hidden rounded-xl border">
-                            <Table>
+                            <Table aria-label="Import row issues">
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Row</TableHead>
@@ -53,6 +54,16 @@ export function ImportJobIssuesTable({ issueQuery, onPageChange }: ImportJobIssu
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
+                                    {issueQuery.data.items.length === 0 &&
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center">
+                                                <EmptyState
+                                                    icon={CheckCircle2}
+                                                    message="No row issues to display."
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    }
                                     {issueQuery.data.items.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>

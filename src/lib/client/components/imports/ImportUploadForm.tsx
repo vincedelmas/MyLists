@@ -3,6 +3,7 @@ import {useNavigate} from "@tanstack/react-router";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {type ReactNode, useId, useState} from "react";
 import {Input} from "@/lib/client/components/ui/input";
+import {formatBytes} from "@/lib/utils/formatting/number";
 import {MAX_IMPORT_FILE_SIZE, MAX_IMPORT_ROWS} from "@/lib/utils/constants";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
@@ -88,7 +89,7 @@ export function ImportUploadForm({ defaultValues, children }: ImportUploadFormPr
 
                                     {selectedFile &&
                                         <span className="mt-1 text-xs text-muted-foreground">
-                                            {(selectedFile.size / 1024).toFixed(1)} KB
+                                            {formatBytes(selectedFile.size)}
                                         </span>
                                     }
 

@@ -1,12 +1,32 @@
 import * as z from "zod";
-import {AchievementDifficulty, ImportJobStatus, PrivacyType, RoleType} from "@/lib/utils/enums";
+import {updateBookCoverSchema} from "@/lib/schemas/media-details.schema";
 import {YEAR_RECAP_FIRST_YEAR, yearRecapReleaseModes} from "@/lib/types/year-recap.types";
-import {coercedPositiveIntFieldSchema, positiveIntFieldSchema, simpleSearchSchema} from "@/lib/schemas/common.schema";
+import {AchievementDifficulty, ImportJobStatus, MediaType, PrivacyType, RoleType} from "@/lib/utils/enums";
+import {coercedPositiveIntFieldSchema, positiveIntFieldSchema, simpleSearchSchema, searchTypeSchema} from "@/lib/schemas/common.schema";
 
 
 export type AchievementTier = z.infer<typeof tierAchievementSchema>;
-export type AdminUpdatePayload = z.infer<typeof adminUpdatePayloadSchema>;
 export type AdminImportsSearch = z.infer<typeof adminImportsSchema>;
+export type AdminListsSearch = z.infer<typeof adminListsSearchSchema>;
+export type AdminUpdatePayload = z.infer<typeof adminUpdatePayloadSchema>;
+export type AdminMissingCoversSearch = z.infer<typeof adminMissingCoversSchema>;
+export type AdminUpdateMediaCover = z.infer<typeof adminUpdateMediaCoverSchema>;
+export type AdminUpdateMediaCoverInput = z.input<typeof adminUpdateMediaCoverSchema>;
+
+
+export const adminListsSearchSchema = searchTypeSchema.extend({
+    listType: z.enum(["collections", "dynamic"]).default("collections"),
+});
+
+
+export const adminMissingCoversSchema = simpleSearchSchema.extend({
+    mediaType: z.enum(MediaType).optional(),
+});
+
+
+export const adminUpdateMediaCoverSchema = updateBookCoverSchema.safeExtend({
+    mediaType: z.enum(MediaType),
+});
 
 
 export const adminImportsSchema = simpleSearchSchema.extend({

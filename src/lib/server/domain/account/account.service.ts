@@ -3,6 +3,7 @@ import {CacheManager} from "@/lib/server/core/cache-manager";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
 import {AdminUpdatePayload, GeneralSettings, SearchType} from "@/lib/schemas";
+import {getMcpConnectedUserCount} from "@/lib/server/domain/mcp/mcp.repository";
 import {AccountRepository} from "@/lib/server/domain/account/account.repository";
 import {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
 
@@ -38,6 +39,9 @@ export class AccountService {
             recentUsers,
             usersPerPrivacy,
             cumulativeUsersPerMonth,
+            mcpConnectedUsers: {
+                count: getMcpConnectedUserCount(),
+            },
         };
     }
 

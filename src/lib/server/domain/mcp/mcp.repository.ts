@@ -1,6 +1,6 @@
 import type {JWTPayload} from "jose";
-import {and, eq, gt, sql} from "drizzle-orm";
 import {MCP_RESOURCE} from "@/lib/server/core/mcp/config";
+import {and, countDistinct, eq, gt, sql} from "drizzle-orm";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
 import {mcpRevocation, oauthAccessToken, oauthClient, oauthConsent, oauthRefreshToken, session, user, verification} from "@/lib/server/database/schema";
 
@@ -60,6 +60,19 @@ export const getMcpAccess = (claims: JWTPayload) => {
     const scopes = new Set(claims.scope.split(" ").filter(scope => consentedScopes.has(scope)));
 
     return { userId, username: grant.username, scopes };
+};
+
+
+export const getMcpConnectedUserCount = () => {
+    return getDbClient()
+        .select({ count: countDistinct(oauthConsent.userId) })
+        .from(oauthConsent)
+        .innerJoin(oauthClient, eq(oauthClient.clientId, oauthConsent.clientId))
+        .where(and(
+            sql`coalesce(${oauthClient.disabled}, 0) = 0`,
+            sql`exists (select 1 from json_each(${oauthConsent.resources}) where value = ${MCP_RESOURCE})`,
+        ))
+        .get()!.count;
 };
 
 

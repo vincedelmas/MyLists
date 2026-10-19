@@ -2,12 +2,12 @@ import {capitalize} from "@/lib/utils/formatting/text";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatNumber} from "@/lib/utils/formatting/number";
-import {Smile, Star, UserCheck, UserPlus, Users} from "lucide-react";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {RecentUsers} from "@/lib/client/components/admin/RecentUsers";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
 import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
+import {Plug, Smile, Star, UserCheck, UserPlus, Users} from "lucide-react";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {adminOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
@@ -72,6 +72,11 @@ function OverviewPage() {
                             label: `${capitalize(privacy)} profiles`,
                             icon: <PrivacyIcon type={privacy} className="size-4"/>,
                         })),
+                        {
+                            label: "MCP connected users",
+                            icon: <Plug className="size-4"/>,
+                            value: formatNumber(apiData.mcpConnectedUsers.count),
+                        },
                     ]}
                 />
             </section>

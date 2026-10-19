@@ -1,9 +1,9 @@
 import {cn} from "@/lib/utils/classnames";
-import {Link, useRouter} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Pencil, RefreshCw} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useNow} from "@/lib/client/hooks/use-dates";
+import {Link, useRouter} from "@tanstack/react-router";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
@@ -12,12 +12,13 @@ import {useRefreshMediaMutation} from "@/lib/client/react-query/query-mutations/
 
 interface RefreshAndEditProps {
     mediaId: number;
+    isManual?: boolean;
     mediaType: MediaType;
     lastUpdate: string | null;
 }
 
 
-export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEditProps) => {
+export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate, isManual = false }: RefreshAndEditProps) => {
     const router = useRouter();
     const now = useNow(10_000);
     const { currentUser } = useAuth();
@@ -32,8 +33,8 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
     const isLastUpdateValid = lastUpdateDate && !isNaN(lastUpdateDate.getTime());
     const nextRefreshAt = isLastUpdateValid ? new Date(lastUpdateDate.getTime() + 24 * 60 * 60 * 1000) : null;
 
-    // Managers can refresh anything. Others can refresh anything except books.
-    const canRefreshThisType = isManagerOrAbove || !isBook;
+    // Book refreshes require a manager, manual books have no provider metadata
+    const canRefreshThisType = !isManual && (isManagerOrAbove || !isBook);
 
     // Cooldown only applies to users below MANAGER
     const isRefreshCooldown = !isManagerOrAbove && !!nextRefreshAt && now < nextRefreshAt.getTime();

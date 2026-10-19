@@ -1,14 +1,21 @@
-import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
 import {ApiProviderType, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 
 
 export const BOOKS_FIXED_DURATION_MIN = 1.7;
 
 
 export const booksDefinition = defineMediaDefinition({
+    maxGenres: 4,
+    genres: [
+        "Action & Adventure", "Biography", "Chick lit", "Children", "Classic", "Crime", "Drama",
+        "Dystopian", "Essay", "Fantastic", "Fantasy", "Historical Fiction", "History", "Humor", "Horror",
+        "Literary Novel", "Memoirs", "Mystery", "Paranormal", "Philosophy", "Poetry", "Romance", "Science",
+        "Science-Fiction", "Short story", "Suspense", "Testimony", "Thriller", "Western", "Young adult",
+    ] as const,
     filters: {
         common: commonMediaFilters,
         metadata: {

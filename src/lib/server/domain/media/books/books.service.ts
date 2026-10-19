@@ -1,16 +1,24 @@
 import {notFound} from "@tanstack/react-router";
-import {FormattedError} from "@/lib/utils/error-classes";
 import {LogPayload} from "@/lib/types/user-updates.types";
 import {pick, uniqueBy} from "@/lib/utils/arrays-objects";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
 import {Book, BooksList} from "@/lib/server/domain/media/books/books.types";
 import {createMediaService} from "@/lib/server/domain/media/base/media.service";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
+import {createBookSchema, type CreateBookPayload} from "@/lib/schemas/books.schema";
 import {PagePayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
-import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
+import {MANUAL_BOOK_ID_PREFIX, BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
+
+
+function toAuthorsData(authors: string) {
+    return uniqueBy(authors.split(",")
+        .map(name => name.trim()).filter(Boolean)
+        .map(name => ({ name })), author => author.name);
+}
 
 
 export function createBooksService(repository: BooksRepository, definition: BookServerDefinition = booksServerDefinition) {
@@ -22,6 +30,26 @@ export function createBooksService(repository: BooksRepository, definition: Book
         [UpdateType.REDO]: updateRedoHandler,
         [UpdateType.STATUS]: updateStatusHandler,
     });
+
+    async function prepareManualBook(input: CreateBookPayload) {
+        const { imageCover: imageUrl, authors, genres, ...fields } = createBookSchema.parse(input);
+        const imageCover = await saveImageFromUrl({ dirSaveName: identity.coverDirectory, imageUrl });
+
+        if (imageCover === "default.jpg") {
+            throw new ValidationError("imageCover", "Could not download this cover. Choose another image.");
+        }
+
+        return () => repository.storeMediaWithDetails({
+            authorsData: toAuthorsData(authors),
+            genresData: genres.map(name => ({ name })),
+            mediaData: {
+                ...fields,
+                imageCover,
+                lockStatus: true,
+                apiId: `${MANUAL_BOOK_ID_PREFIX}${crypto.randomUUID()}`,
+            },
+        });
+    }
 
     async function getMediaEditableFields(mediaId: number) {
         const { editableFields } = servicePolicy;
@@ -51,13 +79,7 @@ export function createBooksService(repository: BooksRepository, definition: Book
             mediaData.imageCover = await saveImageFromUrl({ dirSaveName: coverDirectory, imageUrl: imageCover });
         }
 
-        const authorsData = authors === undefined
-            ? undefined
-            : uniqueBy(authors
-                .split(",")
-                .map((name) => name.trim())
-                .filter(Boolean).map((name) => ({ name })), (author) => author.name
-            );
+        const authorsData = authors === undefined ? undefined : toAuthorsData(authors);
 
         withTransaction(() => repository.updateMediaWithDetails({ mediaData, authorsData }));
     }
@@ -117,15 +139,6 @@ description: ${book.synopsis}
         withTransaction(() => repository.updateMediaWithDetails({ mediaData, genresData }));
     }
 
-    function getAvailableGenres() {
-        return [
-            "Action & Adventure", "Biography", "Chick lit", "Children", "Classic", "Crime", "Drama",
-            "Dystopian", "Essay", "Fantastic", "Fantasy", "Historical Fiction", "History", "Humor", "Horror",
-            "Literary Novel", "Memoirs", "Mystery", "Paranormal", "Philosophy", "Poetry", "Romance", "Science",
-            "Science-Fiction", "Short story", "Suspense", "Testimony", "Thriller", "Western", "Young adult"
-        ];
-    }
-
     function updateRedoHandler(currentState: BooksList, payload: RedoPayload, media: Book): [BooksList, LogPayload] {
         const newState = { ...currentState, redo: payload.redo };
         const logPayload = { oldValue: currentState.redo, newValue: payload.redo };
@@ -172,12 +185,12 @@ description: ${book.synopsis}
 
     return {
         ...service,
+        prepareManualBook,
         getMediaEditableFields,
         updateMediaEditableFields,
         updateDefaultCover,
         batchBooksWithoutGenres,
         addGenresToBook,
-        getAvailableGenres,
         updateRedoHandler,
         updateStatusHandler,
         updatePageHandler,

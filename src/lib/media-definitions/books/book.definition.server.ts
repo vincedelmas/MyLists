@@ -1,11 +1,19 @@
 import {getTableColumns, ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+
+
+export const MANUAL_BOOK_ID_PREFIX = "manual:";
+
+
+export const isManualBookId = (apiId: string | number) => {
+    return typeof apiId === "string" && apiId.startsWith(MANUAL_BOOK_ID_PREFIX);
+}
 
 
 const tables = {

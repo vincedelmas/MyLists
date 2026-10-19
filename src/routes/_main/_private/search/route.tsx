@@ -7,8 +7,8 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {Field, FieldError} from "@/lib/client/components/ui/field";
-import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {ButtonGroup} from "@/lib/client/components/ui/button-group";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
@@ -16,10 +16,10 @@ import {AdvancedSearchFilters, globalSearchSchema} from "@/lib/schemas";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
-import {ChevronLeft, ChevronRight, Database, ScanSearch, Search, SearchX} from "lucide-react";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/media/advanced-search";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {SearchMediaListIndicator} from "@/lib/client/components/media/base/SearchMediaListIndicator";
+import {ChevronLeft, ChevronRight, Database, PencilLine, ScanSearch, Search, SearchX} from "lucide-react";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
@@ -64,6 +64,7 @@ function SearchPage() {
     const { query = "", page = 1, apiProvider = ApiProviderType.TMDB, advancedFilters } = filters;
     const form = useForm<SearchFormValues>({ defaultValues: createFormValues(query, apiProvider, advancedFilters) });
 
+    const draftQuery = useWatch({ control: form.control, name: "query" });
     const draftFilters = useWatch({ control: form.control, name: "advancedFilters" });
     const selectedProvider = useWatch({ control: form.control, name: "apiProvider" });
 
@@ -289,6 +290,18 @@ function SearchPage() {
                     }
                 </div>
             </FormProvider>
+
+            {selectedProvider === ApiProviderType.BOOKS &&
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed p-5">
+                    <p className="text-sm text-muted-foreground">
+                        Can’t find your book on Google Books?
+                    </p>
+                    <Button variant="outline" render={<Link to="/add-book" search={{ title: draftQuery.trim() || undefined }}/>}>
+                        <PencilLine data-icon="inline-start"/>
+                        Add a book manually
+                    </Button>
+                </div>
+            }
         </div>
     );
 }

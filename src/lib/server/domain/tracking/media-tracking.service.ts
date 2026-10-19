@@ -1,5 +1,6 @@
 import {UpdateUserMedia} from "@/lib/schemas";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import type {CreateBookPayload} from "@/lib/schemas/books.schema";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {StatsService} from "@/lib/server/domain/stats/stats.service";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
@@ -25,6 +26,17 @@ export class MediaTrackingService {
         private notificationsService: NotificationsService,
         private mediaServiceRegistry: MediaServiceRegistry,
     ) {
+    }
+
+    async createManualBook(userId: number, payload: CreateBookPayload) {
+        const store = await this.mediaServiceRegistry.get(MediaType.BOOKS).prepareManualBook(payload);
+
+        return withTransaction(() => {
+            const mediaId = store();
+            this.addMediaToList({ userId, mediaId, mediaType: MediaType.BOOKS });
+            
+            return { mediaId };
+        });
     }
 
     addMediaToList({ userId, mediaType, mediaId, status }: MediaAction & { status?: Status }) {

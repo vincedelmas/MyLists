@@ -37,8 +37,10 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
     }),
     loader: async ({ context }) => {
         const { media } = await context.queryClient.query({ ...context.mediaDetailsQueryOptions, staleTime: "static" });
-        void context.queryClient.query(context.communityCollectionsQueryOptions).catch(() => {});
-        void context.queryClient.query(context.communityActivityQueryOptions).catch(() => {});
+        void context.queryClient.query(context.communityCollectionsQueryOptions).catch(() => {
+        });
+        void context.queryClient.query(context.communityActivityQueryOptions).catch(() => {
+        });
         return { title: media.name };
     },
     component: MediaDetailsPage,
@@ -113,6 +115,7 @@ function MediaDetailsPage() {
                                 <RefreshAndEdit
                                     mediaId={media.id}
                                     mediaType={mediaType}
+                                    isManual={!media.providerData}
                                     lastUpdate={media.lastApiUpdate}
                                 />
                             }
@@ -123,14 +126,20 @@ function MediaDetailsPage() {
                                 mediaType={mediaType}
                             />
 
-                            <a
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                href={media.providerData.url}
-                                className={buttonVariants({ size: "lg", variant: "tame", className: "w-full" })}
-                            >
-                                View on {media.providerData.name} <ExternalLink/>
-                            </a>
+                            {media.providerData ?
+                                <a
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    href={media.providerData.url}
+                                    className={buttonVariants({ size: "lg", variant: "tame", className: "w-full" })}
+                                >
+                                    View on {media.providerData.name} <ExternalLink/>
+                                </a>
+                                :
+                                <Button size="lg" variant="tame" className="w-full" disabled={true}>
+                                    Book Added Manually
+                                </Button>
+                            }
 
                             {userMedia && isMediaTypeActive ?
                                 <UserMediaDetails

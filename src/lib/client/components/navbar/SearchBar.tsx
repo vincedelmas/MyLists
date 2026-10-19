@@ -169,6 +169,8 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                 {searchResults && searchResults.data.length > 0 &&
                     <NavbarSearchResults
                         page={page}
+                        search={search}
+                        provider={selectDrop}
                         onPageChange={setPage}
                         items={searchResults.data}
                         currentUserId={currentUser?.id}

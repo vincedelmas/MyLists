@@ -30,7 +30,7 @@ export type AddedMediaDetails = {
     providerData: {
         url: string,
         name: string,
-    };
+    } | null;
     collection?: {
         mediaId: number,
         mediaName: string,

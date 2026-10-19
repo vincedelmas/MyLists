@@ -4,19 +4,19 @@ import {Field, FieldDescription, FieldError, FieldLabel} from "@/lib/client/comp
 import {type Control, type FieldPathByValue, type FieldValues, type UseControllerProps, useController} from "react-hook-form";
 
 
-type FormTextFieldProps<T extends FieldValues, TName extends FieldPathByValue<T, string | undefined>> =
+type FormTextFieldProps<T extends FieldValues, TName extends FieldPathByValue<T, string | number | null | undefined>> =
     Pick<UseControllerProps<T, TName>, "name" | "rules"> &
     Omit<ComponentProps<typeof Input>, "name" | "value" | "defaultValue" | "onChange" | "onBlur" | "ref" | "aria-invalid" | "type" | "children"> & {
     label: ReactNode;
     control: Control<T>;
     description?: ReactNode;
     labelAction?: ReactNode;
-    type?: "text" | "email" | "password" | "url" | "tel" | "search";
+    type?: "text" | "email" | "password" | "url" | "tel" | "search" | "date" | "number";
 };
 
 
 export function FormTextField<
-    T extends FieldValues, TName extends FieldPathByValue<T, string | undefined>
+    T extends FieldValues, TName extends FieldPathByValue<T, string | number | null | undefined>
 >(props: FormTextFieldProps<T, TName>) {
     const { control, name, rules, label, description, labelAction, id, disabled, "aria-describedby": ariaDescribedBy, ...inputProps } = props;
 

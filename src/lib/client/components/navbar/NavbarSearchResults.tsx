@@ -3,13 +3,13 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Link, LinkProps} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
-import {ChevronLeft, ChevronRight, Search} from "lucide-react";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {ApiProviderType, MediaType, PrivacyType} from "@/lib/utils/enums";
 import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
+import {ArrowRight, ChevronLeft, ChevronRight, Plus, Search} from "lucide-react";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {SearchMediaListIndicator} from "@/lib/client/components/media/base/SearchMediaListIndicator";
@@ -17,17 +17,19 @@ import {SearchMediaListIndicator} from "@/lib/client/components/media/base/Searc
 
 interface NavbarSearchResultsProps {
     page: number;
+    search: string;
     hasNextPage: boolean;
-    currentUserId?: number;
     providerLabel: string;
+    currentUserId?: number;
     onNavigate: () => void;
+    provider: ApiProviderType;
     items: ProviderSearchResult[];
     onPageChange: (page: number) => void;
 }
 
 
 export const NavbarSearchResults = (props: NavbarSearchResultsProps) => {
-    const { page, items, hasNextPage, currentUserId, providerLabel, onNavigate, onPageChange } = props;
+    const { page, search, provider, items, hasNextPage, currentUserId, providerLabel, onNavigate, onPageChange } = props;
 
     return (
         <div className="flex max-h-[min(32rem,calc(100vh-6rem))] flex-col">
@@ -60,10 +62,36 @@ export const NavbarSearchResults = (props: NavbarSearchResultsProps) => {
                 )}
             </div>
 
+            {currentUserId && provider === ApiProviderType.BOOKS &&
+                <Link
+                    to="/add-book"
+                    onClick={onNavigate}
+                    search={{ title: search.trim() || undefined }}
+                    className="group/manual flex shrink-0 items-center gap-2 border-t px-3.5 py-2.5
+                    transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset
+                    focus-visible:ring-ring"
+                >
+                    <Plus aria-hidden="true" className="size-3.5 text-brand"/>
+                    <span className="flex-1 text-xs font-medium">
+                        Add a book manually
+                    </span>
+                    <ArrowRight
+                        aria-hidden="true"
+                        className="size-3 text-muted-foreground transition-transform group-hover/manual:translate-x-0.5"
+                    />
+                </Link>
+            }
+
             <div className="flex items-center justify-between border-t bg-muted/15 px-3 py-2.5">
                 <span className="text-[11px] text-muted-foreground">
                     {currentUserId
-                        ? <>Press <kbd className="rounded border bg-background px-1.5 py-0.5 font-sans text-[10px]">Enter</kbd> for all results</>
+                        ? <>
+                            Press{" "}
+                            <kbd className="rounded border bg-background px-1.5 py-0.5 font-sans text-[10px]">
+                                Enter
+                            </kbd>
+                            {" "}for all results
+                        </>
                         : "Choose a result to open it"
                     }
                 </span>
@@ -72,8 +100,8 @@ export const NavbarSearchResults = (props: NavbarSearchResultsProps) => {
                         size="icon-sm"
                         variant="outline"
                         disabled={page === 1}
-                        onClick={() => onPageChange(page - 1)}
                         aria-label="Previous search result page"
+                        onClick={() => onPageChange(page - 1)}
                     >
                         <ChevronLeft/>
                     </Button>
@@ -198,13 +226,12 @@ interface ResultLinkProps {
 
 
 const ResultLink = ({ item, onNavigate, children }: ResultLinkProps) => {
-    const destination: LinkProps = item.itemType === ApiProviderType.USERS ?
-        {
+    const destination: LinkProps = item.itemType === ApiProviderType.USERS
+        ? {
             to: "/profile/$username",
             params: { username: item.name },
         }
-        :
-        {
+        : {
             to: "/details/$mediaType/external/$apiId",
             params: { mediaType: item.itemType as MediaType, apiId: item.id.toString() },
         };

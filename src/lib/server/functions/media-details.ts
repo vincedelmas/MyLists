@@ -5,8 +5,9 @@ import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
 import {hasRequiredRole, toActor} from "@/lib/server/authorization";
-import {requiredMediaReadMiddleware, requiredMediaWriteMiddleware, optionalMediaAuthMiddleware} from "@/lib/server/middlewares/media-authentication";
+import {isManualBookId} from "@/lib/media-definitions/books/book.definition.server";
 import {publicAuthMiddleware, requiredAuthAndManagerRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {requiredMediaReadMiddleware, requiredMediaWriteMiddleware, optionalMediaAuthMiddleware} from "@/lib/server/middlewares/media-authentication";
 import {
     editMediaDetailsSchema,
     externalMediaResolveSchema,
@@ -84,7 +85,13 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
         }
 
         const media = mediaService.findById(mediaId);
-        if (!media) throw new FormattedError("Media not found, cannot refresh metadata.");
+        if (!media) {
+            throw new FormattedError("Media not found, cannot refresh metadata.");
+        }
+
+        if (mediaType === MediaType.BOOKS && isManualBookId(media.apiId)) {
+            throw new FormattedError("Manually added books do not have Google Books metadata to refresh.");
+        }
 
         if (!isManagerOrAbove && media.lastApiUpdate) {
             const lastUpdateTime = dateFromUTCInput(media.lastApiUpdate).getTime();

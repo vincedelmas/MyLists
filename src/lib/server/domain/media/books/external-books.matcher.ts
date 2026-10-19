@@ -1,12 +1,13 @@
 import {logger} from "@/lib/server/core/logger";
-import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
-import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
-import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
-import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
+import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
+import {isManualBookId} from "@/lib/media-definitions/books/book.definition.server";
+import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
+import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
 const BOOKS_API_RES_FAILED_REASON = "API failed for this media";
@@ -27,6 +28,14 @@ export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
 
         for (const item of items) {
             try {
+                if (item.externalApiId && isManualBookId(item.externalApiId)) {
+                    batch.skipped.push(this._createSkippedOutcome(item, "This manually added book is no longer available."));
+                    if (this._shouldFlush(batch)) {
+                        yield batch;
+                        batch = this._createEmptyBatch();
+                    }
+                    continue;
+                }
                 if (this._hasBooksExternalId(item)) {
                     const mediaId = await this.booksIngestion.storeFromExternal(item.externalApiId, false);
                     batch.matched.push({ item, mediaId });

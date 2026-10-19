@@ -5,6 +5,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {adminLlmResponseSchema} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
+import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
 
 
 export const addGenresToBooksUsingLlmTask = defineTask({
@@ -29,7 +30,7 @@ export const addGenresToBooksUsingLlmTask = defineTask({
         ctx.metric("llm.model", serverEnv.LLM_MODEL_ID);
         ctx.metric("llm.endpoint", serverEnv.LLM_BASE_URL);
 
-        const booksGenres = booksService.getAvailableGenres();
+        const booksGenres: readonly string[] = booksDefinition.genres;
         const batchedBooks = await booksService.batchBooksWithoutGenres(input.batchSize ?? 10);
         const processingBatches = batchedBooks.slice(0, input.batchLimit ?? 10);
 
@@ -37,12 +38,12 @@ export const addGenresToBooksUsingLlmTask = defineTask({
         ctx.metric("batches.toProcess", processingBatches.length);
 
         const mainPrompt = dedent`
-            You are given a list of books. Your task is to assign up to 4 relevant genres to each book from the 
+            You are given a list of books. Your task is to assign up to ${booksDefinition.maxGenres} relevant genres to each book from the
             provided genre list. Genres to choose from:
             ${booksGenres.join(", ")}
             
             Instructions:
-            1. Choose a MAXIMUM of 4 genres per book.
+            1. Choose a MAXIMUM of ${booksDefinition.maxGenres} genres per book.
             2. ONLY choose genres from the above list.
             3. Output your answer as a JSON array following this schema:
                [
@@ -75,15 +76,15 @@ export const addGenresToBooksUsingLlmTask = defineTask({
                 }
 
                 for (const item of result) {
-                    const validGenres = item.genres.filter((g) => booksGenres.includes(g)).slice(0, 4);
+                    const valid = item.genres.filter((g) => booksGenres.includes(g)).slice(0, booksDefinition.maxGenres);
 
-                    if (!item.bookApiId || validGenres.length === 0) {
+                    if (!item.bookApiId || valid.length === 0) {
                         ctx.warn("Skipping invalid LLM entry", { item });
                         ctx.increment("books.skipped");
                         continue;
                     }
 
-                    await booksService.addGenresToBook(item.bookApiId, validGenres);
+                    await booksService.addGenresToBook(item.bookApiId, valid);
                     ctx.increment("books.tagged");
                 }
             });

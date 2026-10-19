@@ -1,6 +1,9 @@
 import {MediaType} from "@/lib/utils/enums";
-import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {useAuth} from "@/lib/client/hooks/use-auth";
+import {postCreateBook} from "@/lib/server/functions/books";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
+import {mediaDetailsOptions, profileOptions} from "@/lib/client/react-query/query-options";
+import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
 import {postEditMediaDetails, postUpdateBookCover, refreshMediaDetails, resolveExternalMedia} from "@/lib/server/functions/media-details";
 
 
@@ -55,5 +58,28 @@ export const useUpdateBookCoverMutation = (mediaId: number, meta?: MutationMeta)
 export const useResolveExternalMediaMutation = () => {
     return useMutation({
         mutationFn: resolveExternalMedia,
+    });
+};
+
+
+export const useCreateBookMutation = () => {
+    const { currentUser } = useAuth();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: postCreateBook,
+        meta: {
+            noErrorToast: true,
+            successToastMessage: "Book created and added to your list!",
+        },
+        onSuccess: () => Promise.all([
+            queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
+            invalidateUserProgressQueries(queryClient, currentUser!.name),
+            queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+            queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+            queryClient.invalidateQueries({ queryKey: ["userList", MediaType.BOOKS] }),
+            queryClient.invalidateQueries({ queryKey: ["listFilters", MediaType.BOOKS, currentUser!.name] }),
+            queryClient.invalidateQueries({ queryKey: ["navSearch"] }),
+        ]),
     });
 };

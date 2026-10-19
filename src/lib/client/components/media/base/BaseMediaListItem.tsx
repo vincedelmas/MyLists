@@ -47,21 +47,8 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const {
-        rank,
-        rating,
-        onEdited,
-        mediaType,
-        userMedia,
-        isCurrent,
-        annotation,
-        redoDisplay,
-        queryOption,
-        isConnected,
-        allStatuses,
-        showMediaType,
-        ratingDisplay,
-        isMediaTypeActive,
-        mediaDetailsDisplay
+        rank, rating, onEdited, mediaType, userMedia, isCurrent, annotation, redoDisplay, queryOption,
+        isConnected, allStatuses, showMediaType, ratingDisplay, isMediaTypeActive, mediaDetailsDisplay
     } = props;
 
     const isCommon = isMediaTypeActive && userMedia.common;

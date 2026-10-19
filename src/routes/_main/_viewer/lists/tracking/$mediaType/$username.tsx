@@ -56,7 +56,6 @@ function TrackingListPage() {
     const [filtersTab, setFiltersTab] = useState<MediaFiltersTab>("filters");
 
     const isCurrent = (currentUser?.id === userData.id);
-
     const lastPage = Math.max(1, apiData.results.pagination.totalPages);
     const isGrid = filters.view ? filters.view === "grid" : (currentUser?.gridListView ?? true);
 
@@ -128,7 +127,6 @@ function TrackingListPage() {
             />
 
             <Header
-                trailing={<QuickActions username={username} mediaType={mediaType}/>}
                 isGrid={isGrid}
                 filters={filters}
                 onGridClick={handleGridToggle}
@@ -136,6 +134,12 @@ function TrackingListPage() {
                 allStatuses={getMediaDefinition(mediaType).statuses}
                 onSortChange={({ sorting }) => handleFilterChange({ sorting })}
                 onStatusChange={({ status }) => handleFilterChange({ status })}
+                trailing={
+                    <QuickActions
+                        username={username}
+                        mediaType={mediaType}
+                    />
+                }
                 onFilterClick={() => {
                     setFiltersTab("filters");
                     setFiltersPanelOpen(true);

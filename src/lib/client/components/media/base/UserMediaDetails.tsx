@@ -25,12 +25,12 @@ import {
 
 
 interface UserMediaDetailsProps<T extends MediaType> {
+    mediaType: T;
     preview?: boolean;
     listEdit?: boolean;
-    mediaType: T;
-    userMedia: NoInfer<ExtractUserMediaByType<T>>;
-    media: NoInfer<UserMediaProgressDetails<T>>;
     queryOption: UserMediaQueryOption;
+    media: NoInfer<UserMediaProgressDetails<T>>;
+    userMedia: NoInfer<ExtractUserMediaByType<T>>;
 }
 
 

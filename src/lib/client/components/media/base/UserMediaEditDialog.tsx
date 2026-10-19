@@ -77,7 +77,7 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
                                     </div>
                                 )}
                             >
-                                <Suspense fallback={<Spinner/>}>
+                                <Suspense fallback={<Spinner className="size-10"/>}>
                                     {dialogOpen &&
                                         <UserMediaSection
                                             listEdit={true}

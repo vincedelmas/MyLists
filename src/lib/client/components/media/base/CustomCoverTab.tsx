@@ -5,9 +5,9 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {FormProvider, useForm} from "react-hook-form";
 import {Button} from "@/lib/client/components/ui/button";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {UserMedia} from "@/lib/types/query.options.types";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {FieldGroup, FieldSet} from "@/lib/client/components/ui/field";
-import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {UpdateUserCustomCoverInput, updateUserCustomCoverSchema} from "@/lib/schemas";
 import {CoverSourceFields} from "@/lib/client/components/media/base/CoverSourceFields";
@@ -16,7 +16,7 @@ import {useUpdateCustomCoverMutation} from "@/lib/client/react-query/query-mutat
 
 interface CustomCoverTabProps {
     mediaType: MediaType;
-    userMedia: UserMedia | UserMediaItem;
+    userMedia: UserMedia;
     onUpdateMutation: ReturnType<typeof useUpdateCustomCoverMutation>;
 }
 

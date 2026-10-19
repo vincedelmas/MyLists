@@ -2,9 +2,9 @@ import {Settings} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
-import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {buttonVariants} from "@/lib/client/components/ui/button";
+import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 
 

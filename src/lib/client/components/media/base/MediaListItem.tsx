@@ -6,15 +6,14 @@ import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 interface MediaListItemProps<T extends MediaType> {
-    rank?: number;
-    annotation?: string | null;
-    showMediaType?: boolean;
-    loadEditDetails?: boolean;
-    onEdited?: () => Promise<void>;
     mediaType: T;
+    rank?: number;
     isCurrent: boolean;
     isConnected: boolean;
+    showMediaType?: boolean;
     isMediaTypeActive: boolean;
+    annotation?: string | null;
+    onEdited?: () => Promise<void>;
     allStatuses: readonly Status[];
     userMedia: ExtractListByType<T>;
     queryOption: ReturnType<typeof mediaListOptions>;
@@ -22,25 +21,27 @@ interface MediaListItemProps<T extends MediaType> {
 
 
 export const MediaListItem = <T extends MediaType>(props: MediaListItemProps<T>) => {
-    const { mediaType, queryOption, isCurrent, isConnected, isMediaTypeActive, allStatuses, userMedia, onEdited, loadEditDetails, showMediaType, rank, annotation } = props;
+    const {
+        mediaType, queryOption, isCurrent, isConnected, isMediaTypeActive,
+        allStatuses, userMedia, onEdited, showMediaType, rank, annotation
+    } = props;
 
     const MediaItemComponent = mediaConfig[mediaType].mediaListCard;
     const rating = formatRating(userMedia.ratingSystem, userMedia.rating);
 
     return (
         <MediaItemComponent
-            rating={rating}
             rank={rank}
-            annotation={annotation}
-            showMediaType={showMediaType}
+            rating={rating}
             onEdited={onEdited}
-            loadEditDetails={loadEditDetails}
             isCurrent={isCurrent}
             mediaType={mediaType}
             userMedia={userMedia}
+            annotation={annotation}
             queryOption={queryOption}
             isConnected={isConnected}
             allStatuses={allStatuses}
+            showMediaType={showMediaType}
             isMediaTypeActive={isMediaTypeActive}
         />
     );

@@ -1,11 +1,12 @@
-import {getTableColumns, ne, sql} from "drizzle-orm";
+import {ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {getCommonMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {MOVIES_FALLBACK_DURATION, moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {movies, moviesActors, moviesGenre, moviesList, moviesTags} from "@/lib/server/database/schema/media/movies.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 const tables = {
@@ -51,9 +52,8 @@ export const moviesServerDefinition = defineServerMediaDefinition({
         },
         listQuery: {
             selection: {
-                mediaName: movies.name,
-                imageCover: movies.imageCover,
-                ...getTableColumns(moviesList),
+                ...getCommonMediaListSelection(tables),
+                redo: moviesList.redo,
             },
             defaultSort: getMediaSortLabel(moviesDefinition, moviesDefinition.sorting.default),
             sorts: createMediaListSorts(moviesDefinition, sortColumns, movies.id),

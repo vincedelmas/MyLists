@@ -93,7 +93,7 @@ type SpecificAffinityKey<TDefinition extends Pick<MediaDefinition, "statistics">
 >;
 
 
-type BaseSelection = Omit<ListTableColumns, "redo"> & SelectedFieldsFlat & {
+type BaseSelection = Omit<ListTableColumns, "redo" | "id" | "addedAt" | "lastUpdated"> & SelectedFieldsFlat & {
     redo?: NotNullColumn<number>;
     mediaName: NotNullColumn<string>;
     imageCover: NotNullColumn<string>;

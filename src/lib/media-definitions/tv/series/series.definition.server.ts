@@ -1,6 +1,7 @@
+import {notInArray, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
-import {getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {getCommonMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {SERIES_FALLBACK_DURATION, seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
@@ -70,18 +71,10 @@ export const seriesServerDefinition = defineServerMediaDefinition({
         },
         listQuery: {
             selection: {
-                mediaName: series.name,
-                imageCover: series.imageCover,
-                epsPerSeason: sql<{ season: number; episodes: number }[]>`(
-                    SELECT
-                        json_group_array(json_object(
-                            'season', ${seriesEpisodesPerSeason.season},
-                            'episodes', ${seriesEpisodesPerSeason.episodes}
-                        ))
-                    FROM ${seriesEpisodesPerSeason}
-                    WHERE ${seriesEpisodesPerSeason.mediaId} = ${series.id}
-                )`.mapWith(JSON.parse),
-                ...getTableColumns(seriesList),
+                ...getCommonMediaListSelection(tables),
+                redo: seriesList.redo,
+                currentSeason: seriesList.currentSeason,
+                currentEpisode: seriesList.currentEpisode,
             },
             defaultSort: getMediaSortLabel(seriesDefinition, seriesDefinition.sorting.default),
             sorts: createMediaListSorts(seriesDefinition, sortColumns, series.id),

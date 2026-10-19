@@ -1,11 +1,12 @@
+import {and, eq, like, ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
-import {and, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
+import {getCommonMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
-import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 const tables = {
@@ -48,9 +49,8 @@ export const gamesServerDefinition = defineServerMediaDefinition({
         },
         listQuery: {
             selection: {
-                mediaName: games.name,
-                imageCover: games.imageCover,
-                ...getTableColumns(gamesList),
+                ...getCommonMediaListSelection(tables),
+                playtime: gamesList.playtime,
             },
             defaultSort: getMediaSortLabel(gamesDefinition, gamesDefinition.sorting.default),
             sorts: createMediaListSorts(gamesDefinition, sortColumns, games.id),

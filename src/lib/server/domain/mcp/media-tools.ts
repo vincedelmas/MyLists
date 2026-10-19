@@ -7,7 +7,7 @@ import {mediaDetailsSchema, externalMediaResolveSchema} from "@/lib/schemas/medi
 import {addMediaToListSchema, updateUserMediaSchema, userTagNamesSchema} from "@/lib/schemas/user-media.schema";
 import {getMediaListSF, getMediaListFilters, getMediaListSearchFilters} from "@/lib/server/functions/media-lists";
 import {getMediaDetails, resolveExternalMedia, getGameCompatiblePlatforms} from "@/lib/server/functions/media-details";
-import {postAddMediaToList, postUpdateUserMedia, postEditUserTag, getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
+import {getUserMediaDetails, postAddMediaToList, postUpdateUserMedia, postEditUserTag, getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
 import {
     mediaListInputSchema,
     mediaListFiltersInputSchema,
@@ -23,7 +23,11 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
         inputSchema: mediaDetailsSchema.strict(),
         description: "Read catalog details, your list entry and similar titles. mediaId is a MyLists ID; userMedia is null if unlisted.",
     }, async data => {
-        const { media, userMedia, similarMedia } = await getMediaDetails({ data });
+        const [{ media, similarMedia }, { userMedia }] = await Promise.all([
+            getMediaDetails({ data }),
+            getUserMediaDetails({ data }),
+        ]);
+
         return { media, userMedia, similarMedia };
     });
 

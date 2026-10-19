@@ -1,5 +1,7 @@
+import {notFound} from "@tanstack/react-router";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
+import type {UserMediaProgressDetails} from "@/lib/types/user-media.types";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {ActivityCorrectionRequired} from "@/lib/server/domain/tracking/monthly-activity.service";
 import {requiredMediaReadMiddleware, requiredMediaWriteMiddleware} from "@/lib/server/middlewares/media-authentication";
@@ -12,6 +14,35 @@ import {
     updateUserMediaSchema,
     userTagNamesSchema
 } from "@/lib/schemas";
+
+
+export const getUserMediaDetails = createServerFn({ method: "GET" })
+    .middleware([requiredMediaReadMiddleware])
+    .validator(mediaTypeMediaIdSchema)
+    .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
+        const container = await getContainer();
+        const mediaService = container.registries.mediaService.get(mediaType);
+
+        const userMedia = mediaService.findUserMedia(currentUser.id, mediaId);
+        const media = mediaService.findById(mediaId);
+        if (!media) throw notFound();
+
+        // Only metadata needed by progress controls belongs in editor response
+        const progress: UserMediaProgressDetails = "pages" in media
+            ? { pages: media.pages }
+            : "chapters" in media
+                ? { chapters: media.chapters }
+                : "getMediaEpsPerSeason" in mediaService
+                    ? { epsPerSeason: mediaService.getMediaEpsPerSeason(mediaId) }
+                    : {};
+
+        const details: { userMedia: ReturnType<typeof mediaService.findUserMedia>; media: UserMediaProgressDetails } = {
+            userMedia,
+            media: progress,
+        };
+        
+        return details;
+    });
 
 
 export const getUserMediaHistory = createServerFn({ method: "GET" })

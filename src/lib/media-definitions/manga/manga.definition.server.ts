@@ -1,11 +1,12 @@
-import {getTableColumns, ne, sql} from "drizzle-orm";
+import {ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {getCommonMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {MANGA_FIXED_DURATION_MIN, mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 const tables = {
@@ -49,10 +50,10 @@ export const mangaServerDefinition = defineServerMediaDefinition({
         },
         listQuery: {
             selection: {
-                mediaName: manga.name,
+                ...getCommonMediaListSelection(tables),
+                redo: mangaList.redo,
                 chapters: manga.chapters,
-                imageCover: manga.imageCover,
-                ...getTableColumns(mangaList),
+                currentChapter: mangaList.currentChapter,
             },
             defaultSort: getMediaSortLabel(mangaDefinition, mangaDefinition.sorting.default),
             sorts: createMediaListSorts(mangaDefinition, sortColumns, manga.id),

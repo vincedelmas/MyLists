@@ -9,30 +9,30 @@ import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
-import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
 import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
+import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
-import {
-    allUpdatesOptions,
-    continueOptions,
-    historyOptions,
-    mediaDetailsOptions,
-    mediaListOptions,
-    profileOptions,
-    profileRecentFeedOptions,
-    tagNamesOptions
-} from "@/lib/client/react-query/query-options";
 import {
     postAddMediaToList,
     postDeleteUserUpdates,
     postEditUserTag,
     postRemoveMediaFromList,
-    postUpdateUserCustomCover,
-    postUpdateUserMedia
+    postUpdateUserCustomCover, postUpdateUserMedia
 } from "@/lib/server/functions/user-media";
+import {
+    allUpdatesOptions,
+    continueOptions,
+    historyOptions,
+    mediaListOptions,
+    userMediaDetailsOptions,
+    profileOptions,
+    profileRecentFeedOptions,
+    tagNamesOptions
+} from "@/lib/client/react-query/query-options";
 
 
-export type UserMediaQueryOption = ReturnType<typeof mediaDetailsOptions> | ReturnType<typeof mediaListOptions>;
+export type UserMediaQueryOption = ReturnType<typeof mediaListOptions> | ReturnType<typeof userMediaDetailsOptions>;
+
 
 export type UpdateUserMediaMutationOptions = {
     loggedAt?: string;
@@ -107,7 +107,7 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
             successToastMessage: "Media added to your list!",
         },
         onSuccess: async (data, variables) => {
-            if (queryOption.queryKey[0] === "details") {
+            if (queryOption.queryKey[0] === "userMedia") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                     if (!oldData || !data) return;
                     return Object.assign({}, oldData, { userMedia: data });
@@ -128,6 +128,7 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
             }
 
             await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["userMedia", variables.data.mediaType, variables.data.mediaId] }),
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
                 invalidateUserProgressQueries(queryClient, currentUser!.name),
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
@@ -150,7 +151,7 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
             successToastMessage: "Media removed from your list!",
         },
         onSuccess: async (_data, variables) => {
-            if (queryOption.queryKey[0] === "details") {
+            if (queryOption.queryKey[0] === "userMedia") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                     if (!oldData) return;
                     return { ...oldData, userMedia: null };
@@ -178,6 +179,7 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
                 queryClient.invalidateQueries({ queryKey: ["tagsView", variables.data.mediaType, currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: tagNamesOptions(variables.data.mediaType, false).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", variables.data.mediaType, variables.data.mediaId] }),
+                queryClient.invalidateQueries({ queryKey: ["userMedia", variables.data.mediaType, variables.data.mediaId] }),
             ]);
         }
     });
@@ -257,20 +259,20 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                 invalidations.push(queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }));
             }
 
-            if (queryOption.queryKey[0] === "details") {
-                invalidations.push(queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }));
+            if (queryOption.queryKey[0] === "userMedia") {
+                invalidations.push(queryClient.invalidateQueries({ queryKey: ["userList", mediaType], refetchType: "none" }));
             }
 
             await Promise.all(invalidations);
 
-            if (queryOption.queryKey[0] === "details") {
+            if (queryOption.queryKey[0] === "userMedia") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                     if (!oldData) return;
                     return { ...oldData, userMedia: { ...oldData.userMedia, ...data } };
                 })
             }
             else if (queryOption.queryKey[0] === "userList") {
-                await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey });
+                await queryClient.invalidateQueries({ queryKey: userMediaDetailsOptions(mediaType, mediaId).queryKey });
 
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                     if (!oldData) return;
@@ -323,9 +325,7 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, 
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
-                ...(queryOption.queryKey[0] === "details"
-                    ? [queryClient.invalidateQueries({ queryKey: queryOption.queryKey })]
-                    : []),
+                queryClient.invalidateQueries({ queryKey: ["userMedia", queryOption.queryKey[1], data.mediaId] }),
             ]);
         },
     });
@@ -356,7 +356,7 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
                     queryKey: ["userList", mediaType, currentUser!.name],
                     refetchType: action === TagAction.ADD || action === TagAction.DELETE_ONE ? "none" : "active",
                 }),
-                queryClient.invalidateQueries({ queryKey: ["details", mediaType] }),
+                queryClient.invalidateQueries({ queryKey: ["userMedia", mediaType] }),
             ]);
         }
     })

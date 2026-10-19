@@ -65,7 +65,6 @@ export const MediaListResults = (props: MediaListResultsProps) => {
                     showMediaType={true}
                     key={toItemKey(item)}
                     isCurrent={isCurrent}
-                    loadEditDetails={true}
                     isConnected={isConnected}
                     mediaType={item.mediaType}
                     userMedia={item.userMedia}

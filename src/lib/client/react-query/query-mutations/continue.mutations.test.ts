@@ -22,7 +22,7 @@ vi.mock("@/lib/server/functions/continue", () => ({ postContinueMedia: mocks.sav
 vi.mock("@/lib/server/functions/profile-pins", () => ({ getProfilePins: vi.fn(), getOwnProfilePins: vi.fn() }));
 vi.mock("@/lib/client/react-query/query-options", async () => ({
     ...await import("@/lib/client/react-query/query-options/continue.options"),
-    mediaDetailsOptions: (type: MediaType, id: number) => ({ queryKey: ["details", type, id] }),
+    userMediaDetailsOptions: (type: MediaType, id: number) => ({ queryKey: ["userMedia", type, id] }),
     historyOptions: (type: MediaType, id: number) => ({ queryKey: ["onOpenHistory", type, id] }),
     profileHeaderOptions: (name: string) => ({ queryKey: ["profile", "header", name] }),
     profileSummaryOptions: (name: string) => ({ queryKey: ["profile", "summary", name] }),

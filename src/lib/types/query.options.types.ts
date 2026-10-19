@@ -5,6 +5,7 @@ import {
     hallOfFameOptions,
     historyOptions,
     mediaDetailsOptions,
+    userMediaDetailsOptions,
     mediaListOptions,
     profileHeaderOptions,
     profileOptions,
@@ -30,7 +31,8 @@ export type AdminUserOverview = Awaited<ReturnType<NonNullable<typeof adminOverv
 
 
 // --- User Media Details Types ----------------------------------------------------
-export type UserMedia = NonNullable<MediaDetailsOptionsType["userMedia"]>;
+type UserMediaDetailsOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof userMediaDetailsOptions>["queryFn"]>>>;
+export type UserMedia = NonNullable<UserMediaDetailsOptionsType["userMedia"]>;
 export type ExtractUserMediaByType<T extends MediaType> =
     T extends typeof MediaType.GAMES ? Extract<UserMedia, { playtime: any }> :
         T extends TvMediaType ? Extract<UserMedia, { currentSeason: any }> :

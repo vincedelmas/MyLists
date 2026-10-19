@@ -233,19 +233,17 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         return delta;
     }
 
-    async function getMediaAndUserDetails(userId: number | undefined, mediaId: number) {
+    async function getMediaDetails(userId: number | undefined, mediaId: number) {
         const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         const mediaWithDetails = await repository.findAllAssociatedDetails(media.id);
         if (!mediaWithDetails) throw notFound();
 
-        const userMedia = repository.findUserMedia(userId, mediaWithDetails.id);
         const similarMedia = await repository.findSimilarMedia(mediaWithDetails.id);
         const followsData = await communityQueries.getUserFollowsMediaData(userId, mediaWithDetails.id);
 
         return {
-            userMedia,
             followsData,
             similarMedia,
             media: mediaWithDetails,
@@ -323,6 +321,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         searchByName,
         findByApiIds,
         getListFilters,
+        getMediaDetails,
         findUserMediaIds,
         getUpcomingMedia,
         getUserFavorites,
@@ -337,7 +336,6 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         updateUserCustomCover,
         downloadMediaListAsCSV,
         updateUserMediaDetails,
-        getMediaAndUserDetails,
         removeMediaFromUserList,
         searchMediadleSuggestion,
         getMediaCommunityActivity,

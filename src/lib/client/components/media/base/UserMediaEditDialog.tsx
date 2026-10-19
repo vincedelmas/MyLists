@@ -1,25 +1,26 @@
+import {Suspense} from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {useQuery, useQueryClient} from "@tanstack/react-query";
-import {UserMediaItem} from "@/lib/types/query.options.types";
-import {mediaDetailsOptions, mediaListOptions} from "@/lib/client/react-query/query-options";
-import {Spinner} from "@/lib/client/components/ui/spinner";
+import {CatchBoundary} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
-import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {UserMediaItem} from "@/lib/types/query.options.types";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import {QueryErrorResetBoundary, useQueryClient} from "@tanstack/react-query";
+import {UserMediaSection} from "@/lib/client/components/media/base/UserMediaSection";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
 interface UserMediaEditDialogProps {
-    loadDetails?: boolean;
-    onEdited?: () => Promise<void>;
     dialogOpen: boolean;
     mediaType: MediaType;
     userMedia: UserMediaItem;
+    onEdited?: () => Promise<void>;
     onOpenChange: (open: boolean) => void;
     queryOption: ReturnType<typeof mediaListOptions>;
 }
 
 
-export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOption, onOpenChange, onEdited, loadDetails = false }: UserMediaEditDialogProps) => {
+export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOption, onOpenChange, onEdited }: UserMediaEditDialogProps) => {
     const queryClient = useQueryClient();
     if (!userMedia) return null;
 
@@ -27,9 +28,10 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
         onOpenChange(open);
         if (open) return;
 
-        // A save outlive the dialog. Refresh only once those edits have settled
+        // A save outlive dialog. Refresh only once edits have settled
         const mutationCache = queryClient.getMutationCache();
         const pendingEdits = mutationCache.findAll({ mutationKey: ["userMediaEdit", mediaType], status: "pending" });
+
         if (pendingEdits.length > 0) {
             await new Promise<void>((resolve) => {
                 const unsubscribe = mutationCache.subscribe(() => {
@@ -57,37 +59,39 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
                     </DialogDescription>
                 </DialogHeader>
                 <div className="w-full flex items-center justify-center max-sm:mb-8 max-sm:px-2">
-                    {loadDetails ?
-                        <MediaDetailsEditor mediaType={mediaType} mediaId={userMedia.mediaId} enabled={dialogOpen}/>
-                        :
-                        <UserMediaDetails
-                            userMedia={userMedia}
-                            mediaType={mediaType}
-                            queryOption={queryOption}
-                        />
-                    }
+                    <QueryErrorResetBoundary>
+                        {({ reset: resetQuery }) =>
+                            <CatchBoundary
+                                getResetKey={() => dialogOpen}
+                                errorComponent={({ reset }) => (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <p>Could not load this title's details.</p>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                resetQuery();
+                                                reset();
+                                            }}
+                                        >
+                                            Try again
+                                        </Button>
+                                    </div>
+                                )}
+                            >
+                                <Suspense fallback={<Spinner/>}>
+                                    {dialogOpen &&
+                                        <UserMediaSection
+                                            listEdit={true}
+                                            mediaType={mediaType}
+                                            mediaId={userMedia.mediaId}
+                                        />
+                                    }
+                                </Suspense>
+                            </CatchBoundary>
+                        }
+                    </QueryErrorResetBoundary>
                 </div>
             </DialogContent>
         </Dialog>
     );
-};
-
-
-const MediaDetailsEditor = ({ mediaType, mediaId, enabled }: { mediaType: MediaType; mediaId: number; enabled: boolean }) => {
-    const queryOption = mediaDetailsOptions(mediaType, mediaId);
-    const details = useQuery({ ...queryOption, enabled });
-    if (details.isPending) return <Spinner/>;
-    if (details.isError) {
-        return (
-            <div className="flex flex-col items-center gap-3">
-                <p>Could not load this title's details.</p>
-                <Button variant="outline" onClick={() => void details.refetch()} disabled={details.isFetching}>
-                    Try again
-                </Button>
-            </div>
-        );
-    }
-    if (!details.data.userMedia) return <p>This title is no longer in your list.</p>;
-
-    return <UserMediaDetails mediaType={mediaType} userMedia={details.data.userMedia} queryOption={queryOption}/>;
 };

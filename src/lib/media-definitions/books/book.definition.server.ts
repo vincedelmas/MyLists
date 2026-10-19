@@ -1,6 +1,7 @@
-import {getTableColumns, ne, sql} from "drizzle-orm";
+import {ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {getCommonMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
@@ -52,10 +53,10 @@ export const booksServerDefinition = defineServerMediaDefinition({
         tables,
         listQuery: {
             selection: {
+                ...getCommonMediaListSelection(tables),
                 pages: books.pages,
-                mediaName: books.name,
-                imageCover: books.imageCover,
-                ...getTableColumns(booksList),
+                redo: booksList.redo,
+                actualPage: booksList.actualPage,
             },
             defaultSort: getMediaSortLabel(booksDefinition, booksDefinition.sorting.default),
             sorts: createMediaListSorts(booksDefinition, sortColumns, books.id),

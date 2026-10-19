@@ -1,7 +1,16 @@
 import {DeltaStats} from "@/lib/types/stats.types";
 import {NameObj} from "@/lib/types/media-common.types";
 import {LogPayload} from "@/lib/types/user-updates.types";
-import {GamesPlatformsEnum, RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
+import type {EpsPerSeasonType} from "@/lib/types/media-list.types";
+import {GamesPlatformsEnum, MediaType, RatingSystemType, Status, TvMediaType, UpdateType} from "@/lib/utils/enums";
+
+
+export type UserMediaProgressDetails<T extends MediaType = MediaType> = ({
+    [MediaType.BOOKS]: { pages: number };
+    [MediaType.MANGA]: { chapters: number | null };
+    [MediaType.MOVIES]: Record<string, never>;
+    [MediaType.GAMES]: Record<string, never>;
+} & { [K in TvMediaType]: { epsPerSeason: EpsPerSeasonType[] } })[T];
 
 
 export type UpdatePayload = {

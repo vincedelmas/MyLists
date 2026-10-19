@@ -3,7 +3,7 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {toast} from "@/lib/client/components/ui/toast";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {postContinueMedia} from "@/lib/server/functions/continue";
-import {historyOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {historyOptions, userMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {ContinueItem, continueOptions} from "@/lib/client/react-query/query-options/continue.options";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
 
@@ -44,7 +44,7 @@ export const useContinueMediaMutation = ({ mediaType, mediaId, mediaName }: Cont
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId], refetchType: "none" }),
                 queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey, refetchType: "none" }),
                 invalidateUserProgressQueries(queryClient, currentUser!.name, { refetchContinue: false, refetchSecondary: false }),
-                queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey, refetchType: "none" }),
+                queryClient.invalidateQueries({ queryKey: userMediaDetailsOptions(mediaType, mediaId).queryKey, refetchType: "none" }),
             ]);
 
             if (completed) {

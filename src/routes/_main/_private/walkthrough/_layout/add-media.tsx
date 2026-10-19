@@ -3,7 +3,7 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
-import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {userMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {ExternalLink, Heart, List, MessageCircle, Plus, RotateCcw, Star, Tags} from "lucide-react";
 import {ONBOARDING_MOVIE_ID, onboardingAddMediaFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_main/_private/walkthrough/_layout/add-me
 
 function RouteComponent() {
     const { media, userMedia } = onboardingAddMediaFixture;
-    const onboardingQueryOption = mediaDetailsOptions(MediaType.MOVIES, ONBOARDING_MOVIE_ID);
+    const onboardingQueryOption = userMediaDetailsOptions(MediaType.MOVIES, ONBOARDING_MOVIE_ID);
 
     return (
         <OnboardingContainer>
@@ -82,7 +82,8 @@ function RouteComponent() {
                     {!!userMedia &&
                         <div className="max-w-90">
                             <UserMediaDetails
-                                preview
+                                media={{}}
+                                preview={true}
                                 userMedia={userMedia}
                                 mediaType={MediaType.MOVIES}
                                 queryOption={onboardingQueryOption}

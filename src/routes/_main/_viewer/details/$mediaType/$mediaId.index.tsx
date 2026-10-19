@@ -1,10 +1,9 @@
 import {Suspense} from "react";
-import {ExternalLink, Plus} from "lucide-react";
+import {ExternalLink} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
@@ -13,14 +12,13 @@ import {SimilarMedia} from "@/lib/client/components/media/base/SimilarMedia";
 import {MediaSynopsis} from "@/lib/client/components/media/base/MediaSynopsis";
 import {MediaComponent} from "@/lib/client/components/media/base/MediaComponent";
 import {RefreshAndEdit} from "@/lib/client/components/media/base/RefreshAndEdit";
-import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
+import {UserMediaSection} from "@/lib/client/components/media/base/UserMediaSection";
 import {CollectionsLists} from "@/lib/client/components/media/base/CollectionsLists";
 import {MediaFollowsSection} from "@/lib/client/components/media/base/MediaFollowsSection";
 import {MediaCommunityActivity} from "@/lib/client/components/media/base/MediaCommunityActivity";
 import {DisabledMediaListNotice} from "@/lib/client/components/media/base/DisabledMediaListNotice";
 import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
-import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDetailsOptions, userMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId/")({
@@ -32,15 +30,24 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
     },
     context: ({ params: { mediaType, mediaId } }) => ({
         mediaDetailsQueryOptions: mediaDetailsOptions(mediaType, mediaId),
+        userMediaQueryOptions: userMediaDetailsOptions(mediaType, mediaId),
         communityCollectionsQueryOptions: mediaCommunityCollectionsOptions(mediaId, mediaType),
         communityActivityQueryOptions: mediaCommunityActivityOptions(mediaId, mediaType, { page: 1, perPage: 8 }),
     }),
-    loader: async ({ context }) => {
-        const { media } = await context.queryClient.query({ ...context.mediaDetailsQueryOptions, staleTime: "static" });
-        void context.queryClient.query(context.communityCollectionsQueryOptions).catch(() => {
-        });
+    loader: async ({ context, params: { mediaType } }) => {
+        const currentUser = context.queryClient.getQueryData(context.authQueryOptions.queryKey);
+
+        const [{ media }] = await Promise.all([
+            context.queryClient.query({ ...context.mediaDetailsQueryOptions, staleTime: "static" }),
+            currentUser && resolveMediaTypeActive(currentUser.settings, mediaType)
+                ? context.queryClient.query(context.userMediaQueryOptions) : undefined,
+        ]);
+
         void context.queryClient.query(context.communityActivityQueryOptions).catch(() => {
         });
+        void context.queryClient.query(context.communityCollectionsQueryOptions).catch(() => {
+        });
+
         return { title: media.name };
     },
     component: MediaDetailsPage,
@@ -56,12 +63,7 @@ function MediaDetailsPage() {
     const { mediaDetailsQueryOptions, communityCollectionsQueryOptions, communityActivityQueryOptions } = Route.useRouteContext();
 
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
-    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsQueryOptions);
-    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsQueryOptions).data;
-
-    const handleAddMediaToUser = () => {
-        addMediaToListMutation.mutate({ data: { mediaType, mediaId: media.id } });
-    };
+    const { media, followsData, similarMedia } = useSuspenseQuery(mediaDetailsQueryOptions).data;
 
     return (
         <>
@@ -136,48 +138,30 @@ function MediaDetailsPage() {
                                     View on {media.providerData.name} <ExternalLink/>
                                 </a>
                                 :
-                                <Button size="lg" variant="tame" className="w-full" disabled={true}>
-                                    Book Added Manually
+                                <Button size="lg" variant="tame" className="w-full capitalize" disabled={true}>
+                                    {mediaType} added manually
                                 </Button>
                             }
 
-                            {userMedia && isMediaTypeActive ?
-                                <UserMediaDetails
-                                    mediaType={mediaType}
-                                    userMedia={userMedia}
-                                    queryOption={mediaDetailsOptions(mediaType, mediaId)}
+                            {isAnonymous ?
+                                <LockedContent
+                                    variant="inline"
+                                    showAuthButtons={true}
+                                    isAnonymous={isAnonymous}
+                                    title="Want to track your progress?"
+                                    description="Log-in or register to add this media to your list, track your
+                                    progress, add ratings, comments, tags and more."
                                 />
                                 :
-                                isAnonymous ?
-                                    <LockedContent
-                                        variant="inline"
-                                        showAuthButtons={true}
-                                        isAnonymous={isAnonymous}
-                                        title="Want to track your progress?"
-                                        description="Log-in or register to add this media to your list, track your
-                                        progress, add ratings, comments, tags and more."
+                                !isMediaTypeActive ?
+                                    <DisabledMediaListNotice
+                                        mediaType={mediaType}
                                     />
                                     :
-                                    !isMediaTypeActive ?
-                                        <DisabledMediaListNotice
-                                            mediaType={mediaType}
-                                        />
-                                        :
-                                        <Card>
-                                            <CardContent className="text-center space-y-4">
-                                                <div className="space-y-3">
-                                                    <h3 className="text-lg font-semibold text-foreground">
-                                                        Are you interested in this?
-                                                    </h3>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Add this {mediaType} to your list to track your progress.
-                                                    </p>
-                                                </div>
-                                                <Button className="w-full" onClick={handleAddMediaToUser}>
-                                                    <Plus/> Add to List
-                                                </Button>
-                                            </CardContent>
-                                        </Card>
+                                    <UserMediaSection
+                                        mediaId={mediaId}
+                                        mediaType={mediaType}
+                                    />
                             }
                             <CollectionsLists
                                 mediaId={media.id}

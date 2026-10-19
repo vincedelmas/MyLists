@@ -1,6 +1,6 @@
 import {AchievementDifficulty, MediaType, RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
 import type {HighlightedMediaResolvedSettings, ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
-import type {AchievementsType, ExtractListByType, MediaGlobalSummaryType, PerMediaSummaryType, UserUpdateType} from "@/lib/types/query.options.types";
+import type {AchievementsType, ExtractListByType, UserMedia, MediaGlobalSummaryType, PerMediaSummaryType, UserUpdateType} from "@/lib/types/query.options.types";
 
 
 export const ONBOARDING_MOVIE_ID = -101;
@@ -314,11 +314,11 @@ export const onboardingMovieFixture = {
     comment: "A favorite for the soundtrack and its sense of scale.",
     imageCover: "/static/movies-covers/642b983912f6118acb9813050d0d9a88.jpg",
     tags: [
-        { id: -1, name: "Sci-Fi" },
-        { id: -2, name: "Top 10" },
-        { id: -3, name: "Cinema" },
+        { name: "Sci-Fi" },
+        { name: "Top 10" },
+        { name: "Cinema" },
     ],
-} satisfies ExtractListByType<typeof MediaType.MOVIES>;
+} satisfies ExtractListByType<typeof MediaType.MOVIES> & UserMedia;
 
 
 export const onboardingAddMediaFixture = {

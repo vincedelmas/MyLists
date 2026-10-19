@@ -2,8 +2,8 @@ import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {postCreateBook} from "@/lib/server/functions/books";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
-import {mediaDetailsOptions, profileOptions} from "@/lib/client/react-query/query-options";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
+import {mediaDetailsOptions, userMediaDetailsOptions, profileOptions} from "@/lib/client/react-query/query-options";
 import {postEditMediaDetails, postUpdateBookCover, refreshMediaDetails, resolveExternalMedia} from "@/lib/server/functions/media-details";
 
 
@@ -17,11 +17,12 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number, o
         },
         onSuccess: async () => {
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ["admin", "missing-covers"] }),
                 queryClient.invalidateQueries({ queryKey: ["release-calendar"] }),
                 queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
+                queryClient.invalidateQueries({ queryKey: ["admin", "missing-covers"] }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId] }),
                 queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey }),
+                queryClient.invalidateQueries({ queryKey: userMediaDetailsOptions(mediaType, mediaId).queryKey }),
             ]);
             onSuccess?.();
         },
@@ -35,8 +36,11 @@ export const useEditMediaMutation = (meta?: MutationMeta) => {
     return useMutation({
         mutationFn: postEditMediaDetails,
         meta: { ...meta },
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["release-calendar"] });
+        onSuccess: async (_data, variables) => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["release-calendar"] }),
+                queryClient.invalidateQueries({ queryKey: ["userMedia", variables.data.mediaType, variables.data.mediaId] }),
+            ]);
         },
     });
 };

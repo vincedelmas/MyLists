@@ -1,5 +1,4 @@
-import {mediaTags, user} from "@/lib/server/database/schema";
-import type {IdNamePair} from "@/lib/types/media-common.types";
+import {user} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {MediaListArgs} from "@/lib/schemas/media-lists.schema";
 import {and, asc, count, eq, inArray, notInArray, sql} from "drizzle-orm";
@@ -7,7 +6,7 @@ import {getMediaTagNames} from "@/lib/server/domain/media/base/media-tag.queries
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import type {ExpandedListFilters, MediaListData} from "@/lib/types/media-list.types";
 import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
-import type {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import type {AnyMediaRepositoryDefinition, BaseMediaTables} from "@/lib/media-definitions/base/media.definition.server";
 import {
     getMediaCommonFilterConditions,
     getMediaMetadataFilterConditions,
@@ -17,19 +16,25 @@ import {
 } from "@/lib/server/domain/media/base/media-filters.queries";
 
 
-export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
-    const { listQuery, tables: { listTable, tagTable } } = definition;
+export const getCommonMediaListSelection = ({ mediaTable, listTable }: BaseMediaTables) => ({
+    mediaName: mediaTable.name,
+    imageCover: mediaTable.imageCover,
+    userId: listTable.userId,
+    status: listTable.status,
+    rating: listTable.rating,
+    mediaId: listTable.mediaId,
+    comment: listTable.comment,
+    favorite: listTable.favorite,
+    customCover: listTable.customCover,
+});
 
+
+export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
     return {
-        ...listQuery.selection,
+        ...definition.listQuery.selection,
         ratingSystem: user.ratingSystem,
-        tags: sql<IdNamePair[]>`COALESCE((
-            SELECT json_group_array(DISTINCT json_object('id', t.id, 'name', t.name))
-            FROM ${tagTable} l INNER JOIN ${mediaTags} t ON t.id = l.tag_id
-            WHERE l.media_id = ${listTable.mediaId} AND l.user_id = ${listTable.userId}
-        ), json_array())`.mapWith(JSON.parse),
     };
-};
+}
 
 
 export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {

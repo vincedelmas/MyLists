@@ -22,7 +22,7 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
     const queryClient = useQueryClient();
 
     const updateTagNames = (newTagsList: Tag[]) => {
-        if (queryOption.queryKey[0] === "details") {
+        if (queryOption.queryKey[0] === "userMedia") {
             queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                 if (!oldData) return;
 

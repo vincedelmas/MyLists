@@ -32,7 +32,6 @@ interface BaseMediaListItemProps {
     showMediaType?: boolean;
     rating: React.ReactNode;
     userMedia: UserMediaItem;
-    loadEditDetails?: boolean;
     isMediaTypeActive: boolean;
     annotation?: string | null;
     redoDisplay?: React.ReactNode;
@@ -61,7 +60,6 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
         allStatuses,
         showMediaType,
         ratingDisplay,
-        loadEditDetails,
         isMediaTypeActive,
         mediaDetailsDisplay
     } = props;
@@ -150,7 +148,6 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                 userMedia={userMedia}
                 dialogOpen={dialogOpen}
                 queryOption={queryOption}
-                loadDetails={loadEditDetails}
                 onOpenChange={() => setDialogOpen(false)}
             />
         </>

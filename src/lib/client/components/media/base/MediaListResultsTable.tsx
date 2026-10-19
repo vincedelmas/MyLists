@@ -148,7 +148,6 @@ export const MediaListResultsTable = ({ items, username, isCurrent, isConnected,
             {editingItem?.userMedia &&
                 <UserMediaEditDialog
                     dialogOpen={true}
-                    loadDetails={true}
                     onEdited={onEdited}
                     userMedia={editingItem.userMedia}
                     mediaType={editingItem.mediaType}

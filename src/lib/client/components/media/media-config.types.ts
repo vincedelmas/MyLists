@@ -2,9 +2,10 @@ import type {LucideIcon} from "lucide-react";
 import type {ComponentType, ReactNode} from "react";
 import type {ColumnDef} from "@tanstack/react-table";
 import type {MediaStatsFor} from "@/lib/types/stats.types";
-import type {MediaFilterKeyFor} from "@/lib/media-definitions/definition.registry";
+import type {UserMediaProgressDetails} from "@/lib/types/user-media.types";
 import type {mediaListOptions} from "@/lib/client/react-query/query-options";
 import type {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
+import type {MediaFilterKeyFor} from "@/lib/media-definitions/definition.registry";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {ContinueConfig} from "@/lib/client/components/continue/continue.types";
 import type {AdvancedSearchFilterDefinition} from "@/lib/types/advanced-search.types";
@@ -23,6 +24,7 @@ export interface MediaDetailsProps<T extends MediaType> {
 export interface MediaUserDetailsProps<T extends MediaType> {
     mediaType: T;
     queryOption: UserMediaQueryOption;
+    media: UserMediaProgressDetails<T>;
     userMedia: ExtractUserMediaByType<T>;
     mutationOptions?: UpdateUserMediaMutationOptions;
 }
@@ -37,17 +39,16 @@ export interface MediaFollowCardProps<T extends MediaType> {
 
 
 export interface MediaListCardProps<T extends MediaType> {
-    rank?: number;
-    annotation?: string | null;
-    showMediaType?: boolean;
-    loadEditDetails?: boolean;
-    onEdited?: () => Promise<void>;
     mediaType: T;
+    rank?: number;
     rating: ReactNode;
     isCurrent: boolean;
     isConnected: boolean;
-    allStatuses: readonly Status[];
+    showMediaType?: boolean;
+    annotation?: string | null;
     isMediaTypeActive: boolean;
+    onEdited?: () => Promise<void>;
+    allStatuses: readonly Status[];
     userMedia: ExtractListByType<T>;
     queryOption: ReturnType<typeof mediaListOptions>;
 }

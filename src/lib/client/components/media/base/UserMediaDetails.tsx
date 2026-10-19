@@ -1,3 +1,4 @@
+import type {UserMediaProgressDetails} from "@/lib/types/user-media.types";
 import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {Card} from "@/lib/client/components/ui/card";
@@ -6,7 +7,7 @@ import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {historyOptions} from "@/lib/client/react-query/query-options";
 import {TagsLists} from "@/lib/client/components/media/base/TagsLists";
-import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
+import {ExtractUserMediaByType} from "@/lib/types/query.options.types";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
@@ -22,15 +23,16 @@ import {
 } from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-interface UserMediaDetailsProps {
+interface UserMediaDetailsProps<T extends MediaType> {
     preview?: boolean;
-    mediaType: MediaType;
+    mediaType: T;
+    userMedia: NoInfer<ExtractUserMediaByType<T>>;
+    media: NoInfer<UserMediaProgressDetails<T>>;
     queryOption: UserMediaQueryOption;
-    userMedia: UserMedia | UserMediaItem;
 }
 
 
-export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = false }: UserMediaDetailsProps) => {
+export const UserMediaDetails = <T extends MediaType>({ media, userMedia, mediaType, queryOption, preview = false }: UserMediaDetailsProps<T>) => {
     const confirm = useConfirm();
     const queryClient = useQueryClient();
     const [backlogDate, setBacklogDate] = useState("");
@@ -92,6 +94,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
 
                 <div className={(backlogMode && !backlogDate) ? "pointer-events-none opacity-40 space-y-2" : "space-y-2"}>
                     <UserMediaSpecificDetails
+                        media={media}
                         mediaType={mediaType}
                         userMedia={userMedia}
                         queryOption={queryOption}

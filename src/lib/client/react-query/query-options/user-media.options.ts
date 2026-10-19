@@ -1,9 +1,16 @@
 import {MediaType} from "@/lib/utils/enums";
 import {MediaListArgs} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
-import {getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
 import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
+import {getUserMediaDetails, getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
 import {getMediaListFilters, getMediaListSF, getTagsViewFn, getUserListHeaderSF} from "@/lib/server/functions/media-lists";
+
+
+export const userMediaDetailsOptions = (mediaType: MediaType, mediaId: number) => queryOptions({
+    queryKey: ["userMedia", mediaType, mediaId] as const,
+    queryFn: () => getUserMediaDetails({ data: { mediaType, mediaId } }),
+    staleTime: 30 * 1000,
+});
 
 
 export const mediaListOptions = (mediaType: MediaType, username: string, search: MediaListArgs) => queryOptions({

@@ -30,12 +30,11 @@ export const getMediaDetails = createServerFn({ method: "GET" })
 
         const {
             media,
-            userMedia,
             followsData,
             similarMedia,
-        } = await mediaService.getMediaAndUserDetails(currentUser?.id, mediaId);
+        } = await mediaService.getMediaDetails(currentUser?.id, mediaId);
 
-        return { media, userMedia, followsData, similarMedia };
+        return { media, followsData, similarMedia };
     });
 
 

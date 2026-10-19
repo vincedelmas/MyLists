@@ -1,13 +1,13 @@
 import {beforeEach, afterEach, describe, expect, it, vi} from "vitest";
 import {MutationObserver, QueryClient, QueryObserver} from "@tanstack/react-query";
-import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import {MediaType, RatingSystemType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {mediaListOptions, userMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options/user-media.options";
 
 import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
-import {useEditTagMutation, useRemoveMediaFromListMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
+import {useAddMediaToListMutation, useUpdateCustomCoverMutation, useEditTagMutation, useRemoveMediaFromListMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
 
 
 const server = vi.hoisted(() => ({
@@ -49,6 +49,7 @@ vi.mock("@/lib/server/functions/user-media", () => ({
     postDeleteUserUpdates: server.deleteUpdates,
     postEditUserTag: server.editTag,
     getUserTagNames: server.tagNames,
+    getUserMediaDetails: vi.fn(),
 }));
 vi.mock("@/lib/server/functions/user-monthly-activity", () => ({
     getMonthlyActivityStats: server.activityStats,
@@ -58,6 +59,7 @@ vi.mock("@/lib/server/functions/media-lists", () => ({
 }));
 vi.mock("@/lib/server/functions/profile-pins", () => ({ getProfilePins: vi.fn(), getOwnProfilePins: vi.fn() }));
 vi.mock("@/lib/client/react-query/query-options", () => ({
+    userMediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["userMedia", mediaType, mediaId] }),
     mediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["details", mediaType, mediaId] }),
     historyOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["onOpenHistory", mediaType, mediaId] }),
     profileOptions: (username: string) => ({ queryKey: ["profile", username] }),
@@ -123,7 +125,7 @@ afterEach(() => {
 });
 
 describe("list filter freshness", () => {
-    it.each(["details", "userList"] as const)("reloads tag names and counts after removing the last tagged title from %s", async source => {
+    it.each(["userMedia", "userList"] as const)("reloads tag names and counts after removing the last tagged title from %s", async source => {
         const namesOptions = tagNamesOptions(MediaType.MOVIES, true);
         const tagsKey = ["tagsView", MediaType.MOVIES, "alice"];
         const otherUserKey = ["tagsView", MediaType.MOVIES, "bob"];
@@ -134,8 +136,8 @@ describe("list filter freshness", () => {
         const fetchTags = vi.fn().mockResolvedValue([]);
         const observer = new QueryObserver(queryClient, { queryKey: tagsKey, queryFn: fetchTags });
         const unsubscribeTags = observer.subscribe(() => {});
-        const mutationKey = source === "details"
-            ? ["details", MediaType.MOVIES, 3] as const
+        const mutationKey = source === "userMedia"
+            ? ["userMedia", MediaType.MOVIES, 3] as const
             : ["userList", MediaType.MOVIES, "alice", {}] as const;
         const mutationOptions = { queryKey: mutationKey } as UserMediaQueryOption;
 
@@ -157,7 +159,7 @@ describe("list filter freshness", () => {
 
     it.each([TagAction.RENAME, TagAction.DELETE_ALL])("refreshes tracking tags and cached tag names after %s", async action => {
         const listKey = ["userList", MediaType.MOVIES, "alice", {}];
-        const detailsKey = ["details", MediaType.MOVIES, 3];
+        const detailsKey = ["userMedia", MediaType.MOVIES, 3];
         const otherUserKey = ["userList", MediaType.MOVIES, "bob", {}];
         const otherMediaKey = ["userList", MediaType.BOOKS, "alice", {}];
         const namesKey = ["tagNames", MediaType.MOVIES];
@@ -273,7 +275,74 @@ describe("activity correction choices", () => {
 });
 
 
+describe("independent tracking cache", () => {
+    it("adds, edits, changes covers and removes tracking without reloading catalog details", async () => {
+        const options = userMediaDetailsOptions(MediaType.SERIES, 1);
+        const metadataKey = ["details", MediaType.SERIES, 1];
+        const metadata = { media: { name: "Series" } };
+        queryClient.setQueryData(metadataKey, metadata);
+        const fetchMetadata = vi.fn().mockResolvedValue(metadata);
+        const observer = new QueryObserver(queryClient, { queryKey: metadataKey, queryFn: fetchMetadata });
+        const unsubscribeMetadata = observer.subscribe(() => {});
+        const trackedItem = {
+            ...item, id: 1, userId: 1, addedAt: null, lastUpdated: null, total: 1, redo: 0,
+            favorite: false, tags: [], ratingSystem: RatingSystemType.SCORE, currentSeason: 1, currentEpisode: 1,
+        };
+        const media = { epsPerSeason: [{ season: 1, episodes: 10 }] };
+        queryClient.setQueryData(options.queryKey, { userMedia: null, media });
+
+        try {
+            server.add.mockResolvedValueOnce(trackedItem);
+            await useAddMediaToListMutation(options).mutateAsync({ data: { mediaType: MediaType.SERIES, mediaId: 1 } });
+            expect(queryClient.getQueryData(options.queryKey)?.userMedia).toEqual(trackedItem);
+
+            server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...trackedItem, rating: 8 } });
+            await useUpdateUserMediaMutation(MediaType.SERIES, 1, options)
+                .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } });
+            expect(queryClient.getQueryData(options.queryKey)?.userMedia?.rating).toBe(8);
+
+            server.cover.mockResolvedValueOnce({ ...trackedItem, customCover: "cover.jpg" });
+            await useUpdateCustomCoverMutation(options).mutateAsync({ data: new FormData() });
+            await useEditTagMutation(MediaType.SERIES, 1).mutateAsync({ action: TagAction.ADD, tag: { name: "Favorite" } });
+            await useRemoveMediaFromListMutation(options).mutateAsync({ data: { mediaType: MediaType.SERIES, mediaId: 1 } });
+            expect(queryClient.getQueryData(options.queryKey)).toEqual({ userMedia: null, media });
+            expect(fetchMetadata).not.toHaveBeenCalled();
+            expect(queryClient.getQueryData(metadataKey)).toEqual(metadata);
+            expect(queryClient.getQueryState(metadataKey)?.isInvalidated).toBe(false);
+        }
+        finally { unsubscribeMetadata(); }
+    });
+});
+
+
 describe("list editing refresh timing", () => {
+
+    it("keeps lazy editor data available after completing a filtered item and refreshes the list on close", async () => {
+        const editorOptions = userMediaDetailsOptions(MediaType.SERIES, 1);
+        const detailsKey = ["details", MediaType.SERIES, 1];
+        const trackedItem = {
+            ...item, id: 1, userId: 1, addedAt: null, lastUpdated: null, total: 1, redo: 0,
+            favorite: false, tags: [], ratingSystem: RatingSystemType.SCORE, currentSeason: 1, currentEpisode: 1,
+        };
+        const media = { epsPerSeason: [{ season: 1, episodes: 10 }] };
+        queryClient.setQueryData(editorOptions.queryKey, { userMedia: trackedItem, media });
+        queryClient.setQueryData(detailsKey, { userMedia: item });
+        const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1, editorOptions);
+        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...trackedItem, status: Status.COMPLETED } });
+        await mutation.mutateAsync({ payload: { type: UpdateType.STATUS, status: Status.COMPLETED } });
+        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...trackedItem, status: Status.COMPLETED, rating: 8 } });
+        await mutation.mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } });
+
+        expect(fetchList).not.toHaveBeenCalled();
+        expect(queryClient.getQueryData(editorOptions.queryKey)).toEqual({
+            userMedia: { ...trackedItem, status: Status.COMPLETED, rating: 8 }, media,
+        });
+        expect(queryClient.getQueryState(detailsKey)?.isInvalidated).toBe(false);
+
+        await closeDialog();
+        expect(fetchList).toHaveBeenCalledTimes(1);
+        expect(queryClient.getQueryData(queryKey)).toEqual(refreshedList);
+    });
 
     it("keeps a newly completed item in the Watching list for rating until the dialog closes", async () => {
         const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption);

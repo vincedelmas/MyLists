@@ -1,6 +1,7 @@
+import {notInArray, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
-import {getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {getCommonMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {ANIME_FALLBACK_DURATION, animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
@@ -63,18 +64,10 @@ export const animeServerDefinition = defineServerMediaDefinition({
             sorts: createMediaListSorts(animeDefinition, sortColumns, anime.id),
             defaultSort: getMediaSortLabel(animeDefinition, animeDefinition.sorting.default),
             selection: {
-                mediaName: anime.name,
-                imageCover: anime.imageCover,
-                epsPerSeason: sql<{ season: number; episodes: number }[]>`(
-                    SELECT
-                        json_group_array(json_object(
-                            'season', ${animeEpisodesPerSeason.season},
-                            'episodes', ${animeEpisodesPerSeason.episodes}
-                        ))
-                    FROM ${animeEpisodesPerSeason}
-                    WHERE ${animeEpisodesPerSeason.mediaId} = ${anime.id}
-                )`.mapWith(JSON.parse),
-                ...getTableColumns(animeList),
+                ...getCommonMediaListSelection(tables),
+                redo: animeList.redo,
+                currentSeason: animeList.currentSeason,
+                currentEpisode: animeList.currentEpisode,
             },
         },
         communityActivity: {

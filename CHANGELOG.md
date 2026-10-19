@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.11.0](https://github.com/vincedelmas/MyLists/compare/v3.10.0...v3.11.0) (2026-10-19)
+
+
+### Features
+
+* **admin:** show MCP connected user count ([ac7f87a](https://github.com/vincedelmas/MyLists/commit/ac7f87a5c3275a8c1ca6154a6c617eafd2db4e86))
+* **books:** Add manual books if missing from API ([91beeef](https://github.com/vincedelmas/MyLists/commit/91beeef7c7865c53615e3a9437336c2aa3b5f407))
+
+
+### Code Refactoring
+
+* **admin:** redesign and shared components ([b7efeb8](https://github.com/vincedelmas/MyLists/commit/b7efeb8fed0cae7aaf515d4cea5ce6bf0652972f))
+
 ## [3.10.0](https://github.com/vincedelmas/MyLists/compare/v3.9.0...v3.10.0) (2026-10-16)
 
 

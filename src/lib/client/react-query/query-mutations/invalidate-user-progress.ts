@@ -3,8 +3,8 @@ import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile
 import {continueOptions, profileHeaderOptions, profileRecentFeedOptions, profileSummaryOptions} from "@/lib/client/react-query/query-options";
 
 
-export const invalidateUserProgressQueries = (queryClient: QueryClient, username: string, { refetchContinue = true, refetchSecondary = true } = {}) => Promise.all([
-    queryClient.invalidateQueries({ queryKey: ["collections", "details", "read"], refetchType: refetchSecondary ? "active" : "none" }),
+export const invalidateUserProgressQueries = (queryClient: QueryClient, username: string, { refetchContinue = true, refetchSecondary = true, refetchCollections = true } = {}) => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["collections", "details", "read"], refetchType: refetchSecondary && refetchCollections ? "active" : "none" }),
     queryClient.invalidateQueries({ queryKey: ["dynamic-lists"], refetchType: "none" }),
     queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", username], refetchType: refetchSecondary ? "active" : "none" }),
     queryClient.invalidateQueries({ queryKey: profilePinsOptions(username).queryKey, refetchType: refetchSecondary ? "active" : "none" }),

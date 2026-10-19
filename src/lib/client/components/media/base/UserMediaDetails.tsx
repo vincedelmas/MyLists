@@ -25,6 +25,7 @@ import {
 
 interface UserMediaDetailsProps<T extends MediaType> {
     preview?: boolean;
+    listEdit?: boolean;
     mediaType: T;
     userMedia: NoInfer<ExtractUserMediaByType<T>>;
     media: NoInfer<UserMediaProgressDetails<T>>;
@@ -32,7 +33,7 @@ interface UserMediaDetailsProps<T extends MediaType> {
 }
 
 
-export const UserMediaDetails = <T extends MediaType>({ media, userMedia, mediaType, queryOption, preview = false }: UserMediaDetailsProps<T>) => {
+export const UserMediaDetails = <T extends MediaType>({ media, userMedia, mediaType, queryOption, preview = false, listEdit = false }: UserMediaDetailsProps<T>) => {
     const confirm = useConfirm();
     const queryClient = useQueryClient();
     const [backlogDate, setBacklogDate] = useState("");
@@ -42,6 +43,7 @@ export const UserMediaDetails = <T extends MediaType>({ media, userMedia, mediaT
     const history = useQuery({ ...historyOptions(mediaType, userMedia.mediaId), enabled: !preview }).data;
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, {
         backlogMode,
+        listEdit,
         loggedAt: backlogMode ? backlogDate : undefined,
     });
 
@@ -98,7 +100,7 @@ export const UserMediaDetails = <T extends MediaType>({ media, userMedia, mediaT
                         mediaType={mediaType}
                         userMedia={userMedia}
                         queryOption={queryOption}
-                        mutationOptions={{ backlogMode, loggedAt: backlogMode ? backlogDate : undefined }}
+                        mutationOptions={{ backlogMode, listEdit, loggedAt: backlogMode ? backlogDate : undefined }}
                     />
                 </div>
 

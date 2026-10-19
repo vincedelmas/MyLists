@@ -35,6 +35,7 @@ export type UserMediaQueryOption = ReturnType<typeof mediaListOptions> | ReturnT
 
 
 export type UpdateUserMediaMutationOptions = {
+    listEdit?: boolean;
     loggedAt?: string;
     backlogMode?: boolean;
 }
@@ -129,6 +130,7 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["userMedia", variables.data.mediaType, variables.data.mediaId] }),
+                queryClient.invalidateQueries({ queryKey: ["userList", variables.data.mediaType, currentUser!.name], refetchType: "none" }),
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
                 invalidateUserProgressQueries(queryClient, currentUser!.name),
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
@@ -241,7 +243,7 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
             const activityUpdate = loggedActivityUpdateTypes.has(variables.payload.type);
 
             const invalidations = [
-                invalidateUserProgressQueries(queryClient, currentUser!.name),
+                invalidateUserProgressQueries(queryClient, currentUser!.name, { refetchCollections: !options.listEdit }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId] }),
                 queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey }),
@@ -326,6 +328,7 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, 
                 queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 queryClient.invalidateQueries({ queryKey: ["userMedia", queryOption.queryKey[1], data.mediaId] }),
+                queryClient.invalidateQueries({ queryKey: ["userList", queryOption.queryKey[1], currentUser!.name], refetchType: "none" }),
             ]);
         },
     });

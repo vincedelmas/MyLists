@@ -219,3 +219,66 @@ test("skips tracking requests for anonymous visitors and disabled lists", async 
     await expect(page.getByRole("heading", { name: "Books List Disabled", exact: true })).toBeVisible();
     expect(trackingRequests).toBe(0);
 });
+
+
+for (const scenario of [
+    { mediaType: "books", status: "Reading", input: "Current page", value: "42", total: 240 },
+    { mediaType: "manga", status: "Reading", input: "Current chapter", value: "3", total: 20 },
+    { mediaType: "series", status: "Watching", input: "Current episode", value: "3", episodes: 10 },
+    { mediaType: "anime", status: "Watching", input: "Current episode", value: "3", episodes: 12 },
+    { mediaType: "games", status: "Playing", input: "Playtime (hours)", value: "2" },
+    { mediaType: "movies", status: "Completed" },
+]) {
+    test(`edits ${scenario.mediaType} from both grid and table using its progress metadata`, async ({ page }) => {
+        await runBun(["src/routes/_main/_viewer/details/-editor.fixtures.ts"]);
+        await signIn(page);
+        const name = `Mixed ${scenario.mediaType} sentinel`;
+        await page.goto(`/details/${scenario.mediaType}/501`);
+        await page.getByRole("button", { name: "Add to List", exact: true }).click();
+        await expect(page.getByRole("button", { name: "Remove from your list", exact: true })).toBeVisible();
+        await page.getByRole("combobox").filter({ hasText: "Plan to" }).click();
+        await page.getByRole("option", { name: scenario.status, exact: true }).click();
+        await expect(page.getByRole("combobox").filter({ hasText: scenario.status })).toBeEnabled();
+
+        await page.goto(`/lists/tracking/${scenario.mediaType}/${users.owner.name}?view=grid`);
+        await page.getByRole("button", { name: `Edit ${name}`, exact: true }).click();
+        const editor = page.getByRole("dialog", { name, exact: true });
+        if (scenario.input) {
+            const input = editor.getByLabel(scenario.input, { exact: true });
+            if (scenario.episodes) {
+                await input.click();
+                await expect(page.getByRole("option")).toHaveCount(scenario.episodes);
+                await page.getByRole("option", { name: scenario.value, exact: true }).click();
+                await expect(input).toContainText(scenario.value);
+            }
+            else {
+                if (scenario.total) await expect(editor.getByText(`/ ${scenario.total}`, { exact: true })).toBeVisible();
+                await input.fill(scenario.value);
+                await input.press("Enter");
+                await expect(input).toHaveValue(scenario.value);
+            }
+            await expect(input).toBeEnabled();
+        }
+        const rating = editor.getByText("Rating", { exact: true }).locator("..").getByRole("combobox");
+        await rating.click();
+        await page.getByRole("option", { name: "7.0", exact: true }).click();
+        await expect(rating).toContainText("7.0");
+        await expect(rating).toBeEnabled();
+        await editor.getByRole("button", { name: "Close", exact: true }).click();
+        await expect(editor).not.toBeVisible();
+
+        await page.goto(`/lists/tracking/${scenario.mediaType}/${users.owner.name}?view=list`);
+        await expect(page.getByRole("table")).toBeVisible();
+        await page.getByRole("button", { name: `Edit ${name}`, exact: true }).click();
+        await expect(rating).toContainText("7.0");
+        if (scenario.input) {
+            const input = editor.getByLabel(scenario.input, { exact: true });
+            if (scenario.episodes) await expect(input).toContainText(scenario.value);
+            else await expect(input).toHaveValue(scenario.value);
+        }
+        await editor.getByRole("button", { name: "Close", exact: true }).click();
+        await expect(editor).not.toBeVisible();
+        await page.goto(`/details/${scenario.mediaType}/501`);
+        await expect(page.getByText("Rating", { exact: true }).locator("..").getByRole("combobox")).toContainText("7.0");
+    });
+}

@@ -96,10 +96,11 @@ const refreshedList = {
 let fetchList: ReturnType<typeof vi.fn<() => Promise<typeof refreshedList>>>;
 let unsubscribe: () => void;
 
-const closeDialog = () => {
+const closeDialog = (onEdited?: () => Promise<void>) => {
     const onOpenChange = vi.fn();
     const dialog = UserMediaEditDialog({
         dialogOpen: true,
+        onEdited,
         mediaType: MediaType.SERIES,
         userMedia: item as UserMediaItem,
         queryOption,
@@ -295,14 +296,19 @@ describe("independent tracking cache", () => {
             server.add.mockResolvedValueOnce(trackedItem);
             await useAddMediaToListMutation(options).mutateAsync({ data: { mediaType: MediaType.SERIES, mediaId: 1 } });
             expect(queryClient.getQueryData(options.queryKey)?.userMedia).toEqual(trackedItem);
+            expect(queryClient.getQueryState(queryKey)?.isInvalidated).toBe(true);
+            expect(fetchList).not.toHaveBeenCalled();
 
             server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...trackedItem, rating: 8 } });
             await useUpdateUserMediaMutation(MediaType.SERIES, 1, options)
                 .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } });
             expect(queryClient.getQueryData(options.queryKey)?.userMedia?.rating).toBe(8);
 
+            queryClient.setQueryData(queryKey, initialList);
             server.cover.mockResolvedValueOnce({ ...trackedItem, customCover: "cover.jpg" });
             await useUpdateCustomCoverMutation(options).mutateAsync({ data: new FormData() });
+            expect(queryClient.getQueryState(queryKey)?.isInvalidated).toBe(true);
+            expect(fetchList).not.toHaveBeenCalled();
             await useEditTagMutation(MediaType.SERIES, 1).mutateAsync({ action: TagAction.ADD, tag: { name: "Favorite" } });
             await useRemoveMediaFromListMutation(options).mutateAsync({ data: { mediaType: MediaType.SERIES, mediaId: 1 } });
             expect(queryClient.getQueryData(options.queryKey)).toEqual({ userMedia: null, media });
@@ -316,6 +322,29 @@ describe("independent tracking cache", () => {
 
 
 describe("list editing refresh timing", () => {
+
+    it("keeps a filtered collection stable during editing and refreshes it on close", async () => {
+        const collectionKey = ["collections", "details", "read", 1];
+        const collection = { items: [item], total: 1 };
+        queryClient.setQueryData(collectionKey, collection);
+        const fetchCollection = vi.fn().mockResolvedValue({ items: [], total: 0 });
+        const observer = new QueryObserver(queryClient, { queryKey: collectionKey, queryFn: fetchCollection });
+        const unsubscribeCollection = observer.subscribe(() => {});
+
+        try {
+            server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, status: Status.COMPLETED } });
+            await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption, { listEdit: true })
+                .mutateAsync({ payload: { type: UpdateType.STATUS, status: Status.COMPLETED } });
+            expect(fetchCollection).not.toHaveBeenCalled();
+            expect(queryClient.getQueryData(collectionKey)).toEqual(collection);
+            expect(queryClient.getQueryState(collectionKey)?.isInvalidated).toBe(true);
+
+            await closeDialog(() => queryClient.invalidateQueries({ queryKey: collectionKey }));
+            expect(fetchCollection).toHaveBeenCalledTimes(1);
+            expect(queryClient.getQueryData(collectionKey)).toEqual({ items: [], total: 0 });
+        }
+        finally { unsubscribeCollection(); }
+    });
 
     it("keeps lazy editor data available after completing a filtered item and refreshes the list on close", async () => {
         const editorOptions = userMediaDetailsOptions(MediaType.SERIES, 1);

@@ -25,6 +25,7 @@ export const UserMediaSection = ({ mediaType, mediaId, listEdit = false }: UserM
         return (
             <UserMediaDetails
                 media={data.media}
+                listEdit={listEdit}
                 mediaType={mediaType}
                 queryOption={queryOption}
                 userMedia={data.userMedia}

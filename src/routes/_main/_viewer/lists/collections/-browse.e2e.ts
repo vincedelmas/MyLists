@@ -149,3 +149,34 @@ test("creates, ranks, annotates and copies a collection across every media type 
     await page.goto(`/lists/collections/${collectionId}`);
     await expect(page.getByRole("link", { name: `View ${book.name}`, exact: true })).toBeVisible();
 });
+
+
+test("keeps a filtered grid editor open until its edits finish", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/lists/collections/create");
+    const collectionId = await page.evaluate(async () => {
+        const trackingModule = "/src/lib/server/functions/user-media.ts";
+        const collectionModule = "/src/lib/server/functions/collections.ts";
+        const { postAddMediaToList } = await import(trackingModule);
+        const { postCreateCollection } = await import(collectionModule);
+        await postAddMediaToList({ data: { mediaType: "movies", mediaId: 101, status: "Plan to Watch" } });
+        return (await postCreateCollection({ data: {
+            title: "Still to watch", ordered: false, privacy: "private", items: [{ mediaType: "movies", mediaId: 101 }],
+        } })).id as number;
+    });
+    const status = encodeURIComponent("Plan to Watch");
+    await page.goto(`/lists/collections/${collectionId}?status=${status}&display=grid`);
+    await page.getByRole("button", { name: "Edit Browser test movie", exact: true }).click();
+    const editor = page.getByRole("dialog", { name: "Browser test movie", exact: true });
+    await editor.getByRole("combobox").filter({ hasText: "Plan to Watch" }).click();
+    await page.getByRole("option", { name: "Completed", exact: true }).click();
+    await expect(editor.getByRole("combobox").filter({ hasText: "Completed" })).toBeEnabled();
+    const rating = editor.getByText("Rating", { exact: true }).locator("..").getByRole("combobox");
+    await rating.click();
+    await page.getByRole("option", { name: "8.0", exact: true }).click();
+    await expect(rating).toContainText("8.0");
+    await expect(rating).toBeEnabled();
+    await editor.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(editor).not.toBeVisible();
+    await expect(page.getByRole("link", { name: "View Browser test movie", exact: true })).toHaveCount(0);
+});

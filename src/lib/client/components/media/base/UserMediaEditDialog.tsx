@@ -28,7 +28,6 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
         onOpenChange(open);
         if (open) return;
 
-        // A save outlive dialog. Refresh only once edits have settled
         const mutationCache = queryClient.getMutationCache();
         const pendingEdits = mutationCache.findAll({ mutationKey: ["userMediaEdit", mediaType], status: "pending" });
 
@@ -49,7 +48,7 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
 
     return (
         <Dialog open={dialogOpen} onOpenChange={onDialogOpenChange}>
-            <DialogContent className="w-108 max-sm:w-full">
+            <DialogContent className="h-[min(40rem,calc(100dvh-2rem))] w-108 grid-rows-[auto_minmax(0,1fr)] overflow-hidden max-sm:w-full">
                 <DialogHeader>
                     <DialogTitle>
                         {userMedia.mediaName}
@@ -58,7 +57,7 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
                         Here you can edit your media details
                     </DialogDescription>
                 </DialogHeader>
-                <div className="w-full flex items-center justify-center max-sm:mb-8 max-sm:px-2">
+                <div className="flex min-h-0 w-full items-center justify-center">
                     <QueryErrorResetBoundary>
                         {({ reset: resetQuery }) =>
                             <CatchBoundary

@@ -1,7 +1,9 @@
-import {useState} from "react";
+import {useId, useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Card} from "@/lib/client/components/ui/card";
 import {Button} from "@/lib/client/components/ui/button";
+import {Switch} from "@/lib/client/components/ui/switch";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {historyOptions} from "@/lib/client/react-query/query-options";
@@ -10,6 +12,7 @@ import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
+import {Field, FieldLabel, FieldDescription} from "@/lib/client/components/ui/field";
 import {BacklogModeSystem} from "@/lib/client/components/media/base/BacklogModeSystem";
 import {CustomCoverTabContent} from "@/lib/client/components/media/base/CustomCoverTab";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/lib/client/components/ui/tabs";
@@ -18,7 +21,8 @@ import {
     useRemoveMediaFromListMutation,
     UserMediaQueryOption,
     useUpdateCustomCoverMutation,
-    useUpdateUserMediaMutation
+    useUpdateUserMediaMutation,
+    useUpdateUserMediaNotificationsMutation
 } from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
@@ -32,10 +36,13 @@ interface UserMediaDetailsProps {
 
 export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = false }: UserMediaDetailsProps) => {
     const confirm = useConfirm();
+    const notificationId = useId();
+    const { currentUser } = useAuth();
     const queryClient = useQueryClient();
     const [backlogDate, setBacklogDate] = useState("");
     const [backlogMode, setBacklogMode] = useState(false);
     const removeMediaFromListMutation = useRemoveMediaFromListMutation(queryOption);
+    const notificationsMutation = useUpdateUserMediaNotificationsMutation(queryOption);
     const updateCustomCoverMutation = useUpdateCustomCoverMutation(queryOption, { noErrorToast: true });
     const history = useQuery({ ...historyOptions(mediaType, userMedia.mediaId), enabled: !preview }).data;
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, {
@@ -115,7 +122,29 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
                 </div>
             </TabsContent>
 
-            <TabsContent value="custom">
+            <TabsContent value="custom" className="flex flex-col gap-4">
+                {(mediaType === MediaType.SERIES || mediaType === MediaType.ANIME || mediaType === MediaType.MOVIES) &&
+                    <Field orientation="horizontal" data-disabled={notificationsMutation.isPending || preview}>
+                        <div className="flex flex-col gap-1">
+                            <FieldLabel htmlFor={notificationId}>
+                                Release notifications
+                            </FieldLabel>
+                            <FieldDescription>
+                                {currentUser?.settings.find(s => s.mediaType === mediaType)?.releaseNotificationsEnabled === false
+                                    ? "Release notifications for this media type are paused in your Settings. This preference will apply when you enable them."
+                                    : "Notify me about upcoming releases for this title."}
+                            </FieldDescription>
+                        </div>
+                        <Switch
+                            id={notificationId}
+                            checked={userMedia.releaseNotificationsEnabled}
+                            disabled={notificationsMutation.isPending || preview}
+                            onCheckedChange={(releaseNotificationsEnabled) => notificationsMutation.mutate({
+                                data: { mediaType, mediaId: userMedia.mediaId, releaseNotificationsEnabled },
+                            })}
+                        />
+                    </Field>
+                }
                 <CustomCoverTabContent
                     mediaType={mediaType}
                     userMedia={userMedia}

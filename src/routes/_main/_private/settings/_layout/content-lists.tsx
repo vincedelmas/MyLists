@@ -64,13 +64,16 @@ function MediaListFormPage() {
         resolver: zodResolver(mediaListSettingsSchema),
         values: {
             gridListView: currentUser?.gridListView ?? true,
-            autoMoveCompletedTvToOnHold: currentUser?.autoMoveCompletedTvToOnHold ?? true,
             ratingSystem: currentUser?.ratingSystem ?? RatingSystemType.SCORE,
             searchSelector: currentUser?.searchSelector ?? ApiProviderType.TMDB,
+            autoMoveCompletedTvToOnHold: currentUser?.autoMoveCompletedTvToOnHold ?? true,
             [MediaType.ANIME]: resolveMediaTypeActive(currentUser?.settings, MediaType.ANIME),
             [MediaType.GAMES]: resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES),
             [MediaType.BOOKS]: resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS),
             [MediaType.MANGA]: resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA),
+            releaseNotificationsEnabled: Object.fromEntries(ALL_MEDIA_TYPES.map(mt => [
+                mt, currentUser?.settings.find(s => s.mediaType === mt)?.releaseNotificationsEnabled ?? true,
+            ])) as Record<MediaType, boolean>,
         }
     });
 
@@ -187,11 +190,51 @@ function MediaListFormPage() {
                                     ))}
                                 </FieldGroup>
                             </FieldSet>
+
                             <FieldSet className="md:col-span-2">
-                                <FieldLegend variant="label">Automatic List Updates</FieldLegend>
+                                <FieldLegend variant="label">
+                                    Release Notifications
+                                </FieldLegend>
+                                <FieldDescription>
+                                    Choose which media types can send episode/release notifications.
+                                    Turn off every type to silence all release notifications.
+                                    Your per-title preferences are kept.
+                                </FieldDescription>
+                                <FieldGroup className="grid gap-2! sm:grid-cols-3">
+                                    {[MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES].map(mt =>
+                                        <Controller
+                                            key={mt}
+                                            control={form.control}
+                                            name={`releaseNotificationsEnabled.${mt}`}
+                                            render={({ field, fieldState }) =>
+                                                <Field
+                                                    orientation="horizontal"
+                                                    data-invalid={fieldState.invalid}
+                                                    className="justify-between rounded-lg border p-2"
+                                                >
+                                                    <FieldLabel htmlFor={`${fieldId}-release-notifications-${mt}`} className="capitalize">
+                                                        <MainThemeIcon type={mt} size={15}/>
+                                                        {mt}
+                                                    </FieldLabel>
+                                                    <Switch
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                        aria-invalid={fieldState.invalid}
+                                                        id={`${fieldId}-release-notifications-${mt}`}
+                                                    />
+                                                </Field>
+                                            }
+                                        />
+                                    )}
+                                </FieldGroup>
+                            </FieldSet>
+                            <FieldSet className="md:col-span-2">
+                                <FieldLegend variant="label">
+                                    Automatic List Updates
+                                </FieldLegend>
                                 <Controller
-                                    name="autoMoveCompletedTvToOnHold"
                                     control={form.control}
+                                    name="autoMoveCompletedTvToOnHold"
                                     render={({ field, fieldState }) => (
                                         <Field
                                             orientation="horizontal"

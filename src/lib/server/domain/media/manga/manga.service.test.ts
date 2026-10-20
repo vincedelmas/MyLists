@@ -47,6 +47,7 @@ describe("MangaService", () => {
         comment: null,
         favorite: false,
         customCover: null,
+        releaseNotificationsEnabled: true,
         addedAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         currentChapter: 100,

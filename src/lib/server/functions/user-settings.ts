@@ -82,7 +82,7 @@ export const postMediaListSettings = createServerFn({ method: "POST" })
 
         withTransaction(() => {
             accountService.updateUserSettings(currentUser.id, toUpdateInUser);
-            statsService.updateUserMediaListSettings(currentUser.id, toUpdateInUserStats);
+            statsService.updateUserMediaListSettings(currentUser.id, toUpdateInUserStats, data.releaseNotificationsEnabled);
         });
 
         // Re compute user's overview stats

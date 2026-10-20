@@ -52,6 +52,7 @@ export const moviesImportPayloadSchema = moviesCSVListSchema.omit({
     addedAt: true,
     customCover: true,
     lastUpdated: true,
+    releaseNotificationsEnabled: true,
 });
 
 

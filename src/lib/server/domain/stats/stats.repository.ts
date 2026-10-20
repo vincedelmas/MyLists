@@ -18,15 +18,29 @@ export class StatsRepository {
             .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.active, true)));
     }
 
-    static updateUserMediaListSettings(userId: number, payload: Partial<Record<MediaType, boolean>>) {
+    static updateUserMediaListSettings(userId: number, payload: Partial<Record<MediaType, boolean>>, notifications: Record<MediaType, boolean>) {
         const updateCases = Object.entries(payload).map(([mediaType, active]) => {
             return sql`WHEN ${userMediaSettings.mediaType} = ${mediaType} THEN ${active}`;
         });
 
+        const notificationCases = Object.entries(notifications).map(([mediaType, enabled]) => {
+            return sql`WHEN ${userMediaSettings.mediaType} = ${mediaType} THEN ${enabled}`;
+        });
+
         getDbClient()
             .update(userMediaSettings)
-            .set({ active: sql`CASE ${sql.join(updateCases, sql` `)} ELSE ${userMediaSettings.active} END` })
-            .where(eq(userMediaSettings.userId, userId)).run()
+            .set({
+                active: sql`
+                    CASE ${sql.join(updateCases, sql` `)} 
+                    ELSE ${userMediaSettings.active} 
+                    END`,
+                releaseNotificationsEnabled: sql`
+                    CASE ${sql.join(notificationCases, sql` `)} 
+                    ELSE ${userMediaSettings.releaseNotificationsEnabled} 
+                    END`,
+            })
+            .where(eq(userMediaSettings.userId, userId))
+            .run()
     }
 
     static updateUserPreComputedStatsWithDelta(userId: number, mediaType: MediaType, mediaId: number, delta: DeltaStats) {

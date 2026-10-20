@@ -27,6 +27,7 @@ export const commonMediaListCols = (modelMediaId: SQLiteColumn, mediaTypeName: M
         userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
         mediaId: integer("media_id").notNull().references(() => modelMediaId),
         status: text("status").$type<Status>().notNull(),
+        releaseNotificationsEnabled: integer("release_notifications_enabled", { mode: "boolean" }).default(true).notNull(),
         favorite: integer("favorite", { mode: "boolean" }),
         comment: text("comment"),
         rating: real("rating"),

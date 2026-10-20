@@ -309,6 +309,7 @@ export const onboardingMovieFixture = {
     mediaName: "Interstellar",
     mediaId: ONBOARDING_MOVIE_ID,
     addedAt: "2026-01-10 12:00:00",
+    releaseNotificationsEnabled: true,
     lastUpdated: "2026-06-18 20:30:00",
     ratingSystem: RatingSystemType.SCORE,
     comment: "A favorite for the soundtrack and its sense of scale.",

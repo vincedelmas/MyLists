@@ -1,5 +1,4 @@
 import {notFound} from "@tanstack/react-router";
-import {mediaTags, user} from "@/lib/server/database/schema";
 import {ExportMediaList} from "@/lib/types/media-list.types";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {UpComingMedia} from "@/lib/types/notifications.types";
@@ -10,6 +9,7 @@ import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {ReleaseCalendarItem} from "@/lib/types/release-calendar.types";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
+import {mediaTags, user, userMediaSettings} from "@/lib/server/database/schema";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
 import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
@@ -357,16 +357,25 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, listTable.userId),
+                eq(userMediaSettings.mediaType, identity.mediaType),
+            ))
             .where(and(
+                userId === undefined
+                    ? and(
+                        eq(listTable.releaseNotificationsEnabled, true),
+                        eq(userMediaSettings.releaseNotificationsEnabled, true),
+                    )
+                    : undefined,
                 notInArray(listTable.status, [Status.DROPPED]),
                 userId ? eq(listTable.userId, userId) : undefined,
-                maxAWeek ?
-                    and(
+                maxAWeek
+                    ? and(
                         gte(mediaTable.releaseDate, sql`date('now')`),
                         lte(mediaTable.releaseDate, sql`date('now', '+7 days')`),
                     )
-                    :
-                    or(
+                    : or(
                         isNull(mediaTable.releaseDate),
                         gte(mediaTable.releaseDate, sql`date('now')`),
                     )

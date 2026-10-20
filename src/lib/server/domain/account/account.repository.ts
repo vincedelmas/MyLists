@@ -166,6 +166,7 @@ export class AccountRepository {
             .select({
                 active: userMediaSettings.active,
                 mediaType: userMediaSettings.mediaType,
+                releaseNotificationsEnabled: userMediaSettings.releaseNotificationsEnabled,
             })
             .from(userMediaSettings)
             .where(eq(userMediaSettings.userId, userId))

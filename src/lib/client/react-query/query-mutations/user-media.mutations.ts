@@ -28,7 +28,8 @@ import {
     postEditUserTag,
     postRemoveMediaFromList,
     postUpdateUserCustomCover,
-    postUpdateUserMedia
+    postUpdateUserMedia,
+    postUpdateUserMediaNotifications
 } from "@/lib/server/functions/user-media";
 
 
@@ -285,6 +286,22 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                     };
                 });
             }
+        },
+    });
+};
+
+
+export const useUpdateUserMediaNotificationsMutation = (queryOption: UserMediaQueryOption) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["userMediaEdit", queryOption.queryKey[1]],
+        mutationFn: postUpdateUserMediaNotifications,
+        onSuccess: async (_data, { data: { mediaType } }) => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["details", mediaType] }),
+                queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
+            ]);
         },
     });
 };

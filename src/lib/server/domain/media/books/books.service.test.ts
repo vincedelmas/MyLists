@@ -43,6 +43,7 @@ describe("BooksService", () => {
         addedAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         customCover: null,
+        releaseNotificationsEnabled: true,
         redo: 0,
         total: 100,
         actualPage: 100,

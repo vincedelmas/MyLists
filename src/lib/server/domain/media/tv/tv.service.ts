@@ -50,10 +50,10 @@ export function createTvService(repository: TvRepository, definition: TvDefiniti
     async function downloadMediaListAsCSV(userId: number) {
         const rows = await repository.downloadMediaListAsCSV(userId);
 
-        return rows.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, ...row }) => ({
+        return rows.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, releaseNotificationsEnabled: _releaseNotificationsEnabled, ...row }) => ({
             ...row,
-            formatVersion: MYLISTS_CSV_VERSION,
             mediaType: identity.mediaType,
+            formatVersion: MYLISTS_CSV_VERSION,
             externalApiSource: definition.ingestion.externalApiSource,
         }));
     }

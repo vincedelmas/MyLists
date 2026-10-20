@@ -38,6 +38,7 @@ type ListTableColumns = {
     favorite: NullableColumn<boolean>;
     lastUpdated: NullableColumn<string>;
     customCover: NullableColumn<string | null>;
+    releaseNotificationsEnabled: NotNullColumn<boolean>;
 };
 
 

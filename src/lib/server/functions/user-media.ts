@@ -10,6 +10,7 @@ import {
     mediaTypeMediaIdSchema,
     updateUserCustomCoverSchema,
     updateUserMediaSchema,
+    updateUserMediaNotificationsSchema,
     userTagNamesSchema
 } from "@/lib/schemas";
 
@@ -54,6 +55,16 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
 
             throw error;
         }
+    });
+
+
+export const postUpdateUserMediaNotifications = createServerFn({ method: "POST" })
+    .middleware([requiredMediaWriteMiddleware])
+    .validator(updateUserMediaNotificationsSchema)
+    .handler(async ({ data, context: { currentUser } }) => {
+        const container = await getContainer();
+        const mediaService = container.registries.mediaService.get(data.mediaType);
+        return mediaService.updateUserMediaNotifications(currentUser.id, data.mediaId, data.releaseNotificationsEnabled);
     });
 
 

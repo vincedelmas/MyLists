@@ -21,6 +21,7 @@ describe("MoviesService", () => {
         id: 1,
         name: "Test Movie",
         imageCover: "test.jpg",
+        backdropPath: null,
         releaseDate: "2025-01-01",
         synopsis: "A test movie.",
         originalName: "Test Movie Original",

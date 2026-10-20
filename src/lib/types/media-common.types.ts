@@ -30,6 +30,7 @@ export type AddedMediaDetails = {
     providerData: {
         url: string,
         name: string,
+        backdropUrl?: string | null,
     } | null;
     collection?: {
         mediaId: number,

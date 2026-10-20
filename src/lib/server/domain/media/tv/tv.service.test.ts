@@ -36,6 +36,7 @@ describe("TvService", () => {
             id: 1,
             name: "Test TV Show",
             imageCover: "test.jpg",
+            backdropPath: null,
             releaseDate: "2025-01-01",
             synopsis: "A test show.",
             duration: 24,

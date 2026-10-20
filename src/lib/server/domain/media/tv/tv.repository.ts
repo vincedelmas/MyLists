@@ -287,6 +287,7 @@ export function createTvRepository(definition: TvDefinition) {
             providerData: {
                 name: attribution.name,
                 url: `${attribution.mediaUrl}${details.apiId}`,
+                backdropUrl: details.backdropPath ? `https://image.tmdb.org/t/p/w1280${details.backdropPath}` : null,
             },
             genres: details.genres || [],
             actors: details.actors || [],

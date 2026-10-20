@@ -15,6 +15,7 @@ import {
 
 
 export const movies = sqliteTable("movies", {
+    backdropPath: text(),
     originalName: text(),
     homepage: text(),
     duration: integer().notNull(),

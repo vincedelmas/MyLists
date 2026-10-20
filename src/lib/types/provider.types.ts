@@ -116,6 +116,11 @@ export interface IgdbGameDetails {
     total_rating_count?: number;
     game_engines?: IdNamePair[];
     player_perspectives?: IdNamePair[];
+    artworks?: {
+        width: number;
+        height: number;
+        image_id: string;
+    }[];
     cover?: {
         id: number;
         image_id: string;

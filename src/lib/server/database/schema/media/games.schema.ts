@@ -15,6 +15,7 @@ import {
 
 
 export const games = sqliteTable("games", {
+    backdropImageId: text(),
     gameEngine: text(),
     gameModes: text(),
     playerPerspective: text(),

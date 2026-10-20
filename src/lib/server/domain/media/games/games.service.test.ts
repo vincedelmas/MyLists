@@ -16,6 +16,7 @@ describe("GamesService", () => {
     const gamesService = createGamesService(gamesRepository);
 
     const baseGame: Game = {
+        backdropImageId: null,
         id: 1,
         name: "Test Game",
         imageCover: "test.jpg",

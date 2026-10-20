@@ -69,6 +69,49 @@ describe("IGDB game ingestion", () => {
         dbContext.db = undefined;
     });
 
+    it.each(["import", "individual refresh", "bulk refresh"])("saves landscape artwork and exposes its CDN URL during %s", async (mode) => {
+        const details: IgdbGameDetails = {
+            ...gameDetails,
+            id: mode === "import" ? 456 : gameDetails.id,
+            artworks: [
+                { image_id: "portrait", width: 600, height: 900 },
+                { image_id: "square", width: 900, height: 900 },
+                { image_id: "landscape", width: 1920, height: 1080 },
+            ],
+        };
+        igdb.getGameDetails.mockResolvedValue(details);
+        igdb.getGamesDetails.mockResolvedValue([details]);
+
+        if (mode === "import") {
+            await ingestion.storeFromExternal(details.id);
+        }
+        else if (mode === "individual refresh") {
+            await ingestion.refreshFromExternal(details.id);
+        }
+        else {
+            for await (const result of ingestion.bulkRefresh()) {
+                expect(result.state).toBe("fulfilled");
+            }
+        }
+
+        const game = db.select().from(schema.games).where(eq(schema.games.apiId, details.id)).get()!;
+        expect(game.backdropImageId).toBe("landscape");
+        const media = await createGamesRepository().findAllAssociatedDetails(game.id);
+        expect(media?.providerData?.backdropUrl).toBe("https://images.igdb.com/igdb/image/upload/t_1080p/landscape.jpg");
+        expect(saveImageFromUrl).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([undefined, [{ image_id: "portrait", width: 600, height: 900 }]])("keeps the backdrop unavailable without landscape artwork (%j)", async (artworks) => {
+        igdb.getGameDetails.mockResolvedValueOnce({ ...gameDetails, artworks });
+
+        await ingestion.refreshFromExternal(gameDetails.id);
+
+        const game = db.select().from(schema.games).where(eq(schema.games.apiId, gameDetails.id)).get()!;
+        expect(game.backdropImageId).toBeNull();
+        const media = await createGamesRepository().findAllAssociatedDetails(game.id);
+        expect(media?.providerData?.backdropUrl).toBeNull();
+    });
+
     it.each(["refresh", "edit"])("preserves HLTB changes saved by a %s while a background lookup is pending", async (mode) => {
         db.update(schema.games).set({ hltbMainTime: null, hltbMainAndExtraTime: null, hltbTotalCompleteTime: null })
             .where(eq(schema.games.apiId, 123)).run();

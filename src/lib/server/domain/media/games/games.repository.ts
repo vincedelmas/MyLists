@@ -113,6 +113,9 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
             providerData: {
                 name: attribution.name,
                 url: details.igdbUrl ?? "#",
+                backdropUrl: details.backdropImageId
+                    ? `https://images.igdb.com/igdb/image/upload/t_1080p/${details.backdropImageId}.jpg`
+                    : null,
             },
             genres: details.genres || [],
             collection: collection || [],

@@ -1,8 +1,9 @@
-import {MalAnimeSearchResponse, TmdbTvDetails} from "@/lib/types/provider.types";
+import {MalAnimeSearchResponse, TmdbMovieDetails, TmdbTvDetails} from "@/lib/types/provider.types";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
+import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 
 
 const imageMocks = vi.hoisted(() => ({
@@ -32,6 +33,7 @@ const createTvDetails = (): TmdbTvDetails => ({
     episode_run_time: [45],
     next_episode_to_air: null,
     poster_path: null,
+    backdrop_path: null,
     seasons: [
         { season_number: 1, episode_count: 8 },
         { season_number: 1, episode_count: 8 },
@@ -72,6 +74,26 @@ describe("tmdbTransformer", () => {
     beforeEach(() => {
         imageMocks.saveImageFromUrl.mockReset();
         imageMocks.saveImageFromUrl.mockResolvedValue("series-covers/default.webp");
+    });
+
+    it.each(["/backdrop.jpg", null])("preserves the TMDB backdrop path %s for TV and movies without downloading it", async (backdropPath) => {
+        const tvDetails = { ...createTvDetails(), backdrop_path: backdropPath };
+        const movieDetails = {
+            id: 11,
+            title: "Star Wars",
+            release_date: "1977-05-25",
+            backdrop_path: backdropPath,
+        } as TmdbMovieDetails;
+
+        const tv = await tmdbTransformer.transformTvDetailsResults(tvDetails, seriesTransformOptions);
+        const movie = await tmdbTransformer.transformMoviesDetailsResults(movieDetails, {
+            ...seriesTransformOptions,
+            coverDirectory: moviesServerDefinition.identity.coverDirectory,
+        });
+
+        expect(tv.mediaData.backdropPath).toBe(backdropPath);
+        expect(movie.mediaData.backdropPath).toBe(backdropPath);
+        expect(imageMocks.saveImageFromUrl).toHaveBeenCalledTimes(2);
     });
 
     it("deduplicates TV relation names before applying their limits", async () => {

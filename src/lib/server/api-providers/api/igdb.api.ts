@@ -239,7 +239,8 @@ export const createIgdbApi = async () => {
         async getGameDetails(apiId: number | string): Promise<IgdbGameDetails> {
             const gameId = coercedPositiveIntFieldSchema.parse(apiId);
             const body = `
-                fields name, cover.image_id, game_engines.name, game_modes.name, platforms.name, genres.name, 
+                fields name, cover.image_id, artworks.image_id, artworks.width, artworks.height,
+                game_engines.name, game_modes.name, platforms.name, genres.name,
                 player_perspectives.name, total_rating, total_rating_count, first_release_date, 
                 involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
                 summary, themes.name, collections, url, external_games.uid, external_games.external_game_source;
@@ -259,7 +260,8 @@ export const createIgdbApi = async () => {
             if (apiIds.length === 0) return [];
 
             const body = `
-                fields name, cover.image_id, game_engines.name, game_modes.name, platforms.name, genres.name, 
+                fields name, cover.image_id, artworks.image_id, artworks.width, artworks.height,
+                game_engines.name, game_modes.name, platforms.name, genres.name,
                 player_perspectives.name, total_rating, total_rating_count, first_release_date, 
                 involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
                 summary, themes.name, collections, url, external_games.uid, external_games.external_game_source;

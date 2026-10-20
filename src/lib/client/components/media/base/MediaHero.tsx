@@ -11,11 +11,15 @@ interface MediaHeroProps {
 
 
 export function MediaHero({ media, mediaType }: MediaHeroProps) {
+    const backdropUrl = media.providerData?.backdropUrl;
+
     const backdropStyle = {
-        filter: "blur(20px)",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundImage: `linear-gradient(to bottom, rgba(15, 15, 15, 0.7), var(--background)), url(${media.imageCover})`,
+        filter: backdropUrl ? undefined : "blur(20px)",
+        backgroundImage: backdropUrl
+            ? `linear-gradient(to bottom, rgba(0, 0, 0, 0.2), var(--background)), url(${backdropUrl})`
+            : `linear-gradient(to bottom, rgba(15, 15, 15, 0.7), var(--background)), url(${media.imageCover})`,
     };
 
     return (

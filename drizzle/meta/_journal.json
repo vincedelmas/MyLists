@@ -435,6 +435,13 @@
       "when": 1791802071248,
       "tag": "0061_better_auth_remove_issuer",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "6",
+      "when": 1792497626728,
+      "tag": "0062_media_backdrop_paths",
+      "breakpoints": true
     }
   ]
 }

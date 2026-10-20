@@ -20,6 +20,7 @@ import {
 
 
 export const anime = sqliteTable("anime", {
+    backdropPath: text(),
     originalName: text(),
     lastAirDate: text(),
     homepage: text(),

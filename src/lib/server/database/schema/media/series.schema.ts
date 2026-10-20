@@ -20,6 +20,7 @@ import {
 
 
 export const series = sqliteTable("series", {
+    backdropPath: text(),
     originalName: text(),
     lastAirDate: text(),
     homepage: text(),

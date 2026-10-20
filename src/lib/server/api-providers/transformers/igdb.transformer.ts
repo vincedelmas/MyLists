@@ -49,6 +49,7 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails, options: I
         releaseDate: formatDateForDb(rawData.first_release_date),
         playerPerspective: rawData?.player_perspectives?.[0]?.name,
         gameModes: rawData?.game_modes?.map((mode) => mode?.name).join(","),
+        backdropImageId: rawData.artworks?.find(art => art.width > art.height)?.image_id ?? null,
         steamApiId: rawData.external_games?.find((source) => source.external_game_source === 1)?.uid,
         imageCover: await saveImageFromUrl({
             dirSaveName: options.coverDirectory,

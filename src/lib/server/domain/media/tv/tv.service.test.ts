@@ -74,6 +74,7 @@ describe("TvService", () => {
             currentEpisode: 24,
             redo: 0,
             customCover: null,
+            releaseNotificationsEnabled: true,
             total: totalEpisodesMock,
             ...overrides,
         });

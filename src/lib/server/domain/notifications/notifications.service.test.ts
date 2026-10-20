@@ -28,7 +28,7 @@ describe("notifications", () => {
 
     afterEach(() => sqlite.close());
 
-    it.each([MediaType.MOVIES, MediaType.SERIES])("avoids duplicates from overlapping %s runs and preserves new releases", async (mediaType) => {
+    it.each([MediaType.MOVIES, MediaType.SERIES, MediaType.GAMES])("avoids duplicates from overlapping %s runs and preserves new releases", async (mediaType) => {
         const release = {
             userId: 1, mediaId: 1, mediaName: "Media", imageCover: "cover.jpg", status: Status.PLAN_TO_WATCH,
             date: "2026-09-10", seasonToAir: 1, episodeToAir: 1, lastEpisode: 8,

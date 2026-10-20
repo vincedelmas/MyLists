@@ -1,8 +1,8 @@
 import {Status} from "@/lib/utils/enums";
-import {user} from "@/lib/server/database/schema";
 import {EpsPerSeasonType} from "@/lib/types/media-list.types";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import type {TvSeasonState} from "@/lib/schemas/tv-seasons.schema";
+import {user, userMediaSettings} from "@/lib/server/database/schema";
 import {ReleaseCalendarItem} from "@/lib/types/release-calendar.types";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
@@ -190,7 +190,16 @@ export function createTvRepository(definition: TvDefinition) {
                 eq(epsPerSeasonTable.mediaId, mediaTable.id),
                 eq(epsPerSeasonTable.season, mediaTable.seasonToAir),
             ))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, listTable.userId),
+                eq(userMediaSettings.mediaType, identity.mediaType),
+            ))
             .where(and(
+                userId === undefined ? and(
+                    eq(userMediaSettings.active, true),
+                    eq(listTable.releaseNotificationsEnabled, true),
+                    eq(userMediaSettings.releaseNotificationsEnabled, true),
+                ) : undefined,
                 userId ? eq(listTable.userId, userId) : undefined,
                 notInArray(listTable.status, [Status.DROPPED, Status.RANDOM]),
                 gte(mediaTable.nextEpisodeToAir, sql`date('now')`),

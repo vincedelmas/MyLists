@@ -88,6 +88,7 @@ export const mediaListSettingsSchema = z.object({
     ratingSystem: z.enum(RatingSystemType),
     searchSelector: z.enum(ApiProviderType),
     autoMoveCompletedTvToOnHold: z.boolean(),
+    releaseNotificationsEnabled: z.record(z.enum(MediaType), z.boolean()),
 });
 
 export const highlightedMediaSearchSchema = z.object({

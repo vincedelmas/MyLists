@@ -49,6 +49,7 @@ describe("GamesService", () => {
         comment: null,
         favorite: false,
         customCover: null,
+        releaseNotificationsEnabled: true,
         addedAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         playtime: 0,

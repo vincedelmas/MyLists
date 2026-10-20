@@ -64,6 +64,7 @@ export const booksImportPayloadSchema = booksCSVListSchema.omit({
     addedAt: true,
     customCover: true,
     lastUpdated: true,
+    releaseNotificationsEnabled: true,
 });
 
 

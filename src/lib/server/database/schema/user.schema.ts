@@ -93,6 +93,7 @@ export const userMediaSettings = sqliteTable("user_media_settings", {
     entriesFavorites: integer().default(0).notNull(),
     totalSpecific: integer().default(0).notNull(),
     statusCounts: customJson<Record<Status, number>>("status_counts").default(sql`'{}'`).notNull(),
+    releaseNotificationsEnabled: integer("release_notifications_enabled", { mode: "boolean" }).default(true).notNull(),
     averageRating: real(),
 }, (table) => [
     index("ix_user_media_settings_media_type").on(table.mediaType),

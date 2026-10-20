@@ -110,12 +110,14 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         const mediaType = identity.mediaType;
         const rows = await repository.downloadMediaListAsCSV(userId);
 
-        return rows?.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, ...row }) => ({
-            ...row,
-            mediaType,
-            formatVersion: MYLISTS_CSV_VERSION,
-            externalApiSource: ingestion.externalApiSource,
-        }) satisfies MyListsCSVImport);
+        return rows?.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, releaseNotificationsEnabled: _releaseNotificationsEnabled, ...row }) => {
+            return {
+                ...row,
+                mediaType,
+                formatVersion: MYLISTS_CSV_VERSION,
+                externalApiSource: ingestion.externalApiSource,
+            } satisfies MyListsCSVImport
+        });
     }
 
     async function getSearchListFilters(userId: number, query: string, field: MediaMetadataFilterKey) {
@@ -192,6 +194,14 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
             : null;
 
         return { media, delta, newState, logPayload, statusLogPayload };
+    }
+
+    function updateUserMediaNotifications(userId: number, mediaId: number, releaseNotificationsEnabled: boolean) {
+        if (!repository.findUserMedia(userId, mediaId)) {
+            throw new FormattedError("Media not in your list");
+        }
+
+        return repository.updateUserMediaDetails(userId, mediaId, { releaseNotificationsEnabled });
     }
 
     async function updateUserCustomCover(userId: number, payload: UpdateUserCustomCover) {
@@ -341,6 +351,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         removeMediaFromUserList,
         searchMediadleSuggestion,
         getMediaCommunityActivity,
+        updateUserMediaNotifications,
         findUserMedia: repository.findUserMedia,
         getReleaseCalendarMedia: repository.getReleaseCalendarMedia,
     };

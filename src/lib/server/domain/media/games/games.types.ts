@@ -54,6 +54,7 @@ export const gamesImportPayloadSchema = gamesCSVListSchema.omit({
     addedAt: true,
     customCover: true,
     lastUpdated: true,
+    releaseNotificationsEnabled: true,
 });
 
 

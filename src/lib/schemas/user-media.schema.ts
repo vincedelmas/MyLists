@@ -4,7 +4,7 @@ import {tvSeasonStateSchema} from "@/lib/schemas/tv-seasons.schema";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {emptyStringToNull, importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
 import {COMMENT_MAX_LENGTH, MIN_ACTIVITY_DATE, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
-import {coercedPositiveIntFieldSchema, imageFileSchema, imageUrlSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {coercedPositiveIntFieldSchema, imageFileSchema, imageUrlSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 
 
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
@@ -72,6 +72,10 @@ export const updateUserCustomCoverSchema = z.object({
     if (!data.remove && data.imageUrl && data.imageFile) {
         addFieldIssues("Please, choose only one cover option.");
     }
+});
+
+export const updateUserMediaNotificationsSchema = mediaTypeMediaIdSchema.extend({
+    releaseNotificationsEnabled: z.boolean(),
 });
 
 export const addMediaToListSchema = z.object({

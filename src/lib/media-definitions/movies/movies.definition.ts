@@ -7,6 +7,7 @@ export const MOVIES_FALLBACK_DURATION = 100;
 
 
 export const moviesDefinition = defineMediaDefinition({
+    releaseNotifications: true,
     filters: {
         common: commonMediaFilters,
         metadata: {

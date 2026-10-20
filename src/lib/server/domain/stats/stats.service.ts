@@ -20,8 +20,8 @@ export class StatsService {
     ) {
     }
 
-    updateUserMediaListSettings(userId: number, payload: Partial<Record<MediaType, boolean>>) {
-        this.repository.updateUserMediaListSettings(userId, payload);
+    updateUserMediaListSettings(userId: number, payload: Partial<Record<MediaType, boolean>>, notifications: Record<MediaType, boolean>) {
+        this.repository.updateUserMediaListSettings(userId, payload, notifications);
     }
 
     updateUserPreComputedStatsWithDelta(userId: number, mediaType: MediaType, mediaId: number, delta: DeltaStats) {

@@ -92,6 +92,7 @@ const seriesImportPayloadSchema = seriesCSVListSchema.omit({
     lastUpdated: true,
     currentSeason: true,
     currentEpisode: true,
+    releaseNotificationsEnabled: true,
 });
 
 
@@ -107,6 +108,7 @@ const animeImportPayloadSchema = animeCSVListSchema.omit({
     lastUpdated: true,
     currentSeason: true,
     currentEpisode: true,
+    releaseNotificationsEnabled: true,
 });
 
 

@@ -52,6 +52,7 @@ describe("MoviesService", () => {
         comment: null,
         favorite: false,
         customCover: null,
+        releaseNotificationsEnabled: true,
         addedAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         redo: 0,

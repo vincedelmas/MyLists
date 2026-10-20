@@ -65,16 +65,17 @@ describe("movies import processing", () => {
         dbContext.db = undefined;
     });
 
-    it("imports IMDb ratings before watchlist using local matches without API calls and preserves existing movies", async () => {
+    it("imports IMDb ratings before watchlist by resolving IMDb IDs to local movies and preserves existing entries", async () => {
         await db.insert(movies).values({
             id: 101, apiId: 680, duration: 154, name: "Pulp Fiction", imageCover: "pulp-fiction.jpg", releaseDate: "1994-09-10",
         });
         const importService = new ImportService(ImportRepository);
         const search = vi.fn();
+        const imdbMovieIds = new Map([["tt0137523", [550]], ["tt0110912", [680]]]);
         const provider = {
             search,
             getDetails: vi.fn(),
-            findMovieIdsByImdbId: vi.fn(),
+            findMovieIdsByImdbId: vi.fn(async (imdbId: string) => imdbMovieIds.get(imdbId)!),
         };
         const repository = createMoviesRepository();
         MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
@@ -110,7 +111,7 @@ describe("movies import processing", () => {
             { mediaId: 101, rating: null, status: Status.PLAN_TO_WATCH, total: 0, redo: 0 },
         ]);
         expect(search).not.toHaveBeenCalled();
-        expect(provider.findMovieIdsByImdbId).not.toHaveBeenCalled();
+        expect(provider.findMovieIdsByImdbId.mock.calls).toEqual([["tt0137523"], ["tt0137523"], ["tt0110912"]]);
         expect(provider.getDetails).not.toHaveBeenCalled();
     });
 

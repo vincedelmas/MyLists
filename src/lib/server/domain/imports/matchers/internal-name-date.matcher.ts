@@ -8,6 +8,7 @@ export const internalNameDateMatcher = (mediaService: Pick<MediaQueries, "findBy
     async match(items: ImportItemsSelect[]) {
         const canMatchByName = (item: ImportItemsSelect) => item.name?.trim()
             && isSupportedReleaseDate(item.releaseDate)
+            && !item.payload.imdbId
             && !(apiProviderType && item.externalApiSource === apiProviderType && item.externalApiId);
 
         const candidates = items.filter(canMatchByName);

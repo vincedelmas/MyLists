@@ -83,6 +83,44 @@ describe.each(Object.values(MediaType))("%s import matching", (mediaType) => {
         else expect(ingestion.storeFromExternal).toHaveBeenCalledWith("200", false);
     });
 
+    if (mediaType === MediaType.MOVIES) {
+        it("resolves the IMDb ID before accepting a different local title/year match", async () => {
+            item.externalApiId = null;
+            item.externalApiSource = null;
+            item.payload.imdbId = "tt1234567";
+            provider.findMovieIdsByImdbId = vi.fn().mockResolvedValue([550]);
+
+            expect(await processItem()).toEqual([{ itemId: 1, matchedMediaId: 200, status: ImportItemStatus.COMPLETED }]);
+            expect(provider.findMovieIdsByImdbId).toHaveBeenCalledWith("tt1234567");
+            expect(ingestion.storeFromExternal).toHaveBeenCalledWith(550, true);
+            expect(service.bulkInsertUserMedia).toHaveBeenCalledWith([expect.objectContaining({ userId: 42, mediaId: 200 })]);
+            expect(service.findByNames).not.toHaveBeenCalled();
+            expect(provider.search).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            { resolution: "unresolved", candidateIds: [] },
+            { resolution: "ambiguous", candidateIds: [550, 551] },
+        ])("skips $resolution IMDb IDs without accepting a local title/year match", async ({ candidateIds }) => {
+            item.externalApiId = null;
+            item.externalApiSource = null;
+            item.payload.imdbId = "tt1234567";
+            provider.findMovieIdsByImdbId = vi.fn().mockResolvedValue(candidateIds);
+
+            expect(await processItem()).toEqual([{
+                itemId: 1,
+                matchedMediaId: null,
+                status: ImportItemStatus.SKIPPED,
+                statusReason: expect.stringContaining("IMDb ID tt1234567"),
+            }]);
+            expect(provider.findMovieIdsByImdbId).toHaveBeenCalledWith("tt1234567");
+            expect(service.findByNames).not.toHaveBeenCalled();
+            expect(provider.search).not.toHaveBeenCalled();
+            expect(ingestion.storeFromExternal).not.toHaveBeenCalled();
+            expect(service.bulkInsertUserMedia).not.toHaveBeenCalled();
+        });
+    }
+
     if (mediaType === MediaType.GAMES || mediaType === MediaType.BOOKS) return;
 
 });

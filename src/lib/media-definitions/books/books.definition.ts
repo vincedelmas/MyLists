@@ -10,6 +10,7 @@ export const BOOKS_FIXED_DURATION_MIN = 1.7;
 
 export const booksDefinition = defineMediaDefinition({
     maxGenres: 4,
+    releaseNotifications: false,
     genres: [
         "Action & Adventure", "Biography", "Chick lit", "Children", "Classic", "Crime", "Drama",
         "Dystopian", "Essay", "Fantastic", "Fantasy", "Historical Fiction", "History", "Humor", "Horror",

@@ -1,6 +1,6 @@
-import {tvMetadataFilters} from "@/lib/media-definitions/tv/filters.definition";
 import {commonMediaFilters} from "@/lib/media-definitions/base/media-filters";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {tvMetadataFilters} from "@/lib/media-definitions/tv/filters.definition";
 import {tvContinueDefinition} from "@/lib/media-definitions/tv/continue.definition";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
@@ -13,6 +13,7 @@ export const animeDefinition = defineMediaDefinition({
         common: commonMediaFilters,
         metadata: tvMetadataFilters,
     },
+    releaseNotifications: true,
     continue: tvContinueDefinition,
     statuses: [Status.WATCHING, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLAN_TO_WATCH],
     sorting: {

@@ -61,6 +61,7 @@ type MediaProgressDefinition = Readonly<{
 
 export type MediaDefinition<TMediaType extends MediaType = MediaType> = Readonly<{
     statuses: readonly Status[];
+    releaseNotifications: boolean;
     statistics: MediaStatsDefinition;
     progress: MediaProgressDefinition;
     continue: ContinueDefinition<TMediaType> | (TMediaType extends typeof MediaType.MOVIES ? null : never);

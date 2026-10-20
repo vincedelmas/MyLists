@@ -9,14 +9,13 @@ import type {MediaDefinition} from "@/lib/media-definitions/base/media.definitio
 import {seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
 
 
-export type MediaMetadataFilterKey = MediaFilterKeyFor<MediaType>;
+type DeclaredCommonFilterSchemas = typeof mediaDefinitions[MediaType]["filters"]["common"];
 type DeclaredMediaFilterSchemas = typeof mediaDefinitions[MediaType]["filters"]["metadata"];
+
+export type MediaMetadataFilterKey = MediaFilterKeyFor<MediaType>;
+export type MediaCommonFilterKey = MediaCommonFilterKeyFor<MediaType>;
+export type MediaCommonFilters = { [Key in MediaCommonFilterKey]?: z.infer<MediaCommonFilterSchemas[Key]> };
 export type MediaMetadataFilters = { [Key in MediaMetadataFilterKey]?: z.infer<MediaMetadataFilterSchemas[Key]> };
-
-
-export type MediaFilterKeyFor<T extends MediaType> = T extends MediaType
-    ? Extract<keyof typeof mediaDefinitions[T]["filters"]["metadata"], string>
-    : never;
 
 
 type MediaCommonFilterKeyFor<T extends MediaType> = T extends MediaType
@@ -24,9 +23,9 @@ type MediaCommonFilterKeyFor<T extends MediaType> = T extends MediaType
     : never;
 
 
-export type MediaCommonFilterKey = MediaCommonFilterKeyFor<MediaType>;
-type DeclaredCommonFilterSchemas = typeof mediaDefinitions[MediaType]["filters"]["common"];
-export type MediaCommonFilters = { [Key in MediaCommonFilterKey]?: z.infer<MediaCommonFilterSchemas[Key]> };
+export type MediaFilterKeyFor<T extends MediaType> = T extends MediaType
+    ? Extract<keyof typeof mediaDefinitions[T]["filters"]["metadata"], string>
+    : never;
 
 
 export type MediaCommonFilterSchemas = {
@@ -57,6 +56,9 @@ const mediaDefinitions = {
     [MediaType.BOOKS]: booksDefinition,
     [MediaType.MANGA]: mangaDefinition,
 } satisfies { [T in MediaType]: MediaDefinition<T> };
+
+
+export const RELEASE_NOTIFICATION_MEDIA_TYPES = ALL_MEDIA_TYPES.filter(m => mediaDefinitions[m].releaseNotifications);
 
 
 export const mediaCommonFilterSchemas = Object.fromEntries(

@@ -1,17 +1,16 @@
 import React, {useId, useState} from "react";
+import {convertToCsv} from "@/lib/utils/csv";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Download, TriangleAlert} from "lucide-react";
+import {saveAsFile} from "@/lib/client/file-download";
 import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
-import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
-import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {Separator} from "@/lib/client/components/ui/separator";
 import {FormError} from "@/lib/client/components/forms/FormError";
-import {convertToCsv} from "@/lib/utils/csv";
-import {saveAsFile} from "@/lib/client/file-download";
 import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -21,6 +20,7 @@ import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
+import {ALL_MEDIA_TYPES, RELEASE_NOTIFICATION_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
@@ -200,8 +200,8 @@ function MediaListFormPage() {
                                     Turn off every type to silence all release notifications.
                                     Your per-title preferences are kept.
                                 </FieldDescription>
-                                <FieldGroup className="grid gap-2! sm:grid-cols-3">
-                                    {[MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES].map(mt =>
+                                <FieldGroup className="grid gap-2! sm:grid-cols-2">
+                                    {RELEASE_NOTIFICATION_MEDIA_TYPES.map(mt =>
                                         <Controller
                                             key={mt}
                                             control={form.control}

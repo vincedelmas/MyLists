@@ -10,6 +10,7 @@ import {historyOptions} from "@/lib/client/react-query/query-options";
 import {TagsLists} from "@/lib/client/components/media/base/TagsLists";
 import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
 import {Field, FieldLabel, FieldDescription} from "@/lib/client/components/ui/field";
@@ -123,7 +124,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
             </TabsContent>
 
             <TabsContent value="custom" className="flex flex-col gap-4">
-                {(mediaType === MediaType.SERIES || mediaType === MediaType.ANIME || mediaType === MediaType.MOVIES) &&
+                {getMediaDefinition(mediaType).releaseNotifications &&
                     <Field orientation="horizontal" data-disabled={notificationsMutation.isPending || preview}>
                         <div className="flex flex-col gap-1">
                             <FieldLabel htmlFor={notificationId}>
@@ -145,6 +146,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
                         />
                     </Field>
                 }
+
                 <CustomCoverTabContent
                     mediaType={mediaType}
                     userMedia={userMedia}

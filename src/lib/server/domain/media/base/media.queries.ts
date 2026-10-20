@@ -364,6 +364,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .where(and(
                 userId === undefined
                     ? and(
+                        eq(userMediaSettings.active, true),
                         eq(listTable.releaseNotificationsEnabled, true),
                         eq(userMediaSettings.releaseNotificationsEnabled, true),
                     )

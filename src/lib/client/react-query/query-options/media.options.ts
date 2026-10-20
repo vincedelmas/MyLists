@@ -1,4 +1,4 @@
-import {Pagination} from "@/lib/schemas";
+import {SimpleSearch} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
@@ -58,7 +58,7 @@ export const mediaFilterSearchOptions = (source: MediaFilterSearchSource, mediaT
 });
 
 
-export const mediaCommunityActivityOptions = (mediaId: number, mediaType: MediaType, search: Pagination = { page: 1, perPage: 8 }) => queryOptions({
+export const mediaCommunityActivityOptions = (mediaId: number, mediaType: MediaType, search: SimpleSearch = { page: 1, perPage: 8 }) => queryOptions({
     queryKey: ["details", "activity", "community", mediaType, mediaId, search] as const,
     queryFn: () => getMediaCommunityActivity({ data: { mediaId, mediaType, search } }),
 });

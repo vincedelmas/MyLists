@@ -1,7 +1,14 @@
 import * as z from "zod";
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {mediaCatalogBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
-import {coercedPositiveIntFieldSchema, imageFileSchema, imageUrlSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas/common.schema";
+import {
+    coercedPositiveIntFieldSchema,
+    imageFileSchema,
+    imageUrlSchema,
+    mediaTypeFieldSchema,
+    mediaTypeMediaIdSchema,
+    simpleSearchSchema
+} from "@/lib/schemas/common.schema";
 
 
 export type UpdateBookCoverInput = z.input<typeof updateBookCoverSchema>;
@@ -13,22 +20,25 @@ export type EditMediaDetailsPayloadByType = { [T in MediaType]: z.output<(typeof
 
 export const mediaDetailsSchema = mediaTypeMediaIdSchema;
 
+export const refreshMediaDetailsSchema = mediaTypeMediaIdSchema;
+
+export const mediaDetailsToEditSchema = mediaTypeMediaIdSchema;
+
+
 export const mediaCommunityActivitySchema = mediaDetailsSchema.extend({
-    search: paginationSchema,
+    search: simpleSearchSchema,
 });
+
 
 export const externalMediaResolveSchema = z.object({
     apiId: z.coerce.string(),
     mediaType: mediaTypeFieldSchema,
 });
 
-export const refreshMediaDetailsSchema = mediaTypeMediaIdSchema;
-
-export const mediaDetailsToEditSchema = mediaTypeMediaIdSchema;
-
 
 const metadataNumberSchema = z.union([z.number(), z.string().trim().min(1)])
     .pipe(z.coerce.number<string | number>().nonnegative());
+
 
 const metadataTextSchema = z.string().nullable().optional();
 const metadataIntegerSchema = metadataNumberSchema.pipe(z.number().int());

@@ -2,8 +2,8 @@ import type {SearchType} from "@/lib/schemas";
 import {SocialState, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
-import {and, asc, count, desc, eq, getTableColumns, sql} from "drizzle-orm";
 import {followers, user, userMediaSettings} from "@/lib/server/database/schema";
+import {and, asc, count, desc, eq, getTableColumns, like, sql} from "drizzle-orm";
 import {type Actor, communityProfileVisibilityCondition} from "@/lib/server/authorization";
 import type {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import type {MediaCommunityActivityStats, UserFollowsMediaData} from "@/lib/types/user-media.types";
@@ -26,7 +26,11 @@ export const createMediaCommunityQueries = <TDef extends AnyServerMediaDefinitio
                 perPage: search.perPage,
             });
 
-            const conditions = and(eq(listTable.mediaId, mediaId), communityProfileVisibilityCondition(actor));
+            const conditions = and(
+                eq(listTable.mediaId, mediaId),
+                communityProfileVisibilityCondition(actor),
+                search.search ? like(user.name, `%${search.search}%`) : undefined,
+            );
 
             const statsQuery = getDbClient()
                 .select({

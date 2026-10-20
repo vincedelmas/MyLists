@@ -139,4 +139,38 @@ describe("media community activity visibility", () => {
         expect(result.stats.total).toBe(expectedIds.length);
         expect(result.stats.averageRating).toBe(expectedAverage);
     });
+
+    it("searches usernames before pagination and filters aggregates", async () => {
+        const service = createTvService(createTvRepository(animeServerDefinition), animeServerDefinition);
+        const result = await service.getMediaCommunityActivity(toActor({ id: 1, role: RoleType.USER }), 100, {
+            search: "USER",
+            page: 2,
+            perPage: 1,
+        });
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].name.toLowerCase()).toContain("user");
+        expect(result.total).toBe(3);
+        expect(result.pages).toBe(3);
+        expect(result.stats.averageRating).toBe(7);
+
+        const match = await service.getMediaCommunityActivity(toActor(), 100, { search: "PUBLIC" });
+        expect(match.items.map(({ id }) => id)).toEqual([2]);
+        expect(match.total).toBe(1);
+        expect(match.stats.total).toBe(1);
+        expect(match.stats.averageRating).toBe(6);
+    });
+
+    it("keeps private activity hidden when searching for its username", async () => {
+        const service = createTvService(createTvRepository(animeServerDefinition), animeServerDefinition);
+        const result = await service.getMediaCommunityActivity(toActor({ id: 1, role: RoleType.USER }), 100, {
+            search: "requested-private",
+        });
+
+        expect(result.items).toEqual([]);
+        expect(result.total).toBe(0);
+        expect(result.pages).toBe(0);
+        expect(result.stats.total).toBe(0);
+        expect(result.stats.averageRating).toBeNull();
+    });
 });

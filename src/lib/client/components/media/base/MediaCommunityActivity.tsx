@@ -124,8 +124,12 @@ export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivitySt
             {items.map(({ icon: Icon, label, value, iconColor }) =>
                 <div key={label} className="flex min-w-0 items-center gap-1.5">
                     <Icon className={`size-4 shrink-0 ${iconColor}`}/>
-                    <span className="font-semibold text-foreground">{value}</span>
-                    <span className="truncate">{label}</span>
+                    <span className="font-semibold text-foreground">
+                        {value}
+                    </span>
+                    <span className="truncate">
+                        {label}
+                    </span>
                 </div>
             )}
         </div>

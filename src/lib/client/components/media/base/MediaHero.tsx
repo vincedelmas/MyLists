@@ -37,6 +37,7 @@ export function MediaHero({ media, mediaType }: MediaHeroProps) {
                             <BookCoverEditDialog
                                 mediaId={media.id}
                                 mediaName={media.name}
+                                authors={"authors" in media ? media.authors?.map(author => author.name).join(", ") : undefined}
                             />
                         }
                     </div>

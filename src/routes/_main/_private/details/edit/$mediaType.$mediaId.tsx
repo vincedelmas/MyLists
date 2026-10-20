@@ -1,23 +1,24 @@
 import {useId} from "react";
 import type {ZodType} from "zod";
 import {cn} from "@/lib/utils/classnames";
+import {THEME_ICONS_MAP} from "@/lib/client/theme";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {THEME_ICONS_MAP} from "@/lib/client/theme";
 import {Button} from "@/lib/client/components/ui/button";
 import {ArrowLeft, PencilLine, Save} from "lucide-react";
-import {Textarea} from "@/lib/client/components/ui/textarea";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {Textarea} from "@/lib/client/components/ui/textarea";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
-import {createMediaEditPayloadSchema} from "@/lib/schemas/media-details.schema";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
+import {createMediaEditPayloadSchema} from "@/lib/schemas/media-details.schema";
 import {Controller, type FieldPath, FormProvider, useForm} from "react-hook-form";
+import {GoogleCoverSearch} from "@/lib/client/components/media/base/GoogleCoverSearch";
 import {useEditMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {Field, FieldDescription, FieldError, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {EditMediaDetailsInput, EditMediaDetailsPayload, editMediaDetailsSchema, mediaTypeMediaIdSchema} from "@/lib/schemas";
@@ -154,31 +155,42 @@ function MediaEditPage() {
                                 </p>
                             </div>
 
-                            <Controller
-                                name="imageCover"
-                                control={form.control}
-                                render={({ field, fieldState }) =>
-                                    <Field
-                                        className="max-w-2xl"
-                                        data-invalid={fieldState.invalid}
-                                        data-disabled={editMediaMutation.isPending}
-                                    >
-                                        <FieldLabel htmlFor={`${fieldId}-image-cover`}>
-                                            Image Cover URL
-                                        </FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={`${fieldId}-image-cover`}
-                                            aria-invalid={fieldState.invalid}
-                                            value={field.value == null ? "" : String(field.value)}
-                                        />
-                                        <FieldDescription>
-                                            Leave this empty to keep the current cover.
-                                        </FieldDescription>
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                }
-                            />
+                            <div className="flex min-w-0 max-w-2xl flex-col gap-4">
+                                <GoogleCoverSearch
+                                    mediaId={mediaId}
+                                    mediaType={mediaType}
+                                    mediaName={mediaName}
+                                    className="items-start"
+                                    disabled={editMediaMutation.isPending}
+                                    authors={"authors" in apiData.fields ? apiData.fields.authors : undefined}
+                                    onUseCover={url => form.setValue("imageCover", url, { shouldDirty: true, shouldValidate: true })}
+                                />
+                                <Controller
+                                    name="imageCover"
+                                    control={form.control}
+                                    render={({ field, fieldState }) =>
+                                        <Field
+                                            className="max-w-2xl"
+                                            data-invalid={fieldState.invalid}
+                                            data-disabled={editMediaMutation.isPending}
+                                        >
+                                            <FieldLabel htmlFor={`${fieldId}-image-cover`}>
+                                                Image Cover URL
+                                            </FieldLabel>
+                                            <Input
+                                                {...field}
+                                                id={`${fieldId}-image-cover`}
+                                                aria-invalid={fieldState.invalid}
+                                                value={field.value == null ? "" : String(field.value)}
+                                            />
+                                            <FieldDescription>
+                                                Leave this empty to keep the current cover.
+                                            </FieldDescription>
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    }
+                                />
+                            </div>
                         </section>
 
                         <section className="mt-5 grid grid-cols-[minmax(12rem,0.35fr)_minmax(0,1fr)] gap-10 rounded-xl border p-5

@@ -2,11 +2,10 @@ import {SearchType} from "@/lib/schemas";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {ProviderApiRollup} from "@/lib/types/admin.types";
-import {dynamicLists} from "@/lib/server/database/schema";
 import {formatMonthYear} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
-import type {AdminMissingCoverMedia} from "@/lib/types/admin.types";
+import {booksAuthors, dynamicLists} from "@/lib/server/database/schema";
 import type {AdminMissingCoversSearch} from "@/lib/schemas/admin.schema";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
@@ -18,33 +17,56 @@ import {apiCallRollup, collectionItems, collections, mediaRefreshLog, taskHistor
 
 export class AdminRepository {
     static async getMissingCovers({ mediaType, search, ...pagination }: AdminMissingCoversSearch) {
+        const db = getDbClient();
         const mediaTypes = mediaType ? [mediaType] : ALL_MEDIA_TYPES;
 
         const queries = mediaTypes.map(mt => {
             const { mediaTable } = getServerMediaDefinition(mt).repository.tables;
 
-            const where = and(
-                eq(mediaTable.imageCover, "default.jpg"), search
-                    ? like(mediaTable.name, `%${search}%`)
-                    : undefined
-            );
+            const authors = mt === MediaType.BOOKS
+                ? sql<string | null>`(${db
+                    .select({ names: sql<string>`group_concat(${booksAuthors.name}, ', ')` })
+                    .from(booksAuthors)
+                    .where(eq(booksAuthors.mediaId, mediaTable.id))})`
+                : sql<string | null>`null`;
 
-            return sql`select
-                ${mediaTable.id} as mediaId,
-                ${mt} as mediaType,
-                ${mediaTable.name} as name,
-                ${mediaTable.releaseDate} as releaseDate
-                from ${mediaTable} where ${where}`;
+            return db
+                .select({
+                    name: mediaTable.name,
+                    mediaId: mediaTable.id,
+                    authors: authors.as("authors"),
+                    releaseDate: mediaTable.releaseDate,
+                    mediaType: sql<MediaType>`${mt}`.as("media_type"),
+                }).from(mediaTable)
+                .where(and(
+                    eq(mediaTable.imageCover, "default.jpg"),
+                    search ? like(mediaTable.name, `%${search}%`) : undefined,
+                )).$dynamic();
         });
 
-        const missing = sql.join(queries, sql` union all `);
+        const [firstQuery, ...otherQueries] = queries;
+
+        for (const query of otherQueries) {
+            firstQuery.unionAll(query);
+        }
+
+        const missing = firstQuery.as("missing_covers");
 
         return paginate({
             ...pagination,
-            getTotal: () => getDbClient().all<{ total: number }>(sql`select count(*) as total from (${missing})`)[0].total,
-            getItems: async ({ limit, offset }) => getDbClient().all<AdminMissingCoverMedia>(sql`
-                select * from (${missing}) order by name collate nocase, mediaType, mediaId limit ${limit} offset ${offset}
-            `),
+
+            getTotal: () => db
+                .select({ total: count() })
+                .from(missing)
+                .get()!.total,
+
+            getItems: async ({ limit, offset }) => db
+                .select()
+                .from(missing)
+                .orderBy(sql`${missing.name} collate nocase`, asc(missing.mediaType), asc(missing.mediaId))
+                .limit(limit)
+                .offset(offset)
+                .all(),
         });
     }
 

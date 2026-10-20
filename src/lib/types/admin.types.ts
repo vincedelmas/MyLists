@@ -34,5 +34,6 @@ export type AdminMissingCoverMedia = {
     name: string;
     mediaId: number;
     mediaType: MediaType;
+    authors: string | null;
     releaseDate: string | null;
 };

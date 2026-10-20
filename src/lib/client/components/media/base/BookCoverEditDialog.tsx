@@ -1,29 +1,28 @@
 import {useState} from "react";
 import {PencilLine} from "lucide-react";
-import {useQuery} from "@tanstack/react-query";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {FormProvider, useForm} from "react-hook-form";
 import {toast} from "@/lib/client/components/ui/toast";
-import {Button} from "@/lib/client/components/ui/button";
 import {handleServerFormErrors} from "@/lib/client/forms";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {FieldGroup, FieldSet} from "@/lib/client/components/ui/field";
 import {UpdateBookCoverInput, updateBookCoverSchema} from "@/lib/schemas";
-import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
+import {GoogleCoverSearch} from "@/lib/client/components/media/base/GoogleCoverSearch";
 import {CoverSourceFields} from "@/lib/client/components/media/base/CoverSourceFields";
+import {SuggestedBookCover} from "@/lib/client/components/media/base/SuggestedBookCover";
 import {useUpdateBookCoverMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 
 
 interface BookCoverEditDialogProps {
     mediaId: number;
+    authors?: string;
     mediaName: string;
 }
 
 
-export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogProps) => {
+export const BookCoverEditDialog = ({ mediaId, mediaName, authors }: BookCoverEditDialogProps) => {
     const [open, setOpen] = useState(false);
     const [mode, setMode] = useState<"link" | "upload">("link");
     const updateCoverMutation = useUpdateBookCoverMutation(mediaId, { noErrorToast: true });
@@ -85,6 +84,15 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
                         <FieldSet disabled={updateCoverMutation.isPending}>
                             <FieldGroup>
+                                <GoogleCoverSearch
+                                    enabled={open}
+                                    mediaType="books"
+                                    mediaId={mediaId}
+                                    authors={authors}
+                                    mediaName={mediaName}
+                                    onUseCover={useSuggestedCover}
+                                    disabled={updateCoverMutation.isPending}
+                                />
                                 <CoverSourceFields
                                     mode={mode}
                                     onModeChange={setMode}
@@ -105,52 +113,5 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
                 </FormProvider>
             </DialogContent>
         </Dialog>
-    );
-};
-
-
-interface SuggestedBookCoverProps {
-    open: boolean;
-    mediaName: string;
-    onUseCover: (coverUrl: string) => void;
-}
-
-
-const SuggestedBookCover = ({ open, mediaName, onUseCover }: SuggestedBookCoverProps) => {
-    // Using simple suggestion system using openLibrary
-    const suggestedCoverUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(mediaName.trim())}-L.jpg?default=false`;
-    const { data, isLoading, isError } = useQuery(suggestBookCoverOptions(mediaName, suggestedCoverUrl, open));
-
-    return (
-        <>
-            <div className="space-y-2">
-                <div className="text-sm font-medium">
-                    Suggested cover
-                </div>
-                {data === "available" &&
-                    <div className="flex items-center gap-3">
-                        <img
-                            alt="Suggested cover"
-                            src={suggestedCoverUrl}
-                            className="h-30 rounded object-cover border"
-                        />
-                        <Button type="button" variant="outline" onClick={() => onUseCover(suggestedCoverUrl)}>
-                            Use suggested cover
-                        </Button>
-                    </div>
-                }
-            </div>
-            {isLoading &&
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <Spinner aria-hidden="true"/>
-                    Looking for a suggested cover...
-                </div>
-            }
-            {(data === "missing" || isError) &&
-                <div className="text-sm text-muted-foreground -mt-3">
-                    No suggestion found.
-                </div>
-            }
-        </>
     );
 };

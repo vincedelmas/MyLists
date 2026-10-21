@@ -1,46 +1,59 @@
 # MyLists mobile
 
-Expo / React Native app for Android and iOS. The first slice supports existing-account email/password sign-in, secure session persistence,
-server-verified session restoration, sign-out, and a read-only profile. The profile shows your identity, follow counts, summary statistics,
-active media lists, highlighted titles, and recent activity, with pull-to-refresh and loading/retry states. Registration, password recovery, and other sign-in methods can be opened on the website;
-they do not sign the native app in automatically. Social sign-in and collection screens are not implemented yet.
+Native Android and iOS app using Expo / React Native. Web keeps its server functions; mobile owns its HTTP endpoints and React Query
+options/mutations. Both clients reuse backend services. Admin and imports remain web-only.
 
-## Structure
+## Implemented core
 
-- `app/`: Expo Router entry points and authenticated navigation guards.
-- `src/features/auth/`: login and session loading/retry.
-- `src/features/profile/`: the authenticated profile screen and native presentation.
-- `src/lib/`: native Better Auth client, mobile HTTP client, and React Query provider.
-- `src/lib/react-query/query-options/`: mobile query keys and request definitions.
-- `src/lib/react-query/query-mutations/`: native mutation hooks, including sign-in and sign-out.
-- `src/theme.ts`: shared native colors and typography.
+- Authenticated Profile, Lists, Search, and Settings tabs with native stack screens.
+- Profile identity/background, counts, highlighted titles, per-media statistics, achievements, and paginated activity history.
+- All six tracking lists with server-side search, status/favorite filters, sorting, pagination, and pull-to-refresh.
+- Provider search (TMDB, IGDB, Google Books, manga), catalog resolution, and media details.
+- Add/remove media, status, score/feeling ratings, favorites, notes, page/chapter/hour progress, TV season/episode progress,
+  season ratings/rewatches, game platform, and repeat counts. Progress reductions preserve the web's explicit monthly-history correction flow.
+- Username/privacy, active lists, score/feeling system, auto-move preference, release notification preferences, password changes, and sign-out.
+- Shared native primitives, selection sheets, media rows, and cached images. Colors are sRGB equivalents of the web dark theme; icons use
+  the native Lucide library. Registration/recovery use the website; they do not automatically sign the native client in.
 
-The app calls the existing Better Auth HTTP endpoints at `/api/auth/*`. It imports no web components, server functions, or database code.
-The backend trusts the `mylists://` scheme. The client uses the backend's `mylists` cookie prefix and stores cookies in SecureStore, with
-storage separated by backend URL. Session restoration checks the server rather than trusting a cached user profile. Better Auth's Expo
-plugin also handles app focus/network changes.
+This is the core implementation, not full web parity. Collections/dynamic-list management, continue-watching, other-user profiles and
+social actions, release calendar/inbox/native push, advanced filters/statistics, profile image uploads/customization, media tags/custom
+covers, account deletion, trends, games, year recaps, and native social login remain separate feature work. There are no placeholder
+buttons pretending those flows exist.
 
-The native auth transport ignores the browser's `session_data` cache cookies. Otherwise, each server-verified read renews that cookie,
-which makes the Expo client refetch the session repeatedly. Session-token rotation and OAuth cookies are preserved. Requests have a
-15-second timeout that also applies when Better Auth supplies its own cancellation signal.
+## Structure and boundaries
 
-The mobile profile uses authenticated endpoints at `/api/mobile/v1/profile` and `/api/mobile/v1/profile/activity`. They expose only the
-signed-in account's data, deriving the account ID from the verified session. The first response includes identity, follow counts, selected
-summary statistics, active list summaries, and overview highlights. Activity loads independently and has its own retry state. The mobile
-API does not fetch the web's achievements, followed-user feed, or continue settings.
+- `app/(tabs)/`: primary navigation; other `app/` directories own stack entry points.
+- `src/components/`: shared native primitives, forms, selection sheets, media rows, and loading/error states.
+- `src/features/`: profile, lists, media tracking, search, settings, and authentication screens.
+- `src/lib/react-query/query-options/`: mobile query keys, request definitions, and pagination.
+- `src/lib/react-query/query-mutations/`: mutation hooks and cache invalidation.
+- `src/lib/api-client.ts`: native session-cookie transport; response/input types inferred with type-only backend imports.
+- `src/theme.ts`: native equivalents of the web dark palette, domain/status colors, and spacing.
+- Backend `src/lib/server/mobile/` and `src/routes/api/mobile/`: isolated mobile response composition and routes.
 
-Web keeps its server functions and its own query options. Both entry points reuse existing services and authorization capabilities;
-neither client depends on the other's transport. Mobile response types are inferred through type-only imports from
-`src/lib/server/mobile/profile.ts`; server modules never enter the native runtime bundle. The mobile TypeScript configuration resolves
-root aliases and server ambient types for that inference. API dates are ISO UTC strings and internal image paths are origin-relative,
-resolved against the native backend address for LAN development.
+The native bundle imports no web components, server functions, or database code. Root aliases and server ambient types in mobile's
+TypeScript configuration support erased type-only references. Removing mobile requires deleting its app, API directories, and workspace
+configuration; web profile functions require no migration. Catalog search is a shared domain operation used by both transports.
 
-To remove mobile later, remove `apps/mobile`, `src/routes/api/mobile`, `src/lib/server/mobile`, and the mobile workspace/scripts. The shared
-request-user helper remains generic server infrastructure, and web profile functions require no migration.
+## Data loading and performance
 
-Native profile requests explicitly attach the cookie provided by the Expo auth client. React Query handles request cancellation, a
-15-second timeout, one retry for temporary failures, focus refresh, and pull-to-refresh. Its cache is recreated when the signed-in account
-changes, including logout. Profile editing and links into media lists, followers, or media details are later slices.
+Queries run for the focused screen, so inactive tabs retain their cache/scroll state without refetching after every edit. Lists and activity
+use virtualized `FlatList` rows and 30-item server pages; search is debounced and cancellable. Expo Image uses disk/memory caching and
+recycling keys. Related/community graphs are not fetched for the mobile details screen. Small profile sections load through separate
+screens. Successful mutations invalidate affected caches; correction previews do not invalidate them. Writes are not automatically retried
+or silently queued while offline. Query caches are cleared when the signed-in account changes.
+
+`getItemLayout` is intentionally omitted because rows support wrapping and system font scaling. Actual scrolling/frame rate and memory
+still need measurement on physical devices in a release build; development Metro timings are not production benchmarks.
+
+Mobile endpoints derive account identity from the verified session, validate mutations with backend schemas, require JSON writes, reject
+foreign browser origins, and return private/no-store responses. Internal image URLs are origin-relative for LAN development; provider
+images keep their external origins. Dates exposed to native clients use ISO UTC strings.
+
+The Better Auth endpoints remain `/api/auth/*`. Expo stores the session cookie in SecureStore, namespaced by backend URL. Native auth
+ignores browser `session_data` cache cookies to prevent renewal/refetch loops while preserving session-token and OAuth cookies. Normal
+requests time out after 15 seconds; provider catalog resolution allows 45 seconds.
+
 
 ## Prerequisites
 
@@ -134,7 +147,7 @@ From the repository root:
 ```bash
 bun run typecheck
 bun run typecheck:mobile
-bun run test apps/mobile/src/lib/auth-fetch.test.ts src/lib/server/core/auth.test.ts src/lib/server/mobile/profile.test.ts apps/mobile/src/lib/api-client.test.ts
+bun run test src/lib/server/mobile src/lib/server/domain/search/catalog-search.test.ts apps/mobile/src/lib/api-client.test.ts apps/mobile/src/lib/auth-fetch.test.ts src/lib/server/core/auth.test.ts
 ```
 
 From `apps/mobile`, run `bunx expo install --check` and `bunx expo-doctor` to verify dependency/configuration compatibility. These commands
@@ -142,8 +155,10 @@ do not build the app.
 
 On Android, check valid/invalid credentials, unverified email errors, password visibility/autofill, keyboard scrolling, session restoration
 after force-closing, session revocation, unavailable backend/retry, and sign-out. Repeat the authentication flow on iOS before release;
-Android testing does not validate iOS behavior. For the profile, check avatar/background loading over the LAN, populated and empty lists,
-ratings, recent activity, pull-to-refresh, unavailable backend/retry, and switching accounts without showing the previous profile.
+Android testing does not validate iOS behavior. Check profile images over the LAN, each of the six list types, search cancellation, pagination/filter reset, media add/edit/remove, season
+ratings/rewatches, activity correction choices (including stale previews), settings persistence, keyboard handling, large text, offline/retry,
+Android back navigation, account switching/cache isolation, and password/session changes. Repeat on iOS. Native visual/device validation
+and release profiling are required before calling the app release-ready.
 
 EAS project registration, native builds, device validation, store publication, and OTA delivery are not performed by adding this scaffold.
 OTA can be configured after the native development flow is validated.

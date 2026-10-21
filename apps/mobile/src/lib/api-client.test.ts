@@ -39,4 +39,15 @@ describe("native API transport", () => {
         controller.abort();
         expect(options.signal.aborted).toBe(true);
     });
+    it("uses JSON mutations and keeps path parameters out of the editable payload", async () => {
+        const fetcher = vi.fn().mockResolvedValue(Response.json({kind: "saved"}));
+        vi.stubGlobal("fetch", fetcher);
+        await api.updateMedia({mediaType: "books", mediaId: 7, payload: {type: "page", actualPage: 20}});
+        const [url, options] = fetcher.mock.calls[0];
+        expect(url).toBe("http://192.168.1.61:3000/api/mobile/v1/media/books/7");
+        expect(options.method).toBe("PATCH");
+        expect(options.headers["content-type"]).toBe("application/json");
+        expect(JSON.parse(options.body)).toEqual({payload: {type: "page", actualPage: 20}});
+    });
+
 });

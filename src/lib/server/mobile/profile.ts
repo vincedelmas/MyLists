@@ -1,3 +1,9 @@
+import * as z from "zod";
+import {toActor} from "@/lib/server/authorization";
+import {calculateMediaLevel} from "@/lib/utils/media/level";
+import {mediaTypeFieldSchema} from "@/lib/schemas/common.schema";
+import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
+import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 import {mobileImagePath} from "./images";
 import {getContainer} from "@/lib/server/core/container";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
@@ -19,6 +25,7 @@ export const getMobileProfile = async (userId: number) => {
         lists: lists.map(({mediaType, entriesFavorites, timeSpent, totalEntries}) => ({
             mediaType,
             timeSpent,
+            level: calculateMediaLevel(timeSpent * 60),
             totalEntries,
             entriesFavorites,
         })),
@@ -61,26 +68,65 @@ export const getMobileProfileActivity = async (userId: number) => {
     }));
 };
 
-export const getMobileStats = async (userId: number) => {
+export const statsTabSchema = z.union([z.literal("overview"), mediaTypeFieldSchema]).default("overview");
+
+export const getMobileStats = async (userId: number, tab: z.infer<typeof statsTabSchema> = "overview") => {
+    const {services, cacheManager} = await getContainer();
+    const user = (await services.account.getUserById(userId))!;
+    const activatedMediaTypes = user.userMediaSettings
+        .filter((setting) => setting.active)
+        .map((setting) => setting.mediaType);
+    if (tab !== "overview" && !activatedMediaTypes.includes(tab)) throw new InactiveMediaTypeError(tab);
+    const context = {activatedMediaTypes, ratingSystem: user.ratingSystem};
+    if (tab === "overview") {
+        const stats = await cacheManager.wrap(
+            getUserStatsCacheKey(userId, tab),
+            () => services.stats.userAdvancedSummaryStats(userId),
+            {ttl: ONE_HOUR_CACHE_TTL_MS},
+        );
+        return {...stats, ...context, kind: "overview" as const};
+    }
+    const stats = await cacheManager.wrap(
+        getUserStatsCacheKey(userId, tab),
+        () => services.stats.userAdvancedMediaStats(userId, tab),
+        {ttl: ONE_HOUR_CACHE_TTL_MS},
+    );
+    return {...stats, ...context, kind: "media" as const, mediaType: tab};
+};
+
+export const getMobileProfileExtras = async (userId: number) => {
     const {services} = await getContainer();
-    const items = await services.stats.userPerMediaSummaryStats(userId);
-    return items.map(({mediaType, totalEntries, timeSpent, entriesFavorites, entriesRated, statusList}) => ({
-        mediaType,
-        totalEntries,
-        timeSpent,
-        entriesFavorites,
-        entriesRated,
-        statusList: statusList.map(({status, count}) => ({status, count})),
-    }));
+    const [achievements, followsFeed] = await Promise.all([
+        services.achievements.getAchievementsDetails(userId, 3),
+        services.updateHistory.getFollowsUpdates(userId, toActor({id: userId}), 10),
+    ]);
+    return {
+        achievements: achievements.map((item) => ({
+            ...item,
+            completedAt: item.completedAt ? dateFromUTCInput(item.completedAt).toISOString() : null,
+        })),
+        followsFeed: followsFeed.map((item) => ({...item, timestamp: dateFromUTCInput(item.timestamp).toISOString()})),
+    };
 };
 
 export const getMobileAchievements = async (userId: number) => {
     const {services} = await getContainer();
-    const items = await services.achievements.getAchievementsDetails(userId);
-    return items.map((item) => ({
-        ...item,
-        completedAt: item.completedAt ? dateFromUTCInput(item.completedAt).toISOString() : null,
-    }));
+    const [items, user] = await Promise.all([
+        services.achievements.getUserAchievements(userId),
+        services.account.getUserById(userId),
+    ]);
+    const active = new Set(
+        user!.userMediaSettings.filter((setting) => setting.active).map((setting) => setting.mediaType),
+    );
+    return items
+        .filter((item) => active.has(item.mediaType))
+        .map((item) => ({
+            ...item,
+            tiers: item.tiers.map((tier) => ({
+                ...tier,
+                completedAt: tier.completedAt ? dateFromUTCInput(tier.completedAt).toISOString() : null,
+            })),
+        }));
 };
 
 export const getMobileHistory = async (userId: number, page: number) => {

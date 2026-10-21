@@ -6,7 +6,9 @@ options/mutations. Both clients reuse backend services. Admin and imports remain
 ## Implemented core
 
 - Authenticated Profile, Lists, Search, and Settings tabs with native stack screens.
-- Profile identity/background, counts, highlighted titles, per-media statistics, achievements, and paginated activity history.
+- Profile identity/background, privacy explanations, social counts/actions, media levels, last three achievements, follows feed, highlights, and paginated recent feed.
+- Lists & collections hub with tracking presets, continue, searchable dynamic lists/collections, and paginated detail screens.
+- Advanced statistics using the web domain services, loaded per media type with monthly activity, status breakdowns, and affinities.
 - All six tracking lists with server-side search, status/favorite filters, sorting, pagination, and pull-to-refresh.
 - Provider search (TMDB, IGDB, Google Books, manga), catalog resolution, and media details.
 - Add/remove media, status, score/feeling ratings, favorites, notes, page/chapter/hour progress, TV season/episode progress,
@@ -15,14 +17,14 @@ options/mutations. Both clients reuse backend services. Admin and imports remain
 - Shared native primitives, selection sheets, media rows, and cached images. Colors are sRGB equivalents of the web dark theme; icons use
   the native Lucide library. Registration/recovery use the website; they do not automatically sign the native client in.
 
-This is the core implementation, not full web parity. Collections/dynamic-list management, continue-watching, other-user profiles and
-social actions, release calendar/inbox/native push, advanced filters/statistics, profile image uploads/customization, media tags/custom
+This is the core implementation, not full web parity. Collections/dynamic-list editing, other-user profiles,
+release calendar/inbox/native push, advanced filters and remaining statistics visualizations, profile image uploads/customization, media tags/custom
 covers, account deletion, trends, games, year recaps, and native social login remain separate feature work. There are no placeholder
 buttons pretending those flows exist.
 
 ## Structure and boundaries
 
-- `app/(tabs)/`: primary navigation; other `app/` directories own stack entry points.
+- `app/(tabs)/`: persistent tabs with independent stacks. Shared array routes keep details in the originating tab; sign-in lives outside the tabs.
 - `src/components/`: shared native primitives, forms, selection sheets, media rows, and loading/error states.
 - `src/features/`: profile, lists, media tracking, search, settings, and authentication screens.
 - `src/lib/react-query/query-options/`: mobile query keys, request definitions, and pagination.

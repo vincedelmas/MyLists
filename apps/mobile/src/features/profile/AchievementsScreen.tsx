@@ -1,9 +1,10 @@
 import {useIsFocused} from "expo-router";
 import {FlatList, View} from "react-native";
-import {Award} from "lucide-react-native";
 import {useQuery} from "@tanstack/react-query";
 import {AppText, Page, QueryPanel, StateView} from "../../components/ui";
+import {ProgressBar} from "../../components/ProgressBar";
 import {achievementsOptions} from "../../lib/react-query/query-options/profile.options";
+import {AchievementRow} from "./AchievementRow";
 import {colors} from "../../theme";
 
 export function AchievementsScreen() {
@@ -16,37 +17,68 @@ export function AchievementsScreen() {
                     <FlatList
                         data={items}
                         keyExtractor={(item) => String(item.id)}
+                        initialNumToRender={6}
+                        windowSize={7}
+                        contentContainerStyle={{padding: 16, gap: 16}}
                         ListEmptyComponent={
                             <StateView
-                                title="No achievements yet"
-                                message="Keep tracking to unlock your first milestone."
+                                title="No achievements"
+                                message="Activate media lists to discover their milestones."
                             />
                         }
-                        renderItem={({item}) => (
-                            <View
-                                style={{
-                                    padding: 16,
-                                    flexDirection: "row",
-                                    gap: 14,
-                                    borderBottomWidth: 1,
-                                    borderBottomColor: colors.border,
-                                }}
-                            >
-                                <Award size={28} color={item.completedAt ? colors.rating : colors.muted} />
-                                <View style={{flex: 1, gap: 5}}>
-                                    <AppText style={{fontWeight: "600"}}>{item.name}</AppText>
-                                    <AppText muted>{item.description}</AppText>
-                                    <AppText
-                                        style={{color: item.completedAt ? colors.rating : colors.muted, fontSize: 12}}
-                                    >
-                                        {item.difficulty} ·{" "}
-                                        {item.completedAt
-                                            ? `Unlocked ${new Date(item.completedAt).toLocaleDateString()}`
-                                            : "Locked"}
-                                    </AppText>
+                        renderItem={({item}) => {
+                            const unlocked = item.tiers.filter((tier) => tier.completed).length;
+                            return (
+                                <View
+                                    style={{
+                                        borderWidth: 1,
+                                        borderColor: colors.border,
+                                        borderRadius: 14,
+                                        overflow: "hidden",
+                                        backgroundColor: colors.surface,
+                                    }}
+                                >
+                                    <AchievementRow
+                                        name={item.name}
+                                        description={item.description}
+                                        completed={unlocked > 0}
+                                        detail={`${unlocked} of ${item.tiers.length} tiers unlocked`}
+                                    />
+                                    <View style={{padding: 16, gap: 14}}>
+                                        {item.tiers.map((tier) => (
+                                            <View key={tier.id} style={{gap: 6}}>
+                                                <View
+                                                    style={{
+                                                        flexDirection: "row",
+                                                        justifyContent: "space-between",
+                                                        gap: 12,
+                                                    }}
+                                                >
+                                                    <AppText
+                                                        style={{
+                                                            fontSize: 12,
+                                                            textTransform: "capitalize",
+                                                            color: tier.completed ? colors.rating : colors.muted,
+                                                        }}
+                                                    >
+                                                        {tier.difficulty}
+                                                    </AppText>
+                                                    <AppText muted style={{fontSize: 11}}>
+                                                        {tier.completedAt
+                                                            ? new Date(tier.completedAt).toLocaleDateString()
+                                                            : `${Math.round(tier.progress)}%`}
+                                                    </AppText>
+                                                </View>
+                                                <ProgressBar
+                                                    value={tier.completed ? 100 : tier.progress}
+                                                    color={tier.completed ? colors.rating : colors.accent}
+                                                />
+                                            </View>
+                                        ))}
+                                    </View>
                                 </View>
-                            </View>
-                        )}
+                            );
+                        }}
                     />
                 )}
             </QueryPanel>

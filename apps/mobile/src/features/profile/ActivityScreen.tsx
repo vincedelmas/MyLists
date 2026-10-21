@@ -1,18 +1,19 @@
+import {useTabPush} from "../../lib/use-tab-push";
 import {useIsFocused} from "expo-router";
 import {FlatList, RefreshControl, Pressable, View} from "react-native";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import {router} from "expo-router";
 import {AppText, Page, StateView} from "../../components/ui";
 import {historyOptions} from "../../lib/react-query/query-options/history.options";
 import {colors, mediaColors} from "../../theme";
 import {formatActivity} from "./profile-formatting";
 
 export function ActivityScreen() {
+    const push = useTabPush();
     const focused = useIsFocused();
     const query = useInfiniteQuery({...historyOptions, enabled: focused});
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
     return (
-        <Page title="Activity history" back>
+        <Page title="Recent feed" back>
             <FlatList
                 data={items}
                 keyExtractor={(item) => String(item.id)}
@@ -33,7 +34,7 @@ export function ActivityScreen() {
                     <Pressable
                         accessibilityRole="button"
                         onPress={() =>
-                            router.push({
+                            push({
                                 pathname: "/media/[mediaType]/[mediaId]",
                                 params: {mediaType: item.mediaType, mediaId: String(item.mediaId)},
                             })

@@ -1,6 +1,5 @@
 import type {ExpoConfig} from "expo/config";
 
-
 const isDevelopmentBuild = (process.env.EAS_BUILD_PROFILE ?? "development") === "development";
 
 const config: ExpoConfig = {
@@ -10,6 +9,7 @@ const config: ExpoConfig = {
     scheme: "mylists",
     orientation: "portrait",
     userInterfaceStyle: "dark",
+    backgroundColor: "#0B0B0B",
     platforms: ["android", "ios"],
     android: {
         package: "app.mylists.mobile",
@@ -17,15 +17,17 @@ const config: ExpoConfig = {
     ios: {
         bundleIdentifier: "app.mylists.mobile",
         supportsTablet: true,
-        ...(isDevelopmentBuild ? {
-            infoPlist: { NSAppTransportSecurity: { NSAllowsLocalNetworking: true } },
-        } : {}),
+        ...(isDevelopmentBuild
+            ? {
+                  infoPlist: {NSAppTransportSecurity: {NSAllowsLocalNetworking: true}},
+              }
+            : {}),
     },
     plugins: [
         "expo-router",
         "expo-image",
         "expo-secure-store",
-        ["expo-build-properties", { android: { usesCleartextTraffic: isDevelopmentBuild } }],
+        ["expo-build-properties", {android: {usesCleartextTraffic: isDevelopmentBuild}}],
     ],
 };
 

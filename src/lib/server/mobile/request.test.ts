@@ -2,7 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import {z} from "zod";
 import {notFound} from "@tanstack/react-router";
 import {mobileRequest} from "./request";
-import {FormattedError, InactiveMediaTypeError} from "@/lib/utils/error-classes";
+import {FormattedError, InactiveMediaTypeError, UnauthorizedError} from "@/lib/utils/error-classes";
 
 const session = vi.hoisted(() => vi.fn());
 vi.mock("@/env/client", () => ({clientEnv: {VITE_BASE_URL: "http://localhost:3000"}}));
@@ -47,6 +47,14 @@ describe("mobile mutation boundary", () => {
         const save = vi.fn();
         expect((await mobileRequest(request(), save)).status).toBe(401);
         expect(save).not.toHaveBeenCalled();
+    });
+
+    it("returns a forbidden response for private collections without leaking their contents", async () => {
+        const response = await mobileRequest(request(), async () => {
+            throw new UnauthorizedError("private");
+        });
+        expect(response.status).toBe(403);
+        expect(await response.json()).toEqual({error: {message: "You don’t have access to this content."}});
     });
 
     it("returns actionable validation errors and safe missing-resource errors", async () => {

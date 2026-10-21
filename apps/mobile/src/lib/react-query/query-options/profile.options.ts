@@ -11,7 +11,12 @@ export const profileActivityOptions = queryOptions({
     queryFn: ({signal}) => api.profileActivity(signal),
 });
 
-export const statsOptions = queryOptions({queryKey: ["profile", "stats"], queryFn: ({signal}) => api.stats(signal)});
+export const statsOptions = (tab: Parameters<typeof api.stats>[0]) =>
+    queryOptions({queryKey: ["profile", "stats", tab], queryFn: ({signal}) => api.stats(tab, signal)});
+export const profileExtrasOptions = queryOptions({
+    queryKey: ["profile", "extras"],
+    queryFn: ({signal}) => api.profileExtras(signal),
+});
 export const achievementsOptions = queryOptions({
     queryKey: ["profile", "achievements"],
     queryFn: ({signal}) => api.achievements(signal),

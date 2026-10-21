@@ -1,6 +1,6 @@
 import {ZodError} from "zod";
 import {isNotFound} from "@tanstack/react-router";
-import {FormattedError, InactiveMediaTypeError, ValidationError} from "@/lib/utils/error-classes";
+import {FormattedError, InactiveMediaTypeError, UnauthorizedError, ValidationError} from "@/lib/utils/error-classes";
 import {clientEnv} from "@/env/client";
 import {logger} from "@/lib/server/core/logger";
 import {getRequestUser} from "@/lib/server/core/request-user";
@@ -37,6 +37,8 @@ export const mobileRequest = async (request: Request, load: (userId: number) => 
     } catch (error) {
         if (error instanceof ZodError) return json({error: {message: error.issues[0].message}}, 400);
         if (error instanceof SyntaxError) return json({error: {message: "Invalid JSON request body."}}, 400);
+        if (error instanceof UnauthorizedError)
+            return json({error: {message: "You don’t have access to this content."}}, 403);
         if (isNotFound(error)) return json({error: {message: "Not found."}}, 404);
         if (error instanceof InactiveMediaTypeError) return json({error: {message: error.message}}, 409);
         if (error instanceof FormattedError || error instanceof ValidationError)

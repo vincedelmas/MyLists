@@ -9,6 +9,7 @@ import {listOptions} from "../../lib/react-query/query-options/media.options";
 import {useDebouncedValue} from "../../lib/use-debounced-value";
 import {mediaLabels} from "../../lib/media";
 import type {MediaType} from "../../lib/api-client";
+import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {colors} from "../../theme";
 
 export function TrackingListScreen() {
@@ -56,10 +57,7 @@ export function TrackingListScreen() {
                         <Select
                             label="Sort"
                             value={sorting}
-                            options={(first?.pagination.availableSorting ?? [sorting]).map((value) => ({
-                                value,
-                                label: value.replaceAll("_", " "),
-                            }))}
+                            options={getMediaSortOptions([mediaType], true)}
                             onChange={setSorting}
                         />
                     </View>

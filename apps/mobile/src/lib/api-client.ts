@@ -1,5 +1,7 @@
 import {backendUrl} from "./config";
 import {authClient} from "./auth-client";
+import type * as Social from "../../../../src/lib/server/mobile/social";
+import type * as Library from "../../../../src/lib/server/mobile/library";
 import type * as Profile from "../../../../src/lib/server/mobile/profile";
 import type * as Media from "../../../../src/lib/server/mobile/media";
 import type * as Settings from "../../../../src/lib/server/mobile/settings";
@@ -71,7 +73,18 @@ export const api = {
     profileActivity: (signal?: AbortSignal) => request<MobileProfileActivity>("/profile/activity", signal),
     history: (page: number, signal?: AbortSignal) =>
         request<Result<typeof Profile.getMobileHistory>>(`/profile/history?page=${page}`, signal),
-    stats: (signal?: AbortSignal) => request<Result<typeof Profile.getMobileStats>>("/profile/stats", signal),
+    stats: (tab: Parameters<typeof Profile.getMobileStats>[1], signal?: AbortSignal) =>
+        request<Result<typeof Profile.getMobileStats>>(`/profile/stats?tab=${tab}`, signal),
+    profileExtras: (signal?: AbortSignal) =>
+        request<Result<typeof Profile.getMobileProfileExtras>>("/profile/extras", signal),
+    social: (input: Parameters<typeof Social.getMobileSocial>[1], signal?: AbortSignal) =>
+        request<Result<typeof Social.getMobileSocial>>(`/social?${queryString(input)}`, signal),
+    socialAction: (input: Parameters<typeof Social.actOnMobileSocial>[1]) =>
+        request<Result<typeof Social.actOnMobileSocial>>("/social", undefined, "POST", input),
+    library: (input: Parameters<typeof Library.getMobileLibrary>[1], signal?: AbortSignal) =>
+        request<Result<typeof Library.getMobileLibrary>>(`/library?${queryString(input)}`, signal),
+    libraryDetail: (input: Parameters<typeof Library.getMobileLibraryDetail>[1], signal?: AbortSignal) =>
+        request<Result<typeof Library.getMobileLibraryDetail>>(`/library/detail?${queryString(input)}`, signal),
     achievements: (signal?: AbortSignal) =>
         request<Result<typeof Profile.getMobileAchievements>>("/profile/achievements", signal),
     lists: (signal?: AbortSignal) => request<NonNullable<Result<typeof Media.getMobileLists>>>("/lists", signal),

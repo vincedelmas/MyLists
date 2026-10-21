@@ -1,7 +1,7 @@
+import {useTabPush} from "../lib/use-tab-push";
 import {memo} from "react";
 import {Pressable, StyleSheet, View} from "react-native";
 import {Heart, Star} from "lucide-react-native";
-import {router} from "expo-router";
 import {AppText, Cover} from "./ui";
 import {ratingLabel} from "../lib/ratings";
 import {colors, statusColors} from "../theme";
@@ -30,6 +30,7 @@ export const MediaRow = memo(function MediaRow({
     detail?: string;
     onPress?: () => void;
 }) {
+    const push = useTabPush();
     return (
         <Pressable
             accessibilityRole="button"
@@ -37,7 +38,7 @@ export const MediaRow = memo(function MediaRow({
             onPress={
                 onPress ??
                 (() =>
-                    router.push({
+                    push({
                         pathname: "/media/[mediaType]/[mediaId]",
                         params: {mediaType, mediaId: String(mediaId)},
                     }))

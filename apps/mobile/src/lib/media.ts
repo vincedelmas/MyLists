@@ -1,5 +1,5 @@
 import type {MediaType} from "./api-client";
-import {BookOpen, Clapperboard, Gamepad2, LibraryBig, MonitorPlay, Sparkles} from "lucide-react-native";
+import {BookImage, Cat, Gamepad2, Library, Monitor, Popcorn} from "lucide-react-native";
 import {mediaColors} from "../theme";
 
 export const mediaLabels: Record<MediaType, string> = {
@@ -11,11 +11,11 @@ export const mediaLabels: Record<MediaType, string> = {
     manga: "Manga",
 };
 export const mediaIcons = {
-    movies: Clapperboard,
-    series: MonitorPlay,
-    anime: Sparkles,
+    movies: Popcorn,
+    series: Monitor,
+    anime: Cat,
     games: Gamepad2,
-    books: BookOpen,
-    manga: LibraryBig,
+    books: Library,
+    manga: BookImage,
 };
 export {mediaColors};

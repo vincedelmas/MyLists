@@ -1,15 +1,21 @@
+import {useTabPush} from "../../lib/use-tab-push";
 import {useIsFocused} from "expo-router";
 import {RefreshControl, View, FlatList, Pressable} from "react-native";
-import {useQuery} from "@tanstack/react-query";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {router} from "expo-router";
-import {Activity, Award, ChartNoAxesCombined, Settings} from "lucide-react-native";
-import {AppText, Content, Cover, MenuRow, Page, QueryPanel, Section, uiStyles} from "../../components/ui";
+import {Activity, ChartNoAxesCombined, Settings} from "lucide-react-native";
+import {AppText, Content, Cover, MenuRow, Page, QueryPanel, Section} from "../../components/ui";
 import {profileOptions} from "../../lib/react-query/query-options/profile.options";
 import {colors} from "../../theme";
 import {mediaIcons, mediaLabels, mediaColors} from "../../lib/media";
+import {PrivacyBadge} from "./PrivacyBadge";
+import {ProfileExtras} from "./ProfileExtras";
+import {ProgressBar} from "../../components/ProgressBar";
 import {formatCount} from "./profile-formatting";
 
 export function ProfileScreen() {
+    const push = useTabPush();
+    const client = useQueryClient();
     const focused = useIsFocused();
     const query = useQuery({...profileOptions, enabled: focused});
     return (
@@ -21,7 +27,7 @@ export function ProfileScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Settings"
                     style={{padding: 12}}
-                    onPress={() => router.navigate("/(tabs)/settings")}
+                    onPress={() => router.navigate("/(tabs)/(settings)/settings")}
                 >
                     <Settings size={21} color={colors.muted} />
                 </Pressable>
@@ -33,78 +39,96 @@ export function ProfileScreen() {
                         refreshControl={
                             <RefreshControl
                                 refreshing={query.isRefetching}
-                                onRefresh={() => void query.refetch()}
+                                onRefresh={() => void client.invalidateQueries({queryKey: ["profile"]})}
                                 tintColor={colors.accent}
                                 colors={[colors.accent]}
                             />
                         }
                     >
-                        <Section>
+                        <View style={{gap: 0}}>
                             <Cover
                                 uri={data.user.backgroundImage}
-                                style={{width: "100%", height: 110, borderRadius: 0}}
+                                style={{width: "100%", height: 144, borderRadius: 16}}
                             />
-                            <View style={uiStyles.padded}>
-                                <View style={uiStyles.row}>
+                            <View style={{paddingHorizontal: 8, gap: 14}}>
+                                <View style={{flexDirection: "row", gap: 14, alignItems: "flex-end", marginTop: -26}}>
                                     <Cover
                                         uri={data.user.image}
                                         label={data.user.name}
-                                        style={{width: 64, height: 64, borderRadius: 32}}
+                                        style={{
+                                            width: 80,
+                                            height: 80,
+                                            borderRadius: 40,
+                                            borderWidth: 4,
+                                            borderColor: colors.background,
+                                        }}
                                     />
                                     <View style={{flex: 1, gap: 4}}>
-                                        <AppText heading>{data.user.name}</AppText>
+                                        <AppText heading style={{fontSize: 25, lineHeight: 32}}>
+                                            {data.user.name}
+                                        </AppText>
                                         <AppText muted style={{fontSize: 12}}>
-                                            {data.user.privacy} profile · Joined{" "}
-                                            {new Date(data.user.createdAt).getUTCFullYear()}
+                                            Joined {new Date(data.user.createdAt).getUTCFullYear()}
                                         </AppText>
                                     </View>
+                                    <PrivacyBadge value={data.user.privacy} />
                                 </View>
-                                <AppText muted>
-                                    {data.social.followsCount} following · {data.social.followersCount} followers
-                                </AppText>
-                                <View style={{flexDirection: "row", gap: 8}}>
-                                    {[
-                                        ["Entries", data.stats.totalEntries],
-                                        ["Hours", data.stats.totalHours],
-                                        ["Favorites", data.stats.totalFavorites],
-                                    ].map(([label, value]) => (
-                                        <View
-                                            key={label}
-                                            style={{
-                                                flex: 1,
-                                                padding: 12,
-                                                backgroundColor: colors.secondary,
-                                                borderRadius: 8,
-                                                gap: 4,
-                                            }}
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        gap: 24,
+                                        borderBottomWidth: 1,
+                                        borderBottomColor: colors.border,
+                                        paddingBottom: 10,
+                                    }}
+                                >
+                                    {(
+                                        [
+                                            ["following", data.social.followsCount],
+                                            ["followers", data.social.followersCount],
+                                        ] as const
+                                    ).map(([kind, count]) => (
+                                        <Pressable
+                                            key={kind}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`${count} ${kind}`}
+                                            onPress={() => push({pathname: "/profile/social", params: {kind}})}
+                                            style={{paddingVertical: 10}}
                                         >
-                                            <AppText style={{fontWeight: "700", fontSize: 20}}>
-                                                {formatCount(Number(value))}
+                                            <AppText style={{fontSize: 16, fontWeight: "700"}}>
+                                                {formatCount(count)}{" "}
+                                                <AppText muted style={{fontSize: 13, fontWeight: "400"}}>
+                                                    {kind}
+                                                </AppText>
                                             </AppText>
-                                            <AppText muted style={{fontSize: 12}}>
-                                                {label}
-                                            </AppText>
-                                        </View>
+                                        </Pressable>
                                     ))}
                                 </View>
                             </View>
-                        </Section>
+                        </View>
                         <Section title="Your media lists">
                             {data.lists.map((list) => {
                                 const Icon = mediaIcons[list.mediaType];
                                 return (
-                                    <MenuRow
-                                        key={list.mediaType}
-                                        title={mediaLabels[list.mediaType]}
-                                        detail={`${formatCount(list.totalEntries)} entries · ${formatCount(list.timeSpent)} hours`}
-                                        icon={<Icon color={mediaColors[list.mediaType]} size={22} />}
-                                        onPress={() =>
-                                            router.push({
-                                                pathname: "/lists/[mediaType]",
-                                                params: {mediaType: list.mediaType},
-                                            })
-                                        }
-                                    />
+                                    <View key={list.mediaType}>
+                                        <MenuRow
+                                            title={mediaLabels[list.mediaType]}
+                                            detail={`Level ${Math.floor(list.level)} · ${formatCount(list.totalEntries)} entries · ${formatCount(list.timeSpent)} hours`}
+                                            icon={<Icon color={mediaColors[list.mediaType]} size={22} />}
+                                            onPress={() =>
+                                                push({
+                                                    pathname: "/lists/[mediaType]",
+                                                    params: {mediaType: list.mediaType},
+                                                })
+                                            }
+                                        />
+                                        <View style={{paddingHorizontal: 16, paddingBottom: 12}}>
+                                            <ProgressBar
+                                                value={(list.level % 1) * 100}
+                                                color={mediaColors[list.mediaType]}
+                                            />
+                                        </View>
+                                    </View>
                                 );
                             })}
                         </Section>
@@ -113,21 +137,16 @@ export function ProfileScreen() {
                                 title="Statistics"
                                 detail="Your progress across every media type"
                                 icon={<ChartNoAxesCombined size={21} color={colors.accent} />}
-                                onPress={() => router.push("/profile/stats")}
+                                onPress={() => push("/profile/stats")}
                             />
                             <MenuRow
-                                title="Activity history"
+                                title="Recent feed"
                                 detail="Your recent updates and tracking history"
                                 icon={<Activity size={21} color={colors.accent} />}
-                                onPress={() => router.push("/profile/activity")}
-                            />
-                            <MenuRow
-                                title="Achievements"
-                                detail="Milestones along the way"
-                                icon={<Award size={21} color={colors.rating} />}
-                                onPress={() => router.push("/profile/achievements")}
+                                onPress={() => push("/profile/activity")}
                             />
                         </Section>
+                        <ProfileExtras ratingSystem={data.user.ratingSystem} />
                         {data.highlights.mode !== "disabled" && (
                             <View style={{gap: 12}}>
                                 <AppText heading style={{fontSize: 17}}>
@@ -145,7 +164,7 @@ export function ProfileScreen() {
                                                 accessibilityRole="button"
                                                 accessibilityLabel={item.mediaName}
                                                 onPress={() =>
-                                                    router.push({
+                                                    push({
                                                         pathname: "/media/[mediaType]/[mediaId]",
                                                         params: {
                                                             mediaType: item.mediaType,

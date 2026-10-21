@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import {eq} from "drizzle-orm";
 import {mcp} from "@better-auth/mcp";
+import {expo} from "@better-auth/expo";
 import {clientEnv} from "@/env/client";
 import {serverEnv} from "@/env/server";
 import {jwt} from "better-auth/plugins";
@@ -44,6 +45,8 @@ const deliverAuthEmail = (message: Parameters<typeof sendEmail>[0]) => {
 const getAuthConfig = createServerOnlyFn(() => betterAuth({
     appName: "MyLists",
     baseURL: clientEnv.VITE_BASE_URL,
+    trustedOrigins: ["mylists://"],
+    disabledPaths: ["/token"],
     secret: serverEnv.BETTER_AUTH_SECRET,
     telemetry: {
         enabled: false,
@@ -329,7 +332,8 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         },
     },
     plugins: [
-        jwt(),
+        expo(),
+        jwt({ disableSettingJwtHeader: true }),
         mcp({
             scopes: MCP_SCOPES,
             resource: MCP_RESOURCE,

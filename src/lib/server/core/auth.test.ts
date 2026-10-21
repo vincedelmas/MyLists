@@ -24,6 +24,7 @@ const imageMocks = vi.hoisted(() => ({
 
 
 vi.mock("@/lib/server/core/mail-sender", () => ({ sendEmail: mailMocks.sendEmail }));
+vi.mock("@/lib/server/core/admin-auth", () => ({ clearAdminCookie: vi.fn() }));
 vi.mock("@/lib/server/database/db", () => ({
     get db() { return dbContext.db; },
 }));
@@ -61,6 +62,8 @@ describe("authentication", () => {
 
         ({ auth } = await import("./auth"));
         const context = await auth.$context;
+        // Better Auth skips origin checks by default in tests; exercise production checks here.
+        context.skipOriginCheck = false;
         const user = await context.internalAdapter.createUser({
             name: "reviewuser",
             email: "review@example.com",
@@ -107,6 +110,92 @@ describe("authentication", () => {
         headers: { cookie, origin: "http://localhost:3000", "content-type": "application/json" },
         body: JSON.stringify(body),
     }));
+
+    // The phone reaches the LAN address while auth and MCP retain a localhost canonical URL.
+    const signInNative = (headers: Record<string, string> = {}, password = "test-password") => auth.handler(new Request("http://192.168.1.10:3000/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { "expo-origin": "mylists://", "content-type": "application/json", ...headers },
+        body: JSON.stringify({ email: "review@example.com", password, rememberMe: true }),
+    }));
+
+    it("issues, restores, and revokes a native session over LAN with a localhost canonical URL", async () => {
+        const login = await signInNative();
+        expect(login.status).toBe(200);
+        expect(await login.json()).toMatchObject({ user: { email: "review@example.com" } });
+        const sessionCookie = login.headers.getSetCookie().find(value => value.startsWith("mylists.session_token="))!;
+        expect(sessionCookie).toMatch(/Max-Age=\d+/i);
+        const nativeCookie = sessionCookie.split(";")[0];
+
+        const restored = await auth.handler(new Request("http://192.168.1.10:3000/api/auth/get-session?disableCookieCache=true", {
+            headers: { cookie: nativeCookie, "expo-origin": "mylists://" },
+        }));
+        expect(restored.status).toBe(200);
+        expect(await restored.json()).toMatchObject({ user: { email: "review@example.com" } });
+
+        const logout = await auth.handler(new Request("http://192.168.1.10:3000/api/auth/sign-out", {
+            method: "POST",
+            headers: { cookie: nativeCookie, "expo-origin": "mylists://", "content-type": "application/json" },
+            body: "{}",
+        }));
+        expect(logout.status).toBe(200);
+        expect(await auth.api.getSession({ headers: new Headers({ cookie: nativeCookie }), query: { disableCookieCache: true } })).toBeNull();
+    });
+
+    it.each<Record<string, string>>([
+        { "expo-origin": "untrusted://" },
+        { origin: "https://untrusted.example", "expo-origin": "mylists://" },
+    ])("rejects untrusted native/browser origins without issuing a session: %j", async (headers) => {
+        const response = await signInNative(headers);
+        expect(response.status).toBe(403);
+        expect(response.headers.getSetCookie().some(value => value.startsWith("mylists.session_token="))).toBe(false);
+    });
+
+    it("rejects incorrect credentials from the native client", async () => {
+        const response = await signInNative({}, "incorrect-password");
+        expect(response.status).toBe(401);
+        expect(await response.json()).toMatchObject({ code: "INVALID_EMAIL_OR_PASSWORD" });
+    });
+
+    it("restores cookie sessions without signing JWTs or changing unreadable MCP keys", async () => {
+        const context = await auth.$context;
+        const unreadableKey = await context.adapter.create({
+            model: "jwks",
+            data: {
+                alg: "EdDSA",
+                crv: "Ed25519",
+                publicKey: "{}",
+                privateKey: JSON.stringify("unreadable-encrypted-key"),
+                createdAt: new Date(Date.now() + 60_000),
+            },
+        });
+
+        try {
+            const response = await auth.handler(new Request("http://192.168.1.10:3000/api/auth/get-session?disableCookieCache=true", {
+                headers: { cookie, "expo-origin": "mylists://" },
+            }));
+
+            expect(response.status).toBe(200);
+            expect(await response.json()).toMatchObject({ user: { email: "review@example.com" } });
+            expect(response.headers.has("set-auth-jwt")).toBe(false);
+            expect(await context.adapter.findOne({ model: "jwks", where: [{ field: "id", value: unreadableKey.id }] }))
+                .toMatchObject({ privateKey: JSON.stringify("unreadable-encrypted-key") });
+        }
+        finally {
+            await context.adapter.delete({ model: "jwks", where: [{ field: "id", value: unreadableKey.id }] });
+        }
+    });
+
+    it("does not expose the standalone token endpoint alongside the MCP OAuth provider", async () => {
+        const response = await auth.handler(new Request("http://localhost:3000/api/auth/token", { headers: { cookie } }));
+        expect(response.status).toBe(404);
+    });
+
+    it("requires email verification for native sign-in", async () => {
+        dbContext.db.update(schema.user).set({ emailVerified: false }).where(eq(schema.user.id, userId)).run();
+        const response = await signInNative();
+        expect(response.status).toBe(403);
+        expect(await response.json()).toMatchObject({ code: "EMAIL_NOT_VERIFIED" });
+    });
 
     const signInOAuth = async (providerId: "github" | "google", image?: string) => {
         const context = await auth.$context;

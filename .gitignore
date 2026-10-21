@@ -40,3 +40,12 @@ dist
 /logs
 /playwright-report/
 /test-results/
+
+# Expo-generated files and local native projects (managed by app config)
+apps/mobile/.expo/
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/expo-env.d.ts
+apps/mobile/.env.*.local
+*.apk
+*.aab

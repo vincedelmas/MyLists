@@ -2,7 +2,8 @@ FROM oven/bun:1.3.14 AS build
 
 WORKDIR /app
 
-COPY package.json bun.lock ./
+COPY package.json bun.lock bunfig.toml ./
+COPY apps/mobile/package.json ./apps/mobile/package.json
 RUN bun install --frozen-lockfile
 
 COPY . .

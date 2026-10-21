@@ -4,6 +4,7 @@
         "**/*.tsx"
     ],
     "exclude": [
+        "apps",
         "node_modules",
         "dist",
         "build",

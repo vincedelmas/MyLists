@@ -2,6 +2,7 @@
     "name": "mylists",
     "private": true,
     "type": "module",
+    "workspaces": ["apps/*"],
     "browserslist": [
         ">0.3%, defaults, supports es6-module"
     ],
@@ -17,6 +18,9 @@
         "build:server": "bun --bun vite build",
         "cli:docker": "bun ./dist/cli/index.js",
         "dev": "bun --bun vite dev --port 3000",
+        "dev:mobile": "bun run --cwd apps/mobile start",
+        "dev:mobile:client": "bun run --cwd apps/mobile start:client",
+        "typecheck:mobile": "bun run --cwd apps/mobile typecheck",
         "cli": "bun --env-file=.env src/cli/index.ts",
         "test:e2e": "bun --no-env-file scripts/e2e/run.ts",
         "seed:achievements": "bun run cli -- seed-achievements",
@@ -31,6 +35,7 @@
         "auth:generate": "bunx --bun auth@1.7.7 generate --yes --config src/lib/server/core/auth.ts --output src/lib/server/database/schema/auth.schema.ts"
     },
     "dependencies": {
+        "@better-auth/expo": "1.7.7",
         "@base-ui/react": "^1.9.0",
         "@better-auth/mcp": "1.7.7",
         "@better-auth/oauth-provider": "1.7.7",

@@ -14,7 +14,7 @@ export const getUserProfileHeader = createServerFn({ method: "GET" })
         const socialService = container.services.social;
 
         const { followersCount, followsCount } = await socialService.getFollowCount(targetUser.id);
-        const followStatus = currentUser && await socialService.getFollowingStatus(currentUser.id, targetUser.id);
+        const followStatus = currentUser && socialService.getFollowingStatus(currentUser.id, targetUser.id);
 
         return {
             userData: {

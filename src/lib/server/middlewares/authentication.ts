@@ -1,28 +1,19 @@
 import {clientEnv} from "@/env/client";
 import {RoleType} from "@/lib/utils/enums";
-import {auth} from "@/lib/server/core/auth";
-import {logger} from "@/lib/server/core/logger";
 import {createMiddleware} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
-import {getContainer} from "@/lib/server/core/container";
 import {notFound, redirect} from "@tanstack/react-router";
+import {getSafeRedirectPath} from "@/lib/utils/redirects";
+import {getRequestUser} from "@/lib/server/core/request-user";
 import {isAdminAuthenticated} from "@/lib/server/core/admin-auth";
 import {hasRequiredRole, toActor} from "@/lib/server/authorization";
 import {getAuthState, isAuthenticatedAuthState} from "@/lib/utils/auth";
-import {getSafeRedirectPath} from "@/lib/utils/redirects";
 
 
 export const publicAuthMiddleware = createMiddleware({ type: "function" })
     .server(async ({ next }) => {
         const { headers } = getRequest();
-        const session = await auth.api.getSession({ headers, query: { disableCookieCache: true } });
-
-        const currentUser = session?.user ? { ...session.user, id: Number(session.user.id) } : undefined;
-        if (currentUser) {
-            void getContainer()
-                .then((c) => c.services.account.updateUserLastSeen(c.cacheManager, currentUser.id))
-                .catch((err) => logger.warn({ err, userId: currentUser.id }, "Failed to update user last seen"));
-        }
+        const currentUser = await getRequestUser(headers);
 
         return next({
             context: {

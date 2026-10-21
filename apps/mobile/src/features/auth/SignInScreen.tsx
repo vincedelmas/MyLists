@@ -3,7 +3,7 @@ import {ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, S
 import type {TextInputInstance} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import * as z from "zod";
-import {authClient} from "../../lib/auth-client";
+import {useSignInMutation} from "../../lib/react-query/query-mutations/auth.mutations";
 import {backendUrl} from "../../lib/config";
 import {colors, commonStyles} from "../../theme";
 
@@ -18,7 +18,8 @@ export function SignInScreen() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const login = useSignInMutation();
+    const isSubmitting = login.isPending;
     const [error, setError] = useState<string>();
 
     const signIn = async () => {
@@ -30,33 +31,10 @@ export function SignInScreen() {
             return;
         }
 
-        setIsSubmitting(true);
-        try {
-            const {error: signInError} = await authClient.signIn.email({...result.data, rememberMe: true});
-            if (signInError) {
-                if (signInError.code === "EMAIL_NOT_VERIFIED") {
-                    setError("Verify your email before signing in. You can request a new verification email on the MyLists website.");
-                }
-                else if (signInError.code === "INVALID_EMAIL_OR_PASSWORD") {
-                    setError("The email or password is incorrect.");
-                }
-                else if (signInError.status === 429) {
-                    setError("Too many attempts. Please wait a moment before trying again.");
-                }
-                else {
-                    setError("We couldn’t sign you in. Check your connection and try again.");
-                }
-            }
-            else {
-                setPassword("");
-            }
-        }
-        catch {
-            setError("We couldn’t reach MyLists. Check your connection and try again.");
-        }
-        finally {
-            setIsSubmitting(false);
-        }
+        login.mutate(result.data, {
+            onSuccess: () => setPassword(""),
+            onError: error => setError(error.message),
+        });
     };
 
     const openWebsite = async (path: "/login" | "/forgot-password") => {

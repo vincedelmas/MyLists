@@ -10,7 +10,9 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header")
     context: ({ params: { username } }) => ({
         profileHeaderQueryOptions: profileHeaderOptions(username),
     }),
-    loader: ({ context }) => context.queryClient.query(context.profileHeaderQueryOptions),
+    loader: ({ context }) => {
+        return context.queryClient.query(context.profileHeaderQueryOptions);
+    },
     component: ProfileTop,
     head: ({ params: { username } }) => ({
         meta: [{ title: `${username} Profile - MyLists` }],

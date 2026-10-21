@@ -1,1 +1,1 @@
-export {AccountScreen as default} from "../src/features/auth/AccountScreen";
+export {ProfileScreen as default} from "../src/features/profile/ProfileScreen";

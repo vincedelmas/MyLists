@@ -1,14 +1,18 @@
 # MyLists mobile
 
 Expo / React Native app for Android and iOS. The first slice supports existing-account email/password sign-in, secure session persistence,
-server-verified session restoration, and sign-out. Registration, password recovery, and other sign-in methods can be opened on the website;
+server-verified session restoration, sign-out, and a read-only profile. The profile shows your identity, follow counts, summary statistics,
+active media lists, highlighted titles, and recent activity, with pull-to-refresh and loading/retry states. Registration, password recovery, and other sign-in methods can be opened on the website;
 they do not sign the native app in automatically. Social sign-in and collection screens are not implemented yet.
 
 ## Structure
 
 - `app/`: Expo Router entry points and authenticated navigation guards.
-- `src/features/auth/`: login, session loading/retry, and authenticated account screen.
-- `src/lib/`: native Better Auth client and backend configuration.
+- `src/features/auth/`: login and session loading/retry.
+- `src/features/profile/`: the authenticated profile screen and native presentation.
+- `src/lib/`: native Better Auth client, mobile HTTP client, and React Query provider.
+- `src/lib/react-query/query-options/`: mobile query keys and request definitions.
+- `src/lib/react-query/query-mutations/`: native mutation hooks, including sign-in and sign-out.
 - `src/theme.ts`: shared native colors and typography.
 
 The app calls the existing Better Auth HTTP endpoints at `/api/auth/*`. It imports no web components, server functions, or database code.
@@ -19,6 +23,24 @@ plugin also handles app focus/network changes.
 The native auth transport ignores the browser's `session_data` cache cookies. Otherwise, each server-verified read renews that cookie,
 which makes the Expo client refetch the session repeatedly. Session-token rotation and OAuth cookies are preserved. Requests have a
 15-second timeout that also applies when Better Auth supplies its own cancellation signal.
+
+The mobile profile uses authenticated endpoints at `/api/mobile/v1/profile` and `/api/mobile/v1/profile/activity`. They expose only the
+signed-in account's data, deriving the account ID from the verified session. The first response includes identity, follow counts, selected
+summary statistics, active list summaries, and overview highlights. Activity loads independently and has its own retry state. The mobile
+API does not fetch the web's achievements, followed-user feed, or continue settings.
+
+Web keeps its server functions and its own query options. Both entry points reuse existing services and authorization capabilities;
+neither client depends on the other's transport. Mobile response types are inferred through type-only imports from
+`src/lib/server/mobile/profile.ts`; server modules never enter the native runtime bundle. The mobile TypeScript configuration resolves
+root aliases and server ambient types for that inference. API dates are ISO UTC strings and internal image paths are origin-relative,
+resolved against the native backend address for LAN development.
+
+To remove mobile later, remove `apps/mobile`, `src/routes/api/mobile`, `src/lib/server/mobile`, and the mobile workspace/scripts. The shared
+request-user helper remains generic server infrastructure, and web profile functions require no migration.
+
+Native profile requests explicitly attach the cookie provided by the Expo auth client. React Query handles request cancellation, a
+15-second timeout, one retry for temporary failures, focus refresh, and pull-to-refresh. Its cache is recreated when the signed-in account
+changes, including logout. Profile editing and links into media lists, followers, or media details are later slices.
 
 ## Prerequisites
 
@@ -112,7 +134,7 @@ From the repository root:
 ```bash
 bun run typecheck
 bun run typecheck:mobile
-bun run test apps/mobile/src/lib/auth-fetch.test.ts src/lib/server/core/auth.test.ts
+bun run test apps/mobile/src/lib/auth-fetch.test.ts src/lib/server/core/auth.test.ts src/lib/server/mobile/profile.test.ts apps/mobile/src/lib/api-client.test.ts
 ```
 
 From `apps/mobile`, run `bunx expo install --check` and `bunx expo-doctor` to verify dependency/configuration compatibility. These commands
@@ -120,7 +142,8 @@ do not build the app.
 
 On Android, check valid/invalid credentials, unverified email errors, password visibility/autofill, keyboard scrolling, session restoration
 after force-closing, session revocation, unavailable backend/retry, and sign-out. Repeat the authentication flow on iOS before release;
-Android testing does not validate iOS behavior.
+Android testing does not validate iOS behavior. For the profile, check avatar/background loading over the LAN, populated and empty lists,
+ratings, recent activity, pull-to-refresh, unavailable backend/retry, and switching accounts without showing the previous profile.
 
 EAS project registration, native builds, device validation, store publication, and OTA delivery are not performed by adding this scaffold.
 OTA can be configured after the native development flow is validated.

@@ -1,7 +1,7 @@
 import {splitSetCookieHeader} from "better-auth/cookies/utils";
 
 
-export const authFetch: typeof fetch = async (input, init) => {
+export const authFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     // Better Fetch skips its timeout when useSession supplies an AbortSignal.
     const timeoutController = new AbortController();
     const signal = init?.signal

@@ -6,8 +6,15 @@
     "types": [
       "react",
       "react-native",
-      "node"
-    ]
+      "node",
+      "bun",
+      "vite/client"
+    ],
+    "paths": {
+      "@/*": [
+        "../../src/*"
+      ]
+    }
   },
   "include": [
     "**/*.ts",

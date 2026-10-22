@@ -3,24 +3,28 @@ import { Collapsible, RNHostView } from "@expo/ui";
 import { NativeHost } from "../../components/native-host";
 import { colors } from "../../theme";
 import { useIsFocused } from "expo-router";
-import { FlatList, View } from "react-native";
+import { Animated, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { AchievementRow } from "./AchievementRow";
 import { ProgressBar } from "../../components/ProgressBar";
+import { ProfileQueryPanel } from "./ProfileQueryPanel";
+import { useProfileScroll } from "../../hooks/use-profile-scroll";
 import { AppText, QueryPanel, StateView, Section } from "../../components/ui";
 import { achievementsOptions, recentAchievementsOptions } from "../../lib/react-query/query-options/profile.options";
 
 export function AchievementsContent() {
     const focused = useIsFocused();
+    const { scrollProps, contentContainerStyle } = useProfileScroll();
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const query = useQuery({ ...achievementsOptions, enabled: focused });
     const recent = useQuery({ ...recentAchievementsOptions, enabled: focused });
 
     return (
         <>
-            <QueryPanel query={query}>
+            <ProfileQueryPanel query={query}>
                 {(items) => (
-                    <FlatList
+                    <Animated.FlatList
+                        {...scrollProps}
                         data={items}
                         ListHeaderComponent={
                             <View style={{ gap: 20 }}>
@@ -50,7 +54,7 @@ export function AchievementsContent() {
                         windowSize={7}
                         initialNumToRender={6}
                         keyExtractor={(item) => String(item.id)}
-                        contentContainerStyle={{ padding: 16, gap: 16 }}
+                        contentContainerStyle={[{ padding: 16, gap: 16 }, contentContainerStyle]}
                         ListEmptyComponent={
                             <StateView
                                 title="No achievements"
@@ -126,7 +130,7 @@ export function AchievementsContent() {
                         }}
                     />
                 )}
-            </QueryPanel>
+            </ProfileQueryPanel>
         </>
     );
 }

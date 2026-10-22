@@ -232,8 +232,8 @@ and multiline notes. Validate these on iOS separately before release. Production
 ## Profile and Community navigation
 
 The persistent bottom navigation contains Profile, Lists, Search, and Community. Settings opens from the Profile cog and remains in that
-stack. Profile has scrollable section tabs above its content: Profile, Achievements, My stats, My activity, and Release
-calendar. Its taller identity/follow header scrolls with the Profile overview and stays out of the other sections. Only the selected section mounts its data readers; switching sections reuses the React Query cache. The overview uses a compact level/percentage media-list grid, a Continue preview, switchable Recent feed/Follows feed tabs with shared
+stack. Profile has scrollable section tabs below its identity and follow buttons: Profile, Achievements, My stats, My activity, and Release
+calendar. The shared header collapses as each section scrolls, keeping the tabs visible. Each section keeps its own virtualized list or scroll view; switching tabs preserves the visible collapse state and restores deeper scroll positions. Only the selected section mounts its data readers; switching sections reuses the React Query cache. The overview uses a compact level/percentage media-list grid, a Continue preview, switchable Recent feed/Follows feed tabs with shared
 compact rows, and highlighted media. Achievements loads its latest three completions separately from the
 catalog. The calendar is a month-by-month agenda of releases from active supported lists, with media filtering.
 
@@ -256,3 +256,12 @@ Media Details displays allowlisted type-specific metadata without fetching the w
 own tab with grouped status/rating/favorite, progress, notes, and collapsible season controls. Per-field saves only appear for edited drafts;
 activity-correction previews and confirmed removals use the existing mutation flow. Check native accordions, avatar navigation/private
 profiles, both grid/list modes, numeric/notes drafts, TV season edits, and correction decisions on Android and iOS.
+
+
+The shared profile header uses React Native’s native-driven Animated scroll events. Decorative header layers let vertical drags reach the
+active scroll pane, while native follow buttons remain interactive. Content insets are measured from the header and tabs, and loading/error
+panes can scroll too. Both profile feeds use the same 360-point nested scroll viewport (six minimum-height rows); all returned updates remain
+available by scrolling. Continue posters explicitly use a 0.67 aspect ratio.
+
+On the phone, check expanding/collapsing from the banner and content, switching all five tabs at partially/fully collapsed positions,
+restoring activity scroll after pagination, loading/error retries, and nested feed scrolling on Android and iOS.

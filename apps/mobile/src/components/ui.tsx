@@ -24,6 +24,7 @@ import {
     type TextProps,
     type StyleProp,
     type ViewStyle,
+    type ViewProps,
 } from "react-native";
 
 
@@ -295,9 +296,9 @@ export function StateView({ loading, title, message, retry }: {
 }
 
 
-export function Cover({ uri, style, label }: { uri: string | null; style?: StyleProp<ViewStyle>; label?: string }) {
+export function Cover({ uri, style, label, pointerEvents }: { uri: string | null; style?: StyleProp<ViewStyle>; label?: string; pointerEvents?: ViewProps["pointerEvents"] }) {
     return (
-        <View style={[styles.cover, style]}>
+        <View pointerEvents={pointerEvents} style={[styles.cover, style]}>
             {uri && (
                 <Image
                     source={{ uri: assetUrl(uri) }}

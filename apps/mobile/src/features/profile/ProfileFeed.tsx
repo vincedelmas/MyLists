@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 import { useIsFocused } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import type { api, MobileProfile, MobileProfileActivity } from "../../lib/api-client";
 import { colors } from "../../theme";
@@ -28,19 +28,27 @@ export function ProfileFeed({ ratingSystem }: { ratingSystem: RatingSystem }) {
     return (
         <View style={styles.card}>
             <TopTabs value={tab} tabs={tabs} onChange={setTab} />
-            <QueryPanel<readonly FeedItem[]> query={query}>
-                {(items) =>
-                    items.length ? (
-                        <FeedRows items={items} ratingSystem={ratingSystem} />
-                    ) : (
-                        <AppText muted style={styles.empty}>
-                            {tab === "mine"
-                                ? "Your tracking updates will appear here."
-                                : "Updates from people you follow will appear here."}
-                        </AppText>
-                    )
-                }
-            </QueryPanel>
+            <ScrollView
+                key={tab}
+                nestedScrollEnabled
+                directionalLockEnabled
+                style={styles.viewport}
+                contentContainerStyle={{ flexGrow: 1 }}
+            >
+                <QueryPanel<readonly FeedItem[]> query={query}>
+                    {(items) =>
+                        items.length ? (
+                            <FeedRows items={items} ratingSystem={ratingSystem} />
+                        ) : (
+                            <AppText muted style={styles.empty}>
+                                {tab === "mine"
+                                    ? "Your tracking updates will appear here."
+                                    : "Updates from people you follow will appear here."}
+                            </AppText>
+                        )
+                    }
+                </QueryPanel>
+            </ScrollView>
         </View>
     );
 }
@@ -53,7 +61,7 @@ const FeedRows = memo(function FeedRows({
     ratingSystem: RatingSystem;
 }) {
     const push = useTabPush();
-    return items.slice(0, 10).map((item) => {
+    return items.map((item) => {
         const Icon = mediaIcons[item.mediaType];
         const author = "avatar" in item ? item : null;
         return (
@@ -62,6 +70,7 @@ const FeedRows = memo(function FeedRows({
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={`View ${author.username}'s profile`}
+                        style={styles.author}
                         onPress={() =>
                             push({ pathname: "/people/[userId]", params: { userId: String(author.userId) } })
                         }
@@ -71,6 +80,9 @@ const FeedRows = memo(function FeedRows({
                             label={author.username}
                             style={{ width: 36, height: 36, borderRadius: 18 }}
                         />
+                        <AppText numberOfLines={2} style={styles.username}>
+                            {author.username}
+                        </AppText>
                     </Pressable>
                 ) : (
                     <Icon size={16} color={mediaColors[item.mediaType]} />
@@ -95,7 +107,6 @@ const FeedRows = memo(function FeedRows({
                         </AppText>
                     </View>
                     <AppText muted style={styles.description}>
-                        {author ? `${author.username} · ` : ""}
                         {formatActivity(item, author?.ratingSystem ?? ratingSystem)}
                     </AppText>
                 </Pressable>
@@ -112,7 +123,11 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: "hidden",
     },
+    viewport: { height: 360 },
+    author: { width: 68, alignItems: "center", gap: 4 },
+    username: { fontSize: 10, fontWeight: "600", color: colors.accent, textAlign: "center" },
     row: {
+        minHeight: 60,
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 12,

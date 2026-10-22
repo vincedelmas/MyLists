@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { colors } from "../../theme";
 import type { MobileProfile } from "../../lib/api-client";
 import { router, useLocalSearchParams } from "expo-router";
@@ -15,11 +15,21 @@ import { formatCount } from "./profile-formatting";
 import { useTabPush } from "../../hooks/use-tab-push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { mediaIcons, mediaLabels, mediaColors } from "../../lib/media";
-import { RefreshControl, View, FlatList, Pressable } from "react-native";
+import {
+    Animated,
+    RefreshControl,
+    View,
+    FlatList,
+    Pressable,
+    type NativeScrollEvent,
+    type NativeSyntheticEvent,
+} from "react-native";
 import { Settings } from "lucide-react-native";
-import { beginNavigationTiming } from "../../lib/diagnostics/navigation-timing";
+import { Button as NativeButton } from "@expo/ui";
+import { NativeHost } from "../../components/native-host";
+import { ProfileScrollContext, useProfileScroll } from "../../hooks/use-profile-scroll";
 import { profileOptions } from "../../lib/react-query/query-options/profile.options";
-import { AppText, Content, Cover, Page, QueryPanel } from "../../components/ui";
+import { AppText, Cover, Page, QueryPanel } from "../../components/ui";
 
 const profileTabs = [
     { value: "profile", label: "Profile" },
@@ -35,6 +45,42 @@ export function ProfileScreen() {
     const [tab, setTab] = useState<ProfileTab>(
         () => profileTabs.find((item) => item.value === params.tab)?.value ?? "profile",
     );
+    const [scrollY] = useState(() => new Animated.Value(0));
+    const offsets = useRef(new Map<ProfileTab, number>());
+    const [initialOffset, setInitialOffset] = useState(0);
+    const [headerHeight, setHeaderHeight] = useState(0);
+    const [tabBarHeight, setTabBarHeight] = useState(49);
+    const [viewportHeight, setViewportHeight] = useState(0);
+    const onScroll = useMemo(
+        () =>
+            Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+                useNativeDriver: true,
+                listener: (event: NativeSyntheticEvent<NativeScrollEvent>) =>
+                    offsets.current.set(tab, event.nativeEvent.contentOffset.y),
+            }),
+        [scrollY, tab],
+    );
+    const selectTab = (next: ProfileTab) => {
+        if (next === tab) return;
+        const current = Math.max(0, offsets.current.get(tab) ?? initialOffset);
+        // Preserve the visible header. Restore a pane's deeper position only
+        // when the header is already fully collapsed.
+        const nextOffset = current < headerHeight ? current : Math.max(headerHeight, offsets.current.get(next) ?? 0);
+        offsets.current.set(next, nextOffset);
+        scrollY.setValue(nextOffset);
+        setInitialOffset(nextOffset);
+        setTab(next);
+    };
+    const getOffset = useCallback(() => offsets.current.get(tab) ?? initialOffset, [tab, initialOffset]);
+    const scrollContext = useMemo(
+        () => ({ onScroll, initialOffset, headerHeight, tabBarHeight, viewportHeight, getOffset }),
+        [onScroll, initialOffset, headerHeight, tabBarHeight, viewportHeight, getOffset],
+    );
+    const translateY = scrollY.interpolate({
+        inputRange: [0, Math.max(headerHeight, 1)],
+        outputRange: [0, -headerHeight],
+        extrapolate: "clamp",
+    });
     const focused = useIsFocused();
     const query = useQuery({ ...profileOptions, enabled: focused });
 
@@ -55,16 +101,47 @@ export function ProfileScreen() {
         >
             <QueryPanel query={query}>
                 {(data) => (
-                    <>
-                        <TopTabs value={tab} tabs={profileTabs} onChange={setTab} />
-                        <View style={{ flex: 1 }}>
-                            {tab === "profile" && <ProfileContent data={data} refreshing={query.isRefetching} />}
-                            {tab === "achievements" && <AchievementsContent />}
-                            {tab === "stats" && <StatsContent />}
-                            {tab === "activity" && <ActivityContent />}
-                            {tab === "calendar" && <CalendarContent />}
+                    <ProfileScrollContext.Provider value={scrollContext}>
+                        <View
+                            style={{ flex: 1, overflow: "hidden" }}
+                            onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
+                        >
+                            {headerHeight > 0 && (
+                                <View style={{ flex: 1 }}>
+                                    {tab === "profile" && (
+                                        <ProfileContent data={data} refreshing={query.isRefetching} />
+                                    )}
+                                    {tab === "achievements" && <AchievementsContent />}
+                                    {tab === "stats" && <StatsContent />}
+                                    {tab === "activity" && <ActivityContent />}
+                                    {tab === "calendar" && <CalendarContent />}
+                                </View>
+                            )}
+                            <Animated.View
+                                pointerEvents="box-none"
+                                style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    zIndex: 1,
+                                    backgroundColor: colors.background,
+                                    transform: [{ translateY }],
+                                }}
+                            >
+                                <View
+                                    pointerEvents="box-none"
+                                    style={{ padding: 16, paddingBottom: 0 }}
+                                    onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+                                >
+                                    <ProfileHeader data={data} />
+                                </View>
+                                <View onLayout={(event) => setTabBarHeight(event.nativeEvent.layout.height)}>
+                                    <TopTabs value={tab} tabs={profileTabs} onChange={selectTab} />
+                                </View>
+                            </Animated.View>
                         </View>
-                    </>
+                    </ProfileScrollContext.Provider>
                 )}
             </QueryPanel>
         </Page>
@@ -81,9 +158,13 @@ const ProfileContent = memo(function ProfileContent({
 }) {
     const push = useTabPush();
     const client = useQueryClient();
+    const { scrollProps, contentContainerStyle } = useProfileScroll();
 
     return (
-        <Content
+        <Animated.ScrollView
+            {...scrollProps}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[{ padding: 16, gap: 24 }, contentContainerStyle]}
             refreshControl={
                 <RefreshControl
                     colors={[colors.accent]}
@@ -93,7 +174,6 @@ const ProfileContent = memo(function ProfileContent({
                 />
             }
         >
-            <ProfileHeader data={data} />
             <View style={{ gap: 12 }}>
                 <AppText heading style={{ fontSize: 17 }}>
                     Your media lists
@@ -177,45 +257,52 @@ const ProfileContent = memo(function ProfileContent({
                     )}
                 </View>
             )}
-        </Content>
+        </Animated.ScrollView>
     );
 });
 
 const ProfileHeader = memo(function ProfileHeader({ data }: { data: MobileProfile }) {
     const push = useTabPush();
     return (
-        <View style={{ gap: 0, paddingBottom: 12 }}>
-            <Cover uri={data.user.backgroundImage} style={{ width: "100%", height: 128, borderRadius: 16 }} />
-            <View style={{ paddingHorizontal: 8, gap: 14 }}>
-                <View style={{ flexDirection: "row", gap: 14, alignItems: "flex-end", marginTop: -26 }}>
+        <View pointerEvents="box-none" style={{ gap: 0, paddingBottom: 12 }}>
+            <Cover
+                pointerEvents="none"
+                uri={data.user.backgroundImage}
+                style={{ width: "100%", height: 128, borderRadius: 16 }}
+            />
+            <View pointerEvents="box-none" style={{ paddingHorizontal: 8, gap: 14 }}>
+                <View
+                    pointerEvents="box-none"
+                    style={{ flexDirection: "row", gap: 14, alignItems: "flex-end", marginTop: -44 }}
+                >
                     <Cover
+                        pointerEvents="none"
                         uri={data.user.image}
                         label={data.user.name}
                         style={{
-                            width: 56,
-                            height: 56,
+                            width: 112,
+                            height: 112,
                             borderWidth: 4,
-                            borderRadius: 40,
+                            borderRadius: 56,
                             borderColor: colors.background,
                         }}
                     />
-                    <View style={{ flex: 1, gap: 4 }}>
+                    <View pointerEvents="none" style={{ flex: 1, gap: 4 }}>
                         <AppText heading style={{ fontSize: 22, lineHeight: 28 }}>
                             {data.user.name}
                         </AppText>
                         <AppText muted style={{ fontSize: 12 }}>
-                            Joined {new Date(data.user.createdAt).getUTCFullYear()}
+                            Joined in {new Date(data.user.createdAt).getUTCFullYear()}
                         </AppText>
                     </View>
                     <PrivacyBadge value={data.user.privacy} />
                 </View>
                 <View
+                    pointerEvents="box-none"
                     style={{
-                        gap: 24,
-                        paddingBottom: 0,
+                        gap: 12,
+                        paddingBottom: 4,
                         flexDirection: "row",
-                        borderBottomWidth: 1,
-                        borderBottomColor: colors.border,
                     }}
                 >
                     {(
@@ -224,21 +311,13 @@ const ProfileHeader = memo(function ProfileHeader({ data }: { data: MobileProfil
                             ["followers", data.social.followersCount],
                         ] as const
                     ).map(([kind, count]) => (
-                        <Pressable
-                            key={kind}
-                            accessibilityRole="button"
-                            style={{ paddingVertical: 8 }}
-                            accessibilityLabel={`${count} ${kind}`}
-                            onPressIn={() => beginNavigationTiming("/profile/social", "press-in")}
-                            onPress={() => push({ pathname: "/profile/social", params: { kind } })}
-                        >
-                            <AppText style={{ fontSize: 16, fontWeight: "700" }}>
-                                {formatCount(count)}{" "}
-                                <AppText muted style={{ fontSize: 13, fontWeight: "400" }}>
-                                    {kind}
-                                </AppText>
-                            </AppText>
-                        </Pressable>
+                        <NativeHost key={kind} style={{ flex: 1 }}>
+                            <NativeButton
+                                label={`${formatCount(count)} ${kind === "following" ? "Following" : "Followers"}`}
+                                variant="outlined"
+                                onPress={() => push({ pathname: "/profile/social", params: { kind } })}
+                            />
+                        </NativeHost>
                     ))}
                 </View>
             </View>

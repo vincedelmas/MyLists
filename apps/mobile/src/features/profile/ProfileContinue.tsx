@@ -68,7 +68,7 @@ const ContinueCards = memo(function ContinueCards({
                     }
                     style={({ pressed }) => [styles.card, pressed && { opacity: 0.6 }]}
                 >
-                    <Cover uri={item.cover} label={item.name} style={{ width: 112, height: 168 }} />
+                    <Cover uri={item.cover} label={item.name} style={styles.cover} />
                     <AppText numberOfLines={2} style={{ fontSize: 12, fontWeight: "600" }}>
                         {item.name}
                     </AppText>
@@ -81,4 +81,5 @@ const ContinueCards = memo(function ContinueCards({
 const styles = StyleSheet.create({
     heading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     card: { width: 112, gap: 8 },
+    cover: { width: "100%", height: undefined, aspectRatio: 0.67, alignSelf: "flex-start" },
 });

@@ -1,17 +1,20 @@
+import { ProfileQueryPanel } from "./ProfileQueryPanel";
+import { useProfileScroll } from "../../hooks/use-profile-scroll";
 import { useMemo, useState } from "react";
 import { useIsFocused } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Pressable, RefreshControl, SectionList, View } from "react-native";
+import { Animated, Pressable, RefreshControl, View } from "react-native";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { colors } from "../../theme";
 import { mediaLabels } from "../../lib/media";
 import { useTabPush } from "../../hooks/use-tab-push";
 import { calendarOptions } from "../../lib/react-query/query-options/profile.options";
-import { AppText, Cover, QueryPanel, Select, StateView } from "../../components/ui";
+import { AppText, Cover, Select, StateView } from "../../components/ui";
 import { shiftDateInputValue, toDateInputValue } from "@/lib/utils/formatting/date";
 
 export function CalendarContent() {
     const focused = useIsFocused();
+    const { scrollProps, contentContainerStyle } = useProfileScroll();
     const push = useTabPush();
     const [month, setMonth] = useState(() => `${toDateInputValue(new Date()).slice(0, 7)}-01`);
     const [mediaType, setMediaType] = useState("all");
@@ -30,53 +33,67 @@ export function CalendarContent() {
 
     return (
         <>
-            <View style={{ padding: 16, gap: 12 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                    <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Previous month"
-                        hitSlop={8}
-                        style={{ padding: 8 }}
-                        onPress={() => setMonth(shiftDateInputValue(month, { months: -1 }))}
-                    >
-                        <ChevronLeft size={22} color={colors.text} />
-                    </Pressable>
-                    <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Return to this month"
-                        onPress={() => setMonth(`${toDateInputValue(new Date()).slice(0, 7)}-01`)}
-                    >
-                        <AppText heading style={{ fontSize: 17 }}>
-                            {new Date(`${month}T00:00:00Z`).toLocaleDateString(undefined, {
-                                month: "long",
-                                year: "numeric",
-                                timeZone: "UTC",
-                            })}
-                        </AppText>
-                    </Pressable>
-                    <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Next month"
-                        hitSlop={8}
-                        style={{ padding: 8 }}
-                        onPress={() => setMonth(shiftDateInputValue(month, { months: 1 }))}
-                    >
-                        <ChevronRight size={22} color={colors.text} />
-                    </Pressable>
-                </View>
-                <Select
-                    label="Releases from your lists"
-                    value={mediaType}
-                    onChange={setMediaType}
-                    options={[
-                        { value: "all", label: "All media" },
-                        ...(query.data?.mediaTypes ?? []).map((value) => ({ value, label: mediaLabels[value] })),
-                    ]}
-                />
-            </View>
-            <QueryPanel query={query}>
+            <ProfileQueryPanel query={query}>
                 {() => (
-                    <SectionList
+                    <Animated.SectionList
+                        {...scrollProps}
+                        contentContainerStyle={contentContainerStyle}
+                        stickySectionHeadersEnabled={false}
+                        ListHeaderComponent={
+                            <View style={{ padding: 16, gap: 12 }}>
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                    }}
+                                >
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Previous month"
+                                        hitSlop={8}
+                                        style={{ padding: 8 }}
+                                        onPress={() => setMonth(shiftDateInputValue(month, { months: -1 }))}
+                                    >
+                                        <ChevronLeft size={22} color={colors.text} />
+                                    </Pressable>
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Return to this month"
+                                        onPress={() => setMonth(`${toDateInputValue(new Date()).slice(0, 7)}-01`)}
+                                    >
+                                        <AppText heading style={{ fontSize: 17 }}>
+                                            {new Date(`${month}T00:00:00Z`).toLocaleDateString(undefined, {
+                                                month: "long",
+                                                year: "numeric",
+                                                timeZone: "UTC",
+                                            })}
+                                        </AppText>
+                                    </Pressable>
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Next month"
+                                        hitSlop={8}
+                                        style={{ padding: 8 }}
+                                        onPress={() => setMonth(shiftDateInputValue(month, { months: 1 }))}
+                                    >
+                                        <ChevronRight size={22} color={colors.text} />
+                                    </Pressable>
+                                </View>
+                                <Select
+                                    label="Releases from your lists"
+                                    value={mediaType}
+                                    onChange={setMediaType}
+                                    options={[
+                                        { value: "all", label: "All media" },
+                                        ...(query.data?.mediaTypes ?? []).map((value) => ({
+                                            value,
+                                            label: mediaLabels[value],
+                                        })),
+                                    ]}
+                                />
+                            </View>
+                        }
                         sections={sections}
                         initialNumToRender={12}
                         windowSize={7}
@@ -141,7 +158,7 @@ export function CalendarContent() {
                         )}
                     />
                 )}
-            </QueryPanel>
+            </ProfileQueryPanel>
         </>
     );
 }

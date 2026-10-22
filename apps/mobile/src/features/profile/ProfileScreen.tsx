@@ -1,4 +1,3 @@
-import {beginNavigationTiming} from "../../lib/diagnostics/navigation-timing";
 import {colors} from "../../theme";
 import {router} from "expo-router";
 import {useIsFocused} from "expo-router";
@@ -11,6 +10,7 @@ import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {mediaIcons, mediaLabels, mediaColors} from "../../lib/media";
 import {RefreshControl, View, FlatList, Pressable} from "react-native";
 import {Activity, ChartNoAxesCombined, Settings} from "lucide-react-native";
+import {beginNavigationTiming} from "../../lib/diagnostics/navigation-timing";
 import {profileOptions} from "../../lib/react-query/query-options/profile.options";
 import {AppText, Content, Cover, MenuRow, Page, QueryPanel, Section} from "../../components/ui";
 

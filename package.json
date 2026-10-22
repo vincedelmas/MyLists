@@ -2,7 +2,9 @@
     "name": "mylists",
     "private": true,
     "type": "module",
-    "workspaces": ["apps/*"],
+    "workspaces": [
+        "apps/*"
+    ],
     "browserslist": [
         ">0.3%, defaults, supports es6-module"
     ],
@@ -19,12 +21,12 @@
         "cli:docker": "bun ./dist/cli/index.js",
         "dev": "bun --bun vite dev --port 3000",
         "dev:mobile": "bun run --cwd apps/mobile start",
-        "dev:mobile:client": "bun run --cwd apps/mobile start:client",
-        "typecheck:mobile": "bun run --cwd apps/mobile typecheck",
         "cli": "bun --env-file=.env src/cli/index.ts",
         "test:e2e": "bun --no-env-file scripts/e2e/run.ts",
         "seed:achievements": "bun run cli -- seed-achievements",
         "email": "email dev -d src/lib/client/components/emails",
+        "typecheck:mobile": "bun run --cwd apps/mobile typecheck",
+        "dev:mobile:client": "bun run --cwd apps/mobile start:client",
         "build:cli": "bun --bun vite build --config vite.cli.config.ts",
         "routes:generate": "bun --no-env-file scripts/generate-routes.ts",
         "build": "bun run build:server && bun run build:cli && bun run build:entry",
@@ -86,7 +88,7 @@
         "zod": "^4.6.6"
     },
     "devDependencies": {
-        "@babel/core": "^8.0.7",
+        "@babel/core": "^7.29.7",
         "@libsql/client": "^0.18.0",
         "@playwright/test": "1.64.0",
         "@react-email/ui": "6.11.1",

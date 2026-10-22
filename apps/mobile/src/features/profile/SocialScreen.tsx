@@ -1,89 +1,113 @@
-import {recordNavigationTiming} from "../../lib/diagnostics/navigation-timing";
-import {useEffect, useState} from "react";
-import {FlatList, View, Alert, RefreshControl} from "react-native";
-import {useIsFocused, useLocalSearchParams} from "expo-router";
-import {useInfiniteQuery} from "@tanstack/react-query";
-import {AppText, Button, Cover, Page, Select, StateView} from "../../components/ui";
-import {socialOptions} from "../../lib/react-query/query-options/social.options";
-import {useSocialAction} from "../../lib/react-query/query-mutations/social.mutations";
 import {colors} from "../../theme";
+import {useEffect, useState} from "react";
 import type {api} from "../../lib/api-client";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import {useIsFocused, useLocalSearchParams} from "expo-router";
+import {FlatList, View, Alert, RefreshControl} from "react-native";
+import {recordNavigationTiming} from "../../lib/diagnostics/navigation-timing";
+import {socialOptions} from "../../lib/react-query/query-options/social.options";
+import {AppText, Button, Cover, Page, Select, StateView} from "../../components/ui";
+import {useSocialAction} from "../../lib/react-query/query-mutations/social.mutations";
+
 
 type Kind = Parameters<typeof api.social>[0]["kind"];
-const kinds: {value: Kind; label: string}[] = [
-    {value: "followers", label: "Followers"},
-    {value: "following", label: "Following"},
-    {value: "requests", label: "Follow requests"},
-    {value: "pending", label: "Sent requests"},
+
+
+const kinds: { value: Kind; label: string }[] = [
+    { value: "followers", label: "Followers" },
+    { value: "following", label: "Following" },
+    { value: "requests", label: "Follow requests" },
+    { value: "pending", label: "Sent requests" },
 ];
 
+
 export function SocialScreen() {
-    const params = useLocalSearchParams<{kind?: Kind}>();
-    const [kind, setKind] = useState<Kind>(params.kind ?? "followers");
     const focused = useIsFocused();
-    const query = useInfiniteQuery({...socialOptions(kind), enabled: focused});
+    const mutation = useSocialAction();
+    const params = useLocalSearchParams<{ kind?: Kind }>();
+    const [kind, setKind] = useState<Kind>(params.kind ?? "followers");
+    const query = useInfiniteQuery({ ...socialOptions(kind), enabled: focused });
+
     useEffect(() => {
         if (query.isSuccess) recordNavigationTiming("data-ready", "/profile/social");
         else if (query.isError) recordNavigationTiming("data-error", "/profile/social");
     }, [query.isSuccess, query.isError, query.dataUpdatedAt]);
-    const mutation = useSocialAction();
+
+    const act = (targetId: number, action: Parameters<typeof api.socialAction>[0]["action"]) => {
+        return mutation.mutate({ targetId, action });
+    }
+
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
-    const act = (targetId: number, action: Parameters<typeof api.socialAction>[0]["action"]) =>
-        mutation.mutate({targetId, action});
+
     return (
         <Page title="Your connections" back>
-            <View style={{padding: 16}}>
-                <Select label="Show" value={kind} options={kinds} onChange={(value) => setKind(value as Kind)} />
+            <View style={{ padding: 16 }}>
+                <Select
+                    label="Show"
+                    value={kind}
+                    options={kinds} onChange={(value) => setKind(value as Kind)}
+                />
             </View>
-            {mutation.error && (
-                <AppText accessibilityRole="alert" style={{color: colors.error, padding: 16}}>
+            {mutation.error &&
+                <AppText accessibilityRole="alert" style={{ color: colors.error, padding: 16 }}>
                     {mutation.error.message}
                 </AppText>
-            )}
+            }
             <FlatList
                 key={kind}
                 data={items}
-                keyExtractor={(item) => String(item.id)}
-                initialNumToRender={12}
                 windowSize={7}
+                initialNumToRender={12}
+                onEndReachedThreshold={0.5}
+                keyExtractor={(item) => String(item.id)}
+                onEndReached={() => {
+                    if (focused && query.hasNextPage && !query.isFetching) {
+                        void query.fetchNextPage();
+                    }
+                }}
                 refreshControl={
                     <RefreshControl
-                        refreshing={query.isRefetching && !query.isFetchingNextPage}
-                        onRefresh={() => void query.refetch()}
                         tintColor={colors.accent}
+                        onRefresh={() => void query.refetch()}
+                        refreshing={query.isRefetching && !query.isFetchingNextPage}
                     />
                 }
-                onEndReachedThreshold={0.5}
-                onEndReached={() => {
-                    if (focused && query.hasNextPage && !query.isFetching) void query.fetchNextPage();
-                }}
                 ListEmptyComponent={
                     <StateView
                         loading={query.isPending}
-                        title={query.isError ? "Couldn’t load connections" : "No connections here yet"}
                         message={query.error?.message}
                         retry={query.isError ? () => void query.refetch() : undefined}
+                        title={query.isError ? "Couldn’t load connections" : "No connections here yet"}
                     />
                 }
                 ListFooterComponent={
-                    query.isFetchingNextPage ? (
-                        <StateView loading />
-                    ) : query.isError && items.length ? (
-                        <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()} />
-                    ) : undefined
+                    query.isFetchingNextPage ?
+                        <StateView
+                            loading={true}
+                        />
+                        :
+                        query.isError && items.length ?
+                            <StateView
+                                title="Couldn’t load more"
+                                retry={() => void query.fetchNextPage()}
+                            />
+                            :
+                            undefined
                 }
-                renderItem={({item}) => (
-                    <View style={{padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border}}>
-                        <View style={{flexDirection: "row", gap: 12, alignItems: "center"}}>
+                renderItem={({ item }) => (
+                    <View style={{ padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                        <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
                             <Cover
                                 uri={item.image}
                                 label={item.username}
-                                style={{width: 42, height: 42, borderRadius: 21}}
+                                style={{ width: 42, height: 42, borderRadius: 21 }}
                             />
-                            <AppText style={{flex: 1, fontWeight: "600"}}>{item.username}</AppText>
+                            <AppText style={{ flex: 1, fontWeight: "600" }}>
+                                {item.username}
+                            </AppText>
                         </View>
-                        {kind === "requests" ? (
-                            <View style={{flexDirection: "row", gap: 10}}>
+                        {kind === "requests" ?
+                            <View style={{ flexDirection: "row", gap: 10 }}>
                                 <Button
                                     label="Accept"
                                     disabled={mutation.isPending}
@@ -96,8 +120,8 @@ export function SocialScreen() {
                                     onPress={() => act(item.id, "decline")}
                                 />
                             </View>
-                        ) : (
-                            <View style={{flexDirection: "row", gap: 10, flexWrap: "wrap"}}>
+                            :
+                            <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
                                 <Button
                                     secondary
                                     disabled={mutation.isPending}
@@ -105,25 +129,27 @@ export function SocialScreen() {
                                         item.myFollowStatus === "accepted"
                                             ? "Unfollow"
                                             : item.myFollowStatus === "requested"
-                                              ? "Cancel request"
-                                              : item.privacy === "private"
-                                                ? "Request to follow"
-                                                : "Follow"
+                                                ? "Cancel request"
+                                                : item.privacy === "private"
+                                                    ? "Request to follow"
+                                                    : "Follow"
                                     }
                                     onPress={() =>
                                         item.myFollowStatus === "accepted"
-                                            ? Alert.alert("Unfollow?", `Stop following ${item.username}?`, [
-                                                  {text: "Keep following", style: "cancel"},
-                                                  {
-                                                      text: "Unfollow",
-                                                      style: "destructive",
-                                                      onPress: () => act(item.id, "unfollow"),
-                                                  },
-                                              ])
-                                            : act(item.id, item.myFollowStatus ? "unfollow" : "follow")
+                                            ?
+                                            Alert.alert("Unfollow?", `Stop following ${item.username}?`, [
+                                                { text: "Keep following", style: "cancel" },
+                                                {
+                                                    text: "Unfollow",
+                                                    style: "destructive",
+                                                    onPress: () => act(item.id, "unfollow"),
+                                                },
+                                            ])
+                                            :
+                                            act(item.id, item.myFollowStatus ? "unfollow" : "follow")
                                     }
                                 />
-                                {kind === "followers" && (
+                                {kind === "followers" &&
                                     <Button
                                         secondary
                                         label="Remove follower"
@@ -133,7 +159,7 @@ export function SocialScreen() {
                                                 "Remove follower?",
                                                 `${item.username} will stop following you.`,
                                                 [
-                                                    {text: "Cancel", style: "cancel"},
+                                                    { text: "Cancel", style: "cancel" },
                                                     {
                                                         text: "Remove",
                                                         style: "destructive",
@@ -143,9 +169,9 @@ export function SocialScreen() {
                                             )
                                         }
                                     />
-                                )}
+                                }
                             </View>
-                        )}
+                        }
                     </View>
                 )}
             />

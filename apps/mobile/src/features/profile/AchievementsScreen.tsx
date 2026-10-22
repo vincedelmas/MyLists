@@ -1,59 +1,55 @@
+import {colors} from "../../theme";
 import {useIsFocused} from "expo-router";
 import {FlatList, View} from "react-native";
 import {useQuery} from "@tanstack/react-query";
-import {AppText, Page, QueryPanel, StateView} from "../../components/ui";
-import {ProgressBar} from "../../components/ProgressBar";
-import {achievementsOptions} from "../../lib/react-query/query-options/profile.options";
 import {AchievementRow} from "./AchievementRow";
-import {colors} from "../../theme";
+import {ProgressBar} from "../../components/ProgressBar";
+import {AppText, Page, QueryPanel, StateView} from "../../components/ui";
+import {achievementsOptions} from "../../lib/react-query/query-options/profile.options";
+
 
 export function AchievementsScreen() {
     const focused = useIsFocused();
-    const query = useQuery({...achievementsOptions, enabled: focused});
+    const query = useQuery({ ...achievementsOptions, enabled: focused });
+
     return (
         <Page title="Achievements" back>
             <QueryPanel query={query}>
                 {(items) => (
                     <FlatList
                         data={items}
-                        keyExtractor={(item) => String(item.id)}
-                        initialNumToRender={6}
                         windowSize={7}
-                        contentContainerStyle={{padding: 16, gap: 16}}
+                        initialNumToRender={6}
+                        keyExtractor={(item) => String(item.id)}
+                        contentContainerStyle={{ padding: 16, gap: 16 }}
                         ListEmptyComponent={
                             <StateView
                                 title="No achievements"
                                 message="Activate media lists to discover their milestones."
                             />
                         }
-                        renderItem={({item}) => {
+                        renderItem={({ item }) => {
                             const unlocked = item.tiers.filter((tier) => tier.completed).length;
                             return (
                                 <View
                                     style={{
                                         borderWidth: 1,
-                                        borderColor: colors.border,
                                         borderRadius: 14,
                                         overflow: "hidden",
+                                        borderColor: colors.border,
                                         backgroundColor: colors.surface,
                                     }}
                                 >
                                     <AchievementRow
                                         name={item.name}
-                                        description={item.description}
                                         completed={unlocked > 0}
+                                        description={item.description}
                                         detail={`${unlocked} of ${item.tiers.length} tiers unlocked`}
                                     />
-                                    <View style={{padding: 16, gap: 14}}>
+                                    <View style={{ padding: 16, gap: 14 }}>
                                         {item.tiers.map((tier) => (
-                                            <View key={tier.id} style={{gap: 6}}>
-                                                <View
-                                                    style={{
-                                                        flexDirection: "row",
-                                                        justifyContent: "space-between",
-                                                        gap: 12,
-                                                    }}
-                                                >
+                                            <View key={tier.id} style={{ gap: 6 }}>
+                                                <View style={{ gap: 12, flexDirection: "row", justifyContent: "space-between" }}>
                                                     <AppText
                                                         style={{
                                                             fontSize: 12,
@@ -63,10 +59,11 @@ export function AchievementsScreen() {
                                                     >
                                                         {tier.difficulty}
                                                     </AppText>
-                                                    <AppText muted style={{fontSize: 11}}>
+                                                    <AppText muted style={{ fontSize: 11 }}>
                                                         {tier.completedAt
                                                             ? new Date(tier.completedAt).toLocaleDateString()
-                                                            : `${Math.round(tier.progress)}%`}
+                                                            : `${Math.round(tier.progress)}%`
+                                                        }
                                                     </AppText>
                                                 </View>
                                                 <ProgressBar

@@ -192,8 +192,8 @@ export function Field({
         }
     }, [text, value]);
     return (
-        <NativeHost>
-            <Column spacing={8} style={{ width: "100%" }}>
+        <NativeHost style={{ width: "100%" }}>
+            <Column spacing={8}>
                 <NativeText>{label}</NativeText>
                 <NativeTextInput
                     {...props}
@@ -205,7 +205,6 @@ export function Field({
                         onChangeText?.(next);
                     }}
                     style={{
-                        width: "100%",
                         padding: 12,
                         borderWidth: 1,
                         borderColor: colors.border,
@@ -233,8 +232,8 @@ export function Select<T extends string>({
     disabled?: boolean;
 }) {
     return (
-        <NativeHost>
-            <Column spacing={8} style={{ width: "100%" }}>
+        <NativeHost style={{ width: "100%" }}>
+            <Column spacing={8}>
                 <NativeText>{label}</NativeText>
                 <Picker selectedValue={value} onValueChange={onChange} enabled={!disabled}>
                     {options.map((option) => (

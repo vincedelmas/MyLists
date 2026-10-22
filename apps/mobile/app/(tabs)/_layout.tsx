@@ -1,6 +1,6 @@
 import {Tabs} from "expo-router";
 import {colors} from "../../src/theme";
-import {Library, Search, Settings, UserRound} from "lucide-react-native";
+import {Library, Search, UsersRound, UserRound} from "lucide-react-native";
 
 
 export const unstable_settings = { anchor: "(profile)" };
@@ -44,11 +44,11 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="(settings)"
+                name="(community)"
                 options={{
-                    title: "Settings",
-                    href: "/(tabs)/(settings)/settings",
-                    tabBarIcon: ({ color, size }) => <Settings color={color} size={size}/>,
+                    title: "Community",
+                    href: "/(tabs)/(community)/community",
+                    tabBarIcon: ({ color, size }) => <UsersRound color={color} size={size}/>,
                 }}
             />
         </Tabs>

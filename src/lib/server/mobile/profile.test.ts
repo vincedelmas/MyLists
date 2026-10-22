@@ -4,6 +4,7 @@ import {
     getMobileProfileActivity,
     getMobileProfileExtras,
     getMobileAchievements,
+    getMobileRecentAchievements,
     getMobileStats,
 } from "./profile";
 import {mobileRequest} from "./request";
@@ -103,6 +104,7 @@ describe("isolated mobile profile API", () => {
         expect(response.status).toBe(200);
         expect(mocks.session).toHaveBeenCalledWith({headers: req.headers, query: {disableCookieCache: true}});
         expect(mocks.user).toHaveBeenCalledWith(10);
+        expect(mocks.stats).not.toHaveBeenCalled();
         expect(await response.json()).toEqual({
             user: {
                 id: 10,
@@ -114,7 +116,6 @@ describe("isolated mobile profile API", () => {
                 backgroundImage: "/static/background.jpg",
             },
             social: {followsCount: 1, followersCount: 2},
-            stats: {totalEntries: 3, totalHours: 4, totalFavorites: 2, totalRated: 1, avgRated: 8},
             lists: [{mediaType: "movies", entriesFavorites: 2, timeSpent: 4, totalEntries: 3, level: 3}],
             highlights: {
                 title: "Highlights",
@@ -127,10 +128,17 @@ describe("isolated mobile profile API", () => {
         expect(mocks.activity).not.toHaveBeenCalled();
     });
 
-    it("loads exactly three earned achievements and applies feed visibility for the verified actor", async () => {
+    it("loads the follows feed independently and applies visibility for the verified actor", async () => {
         await getMobileProfileExtras(10);
-        expect(mocks.earned).toHaveBeenCalledWith(10, 3);
+        expect(mocks.earned).not.toHaveBeenCalled();
         expect(mocks.feed).toHaveBeenCalledWith(10, {kind: "user", id: 10, role: "user"}, 10);
+    });
+
+    it("loads only the three latest achievements when requested", async () => {
+        mocks.earned.mockResolvedValue([{id: 1, completedAt: "2026-10-21 14:00:00"}]);
+        expect(await getMobileRecentAchievements(10)).toEqual([{id: 1, completedAt: "2026-10-21T14:00:00.000Z"}]);
+        expect(mocks.earned).toHaveBeenCalledWith(10, 3);
+        expect(mocks.feed).not.toHaveBeenCalled();
     });
 
     it("keeps all achievement tiers on the full page and excludes inactive media", async () => {
@@ -165,6 +173,7 @@ describe("isolated mobile profile API", () => {
             getMobileProfileActivity,
             getMobileProfileExtras,
             getMobileAchievements,
+            getMobileRecentAchievements,
             getMobileStats,
         ]) {
             expect((await mobileRequest(request(), reader)).status).toBe(401);
@@ -180,7 +189,7 @@ describe("isolated mobile profile API", () => {
     });
 
     it("keeps internal failures out of API error messages", async () => {
-        mocks.stats.mockRejectedValue(new Error("private database details"));
+        mocks.lists.mockRejectedValue(new Error("private database details"));
         const response = await mobileRequest(request(), getMobileProfile);
         expect(response.status).toBe(500);
         expect(await response.text()).not.toContain("private database details");

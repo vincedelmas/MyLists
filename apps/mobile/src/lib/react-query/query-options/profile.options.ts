@@ -29,3 +29,15 @@ export const achievementsOptions = queryOptions({
     queryKey: ["profile", "achievements"],
     queryFn: ({ signal }) => api.achievements(signal),
 });
+
+
+export const recentAchievementsOptions = queryOptions({
+    queryKey: ["profile", "achievements", "recent"],
+    queryFn: ({ signal }) => api.recentAchievements(signal),
+});
+
+
+export const calendarOptions = (range: Parameters<typeof api.calendar>[0]) => queryOptions({
+    queryKey: ["profile", "calendar", range],
+    queryFn: ({ signal }) => api.calendar(range, signal),
+});

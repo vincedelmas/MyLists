@@ -8,7 +8,7 @@ export const unstable_settings = {
     profile: { anchor: "index" },
     library: { anchor: "lists" },
     search: { anchor: "search" },
-    settings: { anchor: "settings" },
+    community: { anchor: "community" },
 };
 
 

@@ -3,19 +3,19 @@ import {colors, mediaColors} from "../../theme";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {formatActivity} from "./profile-formatting";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import {AppText, Page, StateView} from "../../components/ui";
+import {AppText, StateView} from "../../components/ui";
 import {FlatList, RefreshControl, Pressable, View} from "react-native";
 import {historyOptions} from "../../lib/react-query/query-options/history.options";
 
 
-export function ActivityScreen() {
+export function ActivityContent() {
     const push = useTabPush();
     const focused = useIsFocused();
     const query = useInfiniteQuery({ ...historyOptions, enabled: focused });
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
     return (
-        <Page title="Recent feed" back>
+        <>
             <FlatList
                 data={items}
                 windowSize={7}
@@ -89,6 +89,6 @@ export function ActivityScreen() {
                             undefined
                 }
             />
-        </Page>
+        </>
     );
 }

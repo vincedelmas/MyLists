@@ -1,4 +1,5 @@
 import {colors} from "../../theme";
+import {TopTabs} from "../../components/top-tabs";
 import {useEffect, useState} from "react";
 import type {api} from "../../lib/api-client";
 import {useInfiniteQuery} from "@tanstack/react-query";
@@ -6,7 +7,7 @@ import {useIsFocused, useLocalSearchParams} from "expo-router";
 import {FlatList, View, Alert, RefreshControl} from "react-native";
 import {recordNavigationTiming} from "../../lib/diagnostics/navigation-timing";
 import {socialOptions} from "../../lib/react-query/query-options/social.options";
-import {AppText, Button, Cover, Page, Select, StateView} from "../../components/ui";
+import {AppText, Button, Cover, Page, StateView} from "../../components/ui";
 import {useSocialAction} from "../../lib/react-query/query-mutations/social.mutations";
 
 
@@ -41,13 +42,7 @@ export function SocialScreen() {
 
     return (
         <Page title="Your connections" back>
-            <View style={{ padding: 16 }}>
-                <Select
-                    label="Show"
-                    value={kind}
-                    options={kinds} onChange={(value) => setKind(value as Kind)}
-                />
-            </View>
+            <TopTabs value={kind} tabs={kinds} onChange={setKind}/>
             {mutation.error &&
                 <AppText accessibilityRole="alert" style={{ color: colors.error, padding: 16 }}>
                     {mutation.error.message}

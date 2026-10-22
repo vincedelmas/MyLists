@@ -8,17 +8,17 @@ import {RefreshControl, View} from "react-native";
 import {ProgressBar} from "../../components/ProgressBar";
 import {mediaLabels, mediaColors} from "../../lib/media";
 import {statsOptions} from "../../lib/react-query/query-options/profile.options";
-import {AppText, Content, Page, QueryPanel, Section, Select, uiStyles} from "../../components/ui";
+import {AppText, Content, QueryPanel, Section, Select, uiStyles} from "../../components/ui";
 
 
-export function StatsScreen() {
+export function StatsContent() {
     const focused = useIsFocused();
     const [tab, setTab] = useState<NonNullable<Parameters<typeof api.stats>[0]>>("overview");
     
     const query = useQuery({ ...statsOptions(tab), enabled: focused });
 
     return (
-        <Page title="Statistics" subtitle="Your tracking, in perspective" back>
+        <>
             <View style={{ padding: 16 }}>
                 <Select
                     value={tab}
@@ -194,6 +194,6 @@ export function StatsScreen() {
                     );
                 }}
             </QueryPanel>
-        </Page>
+        </>
     );
 }

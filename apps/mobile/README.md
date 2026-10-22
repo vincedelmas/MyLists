@@ -227,3 +227,21 @@ settings scrolling and toggle persistence, privacy-sheet dismissal/back handling
 check email autofill, password visibility, Next/Go keyboard actions, typing without cursor jumps, external clears after saving, numeric
 progress,
 and multiline notes. Validate these on iOS separately before release. Production performance requires a release-build comparison.
+
+
+## Profile and Community navigation
+
+The persistent bottom navigation contains Profile, Lists, Search, and Community. Settings opens from the Profile cog and remains in that
+stack. Profile has its identity/follow header above scrollable section tabs: Profile, Achievements, My stats, My activity, and Release
+calendar. Only the selected section mounts its data readers; switching sections reuses the React Query cache. The overview uses a media
+list grid, recent updates, the follows feed, and highlighted media. Achievements loads its latest three completions separately from the
+catalog. The calendar is a month-by-month agenda of releases from active supported lists, with media filtering.
+
+Connections uses top tabs for Followers, Following, Follow requests, and Sent requests. Community is currently a native navigation hub:
+Trends, Platform stats, Hall of fame, Community collections, Taste matches, Moviedle, and Which came first open their existing web pages in
+the system browser. These links are labeled accordingly; native implementations of those sections are future work, and browser sign-in is
+separate from the mobile session.
+
+On the phone, check every profile/connection tab, scrolling to the last tab, month changes and calendar filtering, pull-to-refresh, the
+Profile cog and Android back behavior, and the persistent bottom bar while opening lists/media. Check that Community links open the
+expected web pages. Restart/reload Expo Go after the route-group rename.

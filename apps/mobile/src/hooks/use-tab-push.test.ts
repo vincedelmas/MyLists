@@ -23,7 +23,7 @@ beforeEach(() => {
 });
 
 describe("tab detail navigation", () => {
-    it.each(["(profile)", "(library)", "(search)", "(settings)"])("preserves the %s tab and destination parameters", (tab) => {
+    it.each(["(profile)", "(library)", "(search)", "(community)"])("preserves the %s tab and destination parameters", (tab) => {
         getState.mockReturnValue({index: 1, routes: [{name: "other"}, {name: tab}]});
         navigate({pathname: "/media/[mediaType]/[mediaId]", params: {mediaType: "anime", mediaId: "42"}});
         expect(push).toHaveBeenCalledWith({

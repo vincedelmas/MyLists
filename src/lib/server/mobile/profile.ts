@@ -18,9 +18,8 @@ export const getMobileProfile = async (userId: number) => {
     const user = await services.account.getUserById(userId);
     if (!user) return null;
 
-    const [social, stats, lists, highlights] = await Promise.all([
+    const [social, lists, highlights] = await Promise.all([
         services.social.getFollowCount(userId),
-        services.stats.userPreComputedStatsSummary(userId),
         services.stats.userPerMediaSummaryStats(userId),
         services.profile.resolveHighlightedMedia(userId),
     ]);
@@ -42,13 +41,6 @@ export const getMobileProfile = async (userId: number) => {
             image: user.image ? mobileImagePath(user.image) : null,
             backgroundImage: mobileImagePath(user.backgroundImage),
             createdAt: dateFromUTCInput(user.createdAt).toISOString(),
-        },
-        stats: {
-            avgRated: stats.avgRated,
-            totalHours: stats.totalHours,
-            totalRated: stats.totalRated,
-            totalEntries: stats.totalEntries,
-            totalFavorites: stats.totalFavorites,
         },
         highlights: {
             mode: highlights.overview.mode,
@@ -111,21 +103,24 @@ export const getMobileStats = async (userId: number, tab: z.infer<typeof statsTa
 
 export const getMobileProfileExtras = async (userId: number) => {
     const { services } = await getContainer();
-    const [achievements, followsFeed] = await Promise.all([
-        services.achievements.getAchievementsDetails(userId, 3),
-        services.updateHistory.getFollowsUpdates(userId, toActor({ id: userId }), 10),
-    ]);
+    const followsFeed = await services.updateHistory.getFollowsUpdates(userId, toActor({ id: userId }), 10);
 
     return {
         followsFeed: followsFeed.map((item) => ({
             ...item,
             timestamp: dateFromUTCInput(item.timestamp).toISOString(),
         })),
-        achievements: achievements.map((item) => ({
-            ...item,
-            completedAt: item.completedAt ? dateFromUTCInput(item.completedAt).toISOString() : null,
-        })),
     };
+};
+
+
+export const getMobileRecentAchievements = async (userId: number) => {
+    const { services } = await getContainer();
+    const items = await services.achievements.getAchievementsDetails(userId, 3);
+    return items.map((item) => ({
+        ...item,
+        completedAt: item.completedAt ? dateFromUTCInput(item.completedAt).toISOString() : null,
+    }));
 };
 
 

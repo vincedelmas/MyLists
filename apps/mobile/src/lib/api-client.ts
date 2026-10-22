@@ -4,6 +4,7 @@ import type * as Media from "../../../../src/lib/server/mobile/media";
 import {timeNavigationRequest} from "./diagnostics/navigation-timing";
 import type * as Social from "../../../../src/lib/server/mobile/social";
 import type * as Library from "../../../../src/lib/server/mobile/library";
+import type * as Calendar from "../../../../src/lib/server/mobile/calendar";
 import type * as Profile from "../../../../src/lib/server/mobile/profile";
 import type * as Settings from "../../../../src/lib/server/mobile/settings";
 import type {searchCatalog} from "../../../../src/lib/server/domain/search/catalog-search";
@@ -82,6 +83,8 @@ const queryString = (input: object) => {
 
 
 export const api = {
+    calendar: (range: Parameters<typeof Calendar.getMobileCalendar>[1], signal?: AbortSignal) =>
+        request<Result<typeof Calendar.getMobileCalendar>>(`/profile/calendar?${queryString(range)}`, signal),
     profile: (signal?: AbortSignal) =>
         request<MobileProfile>("/profile", signal),
     profileActivity: (signal?: AbortSignal) =>
@@ -100,6 +103,8 @@ export const api = {
         request<Result<typeof Library.getMobileLibrary>>(`/library?${queryString(input)}`, signal),
     libraryDetail: (input: Parameters<typeof Library.getMobileLibraryDetail>[1], signal?: AbortSignal) =>
         request<Result<typeof Library.getMobileLibraryDetail>>(`/library/detail?${queryString(input)}`, signal),
+    recentAchievements: (signal?: AbortSignal) =>
+        request<Result<typeof Profile.getMobileRecentAchievements>>("/profile/achievements/recent", signal),
     achievements: (signal?: AbortSignal) =>
         request<Result<typeof Profile.getMobileAchievements>>("/profile/achievements", signal),
     lists: (signal?: AbortSignal) =>

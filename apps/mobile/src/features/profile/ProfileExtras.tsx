@@ -4,7 +4,6 @@ import type {api} from "../../lib/api-client";
 import {useIsFocused} from "expo-router";
 import {Pressable, View} from "react-native";
 import {useQuery} from "@tanstack/react-query";
-import {AchievementRow} from "./AchievementRow";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {formatActivity} from "./profile-formatting";
 import {mediaIcons, mediaColors} from "../../lib/media";
@@ -34,35 +33,6 @@ const ProfileExtrasContent = memo(function ProfileExtrasContent({ data, ratingSy
 
     return (
         <View style={{ gap: 28 }}>
-            <Section
-                title="Latest achievements"
-                action={
-                    <Pressable
-                        hitSlop={10}
-                        accessibilityRole="link"
-                        onPress={() => push("/profile/achievements")}
-                    >
-                        <AppText style={{ color: colors.accent, fontSize: 13 }}>
-                            View all
-                        </AppText>
-                    </Pressable>
-                }
-            >
-                {data.achievements.length ?
-                    data.achievements.map((item) => (
-                        <AchievementRow
-                            name={item.name}
-                            description={item.description}
-                            key={`${item.id}:${item.difficulty}`}
-                            detail={`${item.difficulty} · ${new Date(item.completedAt!).toLocaleDateString()}`}
-                        />
-                    ))
-                    :
-                    <AppText muted style={{ padding: 16 }}>
-                        Your next milestone starts with a little progress.
-                    </AppText>
-                }
-            </Section>
             <Section title="Follows feed">
                 {data.followsFeed.length ?
                     data.followsFeed.map((item) => {

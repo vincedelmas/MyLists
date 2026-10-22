@@ -4,20 +4,38 @@ import {FlatList, View} from "react-native";
 import {useQuery} from "@tanstack/react-query";
 import {AchievementRow} from "./AchievementRow";
 import {ProgressBar} from "../../components/ProgressBar";
-import {AppText, Page, QueryPanel, StateView} from "../../components/ui";
-import {achievementsOptions} from "../../lib/react-query/query-options/profile.options";
+import {AppText, QueryPanel, StateView, Section} from "../../components/ui";
+import {achievementsOptions, recentAchievementsOptions} from "../../lib/react-query/query-options/profile.options";
 
 
-export function AchievementsScreen() {
+export function AchievementsContent() {
     const focused = useIsFocused();
     const query = useQuery({ ...achievementsOptions, enabled: focused });
+    const recent = useQuery({ ...recentAchievementsOptions, enabled: focused });
 
     return (
-        <Page title="Achievements" back>
+        <>
             <QueryPanel query={query}>
                 {(items) => (
                     <FlatList
                         data={items}
+                        ListHeaderComponent={
+                            <View style={{gap: 20}}>
+                                <Section title="Latest achievements">
+                                    <QueryPanel query={recent}>
+                                        {(earned) => earned.length ? earned.map((item) => (
+                                            <AchievementRow
+                                                key={`${item.id}:${item.difficulty}`}
+                                                name={item.name}
+                                                description={item.description}
+                                                detail={`${item.difficulty} · ${new Date(item.completedAt!).toLocaleDateString()}`}
+                                            />
+                                        )) : <AppText muted style={{padding: 16}}>Your next milestone is ahead.</AppText>}
+                                    </QueryPanel>
+                                </Section>
+                                <AppText heading>All achievements</AppText>
+                            </View>
+                        }
                         windowSize={7}
                         initialNumToRender={6}
                         keyExtractor={(item) => String(item.id)}
@@ -79,6 +97,6 @@ export function AchievementsScreen() {
                     />
                 )}
             </QueryPanel>
-        </Page>
+        </>
     );
 }

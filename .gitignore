@@ -40,3 +40,4 @@ dist
 /logs
 /playwright-report/
 /test-results/
+.expo

@@ -182,11 +182,11 @@ OTA can be configured after the native development flow is validated.
 
 ## Navigation timing on your Android phone
 
-In development, navigation via `useTabPush` prints one `[nav-timing]` JSON report to the Metro terminal after a three-second capture window.
+With `EXPO_PUBLIC_NAV_TIMING=1`, navigation via `useTabPush` prints one `[nav-timing]` JSON report to the Metro terminal after a three-second capture window.
 No native rebuild or additional package is needed. To save logs for the next review, restart Metro from the repository root with:
 
 ```bash
-bun run dev:mobile 2>&1 | tee /tmp/mylists-mobile-navigation.log
+EXPO_PUBLIC_NAV_TIMING=1 bun run dev:mobile 2>&1 | tee /tmp/mylists-mobile-navigation.log
 ```
 
 Reload Expo Go, open Profile, tap Following, and wait four seconds. Go back, repeat the
@@ -201,8 +201,8 @@ cookies, response bodies, and credentials are not logged.
 
 These are development diagnostics: JS callbacks can be delayed, and a frame callback does not prove pixels were displayed. Compare the gap
 from `navigation-requested` to the first commit/transition/layout with request timings; do not treat total transition duration as input lag.
-A release build comparison is still needed before drawing conclusions about production performance. To disable logging and render profiling,
-start Metro with `EXPO_PUBLIC_NAV_TIMING=0 bun run dev:mobile` from the repository root and reload the app.
+A release build comparison is still needed before drawing conclusions about production performance. Logging and render profiling are disabled
+by default. Remove `EXPO_PUBLIC_NAV_TIMING=1` and restart Metro to stop capturing.
 
 ## Android navigation findings and Expo UI acceptance
 

@@ -1,6 +1,6 @@
 import { useIsFocused } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Animated, RefreshControl, View } from "react-native";
+import { Alert, Animated, RefreshControl, StyleSheet, View } from "react-native";
 import { AppText, Button, MenuRow, QueryPanel, Section } from "../../components/ui";
 import { TrackingEditor } from "./TrackingEditor";
 import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
@@ -36,11 +36,23 @@ export function MediaTrackingContent({
     const memberships = useQuery({ ...mediaCollectionsOptions(params), enabled: focused });
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const push = useTabPush();
+    const collections = memberships.data?.filter((item) => item.hasMedia) ?? [];
     return (
-        <Animated.ScrollView
+        <Animated.FlatList
             {...scrollProps}
+            data={collections}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={({ item }) => (
+                <MenuRow
+                    title={item.title}
+                    detail={`${item.itemsCount} titles · ${item.privacy}`}
+                    onPress={() =>
+                        push({ pathname: "/library/[kind]", params: { kind: "collection", id: String(item.id) } })
+                    }
+                />
+            )}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[{ padding: 16, gap: 24 }, contentContainerStyle]}
+            contentContainerStyle={[styles.content, contentContainerStyle]}
             refreshControl={
                 <RefreshControl
                     tintColor={colors.accent}
@@ -51,80 +63,78 @@ export function MediaTrackingContent({
                     }}
                 />
             }
-        >
-            {error && (
-                <AppText accessibilityRole="alert" style={{ color: colors.error }}>
-                    {error}
-                </AppText>
-            )}
-            {saved && (
-                <AppText accessibilityRole="alert" style={{ color: colors.accent }}>
-                    Changes saved.
-                </AppText>
-            )}
-            {data.tracking ? (
-                <TrackingEditor data={data} update={update} pending={pending} />
-            ) : data.active ? (
-                <Section title="Start tracking">
-                    <View style={{ padding: 16, gap: 12 }}>
-                        <AppText muted>Keep your progress, rating and notes here.</AppText>
-                        <Button label="Add to your list" pending={pending} onPress={add} />
-                    </View>
-                </Section>
-            ) : (
-                <AppText muted>Activate this media list in content settings before adding titles.</AppText>
-            )}
-            <Section title="Your collections">
-                <QueryPanel query={memberships}>
-                    {(items) =>
-                        items.some((item) => item.hasMedia) ? (
-                            items
-                                .filter((item) => item.hasMedia)
-                                .map((item) => (
-                                    <MenuRow
-                                        key={item.id}
-                                        title={item.title}
-                                        detail={`${item.itemsCount} titles · ${item.privacy}`}
-                                        onPress={() =>
-                                            push({
-                                                pathname: "/library/[kind]",
-                                                params: { kind: "collection", id: String(item.id) },
-                                            })
-                                        }
-                                    />
-                                ))
-                        ) : (
-                            <AppText muted style={{ padding: 16 }}>
-                                This title is not in any of your collections.
-                            </AppText>
-                        )
-                    }
-                </QueryPanel>
-            </Section>
-            {data.tracking && (
-                <View style={{ gap: 12, paddingTop: 8 }}>
-                    {data.tracking.addedAt && (
-                        <AppText muted style={{ fontSize: 12 }}>
-                            Added {new Date(data.tracking.addedAt).toLocaleDateString()}
+            ListHeaderComponent={
+                <View style={styles.header}>
+                    {error && (
+                        <AppText accessibilityRole="alert" style={styles.error}>
+                            {error}
                         </AppText>
                     )}
-                    <Button
-                        danger
-                        label="Remove from your list"
-                        pending={pending}
-                        onPress={() =>
-                            Alert.alert(
-                                "Remove from your list?",
-                                "Your rating, notes, progress and tracking history for this title will be removed.",
-                                [
-                                    { text: "Cancel", style: "cancel" },
-                                    { text: "Remove", style: "destructive", onPress: remove },
-                                ],
-                            )
+                    {saved && (
+                        <AppText accessibilityRole="alert" style={styles.success}>
+                            Changes saved.
+                        </AppText>
+                    )}
+                    {data.tracking ? (
+                        <TrackingEditor data={data} update={update} pending={pending} />
+                    ) : data.active ? (
+                        <Section title="Start tracking">
+                            <View style={styles.startTracking}>
+                                <AppText muted>Keep your progress, rating and notes here.</AppText>
+                                <Button label="Add to your list" pending={pending} onPress={add} />
+                            </View>
+                        </Section>
+                    ) : (
+                        <AppText muted>Activate this media list in content settings before adding titles.</AppText>
+                    )}
+                    <AppText heading>Your collections</AppText>
+                    <QueryPanel query={memberships}>
+                        {() =>
+                            !collections.length ? (
+                                <AppText muted>This title is not in any of your collections.</AppText>
+                            ) : null
                         }
-                    />
+                    </QueryPanel>
                 </View>
-            )}
-        </Animated.ScrollView>
+            }
+            ListFooterComponent={
+                <View>
+                    {data.tracking && (
+                        <View style={styles.footer}>
+                            {data.tracking.addedAt && (
+                                <AppText muted style={styles.caption}>
+                                    Added {new Date(data.tracking.addedAt).toLocaleDateString()}
+                                </AppText>
+                            )}
+                            <Button
+                                danger
+                                label="Remove from your list"
+                                pending={pending}
+                                onPress={() =>
+                                    Alert.alert(
+                                        "Remove from your list?",
+                                        "Your rating, notes, progress and tracking history for this title will be removed.",
+                                        [
+                                            { text: "Cancel", style: "cancel" },
+                                            { text: "Remove", style: "destructive", onPress: remove },
+                                        ],
+                                    )
+                                }
+                            />
+                        </View>
+                    )}
+                </View>
+            }
+        />
     );
 }
+
+const styles = StyleSheet.create({
+    content: { padding: 16, gap: 24 },
+    header: { gap: 24 },
+    error: { color: colors.error },
+    success: { color: colors.accent },
+    startTracking: { padding: 16, gap: 12 },
+    footer: { gap: 12, paddingTop: 8 },
+    caption: { fontSize: 12 },
+});

@@ -55,6 +55,17 @@ describe("development navigation timing", () => {
         expect(readReport().events).toContainEqual({phase: "navigation-tree-update", atMs: 0, renderMs: 220});
     });
 
+    it("does not profile or schedule captures unless explicitly enabled", async () => {
+        vi.stubEnv("EXPO_PUBLIC_NAV_TIMING", undefined);
+        vi.resetModules();
+        const disabled = await import("./navigation-timing");
+        expect(disabled.navigationTimingEnabled).toBe(false);
+        disabled.beginNavigationTiming("/profile/social", "navigation-requested");
+        expect(disabled.timeNavigationRequest("/social")).toBeUndefined();
+        expect(vi.getTimerCount()).toBe(0);
+        expect(output).not.toHaveBeenCalled();
+    });
+
     it("does not log or schedule anything in production", async () => {
         vi.stubGlobal("__DEV__", false);
         vi.resetModules();

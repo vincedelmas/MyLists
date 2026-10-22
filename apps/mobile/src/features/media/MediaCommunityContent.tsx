@@ -1,6 +1,6 @@
 import { useIsFocused } from "expo-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Animated, Pressable, RefreshControl, View } from "react-native";
+import { Animated, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import { AppText, Cover, StateView } from "../../components/ui";
 import { mediaCommunityOptions } from "../../lib/react-query/query-options/media.options";
 import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
@@ -28,29 +28,22 @@ function ActivityPerson({ item }: { item: Person }) {
             accessibilityRole="button"
             accessibilityLabel={`View ${item.name}'s profile`}
             onPress={() => push({ pathname: "/people/[userId]", params: { userId: String(item.id) } })}
-            style={{
-                flexDirection: "row",
-                gap: 12,
-                alignItems: "center",
-                padding: 16,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.border,
-            }}
+            style={styles.person}
         >
-            <Cover uri={item.image} label={item.name} style={{ width: 42, height: 42, borderRadius: 21 }} />
-            <View style={{ flex: 1, gap: 4 }}>
-                <AppText style={{ fontWeight: "600" }}>{item.name}</AppText>
-                <AppText muted style={{ fontSize: 12 }}>
+            <Cover uri={item.image} label={item.name} style={styles.avatar} />
+            <View style={styles.personInfo}>
+                <AppText style={styles.personName}>{item.name}</AppText>
+                <AppText muted style={styles.smallText}>
                     {item.status}
                     {item.favorite ? " · Favorite" : ""}
                 </AppText>
                 {progress && (
-                    <AppText muted style={{ fontSize: 12 }}>
+                    <AppText muted style={styles.smallText}>
                         {progress}
                     </AppText>
                 )}
                 {item.comment && (
-                    <AppText numberOfLines={3} style={{ fontSize: 12, lineHeight: 18 }}>
+                    <AppText numberOfLines={3} style={styles.comment}>
                         {item.comment}
                     </AppText>
                 )}
@@ -71,10 +64,15 @@ export function MediaCommunityContent({
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const first = query.data?.pages[0];
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
+    const sections = [
+        { key: "follows", title: "People you follow", data: first?.follows ?? [] },
+        { key: "community", title: "Community activity", data: items },
+    ];
     return (
-        <Animated.FlatList
+        <Animated.SectionList
             {...scrollProps}
-            data={items}
+            sections={sections}
+            stickySectionHeadersEnabled={false}
             contentContainerStyle={contentContainerStyle}
             keyExtractor={(item) => String(item.id)}
             initialNumToRender={12}
@@ -90,43 +88,37 @@ export function MediaCommunityContent({
             onEndReached={() => {
                 if (focused && query.hasNextPage && !query.isFetching) void query.fetchNextPage();
             }}
-            ListHeaderComponent={
-                <View style={{ gap: 16, paddingTop: 4 }}>
-                    <AppText heading style={{ fontSize: 18, paddingHorizontal: 16 }}>
-                        People you follow
+            renderSectionHeader={({ section }) => (
+                <View style={styles.sectionHeader}>
+                    <AppText heading style={styles.sectionTitle}>
+                        {section.title}
                     </AppText>
-                    {first &&
-                        (first.follows.length ? (
-                            first.follows.map((item) => <ActivityPerson key={item.id} item={item} />)
-                        ) : (
-                            <AppText muted style={{ paddingHorizontal: 16 }}>
-                                No followed users tracking this title yet.
-                            </AppText>
-                        ))}
-                    <AppText heading style={{ fontSize: 18, paddingHorizontal: 16 }}>
-                        Community activity
-                    </AppText>
-                    {first && (
-                        <AppText muted style={{ paddingHorizontal: 16, fontSize: 12 }}>
-                            {first.total} tracking · {first.stats.completedCount} completed · {first.stats.likedCount}{" "}
-                            favorites
-                        </AppText>
+                    {section.key === "follows" && first && !section.data.length && (
+                        <AppText muted>No followed users tracking this title yet.</AppText>
                     )}
-                    {first?.stats.averageRating != null && (
-                        <View style={{ paddingHorizontal: 16 }}>
-                            <Rating value={first.stats.averageRating} system={ratingSystem} />
-                        </View>
+                    {section.key === "community" && first && (
+                        <>
+                            <AppText muted style={styles.smallText}>
+                                {first.total} tracking · {first.stats.completedCount} completed ·{" "}
+                                {first.stats.likedCount} favorites
+                            </AppText>
+                            {first.stats.averageRating != null && (
+                                <Rating value={first.stats.averageRating} system={ratingSystem} />
+                            )}
+                        </>
                     )}
                 </View>
-            }
+            )}
             renderItem={({ item }) => <ActivityPerson item={item} />}
-            ListEmptyComponent={
-                <StateView
-                    loading={query.isPending}
-                    title={query.isError ? "Couldn’t load activity" : "No community activity yet"}
-                    message={query.error?.message}
-                    retry={query.isError ? () => void query.refetch() : undefined}
-                />
+            renderSectionFooter={({ section }) =>
+                section.key === "community" && !items.length ? (
+                    <StateView
+                        loading={query.isPending}
+                        title={query.isError ? "Couldn’t load activity" : "No community activity yet"}
+                        message={query.error?.message}
+                        retry={query.isError ? () => void query.refetch() : undefined}
+                    />
+                ) : null
             }
             ListFooterComponent={
                 query.isFetchingNextPage ? (
@@ -138,3 +130,22 @@ export function MediaCommunityContent({
         />
     );
 }
+
+const styles = StyleSheet.create({
+    person: {
+        flexDirection: "row",
+        gap: 12,
+        alignItems: "center",
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    avatar: { width: 42, height: 42, borderRadius: 21 },
+    personInfo: { flex: 1, gap: 4 },
+    personName: { fontWeight: "600" },
+    comment: { fontSize: 12, lineHeight: 18 },
+
+    sectionHeader: { gap: 16, padding: 16 },
+    sectionTitle: { fontSize: 18 },
+    smallText: { fontSize: 12 },
+});

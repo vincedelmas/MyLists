@@ -151,14 +151,16 @@ export function MediaDetailsContent({
                             .filter(({ items }) => items.length)
                             .map(({ label, items }) => (
                                 <Section key={label} title={label}>
-                                    <View style={{ padding: 16, flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                                        {items.map((item) => (
+                                    <FlatList
+                                        horizontal
+                                        data={items}
+                                        keyExtractor={(item) => item.name}
+                                        showsHorizontalScrollIndicator={false}
+                                        contentContainerStyle={{ padding: 16, gap: 10 }}
+                                        renderItem={({ item }) => (
                                             <View
-                                                key={item.name}
                                                 style={{
-                                                    flexBasis: "46%",
-                                                    flexGrow: 1,
-                                                    gap: 8,
+                                                    width: 156,
                                                     padding: 10,
                                                     borderRadius: 8,
                                                     backgroundColor: colors.secondary,
@@ -166,8 +168,8 @@ export function MediaDetailsContent({
                                             >
                                                 <AppText style={{ fontSize: 13 }}>{item.name}</AppText>
                                             </View>
-                                        ))}
-                                    </View>
+                                        )}
+                                    />
                                 </Section>
                             ))}
                         {details.similar.length > 0 && (

@@ -1,7 +1,7 @@
 // Development-only observations. These JS timestamps are not measurements of
 // physical touch latency or proof that a frame has reached the phone's display.
 export const navigationTimingEnabled =
-    typeof __DEV__ !== "undefined" && __DEV__ && process.env.EXPO_PUBLIC_NAV_TIMING !== "0";
+    typeof __DEV__ !== "undefined" && __DEV__ && process.env.EXPO_PUBLIC_NAV_TIMING === "1";
 const captureMs = 3_000;
 let sequence = 0;
 let current:

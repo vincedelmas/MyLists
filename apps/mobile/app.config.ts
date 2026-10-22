@@ -11,6 +11,7 @@ const config: ExpoConfig = {
     userInterfaceStyle: "dark",
     backgroundColor: "#0B0B0B",
     platforms: ["android", "ios"],
+    experiments: {typedRoutes: true},
     android: {
         package: "app.mylists.mobile",
     },

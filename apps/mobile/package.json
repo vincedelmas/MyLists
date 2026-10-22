@@ -8,7 +8,7 @@
         "start:client": "expo start --dev-client",
         "android": "expo run:android",
         "ios": "expo run:ios",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "expo customize tsconfig.json && tsc --noEmit"
     },
     "dependencies": {
         "@better-auth/expo": "1.7.7",

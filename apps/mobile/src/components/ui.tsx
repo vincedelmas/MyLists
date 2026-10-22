@@ -80,25 +80,25 @@ export function Page({
             style={commonStyles.screen}
         >
             {!hideHeader && (
-                <View style={[styles.header, brand && { minHeight: 48, paddingVertical: 4 }]}>
+                <View style={[styles.header, brand && styles.compactHeader]}>
                     {back && (
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel="Go back"
                             hitSlop={8}
-                            onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))}
+                            onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/(profile)"))}
                             style={styles.back}
                         >
                             <ArrowLeft size={22} color={colors.text} />
                         </Pressable>
                     )}
-                    {brand && <Image source={brandLogo} style={{ width: 28, height: 28 }} />}
-                    <View style={{ flex: 1 }}>
-                        <AppText heading style={brand ? { fontSize: 18 } : undefined}>
+                    {brand && <Image source={brandLogo} style={styles.logo} />}
+                    <View style={styles.fill}>
+                        <AppText heading style={brand ? styles.brandTitle : undefined}>
                             {title}
                         </AppText>
                         {subtitle && (
-                            <AppText muted style={{ fontSize: 12 }}>
+                            <AppText muted style={styles.caption}>
                                 {subtitle}
                             </AppText>
                         )}
@@ -109,12 +109,12 @@ export function Page({
             {!online && (
                 <AppText
                     accessibilityRole="alert"
-                    style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.secondary }}
+                    style={styles.offline}
                 >
                     You’re offline. Reconnect to save changes or load more.
                 </AppText>
             )}
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+            <KeyboardAvoidingView style={styles.fill} behavior={Platform.select({ios: "padding" as const})}>
                 {children}
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -149,10 +149,10 @@ export function Content({ children, refreshControl }: { children: ReactNode; ref
 
 export function Section({ title, children, action }: { title?: string; children: ReactNode; action?: ReactNode }) {
     return (
-        <View style={{ gap: 12 }}>
+        <View style={styles.section}>
             {title && (
                 <View style={styles.sectionHeading}>
-                    <AppText heading style={{ fontSize: 17 }}>
+                    <AppText heading style={styles.sectionTitle}>
                         {title}
                     </AppText>
                     {action}
@@ -187,7 +187,7 @@ export function Button({
         <NativeHost
             matchContents
             seedColor={danger ? colors.error : colors.accent}
-            style={{ alignSelf: "flex-start", maxWidth: "100%" }}
+            style={styles.buttonHost}
             accessibilityState={{ disabled: disabled || pending || !online, busy: pending }}
         >
             <NativeButton
@@ -227,7 +227,7 @@ export function Field({
     }, [text, value]);
 
     return (
-        <NativeHost style={{ width: "100%" }}>
+        <NativeHost style={styles.fullWidth}>
             <Column spacing={8}>
                 <NativeText>{label}</NativeText>
                 <NativeTextInput
@@ -254,7 +254,7 @@ export function Field({
 
 export function Select<T extends string>({ label, ...props }: SelectControlProps<T> & { label: string }) {
     return (
-        <NativeHost style={{ width: "100%" }}>
+        <NativeHost style={styles.fullWidth}>
             <Column spacing={8}>
                 <NativeText textStyle={{ fontSize: 12, color: colors.muted }}>{label}</NativeText>
                 <SelectControl {...props} />
@@ -281,10 +281,10 @@ export function MenuRow({
             style={({ pressed }) => [styles.menuRow, pressed && commonStyles.pressed]}
         >
             {icon}
-            <View style={{ flex: 1, gap: 3 }}>
-                <AppText style={{ fontWeight: "600" }}>{title}</AppText>
+            <View style={styles.menuText}>
+                <AppText style={styles.semibold}>{title}</AppText>
                 {detail && (
-                    <AppText muted style={{ fontSize: 12 }}>
+                    <AppText muted style={styles.caption}>
                         {detail}
                     </AppText>
                 )}
@@ -313,13 +313,13 @@ export function StateView({
             ) : (
                 <>
                     {title && (
-                        <AppText heading style={{ fontSize: 18, textAlign: "center" }}>
+                        <AppText heading style={styles.stateTitle}>
                             {title}
                         </AppText>
                     )}
 
                     {message && (
-                        <AppText muted accessibilityRole={retry ? "alert" : undefined} style={{ textAlign: "center" }}>
+                        <AppText muted accessibilityRole={retry ? "alert" : undefined} style={styles.centerText}>
                             {message}
                         </AppText>
                     )}
@@ -366,6 +366,25 @@ export const uiStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+    compactHeader: { minHeight: 48, paddingVertical: 4 },
+    logo: { width: 28, height: 28 },
+    fill: { flex: 1 },
+    brandTitle: { fontSize: 18 },
+    caption: { fontSize: 12 },
+    offline: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.secondary },
+    section: { gap: 12 },
+    sectionTitle: { fontSize: 17 },
+    buttonHost: { alignSelf: "flex-start", maxWidth: "100%" },
+    fullWidth: { width: "100%" },
+    menuText: { flex: 1, gap: 3 },
+    semibold: { fontWeight: "600" },
+    stateTitle: { fontSize: 18, textAlign: "center" },
+    centerText: { textAlign: "center" },
+    refreshError: { padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+    error: { color: colors.error },
+    retry: { paddingVertical: 8 },
+    accent: { color: colors.accent },
+
     text: { color: colors.text, fontSize: 14, lineHeight: 21 },
     muted: { color: colors.muted },
     heading: { fontSize: 22, lineHeight: 30, fontWeight: "700" },
@@ -421,16 +440,16 @@ export function QueryPanel<T>({
     return (
         <>
             {query.error && (
-                <View style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                    <AppText accessibilityRole="alert" style={{ color: colors.error }}>
+                <View style={styles.refreshError}>
+                    <AppText accessibilityRole="alert" style={styles.error}>
                         Couldn’t refresh. Showing previously loaded data.
                     </AppText>
                     <Pressable
                         accessibilityRole="button"
                         onPress={() => void query.refetch()}
-                        style={{ paddingVertical: 8 }}
+                        style={styles.retry}
                     >
-                        <AppText style={{ color: colors.accent }}>Try again</AppText>
+                        <AppText style={styles.accent}>Try again</AppText>
                     </Pressable>
                 </View>
             )}

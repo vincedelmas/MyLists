@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "expo-router";
 import { colors } from "../../src/theme";
@@ -15,15 +15,14 @@ export default function TabLayout() {
                 headerShown: false,
                 tabBarActiveTintColor: colors.accent,
                 tabBarInactiveTintColor: colors.muted,
-                sceneStyle: { backgroundColor: colors.background },
-                tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
-                tabBarStyle: {
-                    backgroundColor: colors.surface,
-                    borderTopColor: colors.border,
-                    ...(Platform.OS === "android"
-                        ? { height: 56 + insets.bottom + 10, paddingTop: 4, paddingBottom: insets.bottom + 10 }
-                        : {}),
-                },
+                sceneStyle: styles.scene,
+                tabBarLabelStyle: styles.label,
+                tabBarStyle: [
+                    styles.tabBar,
+                    Platform.select({
+                        android: { height: 56 + insets.bottom + 10, paddingTop: 4, paddingBottom: insets.bottom + 10 },
+                    }),
+                ],
             }}
         >
             <Tabs.Screen
@@ -61,3 +60,9 @@ export default function TabLayout() {
         </Tabs>
     );
 }
+
+const styles = StyleSheet.create({
+    scene: { backgroundColor: colors.background },
+    label: { fontSize: 11, fontWeight: "600" },
+    tabBar: { backgroundColor: colors.surface, borderTopColor: colors.border },
+});

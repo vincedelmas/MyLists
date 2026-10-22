@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {router, useIsFocused, useLocalSearchParams} from "expo-router";
-import {useNavigation} from "expo-router/react-navigation";
+import type {TabParamList} from "../../lib/navigation.types";
+import {useNavigation, type NavigationProp} from "expo-router/react-navigation";
 import {useQuery} from "@tanstack/react-query";
 import {BottomSheet, RNHostView, Row, Switch, Text as NativeText} from "@expo/ui";
 import {Check} from "lucide-react-native";
@@ -116,7 +117,7 @@ export function ListFiltersScreen() {
                     disabled={query.isPending || query.isError}
                     label={`Apply${count ? ` ${count}` : ""} filters`}
                     onPress={() => {
-                        const tabs = navigation.getParent()!.getState();
+                        const tabs = navigation.getParent<NavigationProp<TabParamList>>()!.getState();
                         const tab = tabs.routes[tabs.index].name;
 
                         router.dismissTo({
@@ -212,14 +213,14 @@ function FilterValues({ mediaType, userId, group, selected, onChange, close }: F
             </View>
 
             {group.searchable && selected.length > 0 && (
-                <ScrollView
+                <FlatList
                     horizontal
+                    data={selected}
+                    keyExtractor={(value) => value}
                     style={{ flexGrow: 0, maxHeight: 48 }}
                     contentContainerStyle={{ gap: 6, alignItems: "center" }}
-                >
-                    {selected.map((value) => (
+                    renderItem={({ item: value }) => (
                         <Pressable
-                            key={value}
                             accessibilityRole="button"
                             accessibilityLabel={`Remove ${value}`}
                             style={{ padding: 8, borderRadius: 8, backgroundColor: colors.secondary }}
@@ -229,8 +230,8 @@ function FilterValues({ mediaType, userId, group, selected, onChange, close }: F
                                 {value} ×
                             </AppText>
                         </Pressable>
-                    ))}
-                </ScrollView>
+                    )}
+                />
             )}
 
             <FlatList

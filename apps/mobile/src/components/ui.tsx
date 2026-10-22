@@ -1,6 +1,8 @@
 import {Image} from "expo-image";
 import {router} from "expo-router";
 import {NativeHost} from "./native-host";
+import {SelectControl} from "./select-control";
+import type {SelectControlProps} from "./select-control.types";
 import {assetUrl} from "../lib/api-client";
 import {useOnline} from "../hooks/use-online";
 import {colors, commonStyles} from "../theme";
@@ -9,7 +11,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {ArrowLeft, ChevronRight} from "lucide-react-native";
 import {Profiler, useEffect, useRef, type ReactNode, type Ref} from "react";
 import {navigationTimingEnabled, recordNavigationTiming, observeNavigationFrame} from "../lib/diagnostics/navigation-timing";
-import {Button as NativeButton, Column, Picker, Text as NativeText, TextInput as NativeTextInput, useNativeState, type TextInputProps, type TextInputRef} from "@expo/ui";
+import {Button as NativeButton, Column, Text as NativeText, TextInput as NativeTextInput, useNativeState, type TextInputProps, type TextInputRef} from "@expo/ui";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -211,26 +213,12 @@ export function Field({ label, inputRef, value, onChangeText, style, ...props }:
 }
 
 
-export function Select<T extends string>({ label, value, options, onChange, disabled }: {
-    value: T;
-    label: string;
-    disabled?: boolean;
-    onChange: (value: T) => void;
-    options: readonly { value: T; label: string }[];
-}) {
+export function Select<T extends string>({ label, ...props }: SelectControlProps<T> & { label: string }) {
     return (
         <NativeHost style={{ width: "100%" }}>
             <Column spacing={8}>
-                <NativeText>{label}</NativeText>
-                <Picker selectedValue={value} onValueChange={onChange} enabled={!disabled}>
-                    {options.map((option) =>
-                        <Picker.Item
-                            key={option.value}
-                            value={option.value}
-                            label={option.label}
-                        />
-                    )}
-                </Picker>
+                <NativeText textStyle={{fontSize: 12, color: colors.muted}}>{label}</NativeText>
+                <SelectControl {...props}/>
             </Column>
         </NativeHost>
     );

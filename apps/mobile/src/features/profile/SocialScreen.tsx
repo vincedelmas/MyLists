@@ -77,7 +77,7 @@ export function SocialScreen() {
                         loading={query.isPending}
                         message={query.error?.message}
                         retry={query.isError ? () => void query.refetch() : undefined}
-                        title={query.isError ? "Couldn’t load connections" : "No connections here yet"}
+                        title={query.isError ? "Couldn’t load connections" : "Nothing to display yet :)"}
                     />
                 }
                 ListFooterComponent={

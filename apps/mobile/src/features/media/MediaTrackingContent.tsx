@@ -26,7 +26,7 @@ export function MediaTrackingContent({
     pending: boolean;
     saved: boolean;
     error?: string;
-    update: (payload: UpdateInput["payload"]) => void;
+    update: (payload: UpdateInput["payload"], onSaved?: () => void) => void;
     add: () => void;
     remove: () => void;
     refetch: () => unknown;
@@ -76,7 +76,7 @@ export function MediaTrackingContent({
                         </AppText>
                     )}
                     {data.tracking ? (
-                        <TrackingEditor data={data} update={update} pending={pending} />
+                        <TrackingEditor data={data} update={update} pending={pending} error={error} />
                     ) : data.active ? (
                         <Section title="Start tracking">
                             <View style={styles.startTracking}>
@@ -130,11 +130,11 @@ export function MediaTrackingContent({
 }
 
 const styles = StyleSheet.create({
-    content: { padding: 16, gap: 24 },
-    header: { gap: 24 },
+    content: { padding: 16 },
+    header: { gap: 24, paddingBottom: 16 },
     error: { color: colors.error },
     success: { color: colors.accent },
     startTracking: { padding: 16, gap: 12 },
-    footer: { gap: 12, paddingTop: 8 },
+    footer: { gap: 12, paddingTop: 24 },
     caption: { fontSize: 12 },
 });

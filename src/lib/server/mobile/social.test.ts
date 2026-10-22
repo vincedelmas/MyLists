@@ -3,6 +3,7 @@ import { getMobileSocial, actOnMobileSocial, socialListSchema, socialActionSchem
 
 const mocks = vi.hoisted(() => ({
     user: vi.fn(),
+    totals: [] as { outgoing: number; status: string; total: number }[],
     follow: vi.fn(),
     status: vi.fn(),
     unfollow: vi.fn(),
@@ -26,12 +27,46 @@ vi.mock("@/lib/server/core/container", () => ({
         },
     }),
 }));
+vi.mock("@/lib/server/database/async-storage", () => ({
+    getDbClient: () => ({
+        select: () => {
+            const query = {
+                from: () => query,
+                innerJoin: () => query,
+                leftJoin: () => query,
+                where: () => query,
+                orderBy: () => query,
+                limit: () => query,
+                offset: async () => [],
+                groupBy: async () => mocks.totals,
+            };
+            return query;
+        },
+    }),
+}));
 beforeEach(() => {
     vi.resetAllMocks();
+    mocks.totals = [];
     mocks.user.mockResolvedValue({ privacy: "private" });
 });
 
 describe("mobile social authorization", () => {
+    it("counts incoming and outgoing relationships separately and hides request counts from visitors", async () => {
+        mocks.totals = [
+            { outgoing: 0, status: "accepted", total: 4 },
+            { outgoing: 1, status: "accepted", total: 7 },
+            { outgoing: 1, status: "requested", total: 2 },
+            { outgoing: 0, status: "requested", total: 1 },
+        ];
+        expect((await getMobileSocial(10, { kind: "followers", page: 1 })).counts).toEqual({
+            followers: 4,
+            following: 7,
+            requests: 1,
+            pending: 2,
+        });
+        const visitor = await getMobileSocial(10, { kind: "followers", page: 1 }, 30);
+        expect(JSON.parse(JSON.stringify(visitor.counts))).toEqual({ followers: 4, following: 7 });
+    });
     it.each(["requests", "pending"] as const)("keeps another user's %s private", async (kind) => {
         await expect(getMobileSocial(20, { kind, page: 1 }, 10)).rejects.toThrow("private");
     });

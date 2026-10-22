@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { useIsFocused } from "expo-router";
-import { Info, UsersRound, BookmarkCheck, Pencil, RefreshCw } from "lucide-react-native";
+import { Info, UserRoundCheck, UsersRound, BookmarkCheck, Pencil, RefreshCw } from "lucide-react-native";
 import { mediaLabels } from "../../lib/media";
 import { CollapsingTabs } from "../../components/collapsing-tabs";
 import { MediaHero } from "./MediaHero";
@@ -9,9 +9,9 @@ import { MediaDetailsContent } from "./MediaDetailsContent";
 import { MediaCommunityContent } from "./MediaCommunityContent";
 import { MediaTrackingContent } from "./MediaTrackingContent";
 import { MediaEditContent } from "./MediaEditContent";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
-import { mediaOptions } from "../../lib/react-query/query-options/media.options";
+import { mediaOptions, mediaCommunityOptions } from "../../lib/react-query/query-options/media.options";
 import type { MediaParams, UpdateInput } from "../../lib/api-client";
 import { useTrackingMutation, useMediaRefreshMutation } from "../../lib/react-query/query-mutations/media.mutations";
 import { AppText, Page, QueryPanel } from "../../components/ui";
@@ -25,8 +25,14 @@ export function MediaScreen() {
     const mutation = useTrackingMutation(media);
     const refresh = useMediaRefreshMutation(media);
     const query = useQuery({ ...mediaOptions(media), enabled: focused });
+    const community = useInfiniteQuery({ ...mediaCommunityOptions(media), enabled: focused });
+    const audience = community.data?.pages[0];
 
-    const update = (payload: UpdateInput["payload"], activityCorrection?: UpdateInput["activityCorrection"]) => {
+    const update = (
+        payload: UpdateInput["payload"],
+        activityCorrection?: UpdateInput["activityCorrection"],
+        onSaved?: () => void,
+    ) => {
         setSaved(false);
         mutation.mutate(
             { action: "update", input: { payload, activityCorrection } },
@@ -34,6 +40,7 @@ export function MediaScreen() {
                 onSuccess: (result) => {
                     if (result.kind === "saved") {
                         setSaved(true);
+                        onSaved?.();
                         return;
                     }
 
@@ -47,12 +54,13 @@ export function MediaScreen() {
                             { text: "Cancel", style: "cancel" },
                             {
                                 text: "Keep history",
-                                onPress: () => update(payload, { version: preview.version, keepHistory: true }),
+                                onPress: () =>
+                                    update(payload, { version: preview.version, keepHistory: true }, onSaved),
                             },
                             {
                                 style: "destructive",
                                 text: "Adjust history",
-                                onPress: () => update(payload, { version: preview.version }),
+                                onPress: () => update(payload, { version: preview.version }, onSaved),
                             },
                         ],
                     );
@@ -78,9 +86,16 @@ export function MediaScreen() {
                     <CollapsingTabs
                         key={`${media.mediaType}:${media.mediaId}`}
                         initialTab="details"
+                        scrollable
                         tabs={[
                             { value: "details", label: "Details", icon: Info },
-                            { value: "community", label: "Community", icon: UsersRound },
+                            {
+                                value: "follows",
+                                label: "Follows",
+                                icon: UserRoundCheck,
+                                count: audience?.follows.length,
+                            },
+                            { value: "community", label: "Community", icon: UsersRound, count: audience?.total },
                             { value: "tracking", label: "Tracking", icon: BookmarkCheck },
                             ...(data.canEdit ? [{ value: "edit", label: "Edit", icon: Pencil }] : []),
                         ]}
@@ -103,8 +118,13 @@ export function MediaScreen() {
                                         refreshing={query.isRefetching}
                                     />
                                 )}
-                                {tab === "community" && (
-                                    <MediaCommunityContent params={media} ratingSystem={data.ratingSystem} />
+                                {(tab === "community" || tab === "follows") && (
+                                    <MediaCommunityContent
+                                        key={tab}
+                                        mode={tab}
+                                        params={media}
+                                        ratingSystem={data.ratingSystem}
+                                    />
                                 )}
                                 {tab === "tracking" && (
                                     <MediaTrackingContent
@@ -113,7 +133,7 @@ export function MediaScreen() {
                                         pending={mutation.isPending}
                                         saved={saved}
                                         error={mutation.error?.message}
-                                        update={update}
+                                        update={(payload, onSaved) => update(payload, undefined, onSaved)}
                                         add={() => {
                                             setSaved(false);
                                             mutation.mutate({ action: "add" });

@@ -11,6 +11,8 @@ options/mutations. Both clients reuse backend services. Admin and imports remain
 - Lists & collections hub with tracking presets, continue, searchable dynamic lists/collections, and paginated detail screens.
 - Advanced statistics using the web domain services, loaded per media type with monthly activity, status breakdowns, and affinities.
 - All six tracking lists with server-side search, status/favorite filters, sorting, pagination, and pull-to-refresh.
+- Progress-first tracking with quick updates, native edit/rating sheets, and separate counted Follows/Community media tabs.
+- Native Moviedle from Community: daily poster, title suggestions, guessing/skipping, personal stats and leaderboard. Puzzle progress is shared with web.
 - Provider search (TMDB, IGDB, Google Books, manga), catalog resolution, and media details.
 - Add/remove media, status, score/feeling ratings, favorites, notes, page/chapter/hour progress, TV season/episode progress,
   season ratings/rewatches, game platform, and repeat counts. Progress reductions preserve the web's explicit monthly-history correction

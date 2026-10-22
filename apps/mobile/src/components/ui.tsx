@@ -114,7 +114,7 @@ export function Page({
                     You’re offline. Reconnect to save changes or load more.
                 </AppText>
             )}
-            <KeyboardAvoidingView style={styles.fill} behavior={Platform.select({ios: "padding" as const})}>
+            <KeyboardAvoidingView style={styles.fill} behavior={Platform.select({ios: "padding" as const, android: "height" as const})}>
                 {children}
             </KeyboardAvoidingView>
         </SafeAreaView>

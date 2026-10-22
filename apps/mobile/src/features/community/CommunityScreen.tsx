@@ -1,3 +1,4 @@
+import {useTabPush} from "../../hooks/use-tab-push";
 import {useState} from "react";
 import {colors} from "../../theme";
 import {backendUrl} from "../../lib/config";
@@ -69,6 +70,7 @@ const sections = [
 
 
 export function CommunityScreen() {
+    const push = useTabPush();
     const [opening, setOpening] = useState(false);
 
     const open = async (path: string) => {
@@ -89,7 +91,7 @@ export function CommunityScreen() {
         <Page title="Community" subtitle="Discover, connect and play">
             <Content>
                 <AppText muted style={{ fontSize: 12 }}>
-                    These sections currently open in your browser.
+                    Play Moviedle here. Other sections open in your browser.
                 </AppText>
                 {sections.map((section) => (
                     <Section key={section.title} title={section.title}>
@@ -97,9 +99,9 @@ export function CommunityScreen() {
                             <Pressable
                                 key={path}
                                 disabled={opening}
-                                accessibilityRole="link"
-                                onPress={() => void open(path)}
-                                accessibilityLabel={`${title}. Opens in browser`}
+                                accessibilityRole={path === "/moviedle" ? "button" : "link"}
+                                onPress={() => path === "/moviedle" ? push("/moviedle") : void open(path)}
+                                accessibilityLabel={path === "/moviedle" ? title : `${title}. Opens in browser`}
                                 style={({ pressed }) => ({
                                     gap: 14,
                                     padding: 16,
@@ -119,10 +121,7 @@ export function CommunityScreen() {
                                     </AppText>
                                 </View>
 
-                                <ExternalLink
-                                    size={17}
-                                    color={colors.muted}
-                                />
+                                {path !== "/moviedle" && <ExternalLink size={17} color={colors.muted} />}
                             </Pressable>
                         )}
                     </Section>

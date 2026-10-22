@@ -52,9 +52,9 @@ export function SocialScreen() {
                 <SectionTabs
                     value={kind}
                     tabs={
-                        params.userId
+                        (params.userId
                             ? kinds.filter((item) => item.value === "followers" || item.value === "following")
-                            : kinds
+                            : kinds).map((tab) => ({...tab, count: query.data?.pages[0]?.counts[tab.value]}))
                     }
                     onChange={setKind}
                 />
@@ -150,9 +150,9 @@ export function SocialScreen() {
                                 </View>
                             </Pressable>
                             {kind !== "requests" && !item.isOwn && (
-                                <View style={{ width: 108, alignItems: "center" }}>
+                                <View style={{ width: 140, alignItems: "center" }}>
                                     <Button
-                                        width={108}
+                                        width={140}
                                         secondary={Boolean(item.myFollowStatus)}
                                         disabled={mutation.isPending}
                                         pending={mutation.isPending && mutation.variables?.targetId === item.id}

@@ -1,16 +1,19 @@
-import { Pressable, View } from "react-native";
-import { AppText, Button, Select } from "../../components/ui";
+import { useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Slider } from "@expo/ui";
+import { AppText, Button } from "../../components/ui";
+import { NativeHost } from "../../components/native-host";
 import { Rating } from "../../components/rating";
 import { FeelingIcon } from "../../components/feeling-icon";
-import { feelingOptions, scoreOptions } from "../../lib/ratings";
-import { colors } from "../../theme";
+import { feelingOptions, ratingLabel } from "../../lib/ratings";
+import { colors, spacing } from "../../theme";
 
 export function RatingInput({
     value,
     system,
     pending,
     onChange,
-    label = "Your rating",
+    label = "",
 }: {
     value: number | null;
     system: "score" | "feeling";
@@ -18,65 +21,87 @@ export function RatingInput({
     label?: string;
     onChange: (value: number | null) => void;
 }) {
+    const [draft, setDraft] = useState(value ?? 5);
     return (
-        <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <AppText style={{ fontWeight: "600" }}>{label}</AppText>
-                {value === null ? (
-                    <AppText muted style={{ fontSize: 12 }}>
-                        Not rated
-                    </AppText>
-                ) : (
-                    <Rating value={value} system={system} />
-                )}
-            </View>
+        <View style={styles.content}>
+            {label && (
+                <View style={styles.heading}>
+                    <AppText>{label}</AppText>
+                    <Rating value={system === "score" ? draft : value} system={system} />
+                </View>
+            )}
             {system === "score" ? (
-                <Select
-                    label="Score"
-                    value={value === null ? "" : String(value)}
-                    disabled={pending}
-                    options={[
-                        { value: "", label: "Not rated" },
-                        ...scoreOptions.map((item) => ({ ...item, label: Number(item.value).toFixed(1) })),
-                    ]}
-                    onChange={(next) => onChange(next === "" ? null : Number(next))}
-                />
+                <>
+                    <AppText style={styles.score}>
+                        {draft.toFixed(1)}
+                        <AppText muted> / 10</AppText>
+                    </AppText>
+                    <NativeHost>
+                        <Slider
+                            value={draft}
+                            min={0}
+                            max={10}
+                            step={0.5}
+                            disabled={pending}
+                            onValueChange={(next) => setDraft(Math.round(next * 10) / 10)}
+                        />
+                    </NativeHost>
+                    <View style={styles.heading}>
+                        <AppText muted>0 · Not for me</AppText>
+                        <AppText muted>10 · A favorite</AppText>
+                    </View>
+                    <Button label="Save rating" pending={pending} onPress={() => onChange(draft)} />
+                </>
             ) : (
                 <>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    <View style={styles.feelings}>
                         {feelingOptions.map((item) => (
                             <Pressable
                                 key={item.value}
                                 accessibilityRole="radio"
                                 accessibilityLabel={item.label}
-                                accessibilityState={{ checked: value === Number(item.value) }}
+                                accessibilityState={{
+                                    checked: value !== null && ratingLabel(value, system) === item.label,
+                                    disabled: pending,
+                                }}
                                 disabled={pending}
                                 onPress={() => onChange(Number(item.value))}
-                                style={({ pressed }) => ({
-                                    flexBasis: "30%",
-                                    flexGrow: 1,
-                                    minHeight: 52,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    gap: 4,
-                                    padding: 8,
-                                    borderRadius: 10,
-                                    borderWidth: 1,
-                                    borderColor: value === Number(item.value) ? colors.accent : colors.border,
-                                    backgroundColor: value === Number(item.value) ? colors.secondary : colors.surface,
-                                    opacity: pending || pressed ? 0.6 : 1,
-                                })}
+                                style={({ pressed }) => [
+                                    styles.feeling,
+                                    value !== null && ratingLabel(value, system) === item.label && styles.selected,
+                                    pressed && styles.pressed,
+                                ]}
                             >
-                                <FeelingIcon value={Number(item.value)} size={23} />
-                                <AppText style={{ fontSize: 10, lineHeight: 14 }}>{item.label}</AppText>
+                                <FeelingIcon value={Number(item.value)} size={30} />
                             </Pressable>
                         ))}
                     </View>
-                    {value != null && (
-                        <Button secondary label="Clear rating" disabled={pending} onPress={() => onChange(null)} />
-                    )}
+                    <AppText muted style={styles.feelingLabel}>
+                        {value === null ? "How did it make you feel?" : ratingLabel(value, system)}
+                    </AppText>
                 </>
+            )}
+            {value !== null && (
+                <Button secondary label="Remove rating" disabled={pending} onPress={() => onChange(null)} />
             )}
         </View>
     );
 }
+const styles = StyleSheet.create({
+    content: { gap: spacing.lg },
+    heading: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    score: { fontSize: 40, lineHeight: 48, fontWeight: "700", textAlign: "center", fontVariant: ["tabular-nums"] },
+    feelings: { flexDirection: "row", gap: spacing.xs },
+    feeling: {
+        flex: 1,
+        minHeight: 52,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "transparent",
+    },
+    selected: { backgroundColor: colors.secondary, borderColor: colors.accent },
+    pressed: { opacity: 0.6 },
+    feelingLabel: { textAlign: "center" },
+});

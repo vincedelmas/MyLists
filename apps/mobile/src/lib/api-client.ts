@@ -1,3 +1,4 @@
+import type * as Moviedle from "../../../../src/lib/server/mobile/moviedle";
 import { backendUrl } from "./config";
 import { authClient } from "./auth-client";
 import type * as ListFilters from "../../../../src/lib/server/mobile/list-filters";
@@ -94,6 +95,10 @@ const subjectPath = (path: string, userId?: number) =>
     userId === undefined ? path : `${path}?${queryString({ userId })}`;
 
 export const api = {
+    moviedle: (signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedle>>("/moviedle", signal),
+    moviedleSuggestions: (query: string, signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedleSuggestions>>(`/moviedle/suggestions?${queryString({query})}`, signal),
+    moviedleLeaderboard: (signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedleLeaderboard>>("/moviedle/leaderboard", signal),
+    moviedleGuess: (input: Parameters<typeof Moviedle.guessMobileMoviedle>[1]) => request<Result<typeof Moviedle.guessMobileMoviedle>>("/moviedle", undefined, "POST", input),
     notificationCounts: (signal?: AbortSignal) =>
         request<Result<typeof Notifications.getMobileNotificationCounts>>("/notifications/counts", signal),
     notifications: (type: Parameters<typeof Notifications.getMobileNotifications>[1], signal?: AbortSignal) =>

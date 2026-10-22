@@ -55,8 +55,10 @@ function ActivityPerson({ item }: { item: Person }) {
 export function MediaCommunityContent({
     params,
     ratingSystem,
+    mode,
 }: {
     params: MediaParams;
+    mode: "follows" | "community";
     ratingSystem: "score" | "feeling";
 }) {
     const focused = useIsFocused();
@@ -64,10 +66,10 @@ export function MediaCommunityContent({
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const first = query.data?.pages[0];
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
-    const sections = [
-        { key: "follows", title: "People you follow", data: first?.follows ?? [] },
-        { key: "community", title: "Community activity", data: items },
-    ];
+    const sections =
+        mode === "follows"
+            ? [{ key: "follows", title: "People you follow", data: first?.follows ?? [] }]
+            : [{ key: "community", title: "Community activity", data: items }];
     return (
         <Animated.SectionList
             {...scrollProps}
@@ -86,7 +88,8 @@ export function MediaCommunityContent({
             }
             onEndReachedThreshold={0.5}
             onEndReached={() => {
-                if (focused && query.hasNextPage && !query.isFetching) void query.fetchNextPage();
+                if (mode === "community" && focused && query.hasNextPage && !query.isFetching)
+                    void query.fetchNextPage();
             }}
             renderSectionHeader={({ section }) => (
                 <View style={styles.sectionHeader}>
@@ -111,7 +114,14 @@ export function MediaCommunityContent({
             )}
             renderItem={({ item }) => <ActivityPerson item={item} />}
             renderSectionFooter={({ section }) =>
-                section.key === "community" && !items.length ? (
+                !first ? (
+                    <StateView
+                        loading={query.isPending}
+                        title="Couldn’t load activity"
+                        message={query.error?.message}
+                        retry={() => void query.refetch()}
+                    />
+                ) : section.key === "community" && !items.length ? (
                     <StateView
                         loading={query.isPending}
                         title={query.isError ? "Couldn’t load activity" : "No community activity yet"}
@@ -121,9 +131,9 @@ export function MediaCommunityContent({
                 ) : null
             }
             ListFooterComponent={
-                query.isFetchingNextPage ? (
+                mode === "community" && query.isFetchingNextPage ? (
                     <StateView loading />
-                ) : query.isError && items.length ? (
+                ) : mode === "community" && query.isError && items.length ? (
                     <StateView title="Couldn’t load more activity" retry={() => void query.fetchNextPage()} />
                 ) : undefined
             }

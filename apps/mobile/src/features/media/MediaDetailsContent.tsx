@@ -73,10 +73,9 @@ export function MediaDetailsContent({
                     alignItems: "center",
                     justifyContent: "space-between",
                     gap: 12,
-                    paddingVertical: 12,
-                    borderTopWidth: 1,
-                    borderBottomWidth: 1,
-                    borderColor: colors.border,
+                    padding: 16,
+                    borderRadius: 12,
+                    backgroundColor: colors.surface,
                 }}
             >
                 <View style={{ gap: 4 }}>

@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, eq, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { notFound } from "@tanstack/react-router";
 import { getContainer } from "@/lib/server/core/container";
@@ -52,7 +52,35 @@ export const getMobileSocial = async (
         .limit(31)
         .offset((page - 1) * 30);
 
+    const isOutgoing = sql<number>`CASE WHEN ${followers.followerId} = ${userId} THEN 1 ELSE 0 END`;
+    const totals = await getDbClient()
+        .select({
+            outgoing: isOutgoing,
+            status: followers.status,
+            total: count(),
+        })
+        .from(followers)
+        .where(or(eq(followers.followerId, userId), eq(followers.followedId, userId)))
+        .groupBy(isOutgoing, followers.status);
+    const counts = { followers: 0, following: 0, requests: 0, pending: 0 };
+    for (const row of totals) {
+        const outgoing = Boolean(row.outgoing);
+        const key =
+            row.status === SocialState.ACCEPTED
+                ? outgoing
+                    ? "following"
+                    : "followers"
+                : outgoing
+                  ? "pending"
+                  : "requests";
+        counts[key] += row.total;
+    }
+
     return {
+        counts:
+            viewerId === userId
+                ? counts
+                : { followers: counts.followers, following: counts.following, requests: undefined, pending: undefined },
         page,
         hasMore: items.length > 30,
         items: items.slice(0, 30).map((item) => ({

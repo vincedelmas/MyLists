@@ -1,19 +1,23 @@
 import * as z from "zod";
 import {getContainer} from "@/lib/server/core/container";
-import {generalSettingsSchema, mediaListSettingsSchema} from "@/lib/schemas/user-settings.schema";
-import {withTransaction} from "@/lib/server/database/async-storage";
 import {getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
+import {withTransaction} from "@/lib/server/database/async-storage";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {generalSettingsSchema, mediaListSettingsSchema} from "@/lib/schemas/user-settings.schema";
+
 
 export const settingsInputSchema = z.discriminatedUnion("section", [
-    generalSettingsSchema.pick({username: true, privacy: true}).extend({section: z.literal("general")}),
-    mediaListSettingsSchema.extend({section: z.literal("content")}),
+    generalSettingsSchema.pick({ username: true, privacy: true }).extend({ section: z.literal("general") }),
+    mediaListSettingsSchema.extend({ section: z.literal("content") }),
 ]);
 
+
 export const getMobileSettings = async (userId: number) => {
-    const {services} = await getContainer();
+    const { services } = await getContainer();
+
     const user = await services.account.getUserById(userId);
     if (!user) return null;
+
     return {
         username: user.name,
         privacy: user.privacy,
@@ -33,14 +37,21 @@ export const getMobileSettings = async (userId: number) => {
     };
 };
 
+
 export const saveMobileSettings = async (userId: number, data: z.infer<typeof settingsInputSchema>) => {
     const container = await getContainer();
+
     if (data.section === "general") {
         const user = await container.services.account.getUserById(userId);
         if (!user) return null;
-        if (data.username !== user.name.trim()) container.services.account.findUserByName(data.username);
-        container.services.account.updateUserSettings(userId, {name: data.username, privacy: data.privacy});
-    } else {
+
+        if (data.username !== user.name.trim()) {
+            container.services.account.findUserByName(data.username);
+        }
+
+        container.services.account.updateUserSettings(userId, { name: data.username, privacy: data.privacy });
+    }
+    else {
         withTransaction(() => {
             container.services.account.updateUserSettings(userId, {
                 ratingSystem: data.ratingSystem,
@@ -48,13 +59,16 @@ export const saveMobileSettings = async (userId: number, data: z.infer<typeof se
                 searchSelector: data.searchSelector,
                 autoMoveCompletedTvToOnHold: data.autoMoveCompletedTvToOnHold,
             });
+
             container.services.stats.updateUserMediaListSettings(
                 userId,
-                {anime: data.anime, books: data.books, manga: data.manga, games: data.games},
+                { anime: data.anime, books: data.books, manga: data.manga, games: data.games },
                 data.releaseNotificationsEnabled,
             );
         });
+
         await container.cacheManager.del(getUserStatsCacheKey(userId, "overview"));
     }
-    return {saved: true};
+
+    return { saved: true };
 };

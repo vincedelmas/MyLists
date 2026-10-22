@@ -213,7 +213,13 @@ observations, not precise native animation or display measurements. The cause of
 `navigation-tree-*` profiler events measure React work outside the destination's Page subtree for the next comparison.
 The `screen-render:<route>:<phase>` events include outgoing screens as well as the destination, so their render durations can be compared
 within the same commit. These durations overlap the navigation-tree measurement and must not be added to it. Global route subscriptions in
-`useTabPush` and focus subscriptions on Profile are candidates for outgoing work; their share of the delay has not yet been measured.
+`useTabPush` and focus subscriptions on Profile were candidates for outgoing work.
+
+The next four traces confirmed 90–101 ms spent rerendering the outgoing Profile during the initial navigation commit, with 149–186 ms
+for the navigation tree and 200–235 ms from dispatch to destination commit. This identifies a contributor, rather than accounting for all
+latency. `useTabPush` now reads the tab navigator on press without a global route subscription, and Profile/Extras keep their expensive
+presentation behind memo boundaries while focus still controls their queries. Repeat the same phone tests and compare the outgoing
+`screen-render:/index:update` duration and dispatch-to-commit gap. Improvement on the device has not yet been verified.
 
 After installing dependencies, restart Metro and reload Expo Go. Expo UI is included in SDK 58 Expo Go; a custom development client built
 before this dependency was added needs a new native build. Check first/repeated navigation timings, Android picker labels and dropdowns,

@@ -1,15 +1,20 @@
 import * as z from "zod";
 import {toActor} from "@/lib/server/authorization";
+import {getContainer} from "@/lib/server/core/container";
+import {mobileImagePath} from "@/lib/server/mobile/images";
 import {calculateMediaLevel} from "@/lib/utils/media/level";
+import {dateFromUTCInput} from "@/lib/utils/formatting/date";
 import {mediaTypeFieldSchema} from "@/lib/schemas/common.schema";
 import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
 import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
-import {mobileImagePath} from "./images";
-import {getContainer} from "@/lib/server/core/container";
-import {dateFromUTCInput} from "@/lib/utils/formatting/date";
+
+
+export const statsTabSchema = z.union([z.literal("overview"), mediaTypeFieldSchema]).default("overview");
+
 
 export const getMobileProfile = async (userId: number) => {
-    const {services} = await getContainer();
+    const { services } = await getContainer();
+
     const user = await services.account.getUserById(userId);
     if (!user) return null;
 
@@ -22,12 +27,12 @@ export const getMobileProfile = async (userId: number) => {
 
     return {
         social,
-        lists: lists.map(({mediaType, entriesFavorites, timeSpent, totalEntries}) => ({
+        lists: lists.map(({ mediaType, entriesFavorites, timeSpent, totalEntries }) => ({
             mediaType,
             timeSpent,
-            level: calculateMediaLevel(timeSpent * 60),
             totalEntries,
             entriesFavorites,
+            level: calculateMediaLevel(timeSpent * 60),
         })),
         user: {
             id: user.id,
@@ -48,7 +53,7 @@ export const getMobileProfile = async (userId: number) => {
         highlights: {
             mode: highlights.overview.mode,
             title: highlights.overview.title,
-            items: highlights.overview.items.map(({mediaId, mediaType, mediaName, mediaCover}) => ({
+            items: highlights.overview.items.map(({ mediaId, mediaType, mediaName, mediaCover }) => ({
                 mediaId,
                 mediaType,
                 mediaName,
@@ -58,8 +63,9 @@ export const getMobileProfile = async (userId: number) => {
     };
 };
 
+
 export const getMobileProfileActivity = async (userId: number) => {
-    const {services} = await getContainer();
+    const { services } = await getContainer();
     const updates = await services.updateHistory.getUserUpdates(userId);
 
     return updates.map((update) => ({
@@ -68,56 +74,71 @@ export const getMobileProfileActivity = async (userId: number) => {
     }));
 };
 
-export const statsTabSchema = z.union([z.literal("overview"), mediaTypeFieldSchema]).default("overview");
 
 export const getMobileStats = async (userId: number, tab: z.infer<typeof statsTabSchema> = "overview") => {
-    const {services, cacheManager} = await getContainer();
+    const { services, cacheManager } = await getContainer();
     const user = (await services.account.getUserById(userId))!;
+
     const activatedMediaTypes = user.userMediaSettings
         .filter((setting) => setting.active)
         .map((setting) => setting.mediaType);
-    if (tab !== "overview" && !activatedMediaTypes.includes(tab)) throw new InactiveMediaTypeError(tab);
-    const context = {activatedMediaTypes, ratingSystem: user.ratingSystem};
+
+    if (tab !== "overview" && !activatedMediaTypes.includes(tab)) {
+        throw new InactiveMediaTypeError(tab);
+    }
+
+    const context = { activatedMediaTypes, ratingSystem: user.ratingSystem };
+
     if (tab === "overview") {
         const stats = await cacheManager.wrap(
             getUserStatsCacheKey(userId, tab),
             () => services.stats.userAdvancedSummaryStats(userId),
-            {ttl: ONE_HOUR_CACHE_TTL_MS},
+            { ttl: ONE_HOUR_CACHE_TTL_MS },
         );
-        return {...stats, ...context, kind: "overview" as const};
+
+        return { ...stats, ...context, kind: "overview" as const };
     }
+
     const stats = await cacheManager.wrap(
         getUserStatsCacheKey(userId, tab),
         () => services.stats.userAdvancedMediaStats(userId, tab),
-        {ttl: ONE_HOUR_CACHE_TTL_MS},
+        { ttl: ONE_HOUR_CACHE_TTL_MS },
     );
-    return {...stats, ...context, kind: "media" as const, mediaType: tab};
+
+    return { ...stats, ...context, kind: "media" as const, mediaType: tab };
 };
 
+
 export const getMobileProfileExtras = async (userId: number) => {
-    const {services} = await getContainer();
+    const { services } = await getContainer();
     const [achievements, followsFeed] = await Promise.all([
         services.achievements.getAchievementsDetails(userId, 3),
-        services.updateHistory.getFollowsUpdates(userId, toActor({id: userId}), 10),
+        services.updateHistory.getFollowsUpdates(userId, toActor({ id: userId }), 10),
     ]);
+
     return {
+        followsFeed: followsFeed.map((item) => ({
+            ...item,
+            timestamp: dateFromUTCInput(item.timestamp).toISOString(),
+        })),
         achievements: achievements.map((item) => ({
             ...item,
             completedAt: item.completedAt ? dateFromUTCInput(item.completedAt).toISOString() : null,
         })),
-        followsFeed: followsFeed.map((item) => ({...item, timestamp: dateFromUTCInput(item.timestamp).toISOString()})),
     };
 };
 
+
 export const getMobileAchievements = async (userId: number) => {
-    const {services} = await getContainer();
-    const [items, user] = await Promise.all([
-        services.achievements.getUserAchievements(userId),
+    const { services } = await getContainer();
+
+    const [user, items] = await Promise.all([
         services.account.getUserById(userId),
+        services.achievements.getUserAchievements(userId),
     ]);
-    const active = new Set(
-        user!.userMediaSettings.filter((setting) => setting.active).map((setting) => setting.mediaType),
-    );
+
+    const active = new Set(user!.userMediaSettings.filter((s) => s.active).map((s) => s.mediaType));
+
     return items
         .filter((item) => active.has(item.mediaType))
         .map((item) => ({
@@ -129,17 +150,23 @@ export const getMobileAchievements = async (userId: number) => {
         }));
 };
 
+
 export const getMobileHistory = async (userId: number, page: number) => {
-    const {services} = await getContainer();
-    const [result, user] = await Promise.all([
-        services.updateHistory.getUserUpdatesPaginated({page, perPage: 30}, userId),
+    const { services } = await getContainer();
+
+    const [user, result] = await Promise.all([
         services.account.getUserById(userId),
+        services.updateHistory.getUserUpdatesPaginated({ page, perPage: 30 }, userId),
     ]);
+
     return {
         ...result,
-        ratingSystem: user!.ratingSystem,
         page,
+        ratingSystem: user!.ratingSystem,
         pages: Math.ceil(result.total / 30),
-        items: result.items.map((item) => ({...item, timestamp: dateFromUTCInput(item.timestamp).toISOString()})),
+        items: result.items.map((item) => ({
+            ...item,
+            timestamp: dateFromUTCInput(item.timestamp).toISOString(),
+        })),
     };
 };

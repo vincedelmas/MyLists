@@ -19,9 +19,10 @@ export const statsOptions = (tab: Parameters<typeof api.stats>[0]) => queryOptio
 });
 
 
-export const profileExtrasOptions = queryOptions({
+export const profileFollowsFeedOptions = queryOptions({
     queryKey: ["profile", "extras"],
     queryFn: ({ signal }) => api.profileExtras(signal),
+    select: (data) => data.followsFeed,
 });
 
 
@@ -40,4 +41,10 @@ export const recentAchievementsOptions = queryOptions({
 export const calendarOptions = (range: Parameters<typeof api.calendar>[0]) => queryOptions({
     queryKey: ["profile", "calendar", range],
     queryFn: ({ signal }) => api.calendar(range, signal),
+});
+
+
+export const profileContinueOptions = queryOptions({
+    queryKey: ["profile", "continue"],
+    queryFn: ({ signal }) => api.libraryDetail({kind: "continue", page: 1, search: ""}, signal),
 });

@@ -233,8 +233,8 @@ and multiline notes. Validate these on iOS separately before release. Production
 
 The persistent bottom navigation contains Profile, Lists, Search, and Community. Settings opens from the Profile cog and remains in that
 stack. Profile has its identity/follow header above scrollable section tabs: Profile, Achievements, My stats, My activity, and Release
-calendar. Only the selected section mounts its data readers; switching sections reuses the React Query cache. The overview uses a media
-list grid, recent updates, the follows feed, and highlighted media. Achievements loads its latest three completions separately from the
+calendar. Only the selected section mounts its data readers; switching sections reuses the React Query cache. The overview uses a compact level/percentage media-list grid, a Continue preview, switchable Recent feed/Follows feed tabs with shared
+compact rows, and highlighted media. Achievements loads its latest three completions separately from the
 catalog. The calendar is a month-by-month agenda of releases from active supported lists, with media filtering.
 
 Connections uses top tabs for Followers, Following, Follow requests, and Sent requests. Community is currently a native navigation hub:

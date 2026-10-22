@@ -98,7 +98,11 @@ export function Page({
     return navigationTimingEnabled ? (
         <Profiler
             id={route}
-            onRender={(_id, phase, actualDuration) => recordNavigationTiming(`react-${phase}`, route, actualDuration)}
+            onRender={(_id, phase, actualDuration) => {
+                recordNavigationTiming(`react-${phase}`, route, actualDuration);
+                // Include outgoing screens: their route differs from the active trace.
+                recordNavigationTiming(`screen-render:${route}:${phase}`, undefined, actualDuration);
+            }}
         >
             {screen}
         </Profiler>

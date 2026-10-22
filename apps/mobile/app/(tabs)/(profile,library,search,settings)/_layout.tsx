@@ -1,6 +1,6 @@
-import {recordNavigationTiming} from "../../../src/lib/diagnostics/navigation-timing";
 import {Stack} from "expo-router";
 import {colors} from "../../../src/theme";
+import {recordNavigationTiming} from "../../../src/lib/diagnostics/navigation-timing";
 
 
 export const unstable_settings = {
@@ -15,7 +15,7 @@ export const unstable_settings = {
 export default function TabStack() {
     return (
         <Stack
-            screenListeners={({route}) => ({
+            screenListeners={({ route }) => ({
                 focus: () => recordNavigationTiming("screen-focused", `/${route.name}`),
                 transitionStart: (event) => {
                     if (!event.data.closing) recordNavigationTiming("transition-start", `/${route.name}`);

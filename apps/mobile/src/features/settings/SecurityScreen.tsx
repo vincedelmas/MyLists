@@ -1,82 +1,93 @@
 import {useState} from "react";
-import {AppText, Button, Content, Field, Page, Section, uiStyles} from "../../components/ui";
 import {View} from "react-native";
-import {usePasswordMutation} from "../../lib/react-query/query-mutations/settings.mutations";
 import {colors} from "../../theme";
+import {usePasswordMutation} from "../../lib/react-query/query-mutations/settings.mutations";
+import {AppText, Button, Content, Field, Page, Section, uiStyles} from "../../components/ui";
+
 
 export function SecurityScreen() {
-    const [currentPassword, setCurrentPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
+    const mutation = usePasswordMutation();
     const [confirm, setConfirm] = useState("");
     const [validation, setValidation] = useState("");
-    const mutation = usePasswordMutation();
+    const [newPassword, setNewPassword] = useState("");
+    const [currentPassword, setCurrentPassword] = useState("");
+
     const submit = () => {
         setValidation("");
+
         if (!currentPassword || newPassword.length < 8 || newPassword.length > 50) {
             setValidation("Enter your current password and a new password of 8–50 characters.");
             return;
         }
+
         if (newPassword !== confirm) {
             setValidation("The new passwords do not match.");
             return;
         }
-        mutation.mutate(
-            {currentPassword, newPassword},
-            {
-                onSuccess: () => {
-                    setCurrentPassword("");
-                    setNewPassword("");
-                    setConfirm("");
-                },
+
+        mutation.mutate({ currentPassword, newPassword }, {
+            onSuccess: () => {
+                setConfirm("");
+                setNewPassword("");
+                setCurrentPassword("");
             },
-        );
+        });
     };
+
     return (
         <Page title="Security" back>
             <Content>
                 <Section title="Change password">
                     <View style={uiStyles.padded}>
                         <Field
+                            autoCapitalize="none"
+                            secureTextEntry={true}
+                            value={currentPassword}
                             label="Current password"
                             editable={!mutation.isPending}
-                            value={currentPassword}
-                            onChangeText={setCurrentPassword}
-                            secureTextEntry
                             autoComplete="current-password"
-                            autoCapitalize="none"
+                            onChangeText={setCurrentPassword}
                         />
                         <Field
-                            label="New password"
-                            editable={!mutation.isPending}
                             value={newPassword}
-                            onChangeText={setNewPassword}
-                            secureTextEntry
-                            autoComplete="new-password"
+                            label="New password"
                             autoCapitalize="none"
+                            secureTextEntry={true}
+                            autoComplete="new-password"
+                            onChangeText={setNewPassword}
+                            editable={!mutation.isPending}
                         />
                         <Field
+                            value={confirm}
+                            autoCapitalize="none"
+                            secureTextEntry={true}
+                            onChangeText={setConfirm}
+                            autoComplete="new-password"
                             label="Confirm new password"
                             editable={!mutation.isPending}
-                            value={confirm}
-                            onChangeText={setConfirm}
-                            secureTextEntry
-                            autoComplete="new-password"
-                            autoCapitalize="none"
                         />
-                        <AppText muted>Changing your password signs out your other sessions.</AppText>
+                        <AppText muted>
+                            Changing your password signs out your other sessions.
+                        </AppText>
                     </View>
                 </Section>
-                {(validation || mutation.error) && (
-                    <AppText accessibilityRole="alert" style={{color: colors.error}}>
+                {(validation || mutation.error) &&
+                    <AppText accessibilityRole="alert" style={{ color: colors.error }}>
                         {validation || mutation.error?.message}
                     </AppText>
-                )}
-                {mutation.isSuccess && (
-                    <AppText accessibilityRole="alert" style={{color: colors.accent}}>
+                }
+
+                {mutation.isSuccess &&
+                    <AppText accessibilityRole="alert" style={{ color: colors.accent }}>
                         Password changed.
                     </AppText>
-                )}
-                <Button label="Change password" pending={mutation.isPending} onPress={submit} />
+                }
+
+                <Button
+                    onPress={submit}
+                    label="Change password"
+                    pending={mutation.isPending}
+                />
             </Content>
         </Page>
     );

@@ -211,6 +211,9 @@ Two trials made no API request and still took 244/308 ms. Requests in the other 
 waiting on the social API as the cause of the initial pause. Transition callback intervals were 477–499 ms; those are JS-delivered event
 observations, not precise native animation or display measurements. The cause of the pre-mount delay is still unconfirmed. The extended
 `navigation-tree-*` profiler events measure React work outside the destination's Page subtree for the next comparison.
+The `screen-render:<route>:<phase>` events include outgoing screens as well as the destination, so their render durations can be compared
+within the same commit. These durations overlap the navigation-tree measurement and must not be added to it. Global route subscriptions in
+`useTabPush` and focus subscriptions on Profile are candidates for outgoing work; their share of the delay has not yet been measured.
 
 After installing dependencies, restart Metro and reload Expo Go. Expo UI is included in SDK 58 Expo Go; a custom development client built
 before this dependency was added needs a new native build. Check first/repeated navigation timings, Android picker labels and dropdowns,

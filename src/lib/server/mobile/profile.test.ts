@@ -61,7 +61,7 @@ beforeEach(() => {
     vi.resetAllMocks();
     mocks.session.mockResolvedValue({ user: { id: "10", role: "user" } });
     mocks.user.mockResolvedValue({
-        userMediaSettings: [{ mediaType: "movies", active: true }],
+        userMediaSettings: [{ mediaType: "movies", active: true, timeSpent: 240 }],
         id: 10,
         name: "owner",
         privacy: "private",
@@ -118,6 +118,7 @@ describe("isolated mobile profile API", () => {
         expect(await response.json()).toEqual({
             user: {
                 id: 10,
+                level: 3,
                 name: "owner",
                 privacy: "private",
                 ratingSystem: "score",

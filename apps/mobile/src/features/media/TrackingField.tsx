@@ -27,31 +27,35 @@ export function TrackingField({
 
     return (
         <View style={{ gap: 10 }}>
-            <Field
-                label={label}
-                value={value}
-                editable={!pending}
-                multiline={multiline}
-                maxLength={multiline ? 5000 : undefined}
-                keyboardType={numeric ? (allowDecimals ? "decimal-pad" : "number-pad") : "default"}
-                onChangeText={(text) => setValue(numeric ? text.replace(",", ".") : text)}
-            />
-            {numeric && (
-                <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 10 }}>
+                {numeric && (
                     <Button
                         label="−1"
                         secondary
                         disabled={pending || !Number.isFinite(Number(value)) || Number(value) < 1}
                         onPress={() => setValue(String(Number(value) - 1))}
                     />
+                )}
+                <View style={{ flex: 1 }}>
+                    <Field
+                        label={label}
+                        value={value}
+                        editable={!pending}
+                        multiline={multiline}
+                        maxLength={multiline ? 5000 : undefined}
+                        keyboardType={numeric ? (allowDecimals ? "decimal-pad" : "number-pad") : "default"}
+                        onChangeText={(text) => setValue(numeric ? text.replace(",", ".") : text)}
+                    />
+                </View>
+                {numeric && (
                     <Button
                         label="+1"
                         secondary
                         disabled={pending || !Number.isFinite(Number(value))}
                         onPress={() => setValue(String(Number(value) + 1))}
                     />
-                </View>
-            )}
+                )}
+            </View>
             {value !== initial && (
                 <Button
                     secondary={true}

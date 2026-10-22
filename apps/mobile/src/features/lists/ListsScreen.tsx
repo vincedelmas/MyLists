@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { colors } from "../../theme";
-import { useIsFocused } from "expo-router";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { SectionList, RefreshControl, View } from "react-native";
-import { useDebouncedValue } from "../../hooks/use-debounced-value";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { FolderOpen, ListFilter } from "lucide-react-native";
-import { MediaListGrid } from "../../components/media-list-grid";
-import { libraryOptions } from "../../lib/react-query/query-options/library.options";
-import { listsSummaryOptions } from "../../lib/react-query/query-options/media.options";
-import { AppText, Cover, Field, MenuRow, Page, QueryPanel, StateView } from "../../components/ui";
+import {useState} from "react";
+import {colors} from "../../theme";
+import {useIsFocused} from "expo-router";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {FolderOpen, ListFilter} from "lucide-react-native";
+import {MediaListGrid} from "../../components/media-list-grid";
+import {SectionList, RefreshControl, View} from "react-native";
+import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
+import {useDebouncedValue} from "../../hooks/use-debounced-value";
+import {libraryOptions} from "../../lib/react-query/query-options/library.options";
+import {listsSummaryOptions} from "../../lib/react-query/query-options/media.options";
+import {AppText, Cover, Field, MenuRow, Page, QueryPanel, StateView} from "../../components/ui";
 
 export function ListsScreen() {
     const push = useTabPush();
@@ -28,27 +28,32 @@ export function ListsScreen() {
     return (
         <Page title="Lists & collections" subtitle="Everything you watch, read, and play">
             <SectionList<(typeof rows)[number]>
-                sections={[
-                    { title: "Dynamic lists", data: rows.filter((item) => item.kind === "dynamic") },
-                    { title: "Collections", data: rows.filter((item) => item.kind === "collection") },
-                ]}
-                stickySectionHeadersEnabled={false}
-                renderSectionHeader={({ section }) => (
-                    <AppText heading style={{ fontSize: 18, paddingVertical: 14 }}>
-                        {section.title}
-                    </AppText>
-                )}
                 windowSize={7}
                 initialNumToRender={10}
                 onEndReachedThreshold={0.5}
+                stickySectionHeadersEnabled={false}
                 keyExtractor={(item) => `${item.kind}:${item.id}`}
                 contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-                renderSectionFooter={({ section }) =>
-                    section.data.length === 0 && query.isSuccess ? (
-                        <AppText muted style={{ paddingBottom: 16 }}>
-                            No {section.title.toLowerCase()} found.
-                        </AppText>
-                    ) : null
+                renderSectionHeader={({ section }) =>
+                    <AppText heading style={{ fontSize: 18, paddingVertical: 14 }}>
+                        {section.title}
+                    </AppText>
+                }
+                sections={[
+                    {
+                        title: "Dynamic lists",
+                        data: rows.filter((item) => item.kind === "dynamic"),
+                    },
+                    {
+                        title: "Collections",
+                        data: rows.filter((item) => item.kind === "collection")
+                    },
+                ]}
+                renderSectionFooter={({ section }) => section.data.length === 0 && query.isSuccess
+                    ? <AppText muted style={{ paddingBottom: 16 }}>
+                        No {section.title.toLowerCase()} found.
+                    </AppText>
+                    : null
                 }
                 onEndReached={() => {
                     if (focused && query.hasNextPage && !query.isFetching) {
@@ -68,14 +73,17 @@ export function ListsScreen() {
                 ListHeaderComponent={
                     <View style={{ gap: 24, marginBottom: 16 }}>
                         <QueryPanel query={tracking}>
-                            {(lists) => (
+                            {(lists) =>
                                 <View style={{ gap: 12 }}>
                                     <AppText heading style={{ fontSize: 18 }}>
                                         Tracking lists
                                     </AppText>
-                                    <MediaListGrid lists={lists} includeContinue />
+                                    <MediaListGrid
+                                        lists={lists}
+                                        includeContinue={true}
+                                    />
                                 </View>
-                            )}
+                            }
                         </QueryPanel>
                         <View style={{ gap: 14 }}>
                             <AppText heading style={{ fontSize: 18 }}>
@@ -111,9 +119,9 @@ export function ListsScreen() {
                             }
                             icon={
                                 item.kind === "dynamic" ? (
-                                    <ListFilter size={22} color={colors.accent} />
+                                    <ListFilter size={22} color={colors.accent}/>
                                 ) : (
-                                    <FolderOpen size={22} color={colors.accent} />
+                                    <FolderOpen size={22} color={colors.accent}/>
                                 )
                             }
                             onPress={() =>
@@ -123,7 +131,7 @@ export function ListsScreen() {
                                 })
                             }
                         />
-                        {item.kind === "collection" && item.previews.length > 0 && (
+                        {(item.kind === "collection" && item.previews.length > 0) &&
                             <View
                                 pointerEvents="none"
                                 style={{ flexDirection: "row", gap: 8, padding: 12, paddingTop: 0 }}
@@ -136,7 +144,7 @@ export function ListsScreen() {
                                     />
                                 ))}
                             </View>
-                        )}
+                        }
                     </View>
                 )}
                 ListFooterComponent={
@@ -149,14 +157,14 @@ export function ListsScreen() {
                                 query.isError
                                     ? "Couldn’t load lists"
                                     : debounced
-                                      ? "No matching lists"
-                                      : "No saved lists or collections yet"
+                                        ? "No matching lists"
+                                        : "No saved lists or collections yet"
                             }
                         />
                     ) : query.isFetchingNextPage ? (
-                        <StateView loading />
+                        <StateView loading/>
                     ) : query.isError ? (
-                        <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()} />
+                        <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()}/>
                     ) : undefined
                 }
             />

@@ -36,6 +36,13 @@ export const getMobileProfile = async (userId: number) => {
         })),
         user: {
             id: user.id,
+            level: Math.floor(
+                calculateMediaLevel(
+                    user.userMediaSettings
+                        .filter((setting) => setting.active)
+                        .reduce((sum, setting) => sum + setting.timeSpent, 0),
+                ),
+            ),
             name: user.name,
             privacy: user.privacy,
             ratingSystem: user.ratingSystem,

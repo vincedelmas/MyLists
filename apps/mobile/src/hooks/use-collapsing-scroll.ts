@@ -12,10 +12,20 @@ export const CollapsingScrollContext = createContext<{
     viewportHeight: number;
 } | null>(null);
 
+// Standalone pages have no collapsing header, but share the same scroll insets.
+const standaloneScroll = {
+    onScroll: () => {},
+    initialOffset: 0,
+    getOffset: () => 0,
+    headerHeight: 0,
+    tabBarHeight: 0,
+    viewportHeight: 0,
+};
+
 // Tab panes use their own scrollable, including virtualized lists. Only the
 // header animation is shared; no vertical list is wrapped in a ScrollView.
 export function useCollapsingScroll() {
-    const context = useContext(CollapsingScrollContext)!;
+    const context = useContext(CollapsingScrollContext) ?? standaloneScroll;
     const { getOffset, viewportHeight } = context;
     const scrollRef = useRef<{ getScrollResponder: () => ScrollResponder | null | undefined } | null>(null);
     const restored = useRef(false);

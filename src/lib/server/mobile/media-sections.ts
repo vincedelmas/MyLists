@@ -48,7 +48,7 @@ export async function getMobileMediaCommunity(userId: number, { mediaType, media
         service.getMediaCommunityActivity(toActor({ id: userId }), mediaId, { page, perPage: 20 }),
         page === 1 ? service.getUserFollowsMediaData(userId, mediaId) : [],
     ]);
-    const summarize = (item: (typeof community.items)[number]) => {
+    const summarize = (item: (typeof community.items)[number], includeComment = false) => {
         // Drizzle erases the generic list columns in this community projection.
         const tracking = item.userMedia as NonNullable<Awaited<ReturnType<typeof getMobileMedia>>["tracking"]>;
         return {
@@ -59,6 +59,16 @@ export async function getMobileMediaCommunity(userId: number, { mediaType, media
             status: tracking.status,
             rating: tracking.rating,
             favorite: tracking.favorite,
+            comment: includeComment ? tracking.comment : null,
+            progress: {
+                season: "currentSeason" in tracking ? tracking.currentSeason : null,
+                episode: "currentEpisode" in tracking ? tracking.currentEpisode : null,
+                playtimeMinutes: "playtime" in tracking ? tracking.playtime : null,
+                pages: "actualPage" in tracking ? tracking.actualPage : null,
+                chapters: "currentChapter" in tracking ? tracking.currentChapter : null,
+                repeats: "redo" in tracking ? tracking.redo : null,
+                platform: "platform" in tracking ? tracking.platform : null,
+            },
             updatedAt: tracking.lastUpdated ? dateFromUTCInput(tracking.lastUpdated).toISOString() : null,
         };
     };
@@ -67,8 +77,8 @@ export async function getMobileMediaCommunity(userId: number, { mediaType, media
         pages: community.pages,
         total: community.total,
         stats: community.stats,
-        items: community.items.map(summarize),
-        follows: follows.map(summarize),
+        items: community.items.map((item) => summarize(item)),
+        follows: follows.map((item) => summarize(item, true)),
     };
 }
 

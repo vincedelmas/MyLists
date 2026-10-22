@@ -80,7 +80,7 @@ describe("mobile media sections", () => {
         mocks.find.mockReturnValue(null);
         await expect(getMobileMediaCollections(10, params)).rejects.toMatchObject({ isNotFound: true });
     });
-    it("uses community visibility rules, omits private notes and returns follows only on the first page", async () => {
+    it("uses community visibility rules, keeps comments limited to accepted follows and returns follows only on the first page", async () => {
         const person = {
             id: 20,
             name: "Other",
@@ -103,7 +103,8 @@ describe("mobile media sections", () => {
             perPage: 20,
         });
         expect(result.follows[0]).toMatchObject({ image: "/avatar.jpg", rating: 8 });
-        expect(JSON.stringify(result)).not.toContain("private note");
+        expect(result.items[0].comment).toBeNull();
+        expect(result.follows[0].comment).toBe("private note");
         expect(JSON.stringify(result)).not.toContain("releaseNotificationsEnabled");
         mocks.follows.mockClear();
         expect((await getMobileMediaCommunity(10, params, 2)).follows).toEqual([]);

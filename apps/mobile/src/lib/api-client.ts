@@ -1,6 +1,7 @@
 import { backendUrl } from "./config";
 import { authClient } from "./auth-client";
 import type * as ListFilters from "../../../../src/lib/server/mobile/list-filters";
+import type * as Notifications from "../../../../src/lib/server/mobile/notifications";
 import type * as MediaSections from "../../../../src/lib/server/mobile/media-sections";
 import type * as Media from "../../../../src/lib/server/mobile/media";
 import { timeNavigationRequest } from "./diagnostics/navigation-timing";
@@ -93,6 +94,12 @@ const subjectPath = (path: string, userId?: number) =>
     userId === undefined ? path : `${path}?${queryString({ userId })}`;
 
 export const api = {
+    notificationCounts: (signal?: AbortSignal) =>
+        request<Result<typeof Notifications.getMobileNotificationCounts>>("/notifications/counts", signal),
+    notifications: (type: Parameters<typeof Notifications.getMobileNotifications>[1], signal?: AbortSignal) =>
+        request<Result<typeof Notifications.getMobileNotifications>>(`/notifications?type=${type}`, signal),
+    notificationAction: (input: Parameters<typeof Notifications.actOnMobileNotification>[1]) =>
+        request<Result<typeof Notifications.actOnMobileNotification>>("/notifications", undefined, "POST", input),
     listFilters: (mediaType: MediaType, signal?: AbortSignal, userId?: number) =>
         request<Result<typeof ListFilters.getMobileListFilterOptions>>(
             `/lists/${mediaType}/filters?${queryString({ userId })}`,

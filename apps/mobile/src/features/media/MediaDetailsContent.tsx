@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useIsFocused } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Animated, FlatList, Linking, Pressable, RefreshControl, View } from "react-native";
-import { AppText, Button, Cover, MenuRow, QueryPanel, Section } from "../../components/ui";
+import { AppText, Cover, MenuRow, QueryPanel, Section } from "../../components/ui";
 import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
 import { useTabPush } from "../../hooks/use-tab-push";
 import { mediaDetailsOptions } from "../../lib/react-query/query-options/media.options";
-import { useMediaRefreshMutation } from "../../lib/react-query/query-mutations/media.mutations";
+import { ExternalLink } from "lucide-react-native";
 import type { MediaParams, MobileMedia } from "../../lib/api-client";
 import { colors } from "../../theme";
 
@@ -24,7 +24,6 @@ export function MediaDetailsContent({
     const focused = useIsFocused();
     const [expanded, setExpanded] = useState(false);
     const query = useQuery({ ...mediaDetailsOptions(params), enabled: focused });
-    const refresh = useMediaRefreshMutation(params);
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const push = useTabPush();
     const upcoming = data.media.nextEpisode?.date;
@@ -94,11 +93,15 @@ export function MediaDetailsContent({
                     )}
                 </View>
                 {data.media.provider.url && (
-                    <Button
-                        secondary
-                        label={data.media.provider.name}
+                    <Pressable
+                        accessibilityRole="link"
+                        accessibilityLabel={`Open ${data.media.provider.name} in your browser`}
                         onPress={() => void Linking.openURL(data.media.provider.url!)}
-                    />
+                        style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44 }}
+                    >
+                        <AppText style={{ color: colors.accent, fontSize: 13 }}>{data.media.provider.name}</AppText>
+                        <ExternalLink size={15} color={colors.accent} />
+                    </Pressable>
                 )}
             </View>
             <Section title="About this title">
@@ -225,34 +228,14 @@ export function MediaDetailsContent({
                     </>
                 )}
             </QueryPanel>
-            <Section title="Metadata">
-                <View style={{ padding: 16, gap: 12 }}>
-                    <AppText muted style={{ fontSize: 12 }}>
-                        Update this title from {data.media.provider.name}.
-                    </AppText>
-                    <Button
-                        secondary
-                        label="Refresh metadata"
-                        pending={refresh.isPending}
-                        disabled={!data.refresh.allowed}
-                        onPress={() => refresh.mutate()}
-                    />
-                    {data.refresh.reason && (
-                        <AppText muted style={{ fontSize: 12 }}>
-                            {data.refresh.reason}
-                            {data.refresh.nextAllowedAt
-                                ? ` Available ${new Date(data.refresh.nextAllowedAt).toLocaleString()}.`
-                                : ""}
-                        </AppText>
-                    )}
-                    {refresh.error && (
-                        <AppText accessibilityRole="alert" style={{ color: colors.error }}>
-                            {refresh.error.message}
-                        </AppText>
-                    )}
-                    {refresh.isSuccess && <AppText accessibilityRole="alert">Metadata refreshed.</AppText>}
-                </View>
-            </Section>
+            {data.refresh.reason && (
+                <AppText muted style={{ fontSize: 12 }}>
+                    {data.refresh.reason}
+                    {data.refresh.nextAllowedAt
+                        ? ` Available ${new Date(data.refresh.nextAllowedAt).toLocaleString()}.`
+                        : ""}
+                </AppText>
+            )}
         </Animated.ScrollView>
     );
 }

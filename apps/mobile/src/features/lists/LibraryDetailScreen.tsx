@@ -1,24 +1,21 @@
-import { LayoutToggle, type MediaLayout } from "../../components/layout-toggle";
-import { useState } from "react";
-import { colors } from "../../theme";
-import { MediaCard } from "../../components/media-card";
-import { ratingLabel } from "../../lib/ratings";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { Page, StateView } from "../../components/ui";
-import { FlatList, RefreshControl } from "react-native";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useIsFocused, useLocalSearchParams } from "expo-router";
-import { libraryDetailOptions } from "../../lib/react-query/query-options/library.options";
+import {useState} from "react";
+import {colors} from "../../theme";
+import {ratingLabel} from "../../lib/ratings";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {Page, StateView} from "../../components/ui";
+import {MediaCard} from "../../components/media-card";
+import {FlatList, RefreshControl} from "react-native";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import {useIsFocused, useLocalSearchParams} from "expo-router";
+import {LayoutToggle, type MediaLayout} from "../../components/layout-toggle";
+import {libraryDetailOptions} from "../../lib/react-query/query-options/library.options";
+
 
 export function LibraryDetailScreen() {
+    const push = useTabPush();
     const focused = useIsFocused();
     const [layout, setLayout] = useState<MediaLayout>("grid");
-    const push = useTabPush();
-    const { kind, id, userId } = useLocalSearchParams<{
-        kind: "collection" | "dynamic" | "continue";
-        id?: string;
-        userId?: string;
-    }>();
+    const { kind, id, userId } = useLocalSearchParams<{ kind: "collection" | "dynamic" | "continue"; id?: string; userId?: string }>();
     const query = useInfiniteQuery({
         ...libraryDetailOptions(kind, id ? Number(id) : undefined, userId ? Number(userId) : undefined),
         enabled: focused,
@@ -29,18 +26,18 @@ export function LibraryDetailScreen() {
 
     return (
         <Page
+            back={true}
+            action={<LayoutToggle value={layout} onChange={setLayout}/>}
             title={first?.title ?? (kind === "continue" ? "Continue" : "List")}
-            back
-            action={<LayoutToggle value={layout} onChange={setLayout} />}
         >
             <FlatList
                 key={layout}
                 data={items}
-                numColumns={layout === "grid" ? 2 : 1}
-                contentContainerStyle={{ padding: 10 }}
                 windowSize={7}
                 initialNumToRender={10}
                 onEndReachedThreshold={0.5}
+                numColumns={layout === "grid" ? 2 : 1}
+                contentContainerStyle={{ padding: 10 }}
                 keyExtractor={(item) => `${item.mediaType}:${item.mediaId}`}
                 onEndReached={() => {
                     if (focused && query.hasNextPage && !query.isFetching) {
@@ -85,9 +82,9 @@ export function LibraryDetailScreen() {
 
                 ListFooterComponent={
                     query.isFetchingNextPage ? (
-                        <StateView loading={true} />
+                        <StateView loading={true}/>
                     ) : query.isError && items.length ? (
-                        <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()} />
+                        <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()}/>
                     ) : undefined
                 }
             />

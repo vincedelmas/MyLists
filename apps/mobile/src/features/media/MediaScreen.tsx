@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { useIsFocused } from "expo-router";
-import { Info, UsersRound, BookmarkCheck, Pencil } from "lucide-react-native";
+import { Info, UsersRound, BookmarkCheck, Pencil, RefreshCw } from "lucide-react-native";
 import { mediaLabels } from "../../lib/media";
 import { CollapsingTabs } from "../../components/collapsing-tabs";
 import { MediaHero } from "./MediaHero";
@@ -13,8 +13,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { mediaOptions } from "../../lib/react-query/query-options/media.options";
 import type { MediaParams, UpdateInput } from "../../lib/api-client";
-import { useTrackingMutation } from "../../lib/react-query/query-mutations/media.mutations";
-import { Page, QueryPanel } from "../../components/ui";
+import { useTrackingMutation, useMediaRefreshMutation } from "../../lib/react-query/query-mutations/media.mutations";
+import { AppText, Page, QueryPanel } from "../../components/ui";
 
 export function MediaScreen() {
     const focused = useIsFocused();
@@ -23,6 +23,7 @@ export function MediaScreen() {
 
     const media = { mediaType: params.mediaType, mediaId: Number(params.mediaId) };
     const mutation = useTrackingMutation(media);
+    const refresh = useMediaRefreshMutation(media);
     const query = useQuery({ ...mediaOptions(media), enabled: focused });
 
     const update = (payload: UpdateInput["payload"], activityCorrection?: UpdateInput["activityCorrection"]) => {
@@ -62,6 +63,16 @@ export function MediaScreen() {
 
     return (
         <Page title={mediaLabels[media.mediaType] ?? "Media"} brand back>
+            {refresh.error && (
+                <AppText accessibilityRole="alert" style={{ padding: 12 }}>
+                    {refresh.error.message}
+                </AppText>
+            )}
+            {refresh.isSuccess && (
+                <AppText accessibilityRole="alert" style={{ padding: 12 }}>
+                    Metadata refreshed.
+                </AppText>
+            )}
             <QueryPanel query={query}>
                 {(data) => (
                     <CollapsingTabs
@@ -73,7 +84,14 @@ export function MediaScreen() {
                             { value: "tracking", label: "Tracking", icon: BookmarkCheck },
                             ...(data.canEdit ? [{ value: "edit", label: "Edit", icon: Pencil }] : []),
                         ]}
-                        header={(selectTab) => <MediaHero data={data} onTrack={() => selectTab("tracking")} />}
+                        header={<MediaHero data={data} />}
+                        action={{
+                            label: "Refresh",
+                            icon: RefreshCw,
+                            disabled: !data.refresh.allowed || refresh.isPending,
+                            busy: refresh.isPending,
+                            onPress: () => refresh.mutate(),
+                        }}
                     >
                         {(tab) => (
                             <>
@@ -85,7 +103,9 @@ export function MediaScreen() {
                                         refreshing={query.isRefetching}
                                     />
                                 )}
-                                {tab === "community" && <MediaCommunityContent params={media} />}
+                                {tab === "community" && (
+                                    <MediaCommunityContent params={media} ratingSystem={data.ratingSystem} />
+                                )}
                                 {tab === "tracking" && (
                                     <MediaTrackingContent
                                         params={media}

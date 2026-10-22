@@ -1,10 +1,18 @@
-import { memo, type ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText, Cover } from "./ui";
-import type { MediaLayout } from "./layout-toggle";
 import { colors } from "../theme";
+import { AppText, Cover } from "./ui";
+import { memo, type ReactNode } from "react";
+import type { MediaLayout } from "./layout-toggle";
+import { Pressable, StyleSheet, View } from "react-native";
 
-// Shared cover treatment for activity and tracking/collection grids.
+interface MediaCardProps {
+    name: string;
+    detail?: string;
+    onPress: () => void;
+    layout?: MediaLayout;
+    cover: string | null;
+    children?: ReactNode;
+}
+
 export const MediaCard = memo(function MediaCard({
     name,
     cover,
@@ -12,19 +20,12 @@ export const MediaCard = memo(function MediaCard({
     children,
     onPress,
     layout = "grid",
-}: {
-    layout?: MediaLayout;
-    name: string;
-    cover: string | null;
-    detail?: string;
-    children?: ReactNode;
-    onPress: () => void;
-}) {
+}: MediaCardProps) {
     return (
         <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={name}
             onPress={onPress}
+            accessibilityLabel={name}
+            accessibilityRole="button"
             style={({ pressed }) => [
                 styles.card,
                 layout === "grid" ? styles.grid : styles.list,
@@ -46,13 +47,14 @@ export const MediaCard = memo(function MediaCard({
         </Pressable>
     );
 });
+
 const styles = StyleSheet.create({
-    card: { flex: 1, padding: 6 },
-    grid: { maxWidth: "50%" },
-    list: { flexDirection: "row", gap: 12, alignItems: "center" },
-    listCover: { width: 56, height: 82 },
-    cover: { width: "100%", height: undefined, aspectRatio: 2 / 3, borderRadius: 10 },
-    caption: { gap: 4, paddingVertical: 8 },
-    title: { fontSize: 13, fontWeight: "600", color: colors.text },
     detail: { fontSize: 11 },
+    grid: { maxWidth: "50%" },
+    card: { flex: 1, padding: 6 },
+    listCover: { width: 56, height: 82 },
+    caption: { gap: 4, paddingVertical: 8 },
+    list: { flexDirection: "row", gap: 12, alignItems: "center" },
+    title: { fontSize: 13, fontWeight: "600", color: colors.text },
+    cover: { width: "100%", height: undefined, aspectRatio: 2 / 3, borderRadius: 10 },
 });

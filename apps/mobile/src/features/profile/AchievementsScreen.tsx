@@ -1,3 +1,4 @@
+import { mediaLabels } from "../../lib/media";
 import { useState } from "react";
 import { Collapsible, RNHostView } from "@expo/ui";
 import { NativeHost } from "../../components/native-host";
@@ -9,11 +10,12 @@ import { AchievementRow } from "./AchievementRow";
 import { ProgressBar } from "../../components/ProgressBar";
 import { ProfileQueryPanel } from "./ProfileQueryPanel";
 import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { AppText, QueryPanel, StateView, Section } from "../../components/ui";
+import { AppText, QueryPanel, StateView, Section, Select } from "../../components/ui";
 import { achievementsOptions, recentAchievementsOptions } from "../../lib/react-query/query-options/profile.options";
 
 export function AchievementsContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
+    const [mediaType, setMediaType] = useState("all");
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const query = useQuery({ ...achievementsOptions(userId), enabled: focused });
@@ -25,7 +27,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                 {(items) => (
                     <Animated.FlatList
                         {...scrollProps}
-                        data={items}
+                        data={items.filter((item) => mediaType === "all" || item.mediaType === mediaType)}
                         ListHeaderComponent={
                             <View style={{ gap: 20 }}>
                                 <Section title="Latest achievements">
@@ -37,7 +39,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                                         key={`${item.id}:${item.difficulty}`}
                                                         name={item.name}
                                                         description={item.description}
-                                                        detail={`${item.difficulty} · ${new Date(item.completedAt!).toLocaleDateString()}`}
+                                                        detail={`${mediaLabels[item.mediaType]} · ${item.difficulty} · ${new Date(item.completedAt!).toLocaleDateString()}`}
                                                     />
                                                 ))
                                             ) : (
@@ -49,6 +51,18 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                     </QueryPanel>
                                 </Section>
                                 <AppText heading>All achievements</AppText>
+                                <Select
+                                    label="Media type"
+                                    value={mediaType}
+                                    onChange={setMediaType}
+                                    options={[
+                                        { value: "all", label: "All media" },
+                                        ...[...new Set(items.map((item) => item.mediaType))].map((value) => ({
+                                            value,
+                                            label: mediaLabels[value],
+                                        })),
+                                    ]}
+                                />
                             </View>
                         }
                         windowSize={7}
@@ -77,7 +91,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                         name={item.name}
                                         completed={unlocked > 0}
                                         description={item.description}
-                                        detail={`${unlocked} of ${item.tiers.length} tiers unlocked`}
+                                        detail={`${mediaLabels[item.mediaType]} · ${unlocked} of ${item.tiers.length} tiers unlocked`}
                                     />
                                     <NativeHost style={{ width: "100%" }}>
                                         <Collapsible

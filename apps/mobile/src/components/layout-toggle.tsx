@@ -1,8 +1,11 @@
-import { LayoutGrid, List } from "lucide-react-native";
-import { Pressable, View } from "react-native";
-import { colors } from "../theme";
+import {colors} from "../theme";
+import {Pressable, View} from "react-native";
+import {LayoutGrid, List} from "lucide-react-native";
+
 
 export type MediaLayout = "grid" | "list";
+
+
 export function LayoutToggle({ value, onChange }: { value: MediaLayout; onChange: (value: MediaLayout) => void }) {
     return (
         <View style={{ flexDirection: "row", gap: 2 }}>
@@ -25,7 +28,7 @@ export function LayoutToggle({ value, onChange }: { value: MediaLayout; onChange
                         opacity: pressed ? 0.6 : 1,
                     })}
                 >
-                    <Icon size={18} color={mode === value ? colors.accent : colors.muted} />
+                    <Icon size={18} color={mode === value ? colors.accent : colors.muted}/>
                 </Pressable>
             ))}
         </View>

@@ -23,6 +23,15 @@ function renderScroll(viewportHeight = 640) {
 }
 
 describe("collapsing profile scroll panes", () => {
+    it("supports standalone pages without reserving space for a profile header", () => {
+        let scroll: ReturnType<typeof useCollapsingScroll>;
+        function Standalone() { scroll = useCollapsingScroll(); return null; }
+        renderToStaticMarkup(createElement(Standalone));
+        expect(scroll!.contentContainerStyle.paddingTop).toBe(16);
+        expect(scroll!.contentContainerStyle.minHeight).toBe(0);
+        expect(scroll!.scrollProps.contentOffset.y).toBe(0);
+    });
+
     it("reserves the header and tabs while allowing even short content to collapse the header", () => {
         const { scroll } = renderScroll();
         expect(scroll.contentContainerStyle.paddingTop).toBe(240 + 49 + 16);

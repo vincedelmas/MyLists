@@ -1,36 +1,36 @@
-import { LayoutToggle, type MediaLayout } from "../../components/layout-toggle";
-import { useState } from "react";
-import { colors } from "../../theme";
-import { useIsFocused } from "expo-router";
-import { mediaLabels } from "../../lib/media";
-import { useLocalSearchParams } from "expo-router";
-import { MediaCard } from "../../components/media-card";
-import { ratingLabel } from "../../lib/ratings";
-import { useTabPush } from "../../hooks/use-tab-push";
-import type { MediaType } from "../../lib/api-client";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { FlatList, RefreshControl, View } from "react-native";
-import { getMediaDefinition } from "@/lib/media-definitions/definition.registry";
-import { parseListFilters, countListFilters } from "./list-filters";
-import { getMediaSortOptions } from "@/lib/utils/media/sorting";
-import { useDebouncedValue } from "../../hooks/use-debounced-value";
-import { listOptions } from "../../lib/react-query/query-options/media.options";
-import { AppText, Button, Field, Page, StateView } from "../../components/ui";
+import {useState} from "react";
+import {colors} from "../../theme";
+import {useIsFocused} from "expo-router";
+import {mediaLabels} from "../../lib/media";
+import {ratingLabel} from "../../lib/ratings";
+import {useLocalSearchParams} from "expo-router";
+import {useTabPush} from "../../hooks/use-tab-push";
+import type {MediaType} from "../../lib/api-client";
+import {MediaCard} from "../../components/media-card";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import {FlatList, RefreshControl, View} from "react-native";
+import {getMediaSortOptions} from "@/lib/utils/media/sorting";
+import {useDebouncedValue} from "../../hooks/use-debounced-value";
+import {parseListFilters, countListFilters} from "./list-filters";
+import {AppText, Button, Field, Page, StateView} from "../../components/ui";
+import {LayoutToggle, type MediaLayout} from "../../components/layout-toggle";
+import {listOptions} from "../../lib/react-query/query-options/media.options";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+
 
 export function TrackingListScreen() {
-    const focused = useIsFocused();
-    const [layout, setLayout] = useState<MediaLayout>("grid");
     const push = useTabPush();
+    const focused = useIsFocused();
     const [search, setSearch] = useState("");
+    const [layout, setLayout] = useState<MediaLayout>("grid");
+
     const debounced = useDebouncedValue(search.trim());
-    const {
-        mediaType,
-        userId,
-        filters: serializedFilters,
-    } = useLocalSearchParams<{ mediaType: MediaType; userId?: string; filters?: string }>();
+    const { mediaType, userId, filters: serializedFilters } = useLocalSearchParams<{ mediaType: MediaType; userId?: string; filters?: string }>();
+
     const filters = parseListFilters(serializedFilters);
     const count = countListFilters(filters);
     const sorting = filters.sorting ?? getMediaDefinition(mediaType).sorting.default;
+
     const query = useInfiniteQuery({
         ...listOptions(mediaType, { ...filters, search: debounced, sorting }, userId ? Number(userId) : undefined),
         enabled: focused,
@@ -41,9 +41,9 @@ export function TrackingListScreen() {
 
     return (
         <Page
-            action={<LayoutToggle value={layout} onChange={setLayout} />}
             back={true}
             title={mediaLabels[mediaType] ?? "List"}
+            action={<LayoutToggle value={layout} onChange={setLayout}/>}
             subtitle={first ? `${first.pagination.totalItems.toLocaleString()} entries` : undefined}
         >
             <View style={{ padding: 16, gap: 12 }}>
@@ -67,20 +67,22 @@ export function TrackingListScreen() {
                         }
                     />
                     <AppText muted numberOfLines={1} style={{ fontSize: 12, flex: 1, textAlign: "right" }}>
-                        {getMediaSortOptions([mediaType], true).find((item) => item.value === sorting)?.label}
+                        {getMediaSortOptions([mediaType], true)
+                            .find((item) => item.value === sorting)?.label
+                        }
                     </AppText>
                 </View>
             </View>
             <FlatList
                 data={items}
-                numColumns={layout === "grid" ? 2 : 1}
-                contentContainerStyle={{ padding: 10 }}
                 windowSize={7}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
                 onEndReachedThreshold={0.5}
                 keyboardDismissMode="on-drag"
                 keyboardShouldPersistTaps="handled"
+                numColumns={layout === "grid" ? 2 : 1}
+                contentContainerStyle={{ padding: 10 }}
                 keyExtractor={(item) => String(item.mediaId)}
                 key={`${layout}:${mediaType}:${debounced}:${serializedFilters}`}
                 onEndReached={() => {
@@ -112,9 +114,7 @@ export function TrackingListScreen() {
                             item.status,
                             item.rating == null ? null : ratingLabel(item.rating, first?.ratingSystem ?? "score"),
                             item.favorite ? "♥" : null,
-                        ]
-                            .filter(Boolean)
-                            .join(" · ")}
+                        ].filter(Boolean).join(" · ")}
                         onPress={() =>
                             push({
                                 pathname: "/media/[mediaType]/[mediaId]",
@@ -126,7 +126,7 @@ export function TrackingListScreen() {
 
                 ListFooterComponent={
                     query.isFetchingNextPage ? (
-                        <StateView loading />
+                        <StateView loading/>
                     ) : query.isError && items.length ? (
                         <StateView
                             title="Couldn’t load more"

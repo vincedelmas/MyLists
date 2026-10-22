@@ -6,12 +6,23 @@ import { mediaCommunityOptions } from "../../lib/react-query/query-options/media
 import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
 import { useTabPush } from "../../hooks/use-tab-push";
 import type { api, MediaParams } from "../../lib/api-client";
-import { ratingLabel } from "../../lib/ratings";
+import { Rating } from "../../components/rating";
+import { formatMinutes } from "@/lib/utils/formatting/number";
 import { colors } from "../../theme";
 
 type Person = Awaited<ReturnType<typeof api.mediaCommunity>>["items"][number];
 function ActivityPerson({ item }: { item: Person }) {
     const push = useTabPush();
+    const progress = [
+        item.progress.season != null ? `S${item.progress.season} · E${item.progress.episode}` : null,
+        item.progress.playtimeMinutes != null ? formatMinutes(item.progress.playtimeMinutes) : null,
+        item.progress.pages != null ? `Page ${item.progress.pages}` : null,
+        item.progress.chapters != null ? `Chapter ${item.progress.chapters}` : null,
+        item.progress.repeats ? `${item.progress.repeats} repeats` : null,
+        item.progress.platform,
+    ]
+        .filter(Boolean)
+        .join(" · ");
     return (
         <Pressable
             accessibilityRole="button"
@@ -33,14 +44,28 @@ function ActivityPerson({ item }: { item: Person }) {
                     {item.status}
                     {item.favorite ? " · Favorite" : ""}
                 </AppText>
+                {progress && (
+                    <AppText muted style={{ fontSize: 12 }}>
+                        {progress}
+                    </AppText>
+                )}
+                {item.comment && (
+                    <AppText numberOfLines={3} style={{ fontSize: 12, lineHeight: 18 }}>
+                        {item.comment}
+                    </AppText>
+                )}
             </View>
-            {item.rating != null && (
-                <AppText style={{ color: colors.rating }}>{ratingLabel(item.rating, item.ratingSystem)}</AppText>
-            )}
+            <Rating value={item.rating} system={item.ratingSystem} />
         </Pressable>
     );
 }
-export function MediaCommunityContent({ params }: { params: MediaParams }) {
+export function MediaCommunityContent({
+    params,
+    ratingSystem,
+}: {
+    params: MediaParams;
+    ratingSystem: "score" | "feeling";
+}) {
     const focused = useIsFocused();
     const query = useInfiniteQuery({ ...mediaCommunityOptions(params), enabled: focused });
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
@@ -85,10 +110,12 @@ export function MediaCommunityContent({ params }: { params: MediaParams }) {
                         <AppText muted style={{ paddingHorizontal: 16, fontSize: 12 }}>
                             {first.total} tracking · {first.stats.completedCount} completed · {first.stats.likedCount}{" "}
                             favorites
-                            {first.stats.averageRating != null
-                                ? ` · ${first.stats.averageRating.toFixed(1)} average`
-                                : ""}
                         </AppText>
+                    )}
+                    {first?.stats.averageRating != null && (
+                        <View style={{ paddingHorizontal: 16 }}>
+                            <Rating value={first.stats.averageRating} system={ratingSystem} />
+                        </View>
                     )}
                 </View>
             }

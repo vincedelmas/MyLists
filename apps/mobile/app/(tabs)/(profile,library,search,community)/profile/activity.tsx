@@ -1,5 +1,4 @@
-import {Redirect} from "expo-router";
-
-export default function ActivityRoute() {
-    return <Redirect href={{pathname: "/(tabs)/(profile)", params: {tab: "activity"}}}/>;
+import { ProfileSectionScreen } from "../../../../src/features/profile/ProfileSectionScreen";
+export default function Screen() {
+    return <ProfileSectionScreen section="activity" />;
 }

@@ -1,12 +1,11 @@
-import { colors, statusColors } from "../../theme";
+import { RatingInput } from "./RatingInput";
 import { useState } from "react";
-import { Pressable, View } from "react-native";
-import { Collapsible, RNHostView, Row, Slider, Switch, Text as NativeText } from "@expo/ui";
+import { View } from "react-native";
+import { Collapsible, RNHostView, Row, Switch, Text as NativeText } from "@expo/ui";
 import { NativeHost } from "../../components/native-host";
 import { TrackingField } from "./TrackingField";
-import { feelingOptions, scoreOptions } from "../../lib/ratings";
 import type { MobileMedia, UpdateInput } from "../../lib/api-client";
-import { AppText, Button, Field, Section, Select, uiStyles } from "../../components/ui";
+import { Button, Field, Section, Select, uiStyles } from "../../components/ui";
 
 interface TvPositionProps {
     season: number;
@@ -81,21 +80,14 @@ function SeasonTracking({ seasons, pending, update, ratingSystem }: SeasonTracki
             />
             {item && (
                 <>
-                    <Select
-                        disabled={pending}
+                    <RatingInput
                         label="Season rating"
-                        value={item.rating == null ? "" : String(item.rating)}
-                        options={[
-                            { value: "", label: "Not rated" },
-                            ...(ratingSystem === "score" ? scoreOptions : feelingOptions),
-                        ]}
-                        onChange={(value) =>
-                            update({
-                                type: "rating",
-                                seasonRating: { season: item.season, rating: value === "" ? null : Number(value) },
-                            })
-                        }
+                        value={item.rating}
+                        system={ratingSystem}
+                        pending={pending}
+                        onChange={(rating) => update({ type: "rating", seasonRating: { season: item.season, rating } })}
                     />
+
                     <TrackingField
                         numeric={true}
                         pending={pending}
@@ -108,79 +100,6 @@ function SeasonTracking({ seasons, pending, update, ratingSystem }: SeasonTracki
                     />
                 </>
             )}
-        </View>
-    );
-}
-
-function RatingControl({
-    rating,
-    system,
-    pending,
-    update,
-}: {
-    rating: number | null;
-    system: MobileMedia["ratingSystem"];
-    pending: boolean;
-    update: TrackingEditorProps["update"];
-}) {
-    const [value, setValue] = useState(rating ?? 0);
-    return (
-        <View style={{ gap: 14 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <AppText heading style={{ fontSize: 18 }}>
-                    Your rating
-                </AppText>
-                <AppText style={{ color: colors.rating, fontSize: 20 }}>
-                    {rating == null && value === 0
-                        ? "Not rated"
-                        : system === "score"
-                          ? `${value} / 10`
-                          : feelingOptions.find((item) => Number(item.value) === value)?.label}
-                </AppText>
-            </View>
-            {system === "score" ? (
-                <NativeHost>
-                    <Slider value={value} onValueChange={setValue} min={0} max={10} step={0.5} disabled={pending} />
-                </NativeHost>
-            ) : (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                    {feelingOptions.map((item) => (
-                        <Pressable
-                            key={item.value}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: value === Number(item.value) }}
-                            disabled={pending}
-                            onPress={() => setValue(Number(item.value))}
-                            style={{
-                                padding: 12,
-                                borderRadius: 10,
-                                borderWidth: 1,
-                                borderColor: value === Number(item.value) ? colors.rating : colors.border,
-                            }}
-                        >
-                            <AppText style={{ fontSize: 12 }}>{item.label}</AppText>
-                        </Pressable>
-                    ))}
-                </View>
-            )}
-            <View style={{ flexDirection: "row", gap: 12 }}>
-                {(value !== rating || rating === null) && (
-                    <Button
-                        secondary
-                        label="Save rating"
-                        pending={pending}
-                        onPress={() => update({ type: "rating", rating: value })}
-                    />
-                )}
-                {rating != null && (
-                    <Button
-                        secondary
-                        label="Clear rating"
-                        pending={pending}
-                        onPress={() => update({ type: "rating", rating: null })}
-                    />
-                )}
-            </View>
         </View>
     );
 }
@@ -199,63 +118,6 @@ export function TrackingEditor({ data, update, pending }: TrackingEditorProps) {
 
     return (
         <View style={{ gap: 20 }}>
-            <View style={{ gap: 12 }}>
-                <AppText heading style={{ fontSize: 18 }}>
-                    Your status
-                </AppText>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                    {data.statuses.map((status) => (
-                        <Pressable
-                            key={status}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: status === tracking.status }}
-                            disabled={pending || status === tracking.status}
-                            onPress={() => update({ type: "status", status })}
-                            style={({ pressed }) => ({
-                                flexBasis: "46%",
-                                flexGrow: 1,
-                                minHeight: 46,
-                                padding: 12,
-                                borderRadius: 12,
-                                borderWidth: 1,
-                                borderColor: status === tracking.status ? statusColors[status] : colors.border,
-                                backgroundColor: status === tracking.status ? colors.secondary : colors.surface,
-                                opacity: pressed || pending ? 0.6 : 1,
-                            })}
-                        >
-                            <AppText
-                                style={{
-                                    fontSize: 13,
-                                    color: status === tracking.status ? statusColors[status] : colors.muted,
-                                }}
-                            >
-                                {status}
-                            </AppText>
-                        </Pressable>
-                    ))}
-                </View>
-                <NativeHost>
-                    <Row spacing={12}>
-                        <NativeText>Favorite</NativeText>
-                        <Switch
-                            value={Boolean(tracking.favorite)}
-                            disabled={pending}
-                            onValueChange={(favorite) => update({ type: "favorite", favorite })}
-                        />
-                    </Row>
-                </NativeHost>
-            </View>
-            <Section>
-                <View style={{ padding: 16 }}>
-                    <RatingControl
-                        key={tracking.rating}
-                        rating={tracking.rating}
-                        system={data.ratingSystem}
-                        pending={pending}
-                        update={update}
-                    />
-                </View>
-            </Section>
             <Section title={data.progress.unit.short === "views" ? "Rewatches" : "Progress"}>
                 <View style={uiStyles.padded}>
                     {"currentSeason" in tracking && (
@@ -328,6 +190,35 @@ export function TrackingEditor({ data, update, pending }: TrackingEditorProps) {
                             }
                         />
                     )}
+                </View>
+            </Section>
+            <Section title="Status & rating">
+                <View style={uiStyles.padded}>
+                    <Select
+                        label="Status"
+                        value={tracking.status}
+                        disabled={pending}
+                        options={data.statuses.map((value) => ({ value, label: value }))}
+                        onChange={(status) => {
+                            if (status !== tracking.status) update({ type: "status", status });
+                        }}
+                    />
+                    <RatingInput
+                        value={tracking.rating}
+                        system={data.ratingSystem}
+                        pending={pending}
+                        onChange={(rating) => update({ type: "rating", rating })}
+                    />
+                    <NativeHost>
+                        <Row spacing={12}>
+                            <NativeText>Favorite</NativeText>
+                            <Switch
+                                value={Boolean(tracking.favorite)}
+                                disabled={pending}
+                                onValueChange={(favorite) => update({ type: "favorite", favorite })}
+                            />
+                        </Row>
+                    </NativeHost>
                 </View>
             </Section>
             <Section title="Your notes">

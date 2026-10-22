@@ -1,19 +1,29 @@
-import type { LucideIcon } from "lucide-react-native";
-import { Pressable, View, type ViewProps } from "react-native";
-import { AppText } from "./ui";
-import { colors } from "../theme";
+import {AppText} from "./ui";
+import {colors} from "../theme";
+import type {LucideIcon} from "lucide-react-native";
+import {Pressable, View, type ViewProps} from "react-native";
 
-export function SectionTabs<T extends string>({
-    tabs,
-    value,
-    onChange,
-    onLayout,
-}: {
-    tabs: readonly { value: T; label: string; icon: LucideIcon }[];
+
+interface SectionTabsProps<T extends string> {
     value: T;
     onChange: (value: T) => void;
     onLayout?: ViewProps["onLayout"];
-}) {
+    tabs: readonly {
+        value: T;
+        label: string;
+        icon: LucideIcon;
+    }[];
+    action?: {
+        label: string;
+        busy?: boolean;
+        icon: LucideIcon;
+        disabled?: boolean;
+        onPress: () => void;
+    };
+}
+
+
+export function SectionTabs<T extends string>({ tabs, value, onChange, onLayout, action }: SectionTabsProps<T>) {
     return (
         <View
             onLayout={onLayout}
@@ -29,22 +39,25 @@ export function SectionTabs<T extends string>({
                     key={key}
                     accessibilityRole="tab"
                     accessibilityLabel={label}
-                    accessibilityState={{ selected: value === key }}
                     onPress={() => onChange(key)}
+                    accessibilityState={{ selected: value === key }}
                     style={({ pressed }) => ({
+                        gap: 3,
                         flex: 1,
                         minHeight: 52,
                         paddingVertical: 6,
-                        paddingHorizontal: 2,
-                        gap: 3,
                         alignItems: "center",
+                        paddingHorizontal: 2,
+                        borderBottomWidth: 2,
                         justifyContent: "center",
                         opacity: pressed ? 0.6 : 1,
-                        borderBottomWidth: 2,
                         borderBottomColor: value === key ? colors.accent : "transparent",
                     })}
                 >
-                    <Icon size={19} color={value === key ? colors.accent : colors.muted} />
+                    <Icon
+                        size={19}
+                        color={value === key ? colors.accent : colors.muted}
+                    />
                     <AppText
                         numberOfLines={1}
                         adjustsFontSizeToFit
@@ -60,6 +73,31 @@ export function SectionTabs<T extends string>({
                     </AppText>
                 </Pressable>
             ))}
+            {action &&
+                <Pressable
+                    onPress={action.onPress}
+                    accessibilityRole="button"
+                    accessibilityLabel={action.label}
+                    accessibilityState={{ disabled: action.disabled, busy: action.busy }} disabled={action.disabled}
+                    style={({ pressed }) => ({
+                        gap: 3,
+                        flex: 1,
+                        minHeight: 52,
+                        paddingVertical: 6,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        opacity: action.disabled ? 0.4 : pressed ? 0.6 : 1
+                    })}
+                >
+                    <action.icon
+                        size={19}
+                        color={colors.muted}
+                    />
+                    <AppText style={{ fontSize: 10, lineHeight: 14, color: colors.muted }}>
+                        {action.busy ? "Refreshing" : action.label}
+                    </AppText>
+                </Pressable>
+            }
         </View>
     );
 }

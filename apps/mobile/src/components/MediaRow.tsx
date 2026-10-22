@@ -1,9 +1,9 @@
 import {memo} from "react";
 import {AppText, Cover} from "./ui";
-import {ratingLabel} from "../lib/ratings";
+import {Rating} from "./rating";
 import {colors, statusColors} from "../theme";
 import {useTabPush} from "../hooks/use-tab-push";
-import {Heart, Star} from "lucide-react-native";
+import {Heart} from "lucide-react-native";
 import type {MediaType} from "../lib/api-client";
 import {Pressable, StyleSheet, View} from "react-native";
 
@@ -63,12 +63,7 @@ export const MediaRow = memo(function MediaRow(props: MediaRowProps) {
                     />
                 }
                 {rating != null &&
-                    <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
-                        <Star size={13} color={colors.rating}/>
-                        <AppText style={{ fontSize: 12 }}>
-                            {ratingLabel(rating, ratingSystem)}
-                        </AppText>
-                    </View>
+                    <Rating value={rating} system={ratingSystem}/>
                 }
             </View>
         </Pressable>

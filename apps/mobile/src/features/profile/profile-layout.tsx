@@ -2,11 +2,6 @@ import { memo, type ReactNode } from "react";
 import { CollapsingTabs } from "../../components/collapsing-tabs";
 import { colors } from "../../theme";
 import type { MobileProfile } from "../../lib/api-client";
-import { useLocalSearchParams } from "expo-router";
-import { AchievementsContent } from "./AchievementsScreen";
-import { StatsContent } from "./StatsScreen";
-import { ActivityContent } from "./ActivityScreen";
-import { CalendarContent } from "./CalendarContent";
 import { PrivacyBadge } from "./PrivacyBadge";
 import { ProfileFeed } from "./ProfileFeed";
 import { ProfileContinue } from "./ProfileContinue";
@@ -28,7 +23,6 @@ const profileTabs = [
     { value: "stats", label: "Stats", icon: ChartNoAxesCombined },
     { value: "achievements", label: "Achievements", icon: Trophy },
 ] as const;
-type ProfileTab = (typeof profileTabs)[number]["value"];
 
 export function ProfileLayout({
     data,
@@ -41,22 +35,21 @@ export function ProfileLayout({
     userId?: number;
     headerAction?: ReactNode;
 }) {
-    const params = useLocalSearchParams<{ tab?: ProfileTab }>();
+    const push = useTabPush();
     return (
         <CollapsingTabs
             tabs={profileTabs}
-            initialTab={profileTabs.find((item) => item.value === params.tab)?.value ?? "profile"}
+            initialTab="profile"
+            onTabPress={(tab) => {
+                if (tab === "profile") return;
+                push({
+                    pathname: `/profile/${tab === "calendar" ? "releases" : tab}`,
+                    params: { userId, username: data.user.name },
+                });
+            }}
             header={<ProfileHeader data={data} userId={userId} action={headerAction} />}
         >
-            {(tab) => (
-                <>
-                    {tab === "profile" && <ProfileContent data={data} refreshing={refreshing} userId={userId} />}
-                    {tab === "achievements" && <AchievementsContent userId={userId} />}
-                    {tab === "stats" && <StatsContent userId={userId} />}
-                    {tab === "activity" && <ActivityContent userId={userId} />}
-                    {tab === "calendar" && <CalendarContent userId={userId} />}
-                </>
-            )}
+            {() => <ProfileContent data={data} refreshing={refreshing} userId={userId} />}
         </CollapsingTabs>
     );
 }
@@ -106,7 +99,10 @@ export const ProfileHeader = memo(function ProfileHeader({
     action,
 }: {
     data: {
-        user: Pick<MobileProfile["user"], "id" | "name" | "privacy" | "image" | "backgroundImage" | "createdAt">;
+        user: Pick<
+            MobileProfile["user"],
+            "id" | "name" | "privacy" | "image" | "backgroundImage" | "createdAt" | "level"
+        >;
         social?: MobileProfile["social"];
     };
     userId?: number;
@@ -123,7 +119,7 @@ export const ProfileHeader = memo(function ProfileHeader({
             <View pointerEvents="box-none" style={{ paddingHorizontal: 16, gap: 14 }}>
                 <View
                     pointerEvents="box-none"
-                    style={{ flexDirection: "row", gap: 14, alignItems: "flex-end", marginTop: -44 }}
+                    style={{ flexDirection: "row", gap: 14, alignItems: "flex-start", marginTop: -44 }}
                 >
                     <Cover
                         pointerEvents="none"
@@ -137,19 +133,19 @@ export const ProfileHeader = memo(function ProfileHeader({
                             borderColor: colors.background,
                         }}
                     />
-                    <View pointerEvents="box-none" style={{ flex: 1, gap: 8, paddingBottom: 4 }}>
-                        <View pointerEvents="box-none" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                            <View pointerEvents="none" style={{ flex: 1 }}>
+                    <View pointerEvents="box-none" style={{ flex: 1, gap: 5, paddingTop: 44, paddingBottom: 4 }}>
+                        <View pointerEvents="box-none" style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <View pointerEvents="none" style={{ flex: 1, gap: 2 }}>
                                 <AppText heading style={{ fontSize: 22, lineHeight: 28 }}>
                                     {data.user.name}
                                 </AppText>
+                                <AppText muted style={{ fontSize: 11, lineHeight: 16 }}>
+                                    Joined in {new Date(data.user.createdAt).getUTCFullYear()} · Level {data.user.level}
+                                </AppText>
                             </View>
-                            <PrivacyBadge value={data.user.privacy} />
-                        </View>
-                        <View pointerEvents="none">
-                            <AppText muted style={{ fontSize: 12 }}>
-                                Joined in {new Date(data.user.createdAt).getUTCFullYear()}
-                            </AppText>
+                            <View style={{ paddingTop: 12 }}>
+                                <PrivacyBadge value={data.user.privacy} />
+                            </View>
                         </View>
                         {action}
                     </View>

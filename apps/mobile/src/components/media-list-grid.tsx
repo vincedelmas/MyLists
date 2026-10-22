@@ -1,60 +1,60 @@
-import { Pressable, View } from "react-native";
-import { Play } from "lucide-react-native";
 import { AppText } from "./ui";
 import { colors } from "../theme";
-import { mediaIcons, mediaColors, mediaLabels } from "../lib/media";
+import { Play } from "lucide-react-native";
+import { Pressable, View } from "react-native";
 import { useTabPush } from "../hooks/use-tab-push";
 import type { MobileProfile } from "../lib/api-client";
+import { mediaIcons, mediaColors, mediaLabels } from "../lib/media";
 
-export function MediaListGrid({
-    lists,
-    userId,
-    includeContinue = false,
-}: {
-    lists: Pick<MobileProfile["lists"][number], "mediaType" | "level">[];
+interface MediaListGridProps {
     userId?: number;
     includeContinue?: boolean;
-}) {
+    lists: Pick<MobileProfile["lists"][number], "mediaType" | "level">[];
+}
+
+export function MediaListGrid({ lists, userId, includeContinue = false }: MediaListGridProps) {
     const push = useTabPush();
+
     const tiles = [
         ...lists.map((list) => ({
-            key: list.mediaType,
-            label: mediaLabels[list.mediaType],
-            icon: mediaIcons[list.mediaType],
-            color: mediaColors[list.mediaType],
             level: list.level,
+            key: list.mediaType,
+            icon: mediaIcons[list.mediaType],
+            label: mediaLabels[list.mediaType],
+            color: mediaColors[list.mediaType],
             open: () => push({ pathname: "/lists/[mediaType]", params: { mediaType: list.mediaType, userId } }),
         })),
         ...(includeContinue
             ? [
                   {
+                      icon: Play,
+                      level: null,
                       key: "continue",
                       label: "Continue",
-                      icon: Play,
                       color: colors.accent,
-                      level: null,
                       open: () => push({ pathname: "/library/[kind]", params: { kind: "continue", userId } }),
                   },
               ]
             : []),
     ];
+
     return (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {tiles.map(({ key, label, icon: Icon, color, level, open }) => (
                 <Pressable
                     key={key}
-                    accessibilityRole="button"
                     onPress={open}
+                    accessibilityRole="button"
                     style={({ pressed }) => ({
-                        flexBasis: "47%",
-                        flexGrow: 1,
                         gap: 6,
+                        flexGrow: 1,
                         padding: 12,
-                        borderRadius: 10,
                         borderWidth: 1,
+                        flexBasis: "47%",
+                        borderRadius: 10,
+                        opacity: pressed ? 0.6 : 1,
                         borderColor: colors.border,
                         backgroundColor: colors.surface,
-                        opacity: pressed ? 0.6 : 1,
                     })}
                 >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

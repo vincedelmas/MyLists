@@ -253,6 +253,7 @@ const followsUpdates = [
 const achievements = [
     {
         id: -301,
+        mediaType: MediaType.MOVIES,
         name: "Cinephile Marathoner",
         completedAt: "2026-06-12 19:00:00",
         description: "Awarded for completing movies, because real life has too few explosions and car chases.",
@@ -260,6 +261,7 @@ const achievements = [
     },
     {
         id: -302,
+        mediaType: MediaType.SERIES,
         name: "Couch Potato",
         completedAt: "2026-06-02 19:00:00",
         description: "Awarded for completing series, because finishing what you started is a true feat!",
@@ -267,6 +269,7 @@ const achievements = [
     },
     {
         id: -303,
+        mediaType: MediaType.MOVIES,
         name: "Sci-Fi Navigator",
         completedAt: "2026-05-28 19:00:00",
         description: "Awarded for completing Science Fiction movies, because you like your plot twists served with a side of quantum stuff.",

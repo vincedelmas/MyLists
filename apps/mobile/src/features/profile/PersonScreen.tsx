@@ -1,9 +1,11 @@
 import { useIsFocused, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, ScrollView } from "react-native";
+import { ScrollView } from "react-native";
 import { useSocialAction } from "../../lib/react-query/query-mutations/social.mutations";
 import { personOptions } from "../../lib/react-query/query-options/profile.options";
 import { AppText, Button, Page, QueryPanel } from "../../components/ui";
+import { ConfirmationSheet } from "../../components/confirmation-sheet";
+import { useConfirmation } from "../../hooks/use-confirmation";
 import { ProfileHeader, ProfileLayout } from "./profile-layout";
 
 export function PersonScreen() {
@@ -11,6 +13,7 @@ export function PersonScreen() {
     const focused = useIsFocused();
     const query = useQuery({ ...personOptions(Number(userId)), enabled: focused });
     const mutation = useSocialAction();
+    const { confirmation, confirm, dismiss } = useConfirmation();
     return (
         <Page title="MyLists" brand back>
             <QueryPanel query={query}>
@@ -37,10 +40,12 @@ export function PersonScreen() {
                                                 action: data.following ? "unfollow" : "follow",
                                             });
                                         if (data.following === "accepted")
-                                            Alert.alert("Unfollow?", `Stop following ${data.header.name}?`, [
-                                                { text: "Cancel", style: "cancel" },
-                                                { text: "Unfollow", style: "destructive", onPress: perform },
-                                            ]);
+                                            confirm({
+                                                title: "Unfollow this person?",
+                                                message: `You will stop seeing ${data.header.name} in your follows feed.`,
+                                                label: "Unfollow",
+                                                onConfirm: perform,
+                                            });
                                         else perform();
                                     }}
                                 />
@@ -66,6 +71,7 @@ export function PersonScreen() {
                     );
                 }}
             </QueryPanel>
+            <ConfirmationSheet confirmation={confirmation} dismiss={dismiss} />
         </Page>
     );
 }

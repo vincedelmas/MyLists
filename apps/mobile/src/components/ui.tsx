@@ -171,9 +171,11 @@ export function Button({
     disabled,
     secondary,
     danger,
+    width,
 }: {
     label: string;
     danger?: boolean;
+    width?: number;
     pending?: boolean;
     disabled?: boolean;
     secondary?: boolean;
@@ -193,6 +195,7 @@ export function Button({
                 label={pending ? `${label}…` : label}
                 disabled={disabled || pending || !online}
                 variant={secondary ? "outlined" : "filled"}
+                style={width ? { width } : undefined}
             />
         </NativeHost>
     );

@@ -1,12 +1,14 @@
 import { useTabPush } from "../../hooks/use-tab-push";
 import { colors } from "../../theme";
+import { ConfirmationSheet } from "../../components/confirmation-sheet";
+import { useConfirmation } from "../../hooks/use-confirmation";
 import { SectionTabs } from "../../components/section-tabs";
 import { UsersRound, UserRoundCheck, UserRoundPlus, Send, MoreHorizontal, type LucideIcon } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import type { api } from "../../lib/api-client";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useIsFocused, useLocalSearchParams } from "expo-router";
-import { FlatList, View, Alert, RefreshControl, Pressable } from "react-native";
+import { FlatList, View, RefreshControl, Pressable } from "react-native";
 import { recordNavigationTiming } from "../../lib/diagnostics/navigation-timing";
 import { socialOptions } from "../../lib/react-query/query-options/social.options";
 import { AppText, Button, Cover, Page, StateView } from "../../components/ui";
@@ -25,6 +27,7 @@ export function SocialScreen() {
     const focused = useIsFocused();
     const push = useTabPush();
     const mutation = useSocialAction();
+    const { confirmation, confirm, dismiss } = useConfirmation();
     const params = useLocalSearchParams<{ kind?: Kind; userId?: string }>();
     const [kind, setKind] = useState<Kind>(params.kind ?? "followers");
     const query = useInfiniteQuery({
@@ -45,15 +48,17 @@ export function SocialScreen() {
 
     return (
         <Page title="Connections" brand back>
-            <SectionTabs
-                value={kind}
-                tabs={
-                    params.userId
-                        ? kinds.filter((item) => item.value === "followers" || item.value === "following")
-                        : kinds
-                }
-                onChange={setKind}
-            />
+            <View style={{ paddingTop: 10 }}>
+                <SectionTabs
+                    value={kind}
+                    tabs={
+                        params.userId
+                            ? kinds.filter((item) => item.value === "followers" || item.value === "following")
+                            : kinds
+                    }
+                    onChange={setKind}
+                />
+            </View>
             {mutation.error && (
                 <AppText accessibilityRole="alert" style={{ color: colors.error, padding: 16 }}>
                     {mutation.error.message}
@@ -145,30 +150,31 @@ export function SocialScreen() {
                                 </View>
                             </Pressable>
                             {kind !== "requests" && !item.isOwn && (
-                                <Button
-                                    secondary={Boolean(item.myFollowStatus)}
-                                    disabled={mutation.isPending}
-                                    pending={mutation.isPending && mutation.variables?.targetId === item.id}
-                                    label={
-                                        item.myFollowStatus === "accepted"
-                                            ? "Following"
-                                            : item.myFollowStatus === "requested"
-                                              ? "Cancel"
-                                              : "Follow"
-                                    }
-                                    onPress={() =>
-                                        item.myFollowStatus === "accepted"
-                                            ? Alert.alert("Unfollow?", `Stop following ${item.username}?`, [
-                                                  { text: "Cancel", style: "cancel" },
-                                                  {
-                                                      text: "Unfollow",
-                                                      style: "destructive",
-                                                      onPress: () => act(item.id, "unfollow"),
-                                                  },
-                                              ])
-                                            : act(item.id, item.myFollowStatus ? "unfollow" : "follow")
-                                    }
-                                />
+                                <View style={{ width: 108, alignItems: "center" }}>
+                                    <Button
+                                        width={108}
+                                        secondary={Boolean(item.myFollowStatus)}
+                                        disabled={mutation.isPending}
+                                        pending={mutation.isPending && mutation.variables?.targetId === item.id}
+                                        label={
+                                            item.myFollowStatus === "accepted"
+                                                ? "Following"
+                                                : item.myFollowStatus === "requested"
+                                                  ? "Cancel"
+                                                  : "Follow"
+                                        }
+                                        onPress={() =>
+                                            item.myFollowStatus === "accepted"
+                                                ? confirm({
+                                                      title: "Unfollow this person?",
+                                                      message: `Stop seeing ${item.username} in your follows feed?`,
+                                                      label: "Unfollow",
+                                                      onConfirm: () => act(item.id, "unfollow"),
+                                                  })
+                                                : act(item.id, item.myFollowStatus ? "unfollow" : "follow")
+                                        }
+                                    />
+                                </View>
                             )}
                             {kind === "followers" && !params.userId && (
                                 <Pressable
@@ -178,14 +184,12 @@ export function SocialScreen() {
                                     hitSlop={8}
                                     style={{ paddingVertical: 10, minWidth: 28, alignItems: "center" }}
                                     onPress={() =>
-                                        Alert.alert(item.username, "Manage this follower", [
-                                            { text: "Cancel", style: "cancel" },
-                                            {
-                                                text: "Remove follower",
-                                                style: "destructive",
-                                                onPress: () => act(item.id, "remove"),
-                                            },
-                                        ])
+                                        confirm({
+                                            title: "Remove follower?",
+                                            message: `${item.username} will stop following you. They can follow or request access again.`,
+                                            label: "Remove",
+                                            onConfirm: () => act(item.id, "remove"),
+                                        })
                                     }
                                 >
                                     <MoreHorizontal size={20} color={colors.muted} />
@@ -210,6 +214,7 @@ export function SocialScreen() {
                     </View>
                 )}
             />
+            <ConfirmationSheet confirmation={confirmation} dismiss={dismiss} />
         </Page>
     );
 }

@@ -26,6 +26,7 @@ beforeEach(() => {
     mocks.user.mockResolvedValue({
         id: 20,
         name: "Other",
+        userMediaSettings: [{ mediaType: "movies", active: true, timeSpent: 240 }],
         privacy: "private",
         createdAt: "2026-01-01 00:00:00",
         image: "/avatar.jpg",

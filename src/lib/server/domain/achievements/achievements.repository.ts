@@ -94,6 +94,7 @@ export class AchievementsRepository {
                 id: achievement.id,
                 name: achievement.name,
                 description: achievement.description,
+                mediaType: achievement.mediaType,
                 difficulty: achievementTier.difficulty,
                 completedAt: userAchievement.completedAt,
             })

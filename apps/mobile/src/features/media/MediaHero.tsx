@@ -1,11 +1,11 @@
 import { View, StyleSheet } from "react-native";
 import { Heart, Star } from "lucide-react-native";
-import { AppText, Button, Cover } from "../../components/ui";
+import { AppText, Cover } from "../../components/ui";
 import type { MobileMedia } from "../../lib/api-client";
 import { colors } from "../../theme";
 import { formatMinutes } from "@/lib/utils/formatting/number";
 
-export function MediaHero({ data, onTrack }: { data: MobileMedia; onTrack: () => void }) {
+export function MediaHero({ data }: { data: MobileMedia }) {
     const media = data.media;
     const time = media.completionHours
         ? `${formatMinutes(media.completionHours * 60)} · main story`
@@ -48,13 +48,6 @@ export function MediaHero({ data, onTrack }: { data: MobileMedia; onTrack: () =>
                             {[media.releaseDate?.slice(0, 4) ?? "TBA", time].filter(Boolean).join(" · ")}
                         </AppText>
                         {media.byline && <AppText style={{ fontSize: 13, lineHeight: 19 }}>{media.byline}</AppText>}
-                    </View>
-                    <View pointerEvents="box-none" style={{ paddingTop: 2 }}>
-                        <Button
-                            label={data.tracking ? "Your tracking" : "Track this title"}
-                            secondary={Boolean(data.tracking)}
-                            onPress={onTrack}
-                        />
                     </View>
                 </View>
                 <Cover

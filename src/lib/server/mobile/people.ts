@@ -1,3 +1,4 @@
+import { calculateMediaLevel } from "@/lib/utils/media/level";
 import { toActor } from "@/lib/server/authorization";
 import { getContainer } from "@/lib/server/core/container";
 import { getMobileProfile } from "./profile";
@@ -13,6 +14,13 @@ export const getMobilePerson = async (viewerId: number, targetId: number) => {
     const header = {
         isOwn: viewerId === targetId,
         id: target.id,
+        level: Math.floor(
+            calculateMediaLevel(
+                target.userMediaSettings
+                    .filter((setting) => setting.active)
+                    .reduce((sum, setting) => sum + setting.timeSpent, 0),
+            ),
+        ),
         name: target.name,
         privacy: target.privacy,
         createdAt: dateFromUTCInput(target.createdAt).toISOString(),

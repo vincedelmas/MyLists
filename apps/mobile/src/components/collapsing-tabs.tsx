@@ -1,53 +1,53 @@
-import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react-native";
-import { Animated, View } from "react-native";
-import { colors } from "../theme";
-import { SectionTabs } from "./section-tabs";
-import { CollapsingScrollContext } from "../hooks/use-collapsing-scroll";
-import { useCollapsingTabs } from "../hooks/use-collapsing-tabs";
+import {colors} from "../theme";
+import type {ReactNode} from "react";
+import {SectionTabs} from "./section-tabs";
+import {Animated, View} from "react-native";
+import type {LucideIcon} from "lucide-react-native";
+import {useCollapsingTabs} from "../hooks/use-collapsing-tabs";
+import {CollapsingScrollContext} from "../hooks/use-collapsing-scroll";
 
-export function CollapsingTabs<T extends string>({
-    tabs,
-    initialTab,
-    header,
-    children,
-}: {
-    tabs: readonly { value: T; label: string; icon: LucideIcon }[];
+
+interface CollapsingTabsProps<T extends string> {
     initialTab: T;
-    header: ReactNode | ((selectTab: (tab: T) => void) => ReactNode);
+    onTabPress?: (tab: T) => void;
     children: (tab: T) => ReactNode;
-}) {
-    const { tab, selectTab, context, translateY, setHeaderHeight, setTabBarHeight, setViewportHeight } =
-        useCollapsingTabs(initialTab);
+    action?: Parameters<typeof SectionTabs<T>>[0]["action"];
+    header: ReactNode | ((selectTab: (tab: T) => void) => ReactNode);
+    tabs: readonly {
+        value: T;
+        label: string;
+        icon: LucideIcon;
+    }[];
+}
+
+
+export function CollapsingTabs<T extends string>({ tabs, initialTab, header, children, onTabPress, action }: CollapsingTabsProps<T>) {
+    const { tab, selectTab, context, translateY, setHeaderHeight, setTabBarHeight, setViewportHeight } = useCollapsingTabs(initialTab);
+
     return (
         <CollapsingScrollContext.Provider value={context}>
-            <View
-                style={{ flex: 1, overflow: "hidden" }}
-                onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
-            >
+            <View style={{ flex: 1, overflow: "hidden" }} onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}>
                 {context.headerHeight > 0 && <View style={{ flex: 1 }}>{children(tab)}</View>}
                 <Animated.View
                     pointerEvents="box-none"
                     style={{
-                        position: "absolute",
                         top: 0,
                         left: 0,
                         right: 0,
                         zIndex: 1,
-                        backgroundColor: colors.background,
+                        position: "absolute",
                         transform: [{ translateY }],
+                        backgroundColor: colors.background,
                     }}
                 >
-                    <View
-                        pointerEvents="box-none"
-                        onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
-                    >
+                    <View pointerEvents="box-none" onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
                         {typeof header === "function" ? header(selectTab) : header}
                     </View>
                     <SectionTabs
                         tabs={tabs}
                         value={tab}
-                        onChange={selectTab}
+                        action={action}
+                        onChange={onTabPress ?? selectTab}
                         onLayout={(event) => setTabBarHeight(event.nativeEvent.layout.height)}
                     />
                 </Animated.View>

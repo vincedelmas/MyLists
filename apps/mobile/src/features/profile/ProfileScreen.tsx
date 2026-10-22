@@ -1,10 +1,11 @@
 import { router, useIsFocused } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 import { Settings } from "lucide-react-native";
 import { colors } from "../../theme";
 import { Page, QueryPanel } from "../../components/ui";
 import { profileOptions } from "../../lib/react-query/query-options/profile.options";
+import { NotificationButton } from "./NotificationButton";
 import { ProfileLayout } from "./profile-layout";
 
 export function ProfileScreen() {
@@ -15,14 +16,17 @@ export function ProfileScreen() {
             title="MyLists"
             brand
             action={
-                <Pressable
-                    style={{ padding: 12 }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Settings"
-                    onPress={() => router.push("/(tabs)/(profile)/settings")}
-                >
-                    <Settings size={21} color={colors.muted} />
-                </Pressable>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <NotificationButton />
+                    <Pressable
+                        style={{ padding: 12 }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Settings"
+                        onPress={() => router.push("/(tabs)/(profile)/settings")}
+                    >
+                        <Settings size={21} color={colors.muted} />
+                    </Pressable>
+                </View>
             }
         >
             <QueryPanel query={query}>

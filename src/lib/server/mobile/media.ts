@@ -1,27 +1,29 @@
 import * as z from "zod";
-import {notFound} from "@tanstack/react-router";
-import {getContainer} from "@/lib/server/core/container";
-import {mobileImagePath} from "@/lib/server/mobile/images";
-import {dateFromUTCInput} from "@/lib/utils/formatting/date";
-import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
-import {mediaListSearchSchema} from "@/lib/schemas/media-lists.schema";
-import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
-import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
-import {addMediaToListSchema, updateUserMediaSchema} from "@/lib/schemas/user-media.schema";
-import {mediaTypeFieldSchema, coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
-import {ActivityCorrectionRequired} from "@/lib/server/domain/tracking/monthly-activity.service";
-
+import { notFound } from "@tanstack/react-router";
+import { getContainer } from "@/lib/server/core/container";
+import { mobileImagePath } from "@/lib/server/mobile/images";
+import { dateFromUTCInput } from "@/lib/utils/formatting/date";
+import { InactiveMediaTypeError } from "@/lib/utils/error-classes";
+import { mediaListSearchSchema } from "@/lib/schemas/media-lists.schema";
+import { getMediaDefinition } from "@/lib/media-definitions/definition.registry";
+import type { MediaListDataByType } from "@/lib/server/domain/media/media-list.types";
+import { addMediaToListSchema, updateUserMediaSchema } from "@/lib/schemas/user-media.schema";
+import { mediaTypeFieldSchema, coercedPositiveIntFieldSchema } from "@/lib/schemas/common.schema";
+import { ActivityCorrectionRequired } from "@/lib/server/domain/tracking/monthly-activity.service";
 
 export const mediaParamsSchema = z.object({ mediaType: mediaTypeFieldSchema, mediaId: coercedPositiveIntFieldSchema });
-
 
 export const listInputSchema = mediaListSearchSchema.pick({ page: true, search: true, sorting: true }).extend({
     status: z.string().optional(),
     favorite: z.enum(["true", "false"]).optional(),
 });
 
-
-export const getMobileList = async (userId: number, mediaType: z.infer<typeof mediaTypeFieldSchema>, input: z.infer<typeof listInputSchema>) => {
+export const getMobileList = async (
+    userId: number,
+    mediaType: z.infer<typeof mediaTypeFieldSchema>,
+    input: z.infer<typeof listInputSchema>,
+    viewerId = userId,
+) => {
     const container = await getContainer();
     const definition = getMediaDefinition(mediaType);
     const user = await container.services.account.getUserById(userId);
@@ -30,7 +32,7 @@ export const getMobileList = async (userId: number, mediaType: z.infer<typeof me
         throw new InactiveMediaTypeError(mediaType);
 
     const status = input.status ? z.enum(definition.statuses).parse(input.status) : undefined;
-    const result = (await container.registries.mediaService.get(mediaType).getMediaList(userId, userId, {
+    const result = (await container.registries.mediaService.get(mediaType).getMediaList(viewerId, userId, {
         ...input,
         perPage: 30,
         favorite: input.favorite === "true",
@@ -52,7 +54,6 @@ export const getMobileList = async (userId: number, mediaType: z.infer<typeof me
     };
 };
 
-
 export const getMobileMedia = async (userId: number, params: z.infer<typeof mediaParamsSchema>) => {
     const container = await getContainer();
     const definition = getMediaDefinition(params.mediaType);
@@ -61,7 +62,9 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
     const media = service.findById(params.mediaId);
     if (!media) throw notFound();
 
-    const userMedia = service.findUserMedia(userId, params.mediaId) as Awaited<ReturnType<typeof service.getMediaAndUserDetails>>["userMedia"];
+    const userMedia = service.findUserMedia(userId, params.mediaId) as Awaited<
+        ReturnType<typeof service.getMediaAndUserDetails>
+    >["userMedia"];
     const settings = await container.services.account.getUserById(userId);
 
     const compatiblePlatforms =
@@ -70,18 +73,35 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
             : [];
 
     const labels = {
-        originalName: "Original title", duration: "Runtime (minutes)", prodStatus: "Production status",
-        totalSeasons: "Seasons", totalEpisodes: "Episodes", voteAverage: "Community score", voteCount: "Votes",
-        originalLanguage: "Original language", originCountry: "Country", directorName: "Director", createdBy: "Created by",
-        compositorName: "Composer", pages: "Pages", language: "Language", publishers: "Publisher",
-        chapters: "Chapters", volumes: "Volumes", endDate: "End date", gameEngine: "Game engine",
-        gameModes: "Game modes", playerPerspective: "Perspective", hltbMainTime: "Main story (hours)",
-        hltbMainAndExtraTime: "Main + extras (hours)", hltbTotalCompleteTime: "Completionist (hours)",
+        originalName: "Original title",
+        duration: "Runtime (minutes)",
+        prodStatus: "Production status",
+        totalSeasons: "Seasons",
+        totalEpisodes: "Episodes",
+        voteAverage: "Community score",
+        voteCount: "Votes",
+        originalLanguage: "Original language",
+        originCountry: "Country",
+        directorName: "Director",
+        createdBy: "Created by",
+        compositorName: "Composer",
+        pages: "Pages",
+        language: "Language",
+        publishers: "Publisher",
+        chapters: "Chapters",
+        volumes: "Volumes",
+        endDate: "End date",
+        gameEngine: "Game engine",
+        gameModes: "Game modes",
+        playerPerspective: "Perspective",
+        hltbMainTime: "Main story (hours)",
+        hltbMainAndExtraTime: "Main + extras (hours)",
+        hltbTotalCompleteTime: "Completionist (hours)",
     };
     const fields: Record<string, unknown> = media;
     const facts = Object.entries(labels).flatMap(([key, label]) => {
         const value = fields[key];
-        return value === null || value === undefined || value === "" ? [] : [{label, value: String(value)}];
+        return value === null || value === undefined || value === "" ? [] : [{ label, value: String(value) }];
     });
 
     return {
@@ -89,7 +109,9 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
         statuses: definition.statuses,
         progress: definition.progress,
         ratingSystem: settings!.ratingSystem,
-        active: settings?.userMediaSettings.some((setting) => setting.mediaType === params.mediaType && setting.active) ?? false,
+        active:
+            settings?.userMediaSettings.some((setting) => setting.mediaType === params.mediaType && setting.active) ??
+            false,
         seasons:
             params.mediaType === "series" || params.mediaType === "anime"
                 ? container.registries.mediaService.get(params.mediaType).getUserSeasons(userId, params.mediaId)
@@ -105,15 +127,14 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
         },
         tracking: userMedia
             ? {
-                ...userMedia,
-                customCover: userMedia.customCover ? mobileImagePath(userMedia.customCover) : null,
-                addedAt: userMedia.addedAt ? dateFromUTCInput(userMedia.addedAt).toISOString() : null,
-                lastUpdated: userMedia.lastUpdated ? dateFromUTCInput(userMedia.lastUpdated).toISOString() : null,
-            }
+                  ...userMedia,
+                  customCover: userMedia.customCover ? mobileImagePath(userMedia.customCover) : null,
+                  addedAt: userMedia.addedAt ? dateFromUTCInput(userMedia.addedAt).toISOString() : null,
+                  lastUpdated: userMedia.lastUpdated ? dateFromUTCInput(userMedia.lastUpdated).toISOString() : null,
+              }
             : null,
     };
 };
-
 
 export const addMobileMedia = async (userId: number, input: z.infer<typeof addMediaToListSchema>) => {
     const { services } = await getContainer();
@@ -122,21 +143,18 @@ export const addMobileMedia = async (userId: number, input: z.infer<typeof addMe
     return { kind: "saved" as const };
 };
 
-
 export const updateMobileMedia = async (userId: number, input: z.infer<typeof updateUserMediaSchema>) => {
     const { services } = await getContainer();
 
     try {
         services.mediaTracking.updateUserMedia({ ...input, userId });
         return { kind: "saved" as const };
-    }
-    catch (error) {
+    } catch (error) {
         if (error instanceof ActivityCorrectionRequired)
             return { kind: "correction-required" as const, preview: error.preview };
         throw error;
     }
 };
-
 
 export const removeMobileMedia = async (userId: number, params: z.infer<typeof mediaParamsSchema>) => {
     const { services } = await getContainer();
@@ -144,7 +162,6 @@ export const removeMobileMedia = async (userId: number, params: z.infer<typeof m
 
     return { kind: "saved" as const };
 };
-
 
 export const getMobileLists = async (userId: number) => {
     const { services } = await getContainer();

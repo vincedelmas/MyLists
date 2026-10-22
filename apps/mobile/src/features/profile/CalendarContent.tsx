@@ -12,14 +12,14 @@ import { calendarOptions } from "../../lib/react-query/query-options/profile.opt
 import { AppText, Cover, Select, StateView } from "../../components/ui";
 import { shiftDateInputValue, toDateInputValue } from "@/lib/utils/formatting/date";
 
-export function CalendarContent() {
+export function CalendarContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
     const { scrollProps, contentContainerStyle } = useProfileScroll();
     const push = useTabPush();
     const [month, setMonth] = useState(() => `${toDateInputValue(new Date()).slice(0, 7)}-01`);
     const [mediaType, setMediaType] = useState("all");
     const range = { startDate: month, endDate: shiftDateInputValue(month, { months: 1, days: -1 }) };
-    const query = useQuery({ ...calendarOptions(range), enabled: focused });
+    const query = useQuery({ ...calendarOptions(range, userId), enabled: focused });
     const sections = useMemo(() => {
         const grouped = new Map<string, NonNullable<typeof query.data>["items"]>();
         for (const item of query.data?.items ?? []) {
@@ -81,7 +81,7 @@ export function CalendarContent() {
                                     </Pressable>
                                 </View>
                                 <Select
-                                    label="Releases from your lists"
+                                    label="Releases from tracked lists"
                                     value={mediaType}
                                     onChange={setMediaType}
                                     options={[
@@ -110,7 +110,7 @@ export function CalendarContent() {
                         ListEmptyComponent={
                             <StateView
                                 title="No releases this month"
-                                message="Upcoming releases from your tracked titles will appear here."
+                                message="Upcoming releases from tracked titles will appear here."
                             />
                         }
                         renderSectionHeader={({ section }) => (

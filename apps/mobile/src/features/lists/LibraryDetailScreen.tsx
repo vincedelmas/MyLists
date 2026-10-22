@@ -14,8 +14,15 @@ export function LibraryDetailScreen() {
     const focused = useIsFocused();
     const [layout, setLayout] = useState<MediaLayout>("grid");
     const push = useTabPush();
-    const { kind, id } = useLocalSearchParams<{ kind: "collection" | "dynamic" | "continue"; id?: string }>();
-    const query = useInfiniteQuery({ ...libraryDetailOptions(kind, id ? Number(id) : undefined), enabled: focused });
+    const { kind, id, userId } = useLocalSearchParams<{
+        kind: "collection" | "dynamic" | "continue";
+        id?: string;
+        userId?: string;
+    }>();
+    const query = useInfiniteQuery({
+        ...libraryDetailOptions(kind, id ? Number(id) : undefined, userId ? Number(userId) : undefined),
+        enabled: focused,
+    });
 
     const first = query.data?.pages[0];
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];

@@ -12,12 +12,12 @@ import { Animated, RefreshControl } from "react-native";
 import { MediaCard } from "../../components/media-card";
 import { historyOptions } from "../../lib/react-query/query-options/history.options";
 
-export function ActivityContent() {
+export function ActivityContent({ userId }: { userId?: number }) {
     const push = useTabPush();
     const focused = useIsFocused();
     const { scrollProps, contentContainerStyle } = useProfileScroll();
     const [layout, setLayout] = useState<MediaLayout>("grid");
-    const query = useInfiniteQuery({ ...historyOptions, enabled: focused });
+    const query = useInfiniteQuery({ ...historyOptions(userId), enabled: focused });
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
     return (
@@ -36,7 +36,7 @@ export function ActivityContent() {
                         }}
                     >
                         <AppText muted style={{ fontSize: 12 }}>
-                            Your tracking history
+                            Tracking history
                         </AppText>
                         <LayoutToggle value={layout} onChange={setLayout} />
                     </View>
@@ -65,7 +65,7 @@ export function ActivityContent() {
                         loading={query.isPending}
                         title={query.isError ? "Couldn’t load activity" : "No activity yet"}
                         retry={query.isError ? () => void query.refetch() : undefined}
-                        message={query.error?.message ?? "Your tracking updates will appear here."}
+                        message={query.error?.message ?? "Tracking updates will appear here."}
                     />
                 }
                 renderItem={({ item }) => (

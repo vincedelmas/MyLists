@@ -1,6 +1,7 @@
 import { toActor } from "@/lib/server/authorization";
 import { getContainer } from "@/lib/server/core/container";
-import { getMobileProfile, getMobileProfileActivity } from "./profile";
+import { getMobileProfile } from "./profile";
+import { dateFromUTCInput } from "@/lib/utils/formatting/date";
 import { mobileImagePath } from "./images";
 
 export const getMobilePerson = async (viewerId: number, targetId: number) => {
@@ -14,10 +15,11 @@ export const getMobilePerson = async (viewerId: number, targetId: number) => {
         id: target.id,
         name: target.name,
         privacy: target.privacy,
+        createdAt: dateFromUTCInput(target.createdAt).toISOString(),
         image: target.image ? mobileImagePath(target.image) : null,
         backgroundImage: mobileImagePath(target.backgroundImage),
     };
     if (!decision.allowed) return { access: "private" as const, header, following: following?.status ?? null };
-    const [profile, activity] = await Promise.all([getMobileProfile(targetId), getMobileProfileActivity(targetId)]);
-    return { access: "allowed" as const, header, following: following?.status ?? null, profile: profile!, activity };
+    const profile = await getMobileProfile(targetId);
+    return { access: "allowed" as const, header, following: following?.status ?? null, profile: profile! };
 };

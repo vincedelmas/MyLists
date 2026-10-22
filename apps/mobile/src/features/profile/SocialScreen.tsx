@@ -24,9 +24,12 @@ export function SocialScreen() {
     const focused = useIsFocused();
     const push = useTabPush();
     const mutation = useSocialAction();
-    const params = useLocalSearchParams<{ kind?: Kind }>();
+    const params = useLocalSearchParams<{ kind?: Kind; userId?: string }>();
     const [kind, setKind] = useState<Kind>(params.kind ?? "followers");
-    const query = useInfiniteQuery({ ...socialOptions(kind), enabled: focused });
+    const query = useInfiniteQuery({
+        ...socialOptions(kind, params.userId ? Number(params.userId) : undefined),
+        enabled: focused,
+    });
 
     useEffect(() => {
         if (query.isSuccess) recordNavigationTiming("data-ready", "/profile/social");
@@ -40,8 +43,16 @@ export function SocialScreen() {
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
     return (
-        <Page title="Your connections" back>
-            <TopTabs value={kind} tabs={kinds} onChange={setKind} />
+        <Page title={params.userId ? "Connections" : "Your connections"} back>
+            <TopTabs
+                value={kind}
+                tabs={
+                    params.userId
+                        ? kinds.filter((item) => item.value === "followers" || item.value === "following")
+                        : kinds
+                }
+                onChange={setKind}
+            />
             {mutation.error && (
                 <AppText accessibilityRole="alert" style={{ color: colors.error, padding: 16 }}>
                     {mutation.error.message}
@@ -115,32 +126,34 @@ export function SocialScreen() {
                             </View>
                         ) : (
                             <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                                <Button
-                                    secondary
-                                    disabled={mutation.isPending}
-                                    label={
-                                        item.myFollowStatus === "accepted"
-                                            ? "Unfollow"
-                                            : item.myFollowStatus === "requested"
-                                              ? "Cancel request"
-                                              : item.privacy === "private"
-                                                ? "Request to follow"
-                                                : "Follow"
-                                    }
-                                    onPress={() =>
-                                        item.myFollowStatus === "accepted"
-                                            ? Alert.alert("Unfollow?", `Stop following ${item.username}?`, [
-                                                  { text: "Keep following", style: "cancel" },
-                                                  {
-                                                      text: "Unfollow",
-                                                      style: "destructive",
-                                                      onPress: () => act(item.id, "unfollow"),
-                                                  },
-                                              ])
-                                            : act(item.id, item.myFollowStatus ? "unfollow" : "follow")
-                                    }
-                                />
-                                {kind === "followers" && (
+                                {!item.isOwn && (
+                                    <Button
+                                        secondary
+                                        disabled={mutation.isPending}
+                                        label={
+                                            item.myFollowStatus === "accepted"
+                                                ? "Unfollow"
+                                                : item.myFollowStatus === "requested"
+                                                  ? "Cancel request"
+                                                  : item.privacy === "private"
+                                                    ? "Request to follow"
+                                                    : "Follow"
+                                        }
+                                        onPress={() =>
+                                            item.myFollowStatus === "accepted"
+                                                ? Alert.alert("Unfollow?", `Stop following ${item.username}?`, [
+                                                      { text: "Keep following", style: "cancel" },
+                                                      {
+                                                          text: "Unfollow",
+                                                          style: "destructive",
+                                                          onPress: () => act(item.id, "unfollow"),
+                                                      },
+                                                  ])
+                                                : act(item.id, item.myFollowStatus ? "unfollow" : "follow")
+                                        }
+                                    />
+                                )}
+                                {kind === "followers" && !params.userId && (
                                     <Button
                                         secondary
                                         label="Remove follower"

@@ -12,12 +12,12 @@ import { useProfileScroll } from "../../hooks/use-profile-scroll";
 import { AppText, QueryPanel, StateView, Section } from "../../components/ui";
 import { achievementsOptions, recentAchievementsOptions } from "../../lib/react-query/query-options/profile.options";
 
-export function AchievementsContent() {
+export function AchievementsContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
     const { scrollProps, contentContainerStyle } = useProfileScroll();
     const [expandedId, setExpandedId] = useState<number | null>(null);
-    const query = useQuery({ ...achievementsOptions, enabled: focused });
-    const recent = useQuery({ ...recentAchievementsOptions, enabled: focused });
+    const query = useQuery({ ...achievementsOptions(userId), enabled: focused });
+    const recent = useQuery({ ...recentAchievementsOptions(userId), enabled: focused });
 
     return (
         <>
@@ -42,7 +42,7 @@ export function AchievementsContent() {
                                                 ))
                                             ) : (
                                                 <AppText muted style={{ padding: 16 }}>
-                                                    Your next milestone is ahead.
+                                                    The next milestone is ahead.
                                                 </AppText>
                                             )
                                         }

@@ -1,26 +1,28 @@
 import * as z from "zod";
-import {toActor} from "@/lib/server/authorization";
-import {getContainer} from "@/lib/server/core/container";
-import {mobileImagePath} from "@/lib/server/mobile/images";
-import {getImageUrl} from "@/lib/server/core/images/image-url";
-import {getContinueItems} from "@/lib/server/domain/continue/continue.repository";
-import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {dynamicListsRepository} from "@/lib/server/domain/dynamic-lists/dynamic-lists.repository";
-import {getDynamicListResults, getDynamicListSummaries} from "@/lib/server/domain/dynamic-lists/dynamic-lists.queries";
-
+import { UnauthorizedError } from "@/lib/utils/error-classes";
+import { toActor } from "@/lib/server/authorization";
+import { getContainer } from "@/lib/server/core/container";
+import { mobileImagePath } from "@/lib/server/mobile/images";
+import { getImageUrl } from "@/lib/server/core/images/image-url";
+import { getContinueItems } from "@/lib/server/domain/continue/continue.repository";
+import { getServerMediaDefinition } from "@/lib/media-definitions/definition.registry.server";
+import { dynamicListsRepository } from "@/lib/server/domain/dynamic-lists/dynamic-lists.repository";
+import {
+    getDynamicListResults,
+    getDynamicListSummaries,
+} from "@/lib/server/domain/dynamic-lists/dynamic-lists.queries";
 
 export const librarySearchSchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     search: z.string().trim().max(100).default(""),
 });
 
-
 export const libraryDetailSchema = librarySearchSchema
     .extend({
         kind: z.enum(["collection", "dynamic", "continue"]),
         id: z.coerce.number().int().positive().optional(),
-    }).refine((input) => input.kind === "continue" || input.id !== undefined, "A list ID is required.");
-
+    })
+    .refine((input) => input.kind === "continue" || input.id !== undefined, "A list ID is required.");
 
 export const getMobileLibrary = async (userId: number, { page, search }: z.infer<typeof librarySearchSchema>) => {
     const { services } = await getContainer();
@@ -41,7 +43,11 @@ export const getMobileLibrary = async (userId: number, { page, search }: z.infer
     return {
         page,
         hasMore: page < Math.ceil(views.length / 8) || page < collections.pages,
-        dynamic: selected.map((view) => ({ id: view.id, title: view.spec.title, total: summaries.get(view.id)!.total })),
+        dynamic: selected.map((view) => ({
+            id: view.id,
+            title: view.spec.title,
+            total: summaries.get(view.id)!.total,
+        })),
         collections: collections.items.map((item) => ({
             id: item.id,
             title: item.title,
@@ -52,8 +58,12 @@ export const getMobileLibrary = async (userId: number, { page, search }: z.infer
     };
 };
 
-
-export const getMobileLibraryDetail = async (userId: number, input: z.infer<typeof libraryDetailSchema>) => {
+export const getMobileLibraryDetail = async (
+    userId: number,
+    input: z.infer<typeof libraryDetailSchema>,
+    viewerId = userId,
+) => {
+    if (viewerId !== userId && input.kind !== "continue") throw new UnauthorizedError("private");
     const { services } = await getContainer();
     const user = (await services.account.getUserById(userId))!;
 
@@ -63,11 +73,13 @@ export const getMobileLibraryDetail = async (userId: number, input: z.infer<type
             .map((setting) => setting.mediaType)
             .filter((type) => type !== "movies");
 
-        const all = await getContinueItems(userId, active);
+        const visible = viewerId === userId || (await services.profile.getContinueVisibility(userId));
+        const all = visible ? await getContinueItems(userId, active) : [];
 
         return {
             page: input.page,
             title: "Continue",
+            visible,
             ratingSystem: user.ratingSystem,
             pages: Math.ceil(all.length / 30),
             items: all.slice((input.page - 1) * 30, input.page * 30).map((item) => ({
@@ -77,7 +89,9 @@ export const getMobileLibraryDetail = async (userId: number, input: z.infer<type
                 mediaId: item.mediaId,
                 favorite: item.favorite,
                 mediaType: item.mediaType,
-                cover: mobileImagePath(getImageUrl(getServerMediaDefinition(item.mediaType).identity.coverDirectory, item.imageCover)),
+                cover: mobileImagePath(
+                    getImageUrl(getServerMediaDefinition(item.mediaType).identity.coverDirectory, item.imageCover),
+                ),
             })),
         };
     }
@@ -103,7 +117,9 @@ export const getMobileLibraryDetail = async (userId: number, input: z.infer<type
         };
     }
 
-    const result = await services.collections.getCollectionDetails(input.id!, "read", toActor({ id: userId }), { page: input.page });
+    const result = await services.collections.getCollectionDetails(input.id!, "read", toActor({ id: userId }), {
+        page: input.page,
+    });
 
     return {
         page: result.page,

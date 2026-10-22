@@ -1,55 +1,49 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import { useIsFocused } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import type { api, MobileProfile, MobileProfileActivity } from "../../lib/api-client";
 import { colors } from "../../theme";
 import { mediaIcons, mediaColors } from "../../lib/media";
 import { useTabPush } from "../../hooks/use-tab-push";
-import { TopTabs } from "../../components/top-tabs";
 import { AppText, Cover, QueryPanel } from "../../components/ui";
 import { formatActivity } from "./profile-formatting";
 import { profileActivityOptions, profileFollowsFeedOptions } from "../../lib/react-query/query-options/profile.options";
 
 type FeedItem = MobileProfileActivity[number] | Awaited<ReturnType<typeof api.profileExtras>>["followsFeed"][number];
 type RatingSystem = MobileProfile["user"]["ratingSystem"];
-const tabs = [
-    { value: "mine", label: "Recent feed" },
-    { value: "following", label: "Follows feed" },
-] as const;
-
-export function ProfileFeed({ ratingSystem }: { ratingSystem: RatingSystem }) {
+export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSystem; userId?: number }) {
     const focused = useIsFocused();
-    const [tab, setTab] = useState<(typeof tabs)[number]["value"]>("mine");
-    const mine = useQuery({ ...profileActivityOptions, enabled: focused && tab === "mine" });
-    const following = useQuery({ ...profileFollowsFeedOptions, enabled: focused && tab === "following" });
-    const query = tab === "mine" ? mine : following;
-
+    const mine = useQuery({ ...profileActivityOptions(userId), enabled: focused });
+    const following = useQuery({ ...profileFollowsFeedOptions(userId), enabled: focused });
     return (
-        <View style={styles.card}>
-            <TopTabs value={tab} tabs={tabs} onChange={setTab} />
-            <ScrollView
-                key={tab}
-                nestedScrollEnabled
-                directionalLockEnabled
-                style={styles.viewport}
-                contentContainerStyle={{ flexGrow: 1 }}
-            >
-                <QueryPanel<readonly FeedItem[]> query={query}>
-                    {(items) =>
-                        items.length ? (
-                            <FeedRows items={items} ratingSystem={ratingSystem} />
-                        ) : (
-                            <AppText muted style={styles.empty}>
-                                {tab === "mine"
-                                    ? "Your tracking updates will appear here."
-                                    : "Updates from people you follow will appear here."}
-                            </AppText>
-                        )
-                    }
-                </QueryPanel>
-            </ScrollView>
-        </View>
+        <>
+            {(
+                [
+                    { title: "Recent feed", query: mine, empty: "Tracking updates will appear here." },
+                    { title: "Follows feed", query: following, empty: "Updates from followed users will appear here." },
+                ] as const
+            ).map(({ title, query, empty }) => (
+                <View key={title} style={{ gap: 12 }}>
+                    <AppText heading style={{ fontSize: 17 }}>
+                        {title}
+                    </AppText>
+                    <View style={styles.card}>
+                        <QueryPanel<readonly FeedItem[]> query={query}>
+                            {(items) =>
+                                items.length ? (
+                                    <FeedRows items={items} ratingSystem={ratingSystem} />
+                                ) : (
+                                    <AppText muted style={styles.empty}>
+                                        {empty}
+                                    </AppText>
+                                )
+                            }
+                        </QueryPanel>
+                    </View>
+                </View>
+            ))}
+        </>
     );
 }
 
@@ -123,7 +117,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: "hidden",
     },
-    viewport: { height: 360 },
     author: { width: 68, alignItems: "center", gap: 4 },
     username: { fontSize: 10, fontWeight: "600", color: colors.accent, textAlign: "center" },
     row: {

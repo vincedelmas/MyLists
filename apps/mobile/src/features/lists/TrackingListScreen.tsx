@@ -24,9 +24,13 @@ export function TrackingListScreen() {
     const [favorite, setFavorite] = useState(false);
     const debounced = useDebouncedValue(search.trim());
     const [sorting, setSorting] = useState("title_asc");
-    const { mediaType } = useLocalSearchParams<{ mediaType: MediaType }>();
+    const { mediaType, userId } = useLocalSearchParams<{ mediaType: MediaType; userId?: string }>();
     const query = useInfiniteQuery({
-        ...listOptions(mediaType, { search: debounced, status, sorting, favorite: favorite ? "true" : undefined }),
+        ...listOptions(
+            mediaType,
+            { search: debounced, status, sorting, favorite: favorite ? "true" : undefined },
+            userId ? Number(userId) : undefined,
+        ),
         enabled: focused,
     });
 

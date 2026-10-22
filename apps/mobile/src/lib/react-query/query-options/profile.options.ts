@@ -1,56 +1,57 @@
-import {api} from "../../api-client";
-import {queryOptions} from "@tanstack/react-query";
+import { api } from "../../api-client";
+import { queryOptions } from "@tanstack/react-query";
 
-export const profileOptions = queryOptions({
-    queryKey: ["profile"],
-    queryFn: ({ signal }) => api.profile(signal),
-});
+export const profileOptions = (userId?: number) =>
+    queryOptions({
+        queryKey: ["profile", userId],
+        queryFn: ({ signal }) => api.profile(signal, userId),
+    });
 
+export const profileActivityOptions = (userId?: number) =>
+    queryOptions({
+        queryKey: ["profile", userId, "activity"],
+        queryFn: ({ signal }) => api.profileActivity(signal, userId),
+    });
 
-export const profileActivityOptions = queryOptions({
-    queryKey: ["profile", "activity"],
-    queryFn: ({ signal }) => api.profileActivity(signal),
-});
+export const statsOptions = (tab: Parameters<typeof api.stats>[0], userId?: number) =>
+    queryOptions({
+        queryKey: ["profile", userId, "stats", tab],
+        queryFn: ({ signal }) => api.stats(tab, signal, userId),
+    });
 
+export const profileFollowsFeedOptions = (userId?: number) =>
+    queryOptions({
+        queryKey: ["profile", userId, "extras"],
+        queryFn: ({ signal }) => api.profileExtras(signal, userId),
+        select: (data) => data.followsFeed,
+    });
 
-export const statsOptions = (tab: Parameters<typeof api.stats>[0]) => queryOptions({
-    queryKey: ["profile", "stats", tab],
-    queryFn: ({ signal }) => api.stats(tab, signal),
-});
+export const achievementsOptions = (userId?: number) =>
+    queryOptions({
+        queryKey: ["profile", userId, "achievements"],
+        queryFn: ({ signal }) => api.achievements(signal, userId),
+    });
 
+export const recentAchievementsOptions = (userId?: number) =>
+    queryOptions({
+        queryKey: ["profile", userId, "achievements", "recent"],
+        queryFn: ({ signal }) => api.recentAchievements(signal, userId),
+    });
 
-export const profileFollowsFeedOptions = queryOptions({
-    queryKey: ["profile", "extras"],
-    queryFn: ({ signal }) => api.profileExtras(signal),
-    select: (data) => data.followsFeed,
-});
+export const calendarOptions = (range: Parameters<typeof api.calendar>[0], userId?: number) =>
+    queryOptions({
+        queryKey: ["profile", userId, "calendar", range],
+        queryFn: ({ signal }) => api.calendar(range, signal, userId),
+    });
 
+export const profileContinueOptions = (userId?: number) =>
+    queryOptions({
+        queryKey: ["profile", userId, "continue"],
+        queryFn: ({ signal }) => api.libraryDetail({ kind: "continue", page: 1, search: "" }, signal, userId),
+    });
 
-export const achievementsOptions = queryOptions({
-    queryKey: ["profile", "achievements"],
-    queryFn: ({ signal }) => api.achievements(signal),
-});
-
-
-export const recentAchievementsOptions = queryOptions({
-    queryKey: ["profile", "achievements", "recent"],
-    queryFn: ({ signal }) => api.recentAchievements(signal),
-});
-
-
-export const calendarOptions = (range: Parameters<typeof api.calendar>[0]) => queryOptions({
-    queryKey: ["profile", "calendar", range],
-    queryFn: ({ signal }) => api.calendar(range, signal),
-});
-
-
-export const profileContinueOptions = queryOptions({
-    queryKey: ["profile", "continue"],
-    queryFn: ({ signal }) => api.libraryDetail({kind: "continue", page: 1, search: ""}, signal),
-});
-
-
-export const personOptions = (userId: number) => queryOptions({
-    queryKey: ["profile", "person", userId],
-    queryFn: ({signal}) => api.person(userId, signal),
-});
+export const personOptions = (userId: number) =>
+    queryOptions({
+        queryKey: ["profile", userId, "person"],
+        queryFn: ({ signal }) => api.person(userId, signal),
+    });

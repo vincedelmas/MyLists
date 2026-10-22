@@ -1,20 +1,18 @@
 import * as z from "zod";
-import {inArray} from "drizzle-orm";
-import {user as userTable} from "@/lib/server/database/schema";
-import {getDbClient} from "@/lib/server/database/async-storage";
-import {withMobileActivityCovers} from "./activity";
-import {toActor} from "@/lib/server/authorization";
-import {getContainer} from "@/lib/server/core/container";
-import {mobileImagePath} from "@/lib/server/mobile/images";
-import {calculateMediaLevel} from "@/lib/utils/media/level";
-import {dateFromUTCInput} from "@/lib/utils/formatting/date";
-import {mediaTypeFieldSchema} from "@/lib/schemas/common.schema";
-import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
-import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
-
+import { inArray } from "drizzle-orm";
+import { user as userTable } from "@/lib/server/database/schema";
+import { getDbClient } from "@/lib/server/database/async-storage";
+import { withMobileActivityCovers } from "./activity";
+import { toActor } from "@/lib/server/authorization";
+import { getContainer } from "@/lib/server/core/container";
+import { mobileImagePath } from "@/lib/server/mobile/images";
+import { calculateMediaLevel } from "@/lib/utils/media/level";
+import { dateFromUTCInput } from "@/lib/utils/formatting/date";
+import { mediaTypeFieldSchema } from "@/lib/schemas/common.schema";
+import { InactiveMediaTypeError } from "@/lib/utils/error-classes";
+import { getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS } from "@/lib/server/core/cache-keys";
 
 export const statsTabSchema = z.union([z.literal("overview"), mediaTypeFieldSchema]).default("overview");
-
 
 export const getMobileProfile = async (userId: number) => {
     const { services } = await getContainer();
@@ -22,10 +20,9 @@ export const getMobileProfile = async (userId: number) => {
     const user = await services.account.getUserById(userId);
     if (!user) return null;
 
-    const [social, lists, highlights] = await Promise.all([
+    const [social, lists] = await Promise.all([
         services.social.getFollowCount(userId),
         services.stats.userPerMediaSummaryStats(userId),
-        services.profile.resolveHighlightedMedia(userId),
     ]);
 
     return {
@@ -46,19 +43,8 @@ export const getMobileProfile = async (userId: number) => {
             backgroundImage: mobileImagePath(user.backgroundImage),
             createdAt: dateFromUTCInput(user.createdAt).toISOString(),
         },
-        highlights: {
-            mode: highlights.overview.mode,
-            title: highlights.overview.title,
-            items: highlights.overview.items.map(({ mediaId, mediaType, mediaName, mediaCover }) => ({
-                mediaId,
-                mediaType,
-                mediaName,
-                mediaCover: mobileImagePath(mediaCover),
-            })),
-        },
     };
 };
-
 
 export const getMobileProfileActivity = async (userId: number) => {
     const { services } = await getContainer();
@@ -69,7 +55,6 @@ export const getMobileProfileActivity = async (userId: number) => {
         timestamp: dateFromUTCInput(update.timestamp).toISOString(),
     }));
 };
-
 
 export const getMobileStats = async (userId: number, tab: z.infer<typeof statsTabSchema> = "overview") => {
     const { services, cacheManager } = await getContainer();
@@ -104,14 +89,18 @@ export const getMobileStats = async (userId: number, tab: z.infer<typeof statsTa
     return { ...stats, ...context, kind: "media" as const, mediaType: tab };
 };
 
-
-export const getMobileProfileExtras = async (userId: number) => {
+export const getMobileProfileExtras = async (userId: number, viewerId = userId) => {
     const { services } = await getContainer();
-    const followsFeed = await services.updateHistory.getFollowsUpdates(userId, toActor({ id: userId }), 10);
+    const followsFeed = await services.updateHistory.getFollowsUpdates(userId, toActor({ id: viewerId }), 10);
 
     const ids = [...new Set(followsFeed.map((item) => item.userId))];
-    const people = ids.length ? getDbClient().select({id: userTable.id, image: userTable.image, ratingSystem: userTable.ratingSystem})
-        .from(userTable).where(inArray(userTable.id, ids)).all() : [];
+    const people = ids.length
+        ? getDbClient()
+              .select({ id: userTable.id, image: userTable.image, ratingSystem: userTable.ratingSystem })
+              .from(userTable)
+              .where(inArray(userTable.id, ids))
+              .all()
+        : [];
     const authors = new Map(people.map((person) => [person.id, person]));
     return {
         followsFeed: withMobileActivityCovers(followsFeed).map((item) => {
@@ -126,7 +115,6 @@ export const getMobileProfileExtras = async (userId: number) => {
     };
 };
 
-
 export const getMobileRecentAchievements = async (userId: number) => {
     const { services } = await getContainer();
     const items = await services.achievements.getAchievementsDetails(userId, 3);
@@ -135,7 +123,6 @@ export const getMobileRecentAchievements = async (userId: number) => {
         completedAt: item.completedAt ? dateFromUTCInput(item.completedAt).toISOString() : null,
     }));
 };
-
 
 export const getMobileAchievements = async (userId: number) => {
     const { services } = await getContainer();
@@ -157,7 +144,6 @@ export const getMobileAchievements = async (userId: number) => {
             })),
         }));
 };
-
 
 export const getMobileHistory = async (userId: number, page: number) => {
     const { services } = await getContainer();

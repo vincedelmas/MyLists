@@ -1,3 +1,4 @@
+import { resolveMobileProfileUser } from "@/lib/server/mobile/profile-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { mobileRequest } from "@/lib/server/mobile/request";
 import { getMobileCalendar } from "@/lib/server/mobile/calendar";
@@ -7,9 +8,9 @@ export const Route = createFileRoute("/api/mobile/v1/profile/calendar")({
     server: {
         handlers: {
             GET: ({ request }) =>
-                mobileRequest(request, (userId) =>
+                mobileRequest(request, async (userId) =>
                     getMobileCalendar(
-                        userId,
+                        await resolveMobileProfileUser(request, userId),
                         releaseCalendarRangeSchema.parse(Object.fromEntries(new URL(request.url).searchParams)),
                     ),
                 ),

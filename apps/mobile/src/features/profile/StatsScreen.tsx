@@ -12,12 +12,12 @@ import { mediaLabels, mediaColors } from "../../lib/media";
 import { statsOptions } from "../../lib/react-query/query-options/profile.options";
 import { AppText, Section, Select, uiStyles } from "../../components/ui";
 
-export function StatsContent() {
+export function StatsContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
     const { scrollProps, contentContainerStyle } = useProfileScroll();
     const [tab, setTab] = useState<NonNullable<Parameters<typeof api.stats>[0]>>("overview");
 
-    const query = useQuery({ ...statsOptions(tab), enabled: focused });
+    const query = useQuery({ ...statsOptions(tab, userId), enabled: focused });
 
     return (
         <>
@@ -94,7 +94,7 @@ export function StatsContent() {
                             </View>
                             {data.kind === "overview" ? (
                                 <>
-                                    <Section title="Across your media">
+                                    <Section title="Across media">
                                         {data.mediaBreakdown.map((item) => (
                                             <View key={item.mediaType} style={uiStyles.padded}>
                                                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -122,7 +122,7 @@ export function StatsContent() {
                                     <Section title="Milestones">
                                         <View style={uiStyles.padded}>
                                             <AppText>{data.platinumAchievements} platinum achievements</AppText>
-                                            <AppText muted>{data.totalTags} tags across your lists</AppText>
+                                            <AppText muted>{data.totalTags} tags across lists</AppText>
                                         </View>
                                     </Section>
                                 </>

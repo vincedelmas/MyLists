@@ -1,15 +1,14 @@
-import {backendUrl} from "./config";
-import {authClient} from "./auth-client";
+import { backendUrl } from "./config";
+import { authClient } from "./auth-client";
 import type * as Media from "../../../../src/lib/server/mobile/media";
-import {timeNavigationRequest} from "./diagnostics/navigation-timing";
+import { timeNavigationRequest } from "./diagnostics/navigation-timing";
 import type * as Social from "../../../../src/lib/server/mobile/social";
 import type * as Library from "../../../../src/lib/server/mobile/library";
 import type * as Calendar from "../../../../src/lib/server/mobile/calendar";
 import type * as People from "../../../../src/lib/server/mobile/people";
 import type * as Profile from "../../../../src/lib/server/mobile/profile";
 import type * as Settings from "../../../../src/lib/server/mobile/settings";
-import type {searchCatalog} from "../../../../src/lib/server/domain/search/catalog-search";
-
+import type { searchCatalog } from "../../../../src/lib/server/domain/search/catalog-search";
 
 // These references are erased by Metro. Payloads and mutation inputs are inferred
 // from the backend implementation rather than maintained as parallel interfaces.
@@ -29,7 +28,10 @@ export type MobileProfileActivity = Result<typeof Profile.getMobileProfileActivi
 export type MobileSettings = NonNullable<Result<typeof Settings.getMobileSettings>>;
 
 export class ApiError extends Error {
-    constructor(public readonly status: number, message: string) {
+    constructor(
+        public readonly status: number,
+        message: string,
+    ) {
         super(message);
         this.name = "ApiError";
     }
@@ -37,8 +39,13 @@ export class ApiError extends Error {
 
 const mediaPath = ({ mediaType, mediaId }: MediaParams) => `/media/${mediaType}/${mediaId}`;
 
-
-const request = async <T>(path: string, signal?: AbortSignal, method = "GET", body?: unknown, timeoutMs = 15_000): Promise<T> => {
+const request = async <T>(
+    path: string,
+    signal?: AbortSignal,
+    method = "GET",
+    body?: unknown,
+    timeoutMs = 15_000,
+): Promise<T> => {
     let outcome = "failed-or-aborted";
     const finishTiming = timeNavigationRequest(path);
 
@@ -67,12 +74,10 @@ const request = async <T>(path: string, signal?: AbortSignal, method = "GET", bo
         }
 
         return await response.json();
-    }
-    finally {
+    } finally {
         finishTiming?.(outcome);
     }
 };
-
 
 const queryString = (input: object) => {
     return new URLSearchParams(
@@ -80,42 +85,54 @@ const queryString = (input: object) => {
             .filter(([, value]) => value !== undefined && value !== "")
             .map(([key, value]) => [key, String(value)]),
     ).toString();
-}
+};
 
+const subjectPath = (path: string, userId?: number) =>
+    userId === undefined ? path : `${path}?${queryString({ userId })}`;
 
 export const api = {
-    calendar: (range: Parameters<typeof Calendar.getMobileCalendar>[1], signal?: AbortSignal) =>
-        request<Result<typeof Calendar.getMobileCalendar>>(`/profile/calendar?${queryString(range)}`, signal),
+    calendar: (range: Parameters<typeof Calendar.getMobileCalendar>[1], signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof Calendar.getMobileCalendar>>(
+            `/profile/calendar?${queryString({ ...range, userId })}`,
+            signal,
+        ),
     person: (userId: number, signal?: AbortSignal) =>
         request<NonNullable<Result<typeof People.getMobilePerson>>>(`/people/${userId}`, signal),
-    profile: (signal?: AbortSignal) =>
-        request<MobileProfile>("/profile", signal),
-    profileActivity: (signal?: AbortSignal) =>
-        request<MobileProfileActivity>("/profile/activity", signal),
-    history: (page: number, signal?: AbortSignal) =>
-        request<Result<typeof Profile.getMobileHistory>>(`/profile/history?page=${page}`, signal),
-    stats: (tab: Parameters<typeof Profile.getMobileStats>[1], signal?: AbortSignal) =>
-        request<Result<typeof Profile.getMobileStats>>(`/profile/stats?tab=${tab}`, signal),
-    profileExtras: (signal?: AbortSignal) =>
-        request<Result<typeof Profile.getMobileProfileExtras>>("/profile/extras", signal),
-    social: (input: Parameters<typeof Social.getMobileSocial>[1], signal?: AbortSignal) =>
-        request<Result<typeof Social.getMobileSocial>>(`/social?${queryString(input)}`, signal),
+    profile: (signal?: AbortSignal, userId?: number) => request<MobileProfile>(subjectPath("/profile", userId), signal),
+    profileActivity: (signal?: AbortSignal, userId?: number) =>
+        request<MobileProfileActivity>(subjectPath("/profile/activity", userId), signal),
+    history: (page: number, signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof Profile.getMobileHistory>>(`/profile/history?${queryString({ page, userId })}`, signal),
+    stats: (tab: Parameters<typeof Profile.getMobileStats>[1], signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof Profile.getMobileStats>>(`/profile/stats?${queryString({ tab, userId })}`, signal),
+    profileExtras: (signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof Profile.getMobileProfileExtras>>(subjectPath("/profile/extras", userId), signal),
+    social: (input: Parameters<typeof Social.getMobileSocial>[1], signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof Social.getMobileSocial>>(`/social?${queryString({ ...input, userId })}`, signal),
     socialAction: (input: Parameters<typeof Social.actOnMobileSocial>[1]) =>
         request<Result<typeof Social.actOnMobileSocial>>("/social", undefined, "POST", input),
     library: (input: Parameters<typeof Library.getMobileLibrary>[1], signal?: AbortSignal) =>
         request<Result<typeof Library.getMobileLibrary>>(`/library?${queryString(input)}`, signal),
-    libraryDetail: (input: Parameters<typeof Library.getMobileLibraryDetail>[1], signal?: AbortSignal) =>
-        request<Result<typeof Library.getMobileLibraryDetail>>(`/library/detail?${queryString(input)}`, signal),
-    recentAchievements: (signal?: AbortSignal) =>
-        request<Result<typeof Profile.getMobileRecentAchievements>>("/profile/achievements/recent", signal),
-    achievements: (signal?: AbortSignal) =>
-        request<Result<typeof Profile.getMobileAchievements>>("/profile/achievements", signal),
-    lists: (signal?: AbortSignal) =>
-        request<NonNullable<Result<typeof Media.getMobileLists>>>("/lists", signal),
-    list: (mediaType: MediaType, input: ListInput, signal?: AbortSignal) =>
-        request<MobileList>(`/lists/${mediaType}?${queryString(input)}`, signal),
-    media: (params: MediaParams, signal?: AbortSignal) =>
-        request<MobileMedia>(mediaPath(params), signal),
+    libraryDetail: (
+        input: Parameters<typeof Library.getMobileLibraryDetail>[1],
+        signal?: AbortSignal,
+        userId?: number,
+    ) =>
+        request<Result<typeof Library.getMobileLibraryDetail>>(
+            `/library/detail?${queryString({ ...input, userId })}`,
+            signal,
+        ),
+    recentAchievements: (signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof Profile.getMobileRecentAchievements>>(
+            subjectPath("/profile/achievements/recent", userId),
+            signal,
+        ),
+    achievements: (signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof Profile.getMobileAchievements>>(subjectPath("/profile/achievements", userId), signal),
+    lists: (signal?: AbortSignal) => request<NonNullable<Result<typeof Media.getMobileLists>>>("/lists", signal),
+    list: (mediaType: MediaType, input: ListInput, signal?: AbortSignal, userId?: number) =>
+        request<MobileList>(`/lists/${mediaType}?${queryString({ ...input, userId })}`, signal),
+    media: (params: MediaParams, signal?: AbortSignal) => request<MobileMedia>(mediaPath(params), signal),
     addMedia: (params: MediaParams, status?: string) =>
         request<Result<typeof Media.addMobileMedia>>(mediaPath(params), undefined, "POST", { status }),
     updateMedia: ({ mediaType, mediaId, ...input }: UpdateInput) =>
@@ -126,11 +143,9 @@ export const api = {
         request<SearchResult>(`/search?${queryString(input)}`, signal),
     resolve: (mediaType: MediaType, apiId: string | number) =>
         request<{ mediaId: number }>("/resolve", undefined, "POST", { mediaType, apiId: String(apiId) }, 45_000),
-    settings: (signal?: AbortSignal) =>
-        request<MobileSettings>("/settings", signal),
+    settings: (signal?: AbortSignal) => request<MobileSettings>("/settings", signal),
     saveSettings: (input: SettingsInput) =>
         request<Result<typeof Settings.saveMobileSettings>>("/settings", undefined, "PATCH", input),
 };
-
 
 export const assetUrl = (path: string) => new URL(path, backendUrl).href;

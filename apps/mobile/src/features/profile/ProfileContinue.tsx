@@ -8,10 +8,12 @@ import { useTabPush } from "../../hooks/use-tab-push";
 import { AppText, Cover, QueryPanel } from "../../components/ui";
 import { profileContinueOptions } from "../../lib/react-query/query-options/profile.options";
 
-export function ProfileContinue() {
+export function ProfileContinue({ userId }: { userId?: number }) {
     const focused = useIsFocused();
     const push = useTabPush();
-    const query = useQuery({ ...profileContinueOptions, enabled: focused });
+    const query = useQuery({ ...profileContinueOptions(userId), enabled: focused });
+
+    if (userId && query.data && "visible" in query.data && !query.data.visible) return null;
 
     return (
         <View style={{ gap: 12 }}>
@@ -23,7 +25,7 @@ export function ProfileContinue() {
                     accessibilityRole="button"
                     accessibilityLabel="View all titles to continue"
                     hitSlop={8}
-                    onPress={() => push({ pathname: "/library/[kind]", params: { kind: "continue" } })}
+                    onPress={() => push({ pathname: "/library/[kind]", params: { kind: "continue", userId } })}
                 >
                     <AppText style={{ fontSize: 12, color: colors.accent }}>View all</AppText>
                 </Pressable>
@@ -34,7 +36,7 @@ export function ProfileContinue() {
                         <ContinueCards items={data.items} />
                     ) : (
                         <AppText muted style={{ fontSize: 12 }}>
-                            Titles you’re watching, playing or reading will appear here.
+                            Titles in progress will appear here.
                         </AppText>
                     )
                 }

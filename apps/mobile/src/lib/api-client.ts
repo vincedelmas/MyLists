@@ -33,6 +33,9 @@ export class ApiError extends Error {
     }
 }
 
+const mediaPath = ({ mediaType, mediaId }: MediaParams) => `/media/${mediaType}/${mediaId}`;
+
+
 const request = async <T>(path: string, signal?: AbortSignal, method = "GET", body?: unknown, timeoutMs = 15_000): Promise<T> => {
     let outcome = "failed-or-aborted";
     const finishTiming = timeNavigationRequest(path);
@@ -41,21 +44,26 @@ const request = async <T>(path: string, signal?: AbortSignal, method = "GET", bo
         const timeout = AbortSignal.timeout(timeoutMs);
         const response = await fetch(`${backendUrl}/api/mobile/v1${path}`, {
             method,
+            credentials: "omit",
+            signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+            body: method !== "GET" ? JSON.stringify(body ?? {}) : undefined,
             headers: {
                 accept: "application/json",
                 cookie: await authClient.getCookie(),
                 ...(method !== "GET" ? { "content-type": "application/json" } : {}),
             },
-            credentials: "omit",
-            body: method !== "GET" ? JSON.stringify(body ?? {}) : undefined,
-            signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
         });
+
         outcome = `http-${response.status}`;
         if (!response.ok) {
-            if (response.status === 401) authClient.$store.notify("$sessionSignal");
+            if (response.status === 401) {
+                authClient.$store.notify("$sessionSignal");
+            }
+
             const { error } = (await response.json()) as { error: { message: string } };
             throw new ApiError(response.status, error.message);
         }
+
         return await response.json();
     }
     finally {
@@ -63,17 +71,21 @@ const request = async <T>(path: string, signal?: AbortSignal, method = "GET", bo
     }
 };
 
-const queryString = (input: object) =>
-    new URLSearchParams(
+
+const queryString = (input: object) => {
+    return new URLSearchParams(
         Object.entries(input)
             .filter(([, value]) => value !== undefined && value !== "")
             .map(([key, value]) => [key, String(value)]),
     ).toString();
-const mediaPath = ({ mediaType, mediaId }: MediaParams) => `/media/${mediaType}/${mediaId}`;
+}
+
 
 export const api = {
-    profile: (signal?: AbortSignal) => request<MobileProfile>("/profile", signal),
-    profileActivity: (signal?: AbortSignal) => request<MobileProfileActivity>("/profile/activity", signal),
+    profile: (signal?: AbortSignal) =>
+        request<MobileProfile>("/profile", signal),
+    profileActivity: (signal?: AbortSignal) =>
+        request<MobileProfileActivity>("/profile/activity", signal),
     history: (page: number, signal?: AbortSignal) =>
         request<Result<typeof Profile.getMobileHistory>>(`/profile/history?page=${page}`, signal),
     stats: (tab: Parameters<typeof Profile.getMobileStats>[1], signal?: AbortSignal) =>
@@ -90,10 +102,12 @@ export const api = {
         request<Result<typeof Library.getMobileLibraryDetail>>(`/library/detail?${queryString(input)}`, signal),
     achievements: (signal?: AbortSignal) =>
         request<Result<typeof Profile.getMobileAchievements>>("/profile/achievements", signal),
-    lists: (signal?: AbortSignal) => request<NonNullable<Result<typeof Media.getMobileLists>>>("/lists", signal),
+    lists: (signal?: AbortSignal) =>
+        request<NonNullable<Result<typeof Media.getMobileLists>>>("/lists", signal),
     list: (mediaType: MediaType, input: ListInput, signal?: AbortSignal) =>
         request<MobileList>(`/lists/${mediaType}?${queryString(input)}`, signal),
-    media: (params: MediaParams, signal?: AbortSignal) => request<MobileMedia>(mediaPath(params), signal),
+    media: (params: MediaParams, signal?: AbortSignal) =>
+        request<MobileMedia>(mediaPath(params), signal),
     addMedia: (params: MediaParams, status?: string) =>
         request<Result<typeof Media.addMobileMedia>>(mediaPath(params), undefined, "POST", { status }),
     updateMedia: ({ mediaType, mediaId, ...input }: UpdateInput) =>
@@ -104,9 +118,11 @@ export const api = {
         request<SearchResult>(`/search?${queryString(input)}`, signal),
     resolve: (mediaType: MediaType, apiId: string | number) =>
         request<{ mediaId: number }>("/resolve", undefined, "POST", { mediaType, apiId: String(apiId) }, 45_000),
-    settings: (signal?: AbortSignal) => request<MobileSettings>("/settings", signal),
+    settings: (signal?: AbortSignal) =>
+        request<MobileSettings>("/settings", signal),
     saveSettings: (input: SettingsInput) =>
         request<Result<typeof Settings.saveMobileSettings>>("/settings", undefined, "PATCH", input),
 };
+
 
 export const assetUrl = (path: string) => new URL(path, backendUrl).href;

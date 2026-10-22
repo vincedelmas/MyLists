@@ -2,15 +2,16 @@ import {splitSetCookieHeader} from "better-auth/cookies/utils";
 
 
 export const authFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    // Better Fetch skips its timeout when useSession supplies an AbortSignal.
     const timeoutController = new AbortController();
+
     const signal = init?.signal
         ? AbortSignal.any([init.signal, timeoutController.signal])
         : timeoutController.signal;
+
     const timer = setTimeout(() => timeoutController.abort(new Error("The authentication request timed out.")), 15_000);
 
     try {
-        const response = await fetch(input, {...init, signal});
+        const response = await fetch(input, { ...init, signal });
         const setCookie = response.headers.get("set-cookie");
         if (!setCookie) return response;
 
@@ -21,15 +22,19 @@ export const authFetch = async (input: RequestInfo | URL, init?: RequestInit): P
         if (retained.length === cookies.length) return response;
 
         const headers = new Headers(response.headers);
+
         headers.delete("set-cookie");
         headers.delete("content-length");
         headers.delete("content-encoding");
-        for (const cookie of retained) headers.append("set-cookie", cookie);
+
+        for (const cookie of retained) {
+            headers.append("set-cookie", cookie);
+        }
 
         return new Response(await response.text(), {
+            headers,
             status: response.status,
             statusText: response.statusText,
-            headers,
         });
     }
     finally {

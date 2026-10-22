@@ -1,5 +1,5 @@
 import { ProfileQueryPanel } from "./ProfileQueryPanel";
-import { useProfileScroll } from "../../hooks/use-profile-scroll";
+import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
 import { useMemo, useState } from "react";
 import { useIsFocused } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +14,7 @@ import { shiftDateInputValue, toDateInputValue } from "@/lib/utils/formatting/da
 
 export function CalendarContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
-    const { scrollProps, contentContainerStyle } = useProfileScroll();
+    const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const push = useTabPush();
     const [month, setMonth] = useState(() => `${toDateInputValue(new Date()).slice(0, 7)}-01`);
     const [mediaType, setMediaType] = useState("all");

@@ -13,7 +13,7 @@ export function ProfileScreen() {
     return (
         <Page
             title="MyLists"
-            subtitle="Your profile"
+            brand
             action={
                 <Pressable
                     style={{ padding: 12 }}

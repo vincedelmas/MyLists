@@ -33,6 +33,8 @@ vi.mock("@/lib/server/core/container", () => ({
 beforeEach(() => {
     vi.resetAllMocks();
     mocks.user.mockResolvedValue({
+        id: 10,
+        role: "user",
         ratingSystem: "score",
         userMediaSettings: [
             { mediaType: "movies", active: true },
@@ -54,6 +56,11 @@ beforeEach(() => {
     });
     mocks.find.mockReturnValue({
         id: 7,
+        apiId: 123,
+        lastApiUpdate: null,
+        backdropPath: "/backdrop.jpg",
+        voteAverage: 8.2,
+        voteCount: 99,
         name: "Film",
         imageCover: "http://localhost:3000/static/cover.jpg",
         synopsis: "A story",
@@ -110,6 +117,22 @@ describe("mobile media operations", () => {
         expect(JSON.stringify(result.media)).not.toContain("must not be exposed");
         expect(result.active).toBe(true);
         expect(result.seasons).toBeNull();
+    });
+
+    it("returns provider attribution, scores and header data without loading the metadata graph", async () => {
+        const result = await getMobileMedia(10, { mediaType: "movies", mediaId: 7 });
+        expect(result.media).toMatchObject({
+            provider: { name: "TMDB", url: "https://www.themoviedb.org/movie/123" },
+            backdrop: "https://image.tmdb.org/t/p/w1280/backdrop.jpg",
+            score: 8.2,
+            votes: 99,
+            duration: 123,
+            byline: "A Director",
+        });
+        expect(result.canEdit).toBe(false);
+        expect(result.refresh.allowed).toBe(true);
+        mocks.user.mockResolvedValue({ id: 10, role: "manager", ratingSystem: "score", userMediaSettings: [] });
+        expect((await getMobileMedia(10, { mediaType: "movies", mediaId: 7 })).canEdit).toBe(true);
     });
 
     it("delegates writes to the existing tracking service with server-owned identity", async () => {

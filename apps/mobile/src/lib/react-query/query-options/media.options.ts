@@ -20,3 +20,26 @@ export const listsSummaryOptions = queryOptions({
     queryKey: ["lists", "summary"],
     queryFn: ({ signal }) => api.lists(signal),
 });
+
+export const mediaDetailsOptions = (params: MediaParams) =>
+    queryOptions({
+        queryKey: ["media", params.mediaType, params.mediaId, "details"],
+        queryFn: ({ signal }) => api.mediaDetails(params, signal),
+    });
+export const mediaCommunityOptions = (params: MediaParams) =>
+    infiniteQueryOptions({
+        queryKey: ["media", params.mediaType, params.mediaId, "community"],
+        initialPageParam: 1,
+        queryFn: ({ signal, pageParam }) => api.mediaCommunity(params, pageParam, signal),
+        getNextPageParam: (page) => (page.page < page.pages ? page.page + 1 : undefined),
+    });
+export const mediaCollectionsOptions = (params: MediaParams) =>
+    queryOptions({
+        queryKey: ["media", params.mediaType, params.mediaId, "collections"],
+        queryFn: ({ signal }) => api.mediaCollections(params, signal),
+    });
+export const mediaEditOptions = (params: MediaParams) =>
+    queryOptions({
+        queryKey: ["media", params.mediaType, params.mediaId, "edit"],
+        queryFn: ({ signal }) => api.mediaEdit(params, signal),
+    });

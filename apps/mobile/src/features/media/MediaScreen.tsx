@@ -1,22 +1,24 @@
 import { useState } from "react";
-import { colors } from "../../theme";
-import { Alert, View } from "react-native";
+import { Alert } from "react-native";
 import { useIsFocused } from "expo-router";
-import { Heart } from "lucide-react-native";
+import { Info, UsersRound, BookmarkCheck, Pencil } from "lucide-react-native";
 import { mediaLabels } from "../../lib/media";
-import { TrackingEditor } from "./TrackingEditor";
-import { TopTabs } from "../../components/top-tabs";
+import { CollapsingTabs } from "../../components/collapsing-tabs";
+import { MediaHero } from "./MediaHero";
+import { MediaDetailsContent } from "./MediaDetailsContent";
+import { MediaCommunityContent } from "./MediaCommunityContent";
+import { MediaTrackingContent } from "./MediaTrackingContent";
+import { MediaEditContent } from "./MediaEditContent";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { mediaOptions } from "../../lib/react-query/query-options/media.options";
 import type { MediaParams, UpdateInput } from "../../lib/api-client";
 import { useTrackingMutation } from "../../lib/react-query/query-mutations/media.mutations";
-import { AppText, Button, Content, Cover, Page, QueryPanel, Section, uiStyles } from "../../components/ui";
+import { Page, QueryPanel } from "../../components/ui";
 
 export function MediaScreen() {
     const focused = useIsFocused();
     const [saved, setSaved] = useState(false);
-    const [tab, setTab] = useState<"details" | "tracking">("details");
     const params = useLocalSearchParams<{ mediaType: MediaParams["mediaType"]; mediaId: string }>();
 
     const media = { mediaType: params.mediaType, mediaId: Number(params.mediaId) };
@@ -59,108 +61,55 @@ export function MediaScreen() {
     };
 
     return (
-        <Page title={mediaLabels[media.mediaType] ?? "Media"} back={true}>
+        <Page title={mediaLabels[media.mediaType] ?? "Media"} brand back>
             <QueryPanel query={query}>
                 {(data) => (
-                    <Content>
-                        <View style={[uiStyles.row, { alignItems: "flex-start" }]}>
-                            <Cover uri={data.media.cover} style={{ width: 108, height: 160 }} />
-                            <View style={{ flex: 1, gap: 10 }}>
-                                <AppText heading>{data.media.name}</AppText>
-                                <AppText muted>{data.media.releaseDate?.slice(0, 4) ?? "Release date unknown"}</AppText>
-                                {data.tracking?.favorite && (
-                                    <Heart size={20} fill={colors.favorite} color={colors.favorite} />
-                                )}
-                            </View>
-                        </View>
-                        {data.media.tagline && (
-                            <AppText muted style={{ fontStyle: "italic" }}>
-                                {data.media.tagline}
-                            </AppText>
-                        )}
-                        <TopTabs
-                            value={tab}
-                            tabs={[
-                                { value: "details", label: "Details" },
-                                { value: "tracking", label: "Your tracking" },
-                            ]}
-                            onChange={setTab}
-                        />
-                        {tab === "details" && (
+                    <CollapsingTabs
+                        key={`${media.mediaType}:${media.mediaId}`}
+                        initialTab="details"
+                        tabs={[
+                            { value: "details", label: "Details", icon: Info },
+                            { value: "community", label: "Community", icon: UsersRound },
+                            { value: "tracking", label: "Tracking", icon: BookmarkCheck },
+                            ...(data.canEdit ? [{ value: "edit", label: "Edit", icon: Pencil }] : []),
+                        ]}
+                        header={<MediaHero data={data} />}
+                    >
+                        {(tab) => (
                             <>
-                                {data.media.synopsis && (
-                                    <Section title="Synopsis">
-                                        <AppText muted style={{ padding: 16, lineHeight: 22 }}>
-                                            {data.media.synopsis}
-                                        </AppText>
-                                    </Section>
+                                {tab === "details" && (
+                                    <MediaDetailsContent
+                                        params={media}
+                                        data={data}
+                                        refetch={query.refetch}
+                                        refreshing={query.isRefetching}
+                                    />
                                 )}
-                                <Section title="About this title">
-                                    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                                        {[
-                                            { label: "Released", value: data.media.releaseDate ?? "Unknown" },
-                                            ...data.media.facts,
-                                        ].map((fact) => (
-                                            <View key={fact.label} style={{ width: "50%", padding: 14, gap: 5 }}>
-                                                <AppText muted style={{ fontSize: 11 }}>
-                                                    {fact.label}
-                                                </AppText>
-                                                <AppText style={{ fontSize: 13 }}>{fact.value}</AppText>
-                                            </View>
-                                        ))}
-                                    </View>
-                                </Section>
+                                {tab === "community" && <MediaCommunityContent params={media} />}
+                                {tab === "tracking" && (
+                                    <MediaTrackingContent
+                                        params={media}
+                                        data={data}
+                                        pending={mutation.isPending}
+                                        saved={saved}
+                                        error={mutation.error?.message}
+                                        update={update}
+                                        add={() => {
+                                            setSaved(false);
+                                            mutation.mutate({ action: "add" });
+                                        }}
+                                        remove={() => {
+                                            setSaved(false);
+                                            mutation.mutate({ action: "remove" });
+                                        }}
+                                        refetch={query.refetch}
+                                        refreshing={query.isRefetching}
+                                    />
+                                )}
+                                {tab === "edit" && data.canEdit && <MediaEditContent params={media} />}
                             </>
                         )}
-                        {mutation.error && (
-                            <AppText accessibilityRole="alert" style={{ color: colors.error }}>
-                                {mutation.error.message}
-                            </AppText>
-                        )}
-                        {saved && (
-                            <AppText accessibilityRole="alert" style={{ color: colors.accent }}>
-                                Changes saved.
-                            </AppText>
-                        )}
-                        {tab === "tracking" &&
-                            (data.tracking ? (
-                                <>
-                                    <TrackingEditor data={data} pending={mutation.isPending} update={update} />
-                                    <Button
-                                        danger={true}
-                                        pending={mutation.isPending}
-                                        label="Remove from your list"
-                                        onPress={() =>
-                                            Alert.alert(
-                                                "Remove from your list?",
-                                                "Your rating, notes, progress, and tracking history for this title will be removed.",
-                                                [
-                                                    { text: "Cancel", style: "cancel" },
-                                                    {
-                                                        text: "Remove",
-                                                        style: "destructive",
-                                                        onPress: () => {
-                                                            setSaved(false);
-                                                            mutation.mutate({ action: "remove" });
-                                                        },
-                                                    },
-                                                ],
-                                            )
-                                        }
-                                    />
-                                </>
-                            ) : data.active ? (
-                                <Button
-                                    label="Add to your list"
-                                    pending={mutation.isPending}
-                                    onPress={() => mutation.mutate({ action: "add" })}
-                                />
-                            ) : (
-                                <AppText muted>
-                                    Activate this media list in content settings before adding titles.
-                                </AppText>
-                            ))}
-                    </Content>
+                    </CollapsingTabs>
                 )}
             </QueryPanel>
         </Page>

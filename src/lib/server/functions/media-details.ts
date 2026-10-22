@@ -1,11 +1,9 @@
-import {logger} from "@/lib/server/core/logger";
 import {createServerFn} from "@tanstack/react-start";
-import {MediaType, RoleType} from "@/lib/utils/enums";
+import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {dateFromUTCInput} from "@/lib/utils/formatting/date";
-import {hasRequiredRole, toActor} from "@/lib/server/authorization";
-import {isManualBookId} from "@/lib/media-definitions/books/book.definition.server";
+import {toActor} from "@/lib/server/authorization";
+import {refreshCatalogMedia} from "@/lib/server/domain/media/media-refresh";
 import {publicAuthMiddleware, requiredAuthAndManagerRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {requiredMediaReadMiddleware, requiredMediaWriteMiddleware, optionalMediaAuthMiddleware} from "@/lib/server/middlewares/media-authentication";
 import {
@@ -74,39 +72,7 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(refreshMediaDetailsSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
-        const container = await getContainer();
-        const adminService = container.services.admin;
-        const mediaService = container.registries.mediaService.get(mediaType);
-        const ingestionService = container.registries.ingestionServices.get(mediaType);
-        const isManagerOrAbove = hasRequiredRole(toActor(currentUser), RoleType.MANAGER);
-
-        if (!isManagerOrAbove && mediaType === MediaType.BOOKS) {
-            throw new FormattedError("Unauthorized to refresh book metadata.");
-        }
-
-        const media = mediaService.findById(mediaId);
-        if (!media) {
-            throw new FormattedError("Media not found, cannot refresh metadata.");
-        }
-
-        if (mediaType === MediaType.BOOKS && isManualBookId(media.apiId)) {
-            throw new FormattedError("Manually added books do not have Google Books metadata to refresh.");
-        }
-
-        if (!isManagerOrAbove && media.lastApiUpdate) {
-            const lastUpdateTime = dateFromUTCInput(media.lastApiUpdate).getTime();
-            const nextAvailableRefresh = lastUpdateTime + (24 * 60 * 60 * 1000); // 24 hours cooldown
-
-            if (Date.now() < nextAvailableRefresh) {
-                throw new FormattedError("You can refresh metadata once every 24 hours.");
-            }
-        }
-
-        await ingestionService.refreshFromExternal(media.apiId);
-        void adminService.logMediaRefresh({ userId: currentUser.id, mediaType, apiId: media.apiId })
-            .catch((err) => {
-                logger.warn({ err, userId: currentUser.id, mediaType, apiId: media.apiId }, "Failed to log media refresh");
-            });
+        await refreshCatalogMedia(toActor(currentUser), mediaType, mediaId);
     });
 
 

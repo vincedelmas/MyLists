@@ -1,9 +1,9 @@
 import { useIsFocused, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Alert } from "react-native";
+import { Alert, ScrollView } from "react-native";
 import { useSocialAction } from "../../lib/react-query/query-mutations/social.mutations";
 import { personOptions } from "../../lib/react-query/query-options/profile.options";
-import { AppText, Button, Content, Page, QueryPanel } from "../../components/ui";
+import { AppText, Button, Page, QueryPanel } from "../../components/ui";
 import { ProfileHeader, ProfileLayout } from "./profile-layout";
 
 export function PersonScreen() {
@@ -12,7 +12,7 @@ export function PersonScreen() {
     const query = useQuery({ ...personOptions(Number(userId)), enabled: focused });
     const mutation = useSocialAction();
     return (
-        <Page title={query.data?.header.name ?? "Profile"} back>
+        <Page title="MyLists" brand back>
             <QueryPanel query={query}>
                 {(data) => {
                     const action = (
@@ -48,10 +48,12 @@ export function PersonScreen() {
                         </>
                     );
                     return data.access === "private" ? (
-                        <Content>
+                        <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 24 }}>
                             <ProfileHeader data={{ user: data.header }} action={action} />
-                            <AppText muted>This profile is private. Follow this person to request access.</AppText>
-                        </Content>
+                            <AppText muted style={{ paddingHorizontal: 16 }}>
+                                This profile is private. Follow this person to request access.
+                            </AppText>
+                        </ScrollView>
                     ) : (
                         <ProfileLayout
                             key={data.header.id}

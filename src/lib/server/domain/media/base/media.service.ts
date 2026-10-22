@@ -351,6 +351,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         removeMediaFromUserList,
         searchMediadleSuggestion,
         getMediaCommunityActivity,
+        getUserFollowsMediaData: communityQueries.getUserFollowsMediaData,
         updateUserMediaNotifications,
         findUserMedia: repository.findUserMedia,
         getReleaseCalendarMedia: repository.getReleaseCalendarMedia,

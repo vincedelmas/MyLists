@@ -1,17 +1,30 @@
-import {Image} from "expo-image";
-import {router} from "expo-router";
-import {NativeHost} from "./native-host";
-import {SelectControl} from "./select-control";
-import type {SelectControlProps} from "./select-control.types";
-import {assetUrl} from "../lib/api-client";
-import {useOnline} from "../hooks/use-online";
-import {colors, commonStyles} from "../theme";
-import {useRoute} from "expo-router/react-navigation";
-import {SafeAreaView} from "react-native-safe-area-context";
-import {ArrowLeft, ChevronRight} from "lucide-react-native";
-import {Profiler, useEffect, useRef, type ReactNode, type Ref} from "react";
-import {navigationTimingEnabled, recordNavigationTiming, observeNavigationFrame} from "../lib/diagnostics/navigation-timing";
-import {Button as NativeButton, Column, Text as NativeText, TextInput as NativeTextInput, useNativeState, type TextInputProps, type TextInputRef} from "@expo/ui";
+import { Image } from "expo-image";
+import brandLogo from "../../../../public/logo192.png";
+import { router } from "expo-router";
+import { NativeHost } from "./native-host";
+import { SelectControl } from "./select-control";
+import type { SelectControlProps } from "./select-control.types";
+import { assetUrl } from "../lib/api-client";
+import { useOnline } from "../hooks/use-online";
+import { colors, commonStyles } from "../theme";
+import { useRoute } from "expo-router/react-navigation";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowLeft, ChevronRight } from "lucide-react-native";
+import { Profiler, useEffect, useRef, type ReactNode, type Ref } from "react";
+import {
+    navigationTimingEnabled,
+    recordNavigationTiming,
+    observeNavigationFrame,
+} from "../lib/diagnostics/navigation-timing";
+import {
+    Button as NativeButton,
+    Column,
+    Text as NativeText,
+    TextInput as NativeTextInput,
+    useNativeState,
+    type TextInputProps,
+    type TextInputRef,
+} from "@expo/ui";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -27,7 +40,6 @@ import {
     type ViewProps,
 } from "react-native";
 
-
 export function AppText({ muted, heading, style, ...props }: TextProps & { muted?: boolean; heading?: boolean }) {
     return (
         <Text
@@ -38,9 +50,18 @@ export function AppText({ muted, heading, style, ...props }: TextProps & { muted
     );
 }
 
-
-export function Page({ title, subtitle, back, action, children }: {
+export function Page({
+    title,
+    subtitle,
+    back,
+    action,
+    children,
+    brand = false,
+    hideHeader = false,
+}: {
     title: string;
+    brand?: boolean;
+    hideHeader?: boolean;
     back?: boolean;
     subtitle?: string;
     action?: ReactNode;
@@ -58,28 +79,33 @@ export function Page({ title, subtitle, back, action, children }: {
             edges={["top", "left", "right"]}
             style={commonStyles.screen}
         >
-            <View style={styles.header}>
-                {back && (
-                    <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Go back"
-                        hitSlop={8}
-                        onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))}
-                        style={styles.back}
-                    >
-                        <ArrowLeft size={22} color={colors.text}/>
-                    </Pressable>
-                )}
-                <View style={{ flex: 1 }}>
-                    <AppText heading>{title}</AppText>
-                    {subtitle && (
-                        <AppText muted style={{ fontSize: 12 }}>
-                            {subtitle}
-                        </AppText>
+            {!hideHeader && (
+                <View style={[styles.header, brand && { minHeight: 48, paddingVertical: 4 }]}>
+                    {back && (
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Go back"
+                            hitSlop={8}
+                            onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))}
+                            style={styles.back}
+                        >
+                            <ArrowLeft size={22} color={colors.text} />
+                        </Pressable>
                     )}
+                    {brand && <Image source={brandLogo} style={{ width: 28, height: 28 }} />}
+                    <View style={{ flex: 1 }}>
+                        <AppText heading style={brand ? { fontSize: 18 } : undefined}>
+                            {title}
+                        </AppText>
+                        {subtitle && (
+                            <AppText muted style={{ fontSize: 12 }}>
+                                {subtitle}
+                            </AppText>
+                        )}
+                    </View>
+                    {action}
                 </View>
-                {action}
-            </View>
+            )}
             {!online && (
                 <AppText
                     accessibilityRole="alert"
@@ -94,8 +120,8 @@ export function Page({ title, subtitle, back, action, children }: {
         </SafeAreaView>
     );
 
-    return navigationTimingEnabled
-        ? <Profiler
+    return navigationTimingEnabled ? (
+        <Profiler
             id={route}
             onRender={(_id, phase, actualDuration) => {
                 recordNavigationTiming(`react-${phase}`, route, actualDuration);
@@ -104,9 +130,10 @@ export function Page({ title, subtitle, back, action, children }: {
         >
             {screen}
         </Profiler>
-        : screen;
+    ) : (
+        screen
+    );
 }
-
 
 export function Content({ children, refreshControl }: { children: ReactNode; refreshControl?: React.ReactElement }) {
     return (
@@ -120,28 +147,31 @@ export function Content({ children, refreshControl }: { children: ReactNode; ref
     );
 }
 
-
 export function Section({ title, children, action }: { title?: string; children: ReactNode; action?: ReactNode }) {
     return (
         <View style={{ gap: 12 }}>
-            {title &&
+            {title && (
                 <View style={styles.sectionHeading}>
                     <AppText heading style={{ fontSize: 17 }}>
                         {title}
                     </AppText>
                     {action}
                 </View>
-            }
+            )}
 
-            <View style={styles.card}>
-                {children}
-            </View>
+            <View style={styles.card}>{children}</View>
         </View>
     );
 }
 
-
-export function Button({ label, onPress, pending, disabled, secondary, danger }: {
+export function Button({
+    label,
+    onPress,
+    pending,
+    disabled,
+    secondary,
+    danger,
+}: {
     label: string;
     danger?: boolean;
     pending?: boolean;
@@ -168,11 +198,17 @@ export function Button({ label, onPress, pending, disabled, secondary, danger }:
     );
 }
 
-
-export function Field({ label, inputRef, value, onChangeText, style, ...props }: Omit<TextInputProps, "value" | "ref"> & {
+export function Field({
+    label,
+    inputRef,
+    value,
+    onChangeText,
+    style,
+    ...props
+}: Omit<TextInputProps, "value" | "ref"> & {
     label: string;
     value: string;
-    inputRef?: Ref<TextInputRef>
+    inputRef?: Ref<TextInputRef>;
 }) {
     const text = useNativeState(value);
     const lastNativeValue = useRef(value);
@@ -213,20 +249,23 @@ export function Field({ label, inputRef, value, onChangeText, style, ...props }:
     );
 }
 
-
 export function Select<T extends string>({ label, ...props }: SelectControlProps<T> & { label: string }) {
     return (
         <NativeHost style={{ width: "100%" }}>
             <Column spacing={8}>
-                <NativeText textStyle={{fontSize: 12, color: colors.muted}}>{label}</NativeText>
-                <SelectControl {...props}/>
+                <NativeText textStyle={{ fontSize: 12, color: colors.muted }}>{label}</NativeText>
+                <SelectControl {...props} />
             </Column>
         </NativeHost>
     );
 }
 
-
-export function MenuRow({ title, detail, icon, onPress }: {
+export function MenuRow({
+    title,
+    detail,
+    icon,
+    onPress,
+}: {
     title: string;
     detail?: string;
     icon?: ReactNode;
@@ -240,23 +279,25 @@ export function MenuRow({ title, detail, icon, onPress }: {
         >
             {icon}
             <View style={{ flex: 1, gap: 3 }}>
-                <AppText style={{ fontWeight: "600" }}>
-                    {title}
-                </AppText>
-                {detail &&
+                <AppText style={{ fontWeight: "600" }}>{title}</AppText>
+                {detail && (
                     <AppText muted style={{ fontSize: 12 }}>
                         {detail}
                     </AppText>
-                }
+                )}
             </View>
 
-            <ChevronRight size={18} color={colors.muted}/>
+            <ChevronRight size={18} color={colors.muted} />
         </Pressable>
     );
 }
 
-
-export function StateView({ loading, title, message, retry }: {
+export function StateView({
+    loading,
+    title,
+    message,
+    retry,
+}: {
     title?: string;
     message?: string;
     loading?: boolean;
@@ -264,39 +305,40 @@ export function StateView({ loading, title, message, retry }: {
 }) {
     return (
         <View style={styles.state}>
-            {loading ?
-                <ActivityIndicator
-                    size="large"
-                    color={colors.accent}
-                />
-                :
+            {loading ? (
+                <ActivityIndicator size="large" color={colors.accent} />
+            ) : (
                 <>
-                    {title &&
+                    {title && (
                         <AppText heading style={{ fontSize: 18, textAlign: "center" }}>
                             {title}
                         </AppText>
-                    }
+                    )}
 
-                    {message &&
+                    {message && (
                         <AppText muted accessibilityRole={retry ? "alert" : undefined} style={{ textAlign: "center" }}>
                             {message}
                         </AppText>
-                    }
+                    )}
 
-                    {retry &&
-                        <Button
-                            label="Try again"
-                            onPress={retry} secondary
-                        />
-                    }
+                    {retry && <Button label="Try again" onPress={retry} secondary />}
                 </>
-            }
+            )}
         </View>
     );
 }
 
-
-export function Cover({ uri, style, label, pointerEvents }: { uri: string | null; style?: StyleProp<ViewStyle>; label?: string; pointerEvents?: ViewProps["pointerEvents"] }) {
+export function Cover({
+    uri,
+    style,
+    label,
+    pointerEvents,
+}: {
+    uri: string | null;
+    style?: StyleProp<ViewStyle>;
+    label?: string;
+    pointerEvents?: ViewProps["pointerEvents"];
+}) {
     return (
         <View pointerEvents={pointerEvents} style={[styles.cover, style]}>
             {uri && (
@@ -314,13 +356,11 @@ export function Cover({ uri, style, label, pointerEvents }: { uri: string | null
     );
 }
 
-
 export const uiStyles = StyleSheet.create({
     row: { flexDirection: "row", alignItems: "center", gap: 12 },
     padded: { padding: 16, gap: 16 },
     divider: { height: 1, backgroundColor: colors.border },
 });
-
 
 const styles = StyleSheet.create({
     text: { color: colors.text, fontSize: 14, lineHeight: 21 },
@@ -359,11 +399,10 @@ const styles = StyleSheet.create({
     cover: { backgroundColor: colors.secondary, borderRadius: 8, overflow: "hidden", width: 56, height: 82 },
 });
 
-
 export function QueryPanel<T>({
-                                  query,
-                                  children,
-                              }: {
+    query,
+    children,
+}: {
     query: { data: T | undefined; isPending: boolean; error: Error | null; refetch: () => unknown };
     children: (data: T) => ReactNode;
 }) {

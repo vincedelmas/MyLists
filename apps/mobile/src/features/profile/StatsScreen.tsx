@@ -1,5 +1,5 @@
 import { ProfileQueryPanel } from "./ProfileQueryPanel";
-import { useProfileScroll } from "../../hooks/use-profile-scroll";
+import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
 import { useState } from "react";
 import { useIsFocused } from "expo-router";
 import type { api } from "../../lib/api-client";
@@ -14,7 +14,7 @@ import { AppText, Section, Select, uiStyles } from "../../components/ui";
 
 export function StatsContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
-    const { scrollProps, contentContainerStyle } = useProfileScroll();
+    const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const [tab, setTab] = useState<NonNullable<Parameters<typeof api.stats>[0]>>("overview");
 
     const query = useQuery({ ...statsOptions(tab, userId), enabled: focused });

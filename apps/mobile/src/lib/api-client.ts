@@ -1,5 +1,6 @@
 import { backendUrl } from "./config";
 import { authClient } from "./auth-client";
+import type * as MediaSections from "../../../../src/lib/server/mobile/media-sections";
 import type * as Media from "../../../../src/lib/server/mobile/media";
 import { timeNavigationRequest } from "./diagnostics/navigation-timing";
 import type * as Social from "../../../../src/lib/server/mobile/social";
@@ -91,6 +92,29 @@ const subjectPath = (path: string, userId?: number) =>
     userId === undefined ? path : `${path}?${queryString({ userId })}`;
 
 export const api = {
+    mediaDetails: (params: MediaParams, signal?: AbortSignal) =>
+        request<Result<typeof MediaSections.getMobileMediaDetails>>(`${mediaPath(params)}/details`, signal),
+    mediaCommunity: (params: MediaParams, page: number, signal?: AbortSignal) =>
+        request<Result<typeof MediaSections.getMobileMediaCommunity>>(
+            `${mediaPath(params)}/community?page=${page}`,
+            signal,
+        ),
+    mediaCollections: (params: MediaParams, signal?: AbortSignal) =>
+        request<Result<typeof MediaSections.getMobileMediaCollections>>(`${mediaPath(params)}/collections`, signal),
+    mediaEdit: (params: MediaParams, signal?: AbortSignal) =>
+        request<Result<typeof MediaSections.getMobileMediaEdit>>(`${mediaPath(params)}/edit`, signal),
+    saveMediaEdit: (input: Parameters<typeof MediaSections.saveMobileMediaEdit>[1]) =>
+        request<Result<typeof MediaSections.saveMobileMediaEdit>>(`${mediaPath(input)}/edit`, undefined, "POST", {
+            payload: input.payload,
+        }),
+    refreshMedia: (params: MediaParams) =>
+        request<Result<typeof MediaSections.refreshMobileMedia>>(
+            `${mediaPath(params)}/refresh`,
+            undefined,
+            "POST",
+            {},
+            60_000,
+        ),
     calendar: (range: Parameters<typeof Calendar.getMobileCalendar>[1], signal?: AbortSignal, userId?: number) =>
         request<Result<typeof Calendar.getMobileCalendar>>(
             `/profile/calendar?${queryString({ ...range, userId })}`,

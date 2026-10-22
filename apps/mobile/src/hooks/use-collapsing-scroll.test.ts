@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { ProfileScrollContext, useProfileScroll } from "./use-profile-scroll";
+import { CollapsingScrollContext, useCollapsingScroll } from "./use-collapsing-scroll";
 
 function renderScroll(viewportHeight = 640) {
     const getOffset = vi.fn(() => 150);
@@ -13,12 +13,12 @@ function renderScroll(viewportHeight = 640) {
         tabBarHeight: 49,
         viewportHeight,
     };
-    let result: ReturnType<typeof useProfileScroll>;
+    let result: ReturnType<typeof useCollapsingScroll>;
     function Harness() {
-        result = useProfileScroll();
+        result = useCollapsingScroll();
         return null;
     }
-    renderToStaticMarkup(createElement(ProfileScrollContext.Provider, { value }, createElement(Harness)));
+    renderToStaticMarkup(createElement(CollapsingScrollContext.Provider, { value }, createElement(Harness)));
     return { scroll: result!, getOffset };
 }
 

@@ -8,13 +8,13 @@ import { useQuery } from "@tanstack/react-query";
 import { AchievementRow } from "./AchievementRow";
 import { ProgressBar } from "../../components/ProgressBar";
 import { ProfileQueryPanel } from "./ProfileQueryPanel";
-import { useProfileScroll } from "../../hooks/use-profile-scroll";
+import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
 import { AppText, QueryPanel, StateView, Section } from "../../components/ui";
 import { achievementsOptions, recentAchievementsOptions } from "../../lib/react-query/query-options/profile.options";
 
 export function AchievementsContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
-    const { scrollProps, contentContainerStyle } = useProfileScroll();
+    const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const query = useQuery({ ...achievementsOptions(userId), enabled: focused });
     const recent = useQuery({ ...recentAchievementsOptions(userId), enabled: focused });

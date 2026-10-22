@@ -3,7 +3,7 @@ import type { ScrollViewProps, ScrollView } from "react-native";
 
 type ScrollResponder = Pick<ComponentRef<typeof ScrollView>, "scrollTo">;
 
-export const ProfileScrollContext = createContext<{
+export const CollapsingScrollContext = createContext<{
     onScroll: NonNullable<ScrollViewProps["onScroll"]>;
     initialOffset: number;
     getOffset: () => number;
@@ -12,10 +12,10 @@ export const ProfileScrollContext = createContext<{
     viewportHeight: number;
 } | null>(null);
 
-// Profile panes use their own scrollable, including virtualized lists. Only the
+// Tab panes use their own scrollable, including virtualized lists. Only the
 // header animation is shared; no vertical list is wrapped in a ScrollView.
-export function useProfileScroll() {
-    const context = useContext(ProfileScrollContext)!;
+export function useCollapsingScroll() {
+    const context = useContext(CollapsingScrollContext)!;
     const { getOffset, viewportHeight } = context;
     const scrollRef = useRef<{ getScrollResponder: () => ScrollResponder | null | undefined } | null>(null);
     const restored = useRef(false);

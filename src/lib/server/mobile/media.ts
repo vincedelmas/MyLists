@@ -1,4 +1,10 @@
 import * as z from "zod";
+import { calculateMediaLevel } from "@/lib/utils/media/level";
+import { RoleType } from "@/lib/utils/enums";
+import { toActor, hasRequiredRole } from "@/lib/server/authorization";
+import { getServerMediaDefinition } from "@/lib/media-definitions/definition.registry.server";
+import { getMediaRefreshAvailability } from "@/lib/server/domain/media/media-refresh";
+import { isManualBookId } from "@/lib/media-definitions/books/book.definition.server";
 import { notFound } from "@tanstack/react-router";
 import { getContainer } from "@/lib/server/core/container";
 import { mobileImagePath } from "@/lib/server/mobile/images";
@@ -78,7 +84,7 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
         prodStatus: "Production status",
         totalSeasons: "Seasons",
         totalEpisodes: "Episodes",
-        voteAverage: "Community score",
+        voteAverage: "Provider score",
         voteCount: "Votes",
         originalLanguage: "Original language",
         originCountry: "Country",
@@ -104,7 +110,26 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
         return value === null || value === undefined || value === "" ? [] : [{ label, value: String(value) }];
     });
 
+    const serverDefinition = getServerMediaDefinition(params.mediaType);
+    const { attribution } = serverDefinition;
+    const providerUrl =
+        params.mediaType === "books" && isManualBookId(String(media.apiId))
+            ? null
+            : "igdbUrl" in media
+              ? media.igdbUrl
+              : "mediaUrl" in attribution
+                ? `${attribution.mediaUrl}${media.apiId}`
+                : null;
+    const backdrop =
+        "backdropPath" in media && media.backdropPath
+            ? `https://image.tmdb.org/t/p/w1280${media.backdropPath}`
+            : "backdropImageId" in media && media.backdropImageId
+              ? `https://images.igdb.com/igdb/image/upload/t_1080p/${media.backdropImageId}.jpg`
+              : null;
+    const actor = toActor(settings!);
     return {
+        canEdit: hasRequiredRole(actor, RoleType.MANAGER),
+        refresh: getMediaRefreshAvailability(actor, params.mediaType, media),
         compatiblePlatforms,
         statuses: definition.statuses,
         progress: definition.progress,
@@ -118,6 +143,25 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
                 : null,
         media: {
             id: media.id,
+            backdrop,
+            provider: { name: attribution.name, url: providerUrl },
+            score: "voteAverage" in media ? media.voteAverage : null,
+            scoreDivisor: params.mediaType === "games" ? 10 : 1,
+            votes: "voteCount" in media ? media.voteCount : null,
+            duration: "duration" in media ? media.duration : null,
+            completionHours: "hltbMainTime" in media ? media.hltbMainTime : null,
+            byline:
+                "directorName" in media
+                    ? media.directorName
+                    : "createdBy" in media
+                      ? media.createdBy
+                      : "publishers" in media
+                        ? media.publishers
+                        : null,
+            nextEpisode:
+                "nextEpisodeToAir" in media
+                    ? { date: media.nextEpisodeToAir, season: media.seasonToAir, episode: media.episodeToAir }
+                    : null,
             name: media.name,
             synopsis: media.synopsis,
             facts,
@@ -176,5 +220,6 @@ export const getMobileLists = async (userId: number) => {
             totalEntries,
             entriesFavorites,
             timeSpent: timeSpent / 60,
+            level: calculateMediaLevel(timeSpent),
         }));
 };

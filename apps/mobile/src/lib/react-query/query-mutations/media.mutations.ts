@@ -1,12 +1,10 @@
-import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {api, type MediaParams, type UpdateInput} from "../../api-client";
-
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, type MediaParams, type UpdateInput } from "../../api-client";
 
 type TrackingChange =
     | { action: "add"; status?: string }
     | { action: "remove" }
-    | { action: "update"; input: Omit<UpdateInput, "mediaType" | "mediaId"> }
-
+    | { action: "update"; input: Omit<UpdateInput, "mediaType" | "mediaId"> };
 
 export const useTrackingMutation = (params: MediaParams) => {
     const client = useQueryClient();
@@ -28,10 +26,28 @@ export const useTrackingMutation = (params: MediaParams) => {
     });
 };
 
+type ResolveMutation = { mediaType: MediaParams["mediaType"]; apiId: string | number };
 
-type ResolveMutation = { mediaType: MediaParams["mediaType"]; apiId: string | number }
+export const useResolveMutation = () =>
+    useMutation({
+        mutationFn: ({ mediaType, apiId }: ResolveMutation) => api.resolve(mediaType, apiId),
+    });
 
-
-export const useResolveMutation = () => useMutation({
-    mutationFn: ({ mediaType, apiId }: ResolveMutation) => api.resolve(mediaType, apiId),
-});
+export function useMediaRefreshMutation(params: MediaParams) {
+    const client = useQueryClient();
+    return useMutation({
+        mutationFn: () => api.refreshMedia(params),
+        onSuccess: async () => {
+            await client.invalidateQueries({ queryKey: ["media", params.mediaType, params.mediaId] });
+        },
+    });
+}
+export function useMediaEditMutation() {
+    const client = useQueryClient();
+    return useMutation({
+        mutationFn: api.saveMediaEdit,
+        onSuccess: async () => {
+            await Promise.all(["media", "lists", "search"].map((key) => client.invalidateQueries({ queryKey: [key] })));
+        },
+    });
+}

@@ -1,4 +1,4 @@
-import { useProfileScroll } from "../../hooks/use-profile-scroll";
+import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
 import { useState } from "react";
 import { View } from "react-native";
 import { LayoutToggle, type MediaLayout } from "../../components/layout-toggle";
@@ -15,7 +15,7 @@ import { historyOptions } from "../../lib/react-query/query-options/history.opti
 export function ActivityContent({ userId }: { userId?: number }) {
     const push = useTabPush();
     const focused = useIsFocused();
-    const { scrollProps, contentContainerStyle } = useProfileScroll();
+    const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const [layout, setLayout] = useState<MediaLayout>("grid");
     const query = useInfiniteQuery({ ...historyOptions(userId), enabled: focused });
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];

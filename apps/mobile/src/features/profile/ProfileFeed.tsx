@@ -7,7 +7,7 @@ import { colors } from "../../theme";
 import { mediaIcons, mediaColors } from "../../lib/media";
 import { useTabPush } from "../../hooks/use-tab-push";
 import { TopTabs } from "../../components/top-tabs";
-import { AppText, QueryPanel } from "../../components/ui";
+import { AppText, Cover, QueryPanel } from "../../components/ui";
 import { formatActivity } from "./profile-formatting";
 import { profileActivityOptions, profileFollowsFeedOptions } from "../../lib/react-query/query-options/profile.options";
 
@@ -55,21 +55,38 @@ const FeedRows = memo(function FeedRows({
     const push = useTabPush();
     return items.slice(0, 10).map((item) => {
         const Icon = mediaIcons[item.mediaType];
+        const author = "avatar" in item ? item : null;
         return (
-            <Pressable
-                key={item.id}
-                accessibilityRole="button"
-                onPress={() =>
-                    push({
-                        pathname: "/media/[mediaType]/[mediaId]",
-                        params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
-                    })
-                }
-                style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
-            >
-                <Icon size={16} color={mediaColors[item.mediaType]} />
-                <View style={styles.details}>
+            <View key={item.id} style={styles.row}>
+                {author ? (
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`View ${author.username}'s profile`}
+                        onPress={() =>
+                            push({ pathname: "/people/[userId]", params: { userId: String(author.userId) } })
+                        }
+                    >
+                        <Cover
+                            uri={author.avatar}
+                            label={author.username}
+                            style={{ width: 36, height: 36, borderRadius: 18 }}
+                        />
+                    </Pressable>
+                ) : (
+                    <Icon size={16} color={mediaColors[item.mediaType]} />
+                )}
+                <Pressable
+                    accessibilityRole="button"
+                    style={styles.details}
+                    onPress={() =>
+                        push({
+                            pathname: "/media/[mediaType]/[mediaId]",
+                            params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
+                        })
+                    }
+                >
                     <View style={styles.heading}>
+                        {author && <Icon size={13} color={mediaColors[item.mediaType]} />}
                         <AppText numberOfLines={1} style={styles.title}>
                             {item.mediaName}
                         </AppText>
@@ -77,12 +94,12 @@ const FeedRows = memo(function FeedRows({
                             {new Date(item.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                         </AppText>
                     </View>
-                    <AppText muted numberOfLines={2} style={styles.description}>
-                        {"username" in item ? `${item.username} · ` : ""}
-                        {formatActivity(item, ratingSystem)}
+                    <AppText muted style={styles.description}>
+                        {author ? `${author.username} · ` : ""}
+                        {formatActivity(item, author?.ratingSystem ?? ratingSystem)}
                     </AppText>
-                </View>
-            </Pressable>
+                </Pressable>
+            </View>
         );
     });
 });

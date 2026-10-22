@@ -1,4 +1,8 @@
 import * as z from "zod";
+import {inArray} from "drizzle-orm";
+import {user as userTable} from "@/lib/server/database/schema";
+import {getDbClient} from "@/lib/server/database/async-storage";
+import {withMobileActivityCovers} from "./activity";
 import {toActor} from "@/lib/server/authorization";
 import {getContainer} from "@/lib/server/core/container";
 import {mobileImagePath} from "@/lib/server/mobile/images";
@@ -60,7 +64,7 @@ export const getMobileProfileActivity = async (userId: number) => {
     const { services } = await getContainer();
     const updates = await services.updateHistory.getUserUpdates(userId);
 
-    return updates.map((update) => ({
+    return withMobileActivityCovers(updates).map((update) => ({
         ...update,
         timestamp: dateFromUTCInput(update.timestamp).toISOString(),
     }));
@@ -105,11 +109,20 @@ export const getMobileProfileExtras = async (userId: number) => {
     const { services } = await getContainer();
     const followsFeed = await services.updateHistory.getFollowsUpdates(userId, toActor({ id: userId }), 10);
 
+    const ids = [...new Set(followsFeed.map((item) => item.userId))];
+    const people = ids.length ? getDbClient().select({id: userTable.id, image: userTable.image, ratingSystem: userTable.ratingSystem})
+        .from(userTable).where(inArray(userTable.id, ids)).all() : [];
+    const authors = new Map(people.map((person) => [person.id, person]));
     return {
-        followsFeed: followsFeed.map((item) => ({
-            ...item,
-            timestamp: dateFromUTCInput(item.timestamp).toISOString(),
-        })),
+        followsFeed: withMobileActivityCovers(followsFeed).map((item) => {
+            const author = authors.get(item.userId)!;
+            return {
+                ...item,
+                avatar: author.image ? mobileImagePath(author.image) : null,
+                ratingSystem: author.ratingSystem,
+                timestamp: dateFromUTCInput(item.timestamp).toISOString(),
+            };
+        }),
     };
 };
 
@@ -159,7 +172,7 @@ export const getMobileHistory = async (userId: number, page: number) => {
         page,
         ratingSystem: user!.ratingSystem,
         pages: Math.ceil(result.total / 30),
-        items: result.items.map((item) => ({
+        items: withMobileActivityCovers(result.items).map((item) => ({
             ...item,
             timestamp: dateFromUTCInput(item.timestamp).toISOString(),
         })),

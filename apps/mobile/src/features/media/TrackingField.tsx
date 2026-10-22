@@ -1,21 +1,28 @@
-import {useState} from "react";
-import {View} from "react-native";
-import {Button, Field} from "../../components/ui";
-
+import { useState } from "react";
+import { View } from "react-native";
+import { Button, Field } from "../../components/ui";
 
 interface TrackingFieldProps {
     label: string;
     initial: string;
     pending: boolean;
     numeric?: boolean;
+    allowDecimals?: boolean;
     multiline?: boolean;
     onSave: (value: string) => void;
 }
 
-
 // Key this editor by the saved field value: unrelated saves preserve its draft,
 // while a server change to this field replaces the old initial value.
-export function TrackingField({ label, initial, pending, numeric, multiline, onSave }: TrackingFieldProps) {
+export function TrackingField({
+    label,
+    initial,
+    pending,
+    numeric,
+    allowDecimals = false,
+    multiline,
+    onSave,
+}: TrackingFieldProps) {
     const [value, setValue] = useState(initial);
 
     return (
@@ -26,16 +33,41 @@ export function TrackingField({ label, initial, pending, numeric, multiline, onS
                 editable={!pending}
                 multiline={multiline}
                 maxLength={multiline ? 5000 : undefined}
-                keyboardType={numeric ? "decimal-pad" : "default"}
+                keyboardType={numeric ? (allowDecimals ? "decimal-pad" : "number-pad") : "default"}
                 onChangeText={(text) => setValue(numeric ? text.replace(",", ".") : text)}
             />
-            <Button
-                secondary={true}
-                pending={pending}
-                onPress={() => onSave(value)}
-                label={`Save ${label.toLowerCase()}`}
-                disabled={value === initial || (numeric && (!value.trim() || !Number.isFinite(Number(value)) || Number(value) < 0))}
-            />
+            {numeric && (
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                    <Button
+                        label="−1"
+                        secondary
+                        disabled={pending || !Number.isFinite(Number(value)) || Number(value) < 1}
+                        onPress={() => setValue(String(Number(value) - 1))}
+                    />
+                    <Button
+                        label="+1"
+                        secondary
+                        disabled={pending || !Number.isFinite(Number(value))}
+                        onPress={() => setValue(String(Number(value) + 1))}
+                    />
+                </View>
+            )}
+            {value !== initial && (
+                <Button
+                    secondary={true}
+                    pending={pending}
+                    onPress={() => onSave(value)}
+                    label={`Save ${label.toLowerCase()}`}
+                    disabled={
+                        value === initial ||
+                        (numeric &&
+                            (!value.trim() ||
+                                !Number.isFinite(Number(value)) ||
+                                Number(value) < 0 ||
+                                (!allowDecimals && !Number.isInteger(Number(value)))))
+                    }
+                />
+            )}
         </View>
     );
 }

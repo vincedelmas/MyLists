@@ -1,0 +1,23 @@
+import { toActor } from "@/lib/server/authorization";
+import { getContainer } from "@/lib/server/core/container";
+import { getMobileProfile, getMobileProfileActivity } from "./profile";
+import { mobileImagePath } from "./images";
+
+export const getMobilePerson = async (viewerId: number, targetId: number) => {
+    const { services } = await getContainer();
+    const target = await services.account.getUserById(targetId);
+    if (!target) return null;
+    const decision = await services.authorization.decideProfile(toActor({ id: viewerId }), target);
+    const following = services.social.getFollowingStatus(viewerId, targetId);
+    const header = {
+        isOwn: viewerId === targetId,
+        id: target.id,
+        name: target.name,
+        privacy: target.privacy,
+        image: target.image ? mobileImagePath(target.image) : null,
+        backgroundImage: mobileImagePath(target.backgroundImage),
+    };
+    if (!decision.allowed) return { access: "private" as const, header, following: following?.status ?? null };
+    const [profile, activity] = await Promise.all([getMobileProfile(targetId), getMobileProfileActivity(targetId)]);
+    return { access: "allowed" as const, header, following: following?.status ?? null, profile: profile!, activity };
+};

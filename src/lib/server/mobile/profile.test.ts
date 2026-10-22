@@ -11,6 +11,7 @@ import {mobileRequest} from "./request";
 
 const mocks = vi.hoisted(() => ({
     earned: vi.fn(),
+    avatars: vi.fn(),
     catalog: vi.fn(),
     feed: vi.fn(),
     advanced: vi.fn(),
@@ -23,6 +24,8 @@ const mocks = vi.hoisted(() => ({
     highlights: vi.fn(),
     activity: vi.fn(),
 }));
+vi.mock("./activity", () => ({withMobileActivityCovers: (items: readonly Record<string, unknown>[]) => items.map((item) => ({...item, cover: null}))}));
+vi.mock("@/lib/server/database/async-storage", () => ({getDbClient: () => ({select: () => ({from: () => ({where: () => ({all: mocks.avatars})})})})}));
 vi.mock("@/env/client", () => ({clientEnv: {VITE_BASE_URL: "http://localhost:3000"}}));
 vi.mock("@/lib/server/core/auth", () => ({auth: {api: {getSession: mocks.session}}}));
 vi.mock("@/lib/server/core/logger", () => ({logger: {warn: vi.fn(), error: vi.fn()}}));
@@ -64,6 +67,7 @@ beforeEach(() => {
         backgroundImage: "http://localhost:3000/static/background.jpg",
     });
     mocks.earned.mockResolvedValue([]);
+    mocks.avatars.mockReturnValue([]);
     mocks.feed.mockResolvedValue([]);
     mocks.catalog.mockResolvedValue([]);
     mocks.wrap.mockImplementation((_key, loader) => loader());
@@ -134,6 +138,13 @@ describe("isolated mobile profile API", () => {
         expect(mocks.feed).toHaveBeenCalledWith(10, {kind: "user", id: 10, role: "user"}, 10);
     });
 
+    it("attaches the author's avatar and rating preference without changing the saved payload", async () => {
+        const payload = {old_value: 0, new_value: 8};
+        mocks.feed.mockResolvedValue([{id: 7, userId: 20, username: "Other", mediaType: "movies", mediaId: 1, payload, timestamp: "2026-10-21 14:00:00"}]);
+        mocks.avatars.mockReturnValue([{id: 20, image: "http://localhost:3000/avatar.jpg", ratingSystem: "feeling"}]);
+        expect((await getMobileProfileExtras(10)).followsFeed[0]).toMatchObject({avatar: "/avatar.jpg", ratingSystem: "feeling", payload});
+    });
+
     it("loads only the three latest achievements when requested", async () => {
         mocks.earned.mockResolvedValue([{id: 1, completedAt: "2026-10-21 14:00:00"}]);
         expect(await getMobileRecentAchievements(10)).toEqual([{id: 1, completedAt: "2026-10-21T14:00:00.000Z"}]);
@@ -160,7 +171,7 @@ describe("isolated mobile profile API", () => {
 
     it("loads activity independently with native-compatible UTC timestamps", async () => {
         const response = await mobileRequest(request(), getMobileProfileActivity);
-        expect(await response.json()).toEqual([{id: 1, userId: 10, timestamp: "2026-10-21T14:00:00.000Z"}]);
+        expect(await response.json()).toEqual([{id: 1, userId: 10, cover: null, timestamp: "2026-10-21T14:00:00.000Z"}]);
         expect(mocks.activity).toHaveBeenCalledWith(10);
         expect(mocks.stats).not.toHaveBeenCalled();
         expect(mocks.highlights).not.toHaveBeenCalled();

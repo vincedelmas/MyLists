@@ -1,14 +1,19 @@
-import {colors} from "../../theme";
-import {MediaRow} from "../../components/MediaRow";
-import {Page, StateView} from "../../components/ui";
-import {FlatList, RefreshControl} from "react-native";
-import {useInfiniteQuery} from "@tanstack/react-query";
-import {useIsFocused, useLocalSearchParams} from "expo-router";
-import {libraryDetailOptions} from "../../lib/react-query/query-options/library.options";
-
+import { LayoutToggle, type MediaLayout } from "../../components/layout-toggle";
+import { useState } from "react";
+import { colors } from "../../theme";
+import { MediaCard } from "../../components/media-card";
+import { ratingLabel } from "../../lib/ratings";
+import { useTabPush } from "../../hooks/use-tab-push";
+import { Page, StateView } from "../../components/ui";
+import { FlatList, RefreshControl } from "react-native";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useIsFocused, useLocalSearchParams } from "expo-router";
+import { libraryDetailOptions } from "../../lib/react-query/query-options/library.options";
 
 export function LibraryDetailScreen() {
     const focused = useIsFocused();
+    const [layout, setLayout] = useState<MediaLayout>("grid");
+    const push = useTabPush();
     const { kind, id } = useLocalSearchParams<{ kind: "collection" | "dynamic" | "continue"; id?: string }>();
     const query = useInfiniteQuery({ ...libraryDetailOptions(kind, id ? Number(id) : undefined), enabled: focused });
 
@@ -16,9 +21,16 @@ export function LibraryDetailScreen() {
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
     return (
-        <Page title={first?.title ?? (kind === "continue" ? "Continue" : "List")} back>
+        <Page
+            title={first?.title ?? (kind === "continue" ? "Continue" : "List")}
+            back
+            action={<LayoutToggle value={layout} onChange={setLayout} />}
+        >
             <FlatList
+                key={layout}
                 data={items}
+                numColumns={layout === "grid" ? 2 : 1}
+                contentContainerStyle={{ padding: 10 }}
                 windowSize={7}
                 initialNumToRender={10}
                 onEndReachedThreshold={0.5}
@@ -43,31 +55,33 @@ export function LibraryDetailScreen() {
                         retry={query.isError ? () => void query.refetch() : undefined}
                     />
                 }
-                renderItem={({ item }) =>
-                    <MediaRow
+                renderItem={({ item }) => (
+                    <MediaCard
+                        layout={layout}
                         name={item.name}
                         cover={item.cover}
-                        rating={item.rating}
-                        mediaId={item.mediaId}
-                        favorite={item.favorite}
-                        mediaType={item.mediaType}
-                        status={item.status ?? undefined}
-                        ratingSystem={first?.ratingSystem}
+                        detail={[
+                            item.status,
+                            item.rating == null ? null : ratingLabel(item.rating, first?.ratingSystem ?? "score"),
+                            item.favorite ? "♥" : null,
+                        ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        onPress={() =>
+                            push({
+                                pathname: "/media/[mediaType]/[mediaId]",
+                                params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
+                            })
+                        }
                     />
-                }
+                )}
+
                 ListFooterComponent={
-                    query.isFetchingNextPage ?
-                        <StateView
-                            loading={true}
-                        />
-                        :
-                        query.isError && items.length ?
-                            <StateView
-                                title="Couldn’t load more"
-                                retry={() => void query.fetchNextPage()}
-                            />
-                            :
-                            undefined
+                    query.isFetchingNextPage ? (
+                        <StateView loading={true} />
+                    ) : query.isError && items.length ? (
+                        <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()} />
+                    ) : undefined
                 }
             />
         </Page>

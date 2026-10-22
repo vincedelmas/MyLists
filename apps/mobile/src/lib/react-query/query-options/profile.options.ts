@@ -48,3 +48,9 @@ export const profileContinueOptions = queryOptions({
     queryKey: ["profile", "continue"],
     queryFn: ({ signal }) => api.libraryDetail({kind: "continue", page: 1, search: ""}, signal),
 });
+
+
+export const personOptions = (userId: number) => queryOptions({
+    queryKey: ["profile", "person", userId],
+    queryFn: ({signal}) => api.person(userId, signal),
+});

@@ -56,7 +56,6 @@ export function ProfileScreen() {
             <QueryPanel query={query}>
                 {(data) => (
                     <>
-                        <ProfileHeader data={data} />
                         <TopTabs value={tab} tabs={profileTabs} onChange={setTab} />
                         <View style={{ flex: 1 }}>
                             {tab === "profile" && <ProfileContent data={data} refreshing={query.isRefetching} />}
@@ -94,6 +93,7 @@ const ProfileContent = memo(function ProfileContent({
                 />
             }
         >
+            <ProfileHeader data={data} />
             <View style={{ gap: 12 }}>
                 <AppText heading style={{ fontSize: 17 }}>
                     Your media lists
@@ -184,8 +184,8 @@ const ProfileContent = memo(function ProfileContent({
 const ProfileHeader = memo(function ProfileHeader({ data }: { data: MobileProfile }) {
     const push = useTabPush();
     return (
-        <View style={{ gap: 0, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
-            <Cover uri={data.user.backgroundImage} style={{ width: "100%", height: 104, borderRadius: 16 }} />
+        <View style={{ gap: 0, paddingBottom: 12 }}>
+            <Cover uri={data.user.backgroundImage} style={{ width: "100%", height: 128, borderRadius: 16 }} />
             <View style={{ paddingHorizontal: 8, gap: 14 }}>
                 <View style={{ flexDirection: "row", gap: 14, alignItems: "flex-end", marginTop: -26 }}>
                     <Cover

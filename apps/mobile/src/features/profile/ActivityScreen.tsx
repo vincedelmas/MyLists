@@ -1,23 +1,44 @@
-import {useIsFocused} from "expo-router";
-import {colors, mediaColors} from "../../theme";
-import {useTabPush} from "../../hooks/use-tab-push";
-import {formatActivity} from "./profile-formatting";
-import {useInfiniteQuery} from "@tanstack/react-query";
-import {AppText, StateView} from "../../components/ui";
-import {FlatList, RefreshControl, Pressable, View} from "react-native";
-import {historyOptions} from "../../lib/react-query/query-options/history.options";
-
+import { useState } from "react";
+import { View } from "react-native";
+import { LayoutToggle, type MediaLayout } from "../../components/layout-toggle";
+import { useIsFocused } from "expo-router";
+import { colors } from "../../theme";
+import { useTabPush } from "../../hooks/use-tab-push";
+import { formatActivity } from "./profile-formatting";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { AppText, StateView } from "../../components/ui";
+import { FlatList, RefreshControl } from "react-native";
+import { MediaCard } from "../../components/media-card";
+import { historyOptions } from "../../lib/react-query/query-options/history.options";
 
 export function ActivityContent() {
     const push = useTabPush();
     const focused = useIsFocused();
+    const [layout, setLayout] = useState<MediaLayout>("grid");
     const query = useInfiniteQuery({ ...historyOptions, enabled: focused });
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
     return (
         <>
+            <View
+                style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingHorizontal: 16,
+                    paddingTop: 8,
+                }}
+            >
+                <AppText muted style={{ fontSize: 12 }}>
+                    Your tracking history
+                </AppText>
+                <LayoutToggle value={layout} onChange={setLayout} />
+            </View>
             <FlatList
+                key={layout}
                 data={items}
+                numColumns={layout === "grid" ? 2 : 1}
+                contentContainerStyle={{ padding: 10 }}
                 windowSize={7}
                 initialNumToRender={15}
                 onEndReachedThreshold={0.5}
@@ -43,9 +64,11 @@ export function ActivityContent() {
                     />
                 }
                 renderItem={({ item }) => (
-                    <Pressable
-                        accessibilityRole="button"
-                        style={{ padding: 16, gap: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}
+                    <MediaCard
+                        layout={layout}
+                        name={item.mediaName}
+                        cover={item.cover}
+                        detail={formatActivity(item, query.data!.pages[0].ratingSystem)}
                         onPress={() =>
                             push({
                                 pathname: "/media/[mediaType]/[mediaId]",
@@ -53,40 +76,17 @@ export function ActivityContent() {
                             })
                         }
                     >
-                        <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-                            <View
-                                style={{
-                                    width: 6,
-                                    height: 6,
-                                    borderRadius: 3,
-                                    backgroundColor: mediaColors[item.mediaType],
-                                }}
-                            />
-                            <AppText style={{ flex: 1, fontWeight: "600" }}>
-                                {item.mediaName}
-                            </AppText>
-                        </View>
-                        <AppText muted={true}>
-                            {formatActivity(item, query.data!.pages[0].ratingSystem)}
-                        </AppText>
-                        <AppText muted style={{ fontSize: 11 }}>
+                        <AppText muted style={{ fontSize: 10 }}>
                             {new Date(item.timestamp).toLocaleString()}
                         </AppText>
-                    </Pressable>
+                    </MediaCard>
                 )}
                 ListFooterComponent={
-                    query.isFetchingNextPage ?
-                        <StateView
-                            loading={true}
-                        />
-                        :
-                        query.isError && items.length ?
-                            <StateView
-                                title="Couldn’t load more activity"
-                                retry={() => void query.fetchNextPage()}
-                            />
-                            :
-                            undefined
+                    query.isFetchingNextPage ? (
+                        <StateView loading={true} />
+                    ) : query.isError && items.length ? (
+                        <StateView title="Couldn’t load more activity" retry={() => void query.fetchNextPage()} />
+                    ) : undefined
                 }
             />
         </>

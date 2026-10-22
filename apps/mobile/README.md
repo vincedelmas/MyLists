@@ -232,8 +232,8 @@ and multiline notes. Validate these on iOS separately before release. Production
 ## Profile and Community navigation
 
 The persistent bottom navigation contains Profile, Lists, Search, and Community. Settings opens from the Profile cog and remains in that
-stack. Profile has its identity/follow header above scrollable section tabs: Profile, Achievements, My stats, My activity, and Release
-calendar. Only the selected section mounts its data readers; switching sections reuses the React Query cache. The overview uses a compact level/percentage media-list grid, a Continue preview, switchable Recent feed/Follows feed tabs with shared
+stack. Profile has scrollable section tabs above its content: Profile, Achievements, My stats, My activity, and Release
+calendar. Its taller identity/follow header scrolls with the Profile overview and stays out of the other sections. Only the selected section mounts its data readers; switching sections reuses the React Query cache. The overview uses a compact level/percentage media-list grid, a Continue preview, switchable Recent feed/Follows feed tabs with shared
 compact rows, and highlighted media. Achievements loads its latest three completions separately from the
 catalog. The calendar is a month-by-month agenda of releases from active supported lists, with media filtering.
 
@@ -245,3 +245,14 @@ separate from the mobile session.
 On the phone, check every profile/connection tab, scrolling to the last tab, month changes and calendar filtering, pull-to-refresh, the
 Profile cog and Android back behavior, and the persistent bottom bar while opening lists/media. Check that Community links open the
 expected web pages. Restart/reload Expo Go after the route-group rename.
+
+
+Activity and tracking/collection lists default to cover grids, with a list toggle. Activity covers are loaded in batches per media type;
+deleted titles keep their updates with an empty cover. Both profile feeds show saved old/new payload values. Follows-feed avatars open a
+native visitor profile; the shared profile authorization policy runs before any private content is loaded. The author’s rating preference
+is used when formatting their updates.
+
+Media Details displays allowlisted type-specific metadata without fetching the web app’s community/similar-media graph. Tracking has its
+own tab with grouped status/rating/favorite, progress, notes, and collapsible season controls. Per-field saves only appear for edited drafts;
+activity-correction previews and confirmed removals use the existing mutation flow. Check native accordions, avatar navigation/private
+profiles, both grid/list modes, numeric/notes drafts, TV season edits, and correction decisions on Android and iOS.

@@ -1,43 +1,40 @@
-import type {MobileProfile, MobileProfileActivity} from "../../lib/api-client";
+import type { MobileProfile, MobileProfileActivity } from "../../lib/api-client";
+import { ratingLabel } from "../../lib/ratings";
+import { getMediaDefinition } from "@/lib/media-definitions/definition.registry";
+import { toActivityDisplayValue } from "@/lib/utils/media/activity";
 
+export const formatCount = (value: number) => new Intl.NumberFormat("en", { maximumFractionDigits: 0 }).format(value);
 
-export const formatCount = (value: number) => {
-    return new Intl.NumberFormat("en", { maximumFractionDigits: 0 }).format(value);
-}
+type Activity = Pick<MobileProfileActivity[number], "payload" | "mediaType" | "updateType">;
+type RatingSystem = MobileProfile["user"]["ratingSystem"];
 
-
-export const formatActivity = (update: MobileProfileActivity[number], ratingSystem: MobileProfile["user"]["ratingSystem"]) => {
-    if (!update.payload) return "Entry updated";
-    const value = update.payload.new_value;
-
+const activityValue = (value: unknown, update: Activity, ratingSystem: RatingSystem): string => {
+    if (value === null || value === undefined || value === "") return "Not set";
     switch (update.updateType) {
-        case "status":
-            return value ?? "Status updated";
-        case "tv":
-            return `Season ${value[0]} · Episode ${value[1]}`;
-        case "page":
-            return `Page ${formatCount(value)}`;
-        case "chapter":
-            return `Chapter ${formatCount(value)}`;
-        case "playtime":
-            return `${new Intl.NumberFormat("en", { maximumFractionDigits: 1 }).format(value / 60)} hours played`;
-        case "favorite":
-            return value ? "Added to favorites" : "Removed from favorites";
-        case "comment":
-            return "Note updated";
-        case "platform":
-            return "Platform updated";
+        case "tv": {
+            const [season, episode] = value as [number, number];
+            return `S${season} · E${episode}`;
+        }
         case "rating":
-            return value === null
-                ? "Rating removed"
-                : ratingSystem === "score"
-                    ? `Rated ${value}/10`
-                    : "Feeling updated";
+            return ratingSystem === "score" ? `${value}/10` : ratingLabel(Number(value), ratingSystem);
+        case "playtime":
+            return `${new Intl.NumberFormat("en", { maximumFractionDigits: 1 }).format(toActivityDisplayValue(update.mediaType, Number(value)))} ${getMediaDefinition(update.mediaType).progress.unit.short}`;
+        case "page":
+            return `Page ${value}`;
+        case "chapter":
+            return `Chapter ${value}`;
         case "redo":
-            return update.mediaType === "games"
-                ? "Replayed"
-                : ["books", "manga"].includes(update.mediaType)
-                    ? "Read again"
-                    : "Rewatched";
+            return `${value}×`;
+        case "favorite":
+            return value ? "Favorite" : "Not a favorite";
+        default:
+            return String(value);
     }
+};
+
+export const formatActivity = (update: Activity, ratingSystem: RatingSystem) => {
+    if (!update.payload) return "Entry updated";
+    const labels = { rating: "Rating", comment: "Notes", platform: "Platform", redo: "Repeats" } as const;
+    const label = update.updateType in labels ? `${labels[update.updateType as keyof typeof labels]}: ` : "";
+    return `${label}${activityValue(update.payload.old_value, update, ratingSystem)} → ${activityValue(update.payload.new_value, update, ratingSystem)}`;
 };

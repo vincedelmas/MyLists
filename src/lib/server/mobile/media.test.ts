@@ -57,6 +57,9 @@ beforeEach(() => {
         name: "Film",
         imageCover: "http://localhost:3000/static/cover.jpg",
         synopsis: "A story",
+        duration: 123,
+        directorName: "A Director",
+        internalField: "must not be exposed",
         releaseDate: "2026-01-01",
     });
     mocks.tracking.mockReturnValue(null);
@@ -92,6 +95,8 @@ describe("mobile media operations", () => {
         const result = await getMobileMedia(10, {mediaType: "movies", mediaId: 7});
         expect(mocks.tracking).toHaveBeenCalledWith(10, 7);
         expect(result.media.cover).toBe("/static/cover.jpg");
+        expect(result.media.facts).toEqual(expect.arrayContaining([{label: "Runtime (minutes)", value: "123"}, {label: "Director", value: "A Director"}]));
+        expect(JSON.stringify(result.media)).not.toContain("must not be exposed");
         expect(result.active).toBe(true);
         expect(result.seasons).toBeNull();
     });

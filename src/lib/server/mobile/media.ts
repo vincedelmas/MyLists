@@ -69,6 +69,21 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
             ? await container.registries.mediaService.get("games").getCompatiblePlatforms(params.mediaId)
             : [];
 
+    const labels = {
+        originalName: "Original title", duration: "Runtime (minutes)", prodStatus: "Production status",
+        totalSeasons: "Seasons", totalEpisodes: "Episodes", voteAverage: "Community score", voteCount: "Votes",
+        originalLanguage: "Original language", originCountry: "Country", directorName: "Director", createdBy: "Created by",
+        compositorName: "Composer", pages: "Pages", language: "Language", publishers: "Publisher",
+        chapters: "Chapters", volumes: "Volumes", endDate: "End date", gameEngine: "Game engine",
+        gameModes: "Game modes", playerPerspective: "Perspective", hltbMainTime: "Main story (hours)",
+        hltbMainAndExtraTime: "Main + extras (hours)", hltbTotalCompleteTime: "Completionist (hours)",
+    };
+    const fields: Record<string, unknown> = media;
+    const facts = Object.entries(labels).flatMap(([key, label]) => {
+        const value = fields[key];
+        return value === null || value === undefined || value === "" ? [] : [{label, value: String(value)}];
+    });
+
     return {
         compatiblePlatforms,
         statuses: definition.statuses,
@@ -83,6 +98,8 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
             id: media.id,
             name: media.name,
             synopsis: media.synopsis,
+            facts,
+            tagline: "tagline" in media ? media.tagline : null,
             releaseDate: media.releaseDate,
             cover: mobileImagePath(userMedia?.customCover ?? media.imageCover),
         },

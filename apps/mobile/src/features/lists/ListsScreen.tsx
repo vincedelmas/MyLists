@@ -1,9 +1,9 @@
 import {useState} from "react";
 import {colors} from "../../theme";
 import {useIsFocused} from "expo-router";
-import {useTabPush} from "../../lib/use-tab-push";
+import {useTabPush} from "../../hooks/use-tab-push";
 import {FlatList, RefreshControl, View} from "react-native";
-import {useDebouncedValue} from "../../lib/use-debounced-value";
+import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
 import {FolderOpen, ListFilter, Play} from "lucide-react-native";
 import {mediaIcons, mediaLabels, mediaColors} from "../../lib/media";

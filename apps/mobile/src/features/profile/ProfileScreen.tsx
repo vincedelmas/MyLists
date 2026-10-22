@@ -4,7 +4,7 @@ import {useIsFocused} from "expo-router";
 import {PrivacyBadge} from "./PrivacyBadge";
 import {ProfileExtras} from "./ProfileExtras";
 import {formatCount} from "./profile-formatting";
-import {useTabPush} from "../../lib/use-tab-push";
+import {useTabPush} from "../../hooks/use-tab-push";
 import {ProgressBar} from "../../components/ProgressBar";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {mediaIcons, mediaLabels, mediaColors} from "../../lib/media";

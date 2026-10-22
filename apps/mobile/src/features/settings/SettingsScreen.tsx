@@ -1,4 +1,4 @@
-import {useTabPush} from "../../lib/use-tab-push";
+import {useTabPush} from "../../hooks/use-tab-push";
 import {useIsFocused} from "expo-router";
 import {Alert, View} from "react-native";
 import {useQuery} from "@tanstack/react-query";

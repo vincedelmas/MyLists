@@ -3,7 +3,7 @@ import {useIsFocused} from "expo-router";
 import {Pressable, View} from "react-native";
 import {useQuery} from "@tanstack/react-query";
 import {AchievementRow} from "./AchievementRow";
-import {useTabPush} from "../../lib/use-tab-push";
+import {useTabPush} from "../../hooks/use-tab-push";
 import {formatActivity} from "./profile-formatting";
 import {mediaIcons, mediaColors} from "../../lib/media";
 import {AppText, Button, QueryPanel, Section} from "../../components/ui";

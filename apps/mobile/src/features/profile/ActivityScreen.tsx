@@ -1,6 +1,6 @@
 import {useIsFocused} from "expo-router";
 import {colors, mediaColors} from "../../theme";
-import {useTabPush} from "../../lib/use-tab-push";
+import {useTabPush} from "../../hooks/use-tab-push";
 import {formatActivity} from "./profile-formatting";
 import {useInfiniteQuery} from "@tanstack/react-query";
 import {AppText, Page, StateView} from "../../components/ui";

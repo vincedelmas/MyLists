@@ -8,7 +8,7 @@ import type {MediaType} from "../../lib/api-client";
 import {useInfiniteQuery} from "@tanstack/react-query";
 import {FlatList, RefreshControl, View} from "react-native";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
-import {useDebouncedValue} from "../../lib/use-debounced-value";
+import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {listOptions} from "../../lib/react-query/query-options/media.options";
 import {AppText, Button, Field, Page, Select, StateView} from "../../components/ui";
 

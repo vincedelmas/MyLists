@@ -1,11 +1,11 @@
-import {useTabPush} from "../../lib/use-tab-push";
+import {useTabPush} from "../../hooks/use-tab-push";
 import {useState} from "react";
 import {useIsFocused} from "expo-router";
 import {FlatList, View} from "react-native";
 import {mediaLabels} from "../../lib/media";
 import {MediaRow} from "../../components/MediaRow";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import {useDebouncedValue} from "../../lib/use-debounced-value";
+import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import type {SearchInput, SearchResult} from "../../lib/api-client";
 import {AppText, Field, Page, Select, StateView} from "../../components/ui";
 import {searchOptions} from "../../lib/react-query/query-options/search.options";

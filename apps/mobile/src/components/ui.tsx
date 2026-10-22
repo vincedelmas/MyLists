@@ -2,7 +2,7 @@ import {Image} from "expo-image";
 import {router} from "expo-router";
 import {NativeHost} from "./native-host";
 import {assetUrl} from "../lib/api-client";
-import {useOnline} from "../lib/use-online";
+import {useOnline} from "../hooks/use-online";
 import {colors, commonStyles} from "../theme";
 import {useRoute} from "expo-router/react-navigation";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -36,21 +36,16 @@ export function AppText({ muted, heading, style, ...props }: TextProps & { muted
 }
 
 
-export function Page({
-                         title,
-                         subtitle,
-                         back,
-                         action,
-                         children,
-                     }: {
+export function Page({ title, subtitle, back, action, children }: {
     title: string;
-    subtitle?: string;
     back?: boolean;
+    subtitle?: string;
     action?: ReactNode;
     children: ReactNode;
 }) {
     const online = useOnline();
     const route = `/${useRoute().name}`;
+
     const screen = (
         <SafeAreaView
             onLayout={() => {
@@ -95,28 +90,26 @@ export function Page({
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
-    return navigationTimingEnabled ? (
-        <Profiler
+
+    return navigationTimingEnabled
+        ? <Profiler
             id={route}
             onRender={(_id, phase, actualDuration) => {
                 recordNavigationTiming(`react-${phase}`, route, actualDuration);
-                // Include outgoing screens: their route differs from the active trace.
                 recordNavigationTiming(`screen-render:${route}:${phase}`, undefined, actualDuration);
             }}
         >
             {screen}
         </Profiler>
-    ) : (
-        screen
-    );
+        : screen;
 }
 
 
 export function Content({ children, refreshControl }: { children: ReactNode; refreshControl?: React.ReactElement }) {
     return (
         <ScrollView
-            keyboardShouldPersistTaps="handled"
             refreshControl={refreshControl}
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.content}
         >
             {children}
@@ -128,46 +121,43 @@ export function Content({ children, refreshControl }: { children: ReactNode; ref
 export function Section({ title, children, action }: { title?: string; children: ReactNode; action?: ReactNode }) {
     return (
         <View style={{ gap: 12 }}>
-            {title && (
+            {title &&
                 <View style={styles.sectionHeading}>
                     <AppText heading style={{ fontSize: 17 }}>
                         {title}
                     </AppText>
                     {action}
                 </View>
-            )}
-            <View style={styles.card}>{children}</View>
+            }
+
+            <View style={styles.card}>
+                {children}
+            </View>
         </View>
     );
 }
 
 
-export function Button({
-                           label,
-                           onPress,
-                           pending,
-                           disabled,
-                           secondary,
-                           danger,
-                       }: {
+export function Button({ label, onPress, pending, disabled, secondary, danger }: {
     label: string;
-    onPress: () => void;
+    danger?: boolean;
     pending?: boolean;
     disabled?: boolean;
     secondary?: boolean;
-    danger?: boolean;
+    onPress: () => void;
 }) {
     const online = useOnline();
+
     return (
         <NativeHost
             matchContents
+            seedColor={danger ? colors.error : colors.accent}
             style={{ alignSelf: "flex-start", maxWidth: "100%" }}
             accessibilityState={{ disabled: disabled || pending || !online, busy: pending }}
-            seedColor={danger ? colors.error : colors.accent}
         >
             <NativeButton
-                label={pending ? `${label}…` : label}
                 onPress={onPress}
+                label={pending ? `${label}…` : label}
                 disabled={disabled || pending || !online}
                 variant={secondary ? "outlined" : "filled"}
             />
@@ -176,16 +166,14 @@ export function Button({
 }
 
 
-export function Field({
-                          label,
-                          inputRef,
-                          value,
-                          onChangeText,
-                          style,
-                          ...props
-                      }: Omit<TextInputProps, "value" | "ref"> & { label: string; value: string; inputRef?: Ref<TextInputRef> }) {
+export function Field({ label, inputRef, value, onChangeText, style, ...props }: Omit<TextInputProps, "value" | "ref"> & {
+    label: string;
+    value: string;
+    inputRef?: Ref<TextInputRef>
+}) {
     const text = useNativeState(value);
     const lastNativeValue = useRef(value);
+
     // Native typing already updates the observable. Only push external changes
     // (such as clearing a password after save) back into the native field.
     useEffect(() => {
@@ -195,14 +183,15 @@ export function Field({
             lastNativeValue.current = value;
         }
     }, [text, value]);
+
     return (
         <NativeHost style={{ width: "100%" }}>
             <Column spacing={8}>
                 <NativeText>{label}</NativeText>
                 <NativeTextInput
                     {...props}
-                    ref={inputRef}
                     value={text}
+                    ref={inputRef}
                     placeholder={props.placeholder ?? label}
                     onChangeText={(next) => {
                         lastNativeValue.current = next;
@@ -211,8 +200,8 @@ export function Field({
                     style={{
                         padding: 12,
                         borderWidth: 1,
-                        borderColor: colors.border,
                         borderRadius: 8,
+                        borderColor: colors.border,
                         ...style,
                     }}
                 />
@@ -222,27 +211,25 @@ export function Field({
 }
 
 
-export function Select<T extends string>({
-                                             label,
-                                             value,
-                                             options,
-                                             onChange,
-                                             disabled,
-                                         }: {
-    label: string;
+export function Select<T extends string>({ label, value, options, onChange, disabled }: {
     value: T;
-    options: readonly { value: T; label: string }[];
-    onChange: (value: T) => void;
+    label: string;
     disabled?: boolean;
+    onChange: (value: T) => void;
+    options: readonly { value: T; label: string }[];
 }) {
     return (
         <NativeHost style={{ width: "100%" }}>
             <Column spacing={8}>
                 <NativeText>{label}</NativeText>
                 <Picker selectedValue={value} onValueChange={onChange} enabled={!disabled}>
-                    {options.map((option) => (
-                        <Picker.Item key={option.value} value={option.value} label={option.label}/>
-                    ))}
+                    {options.map((option) =>
+                        <Picker.Item
+                            key={option.value}
+                            value={option.value}
+                            label={option.label}
+                        />
+                    )}
                 </Picker>
             </Column>
         </NativeHost>
@@ -250,12 +237,7 @@ export function Select<T extends string>({
 }
 
 
-export function MenuRow({
-                            title,
-                            detail,
-                            icon,
-                            onPress,
-                        }: {
+export function MenuRow({ title, detail, icon, onPress }: {
     title: string;
     detail?: string;
     icon?: ReactNode;
@@ -263,55 +245,63 @@ export function MenuRow({
 }) {
     return (
         <Pressable
-            accessibilityRole="button"
             onPress={onPress}
+            accessibilityRole="button"
             style={({ pressed }) => [styles.menuRow, pressed && commonStyles.pressed]}
         >
             {icon}
             <View style={{ flex: 1, gap: 3 }}>
-                <AppText style={{ fontWeight: "600" }}>{title}</AppText>
-                {detail && (
+                <AppText style={{ fontWeight: "600" }}>
+                    {title}
+                </AppText>
+                {detail &&
                     <AppText muted style={{ fontSize: 12 }}>
                         {detail}
                     </AppText>
-                )}
+                }
             </View>
+
             <ChevronRight size={18} color={colors.muted}/>
         </Pressable>
     );
 }
 
 
-export function StateView({
-                              loading,
-                              title,
-                              message,
-                              retry,
-                          }: {
-    loading?: boolean;
+export function StateView({ loading, title, message, retry }: {
     title?: string;
     message?: string;
+    loading?: boolean;
     retry?: () => void;
 }) {
     return (
         <View style={styles.state}>
-            {loading ? (
-                <ActivityIndicator size="large" color={colors.accent}/>
-            ) : (
+            {loading ?
+                <ActivityIndicator
+                    size="large"
+                    color={colors.accent}
+                />
+                :
                 <>
-                    {title && (
+                    {title &&
                         <AppText heading style={{ fontSize: 18, textAlign: "center" }}>
                             {title}
                         </AppText>
-                    )}
-                    {message && (
+                    }
+
+                    {message &&
                         <AppText muted accessibilityRole={retry ? "alert" : undefined} style={{ textAlign: "center" }}>
                             {message}
                         </AppText>
-                    )}
-                    {retry && <Button label="Try again" onPress={retry} secondary/>}
+                    }
+
+                    {retry &&
+                        <Button
+                            label="Try again"
+                            onPress={retry} secondary
+                        />
+                    }
                 </>
-            )}
+            }
         </View>
     );
 }

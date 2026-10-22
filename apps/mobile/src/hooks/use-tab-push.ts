@@ -1,5 +1,5 @@
 import {router, useSegments, type Href} from "expo-router";
-import {beginNavigationTiming, recordNavigationTiming} from "./diagnostics/navigation-timing";
+import {beginNavigationTiming, recordNavigationTiming} from "../lib/diagnostics/navigation-timing";
 
 
 export function useTabPush() {

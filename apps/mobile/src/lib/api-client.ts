@@ -1,3 +1,4 @@
+import {timeNavigationRequest} from "./diagnostics/navigation-timing";
 import {backendUrl} from "./config";
 import {authClient} from "./auth-client";
 import type * as Social from "../../../../src/lib/server/mobile/social";
@@ -40,24 +41,31 @@ const request = async <T>(
     body?: unknown,
     timeoutMs = 15_000,
 ): Promise<T> => {
-    const timeout = AbortSignal.timeout(timeoutMs);
-    const response = await fetch(`${backendUrl}/api/mobile/v1${path}`, {
-        method,
-        headers: {
-            accept: "application/json",
-            cookie: await authClient.getCookie(),
-            ...(method !== "GET" ? {"content-type": "application/json"} : {}),
-        },
-        credentials: "omit",
-        body: method !== "GET" ? JSON.stringify(body ?? {}) : undefined,
-        signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-    });
-    if (!response.ok) {
-        if (response.status === 401) authClient.$store.notify("$sessionSignal");
-        const {error} = (await response.json()) as {error: {message: string}};
-        throw new ApiError(response.status, error.message);
+    const finishTiming = timeNavigationRequest(path);
+    let outcome = "failed-or-aborted";
+    try {
+        const timeout = AbortSignal.timeout(timeoutMs);
+        const response = await fetch(`${backendUrl}/api/mobile/v1${path}`, {
+            method,
+            headers: {
+                accept: "application/json",
+                cookie: await authClient.getCookie(),
+                ...(method !== "GET" ? {"content-type": "application/json"} : {}),
+            },
+            credentials: "omit",
+            body: method !== "GET" ? JSON.stringify(body ?? {}) : undefined,
+            signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+        });
+        outcome = `http-${response.status}`;
+        if (!response.ok) {
+            if (response.status === 401) authClient.$store.notify("$sessionSignal");
+            const {error} = (await response.json()) as {error: {message: string}};
+            throw new ApiError(response.status, error.message);
+        }
+        return await response.json();
+    } finally {
+        finishTiming?.(outcome);
     }
-    return response.json();
 };
 
 const queryString = (input: object) =>

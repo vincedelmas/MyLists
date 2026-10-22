@@ -1,9 +1,10 @@
 import {useTabPush} from "../../lib/use-tab-push";
 import {useIsFocused} from "expo-router";
-import {Alert} from "react-native";
+import {Alert, View} from "react-native";
 import {useQuery} from "@tanstack/react-query";
-import {CircleUserRound, Library, LockKeyhole} from "lucide-react-native";
-import {AppText, Button, Content, MenuRow, Page, QueryPanel, Section} from "../../components/ui";
+import {Button, FieldGroup, ListItem, Text} from "@expo/ui";
+import {NativeHost} from "../../components/native-host";
+import {AppText, Page, QueryPanel} from "../../components/ui";
 import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
 import {useSignOutMutation} from "../../lib/react-query/query-mutations/auth.mutations";
 import {colors} from "../../theme";
@@ -17,47 +18,61 @@ export function SettingsScreen() {
         <Page title="Settings">
             <QueryPanel query={query}>
                 {(data) => (
-                    <Content>
-                        <Section title={data.username}>
-                            <MenuRow
-                                title="General"
-                                detail="Username and profile privacy"
-                                icon={<CircleUserRound size={22} color={colors.muted} />}
-                                onPress={() => push("/settings/general")}
-                            />
-                            <MenuRow
-                                title="Content & lists"
-                                detail="Active lists, rating system, and notifications"
-                                icon={<Library size={22} color={colors.muted} />}
-                                onPress={() => push("/settings/content")}
-                            />
-                            <MenuRow
-                                title="Security"
-                                detail="Change your password"
-                                icon={<LockKeyhole size={22} color={colors.muted} />}
-                                onPress={() => push("/settings/security")}
-                            />
-                        </Section>
+                    <View style={{flex: 1}}>
                         {signOut.error && (
-                            <AppText accessibilityRole="alert" style={{color: colors.error}}>
+                            <AppText accessibilityRole="alert" style={{color: colors.error, padding: 16}}>
                                 {signOut.error.message}
                             </AppText>
                         )}
-                        <Button
-                            label="Sign out"
-                            pending={signOut.isPending}
-                            secondary
-                            onPress={() =>
-                                Alert.alert("Sign out?", "You’ll need to sign in again to access your lists.", [
-                                    {text: "Cancel", style: "cancel"},
-                                    {text: "Sign out", style: "destructive", onPress: () => signOut.mutate()},
-                                ])
-                            }
-                        />
-                        <AppText muted style={{textAlign: "center", fontSize: 12}}>
-                            MyLists · Your media, in one place.
-                        </AppText>
-                    </Content>
+                        <NativeHost matchContents={false} style={{flex: 1}}>
+                            <FieldGroup>
+                                <FieldGroup.Section title={data.username}>
+                                    <ListItem
+                                        onPress={() => push("/settings/general")}
+                                        supportingText="Username and profile privacy"
+                                    >
+                                        General
+                                    </ListItem>
+                                    <ListItem
+                                        onPress={() => push("/settings/content")}
+                                        supportingText="Active lists, rating system, and notifications"
+                                    >
+                                        Content & lists
+                                    </ListItem>
+                                    <ListItem
+                                        onPress={() => push("/settings/security")}
+                                        supportingText="Password and account access"
+                                    >
+                                        Security
+                                    </ListItem>
+                                </FieldGroup.Section>
+                                <FieldGroup.Section>
+                                    <Button
+                                        label={signOut.isPending ? "Signing out…" : "Sign out"}
+                                        variant="outlined"
+                                        disabled={signOut.isPending}
+                                        onPress={() =>
+                                            Alert.alert(
+                                                "Sign out?",
+                                                "You’ll need to sign in again to access your lists.",
+                                                [
+                                                    {text: "Cancel", style: "cancel"},
+                                                    {
+                                                        text: "Sign out",
+                                                        style: "destructive",
+                                                        onPress: () => signOut.mutate(),
+                                                    },
+                                                ],
+                                            )
+                                        }
+                                    />
+                                    <FieldGroup.SectionFooter>
+                                        <Text>MyLists · Your media, in one place.</Text>
+                                    </FieldGroup.SectionFooter>
+                                </FieldGroup.Section>
+                            </FieldGroup>
+                        </NativeHost>
+                    </View>
                 )}
             </QueryPanel>
         </Page>

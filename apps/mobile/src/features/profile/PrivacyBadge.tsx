@@ -1,7 +1,9 @@
+import {BottomSheet, Button} from "@expo/ui";
+import {NativeHost} from "../../components/native-host";
 import {useState} from "react";
-import {Modal, Pressable, View} from "react-native";
-import {Globe, Lock, Shield, X} from "lucide-react-native";
-import {AppText, Button} from "../../components/ui";
+import {Pressable, View} from "react-native";
+import {Globe, Lock, Shield} from "lucide-react-native";
+import {AppText} from "../../components/ui";
 import {colors} from "../../theme";
 import type {MobileProfile} from "../../lib/api-client";
 
@@ -41,44 +43,20 @@ export function PrivacyBadge({value}: {value: MobileProfile["user"]["privacy"]})
             >
                 <Icon size={21} color={color} />
             </Pressable>
-            <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-                <View style={{flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#00000099"}}>
-                    <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Close privacy explanation"
-                        onPress={() => setOpen(false)}
-                        style={{position: "absolute", inset: 0}}
-                    />
-                    <View
-                        accessibilityViewIsModal
-                        style={{
-                            padding: 24,
-                            gap: 18,
-                            backgroundColor: colors.surface,
-                            borderColor: colors.border,
-                            borderWidth: 1,
-                            borderRadius: 20,
-                        }}
-                    >
+            <NativeHost matchContents>
+                <BottomSheet isPresented={open} onDismiss={() => setOpen(false)}>
+                    <View style={{padding: 16, gap: 18}}>
                         <View style={{flexDirection: "row", alignItems: "center", gap: 12}}>
                             <Icon size={24} color={color} />
-                            <AppText heading style={{flex: 1}}>
-                                {title}
-                            </AppText>
-                            <Pressable
-                                accessibilityRole="button"
-                                accessibilityLabel="Close"
-                                hitSlop={10}
-                                onPress={() => setOpen(false)}
-                            >
-                                <X size={20} color={colors.muted} />
-                            </Pressable>
+                            <AppText heading>{title}</AppText>
                         </View>
                         <AppText muted>{explanation}</AppText>
-                        <Button secondary label="Got it" onPress={() => setOpen(false)} />
+                        <NativeHost>
+                            <Button label="Got it" onPress={() => setOpen(false)} />
+                        </NativeHost>
                     </View>
-                </View>
-            </Modal>
+                </BottomSheet>
+            </NativeHost>
         </>
     );
 }

@@ -42,7 +42,6 @@ export function SecurityScreen() {
                             value={currentPassword}
                             onChangeText={setCurrentPassword}
                             secureTextEntry
-                            textContentType="password"
                             autoComplete="current-password"
                             autoCapitalize="none"
                         />
@@ -52,7 +51,6 @@ export function SecurityScreen() {
                             value={newPassword}
                             onChangeText={setNewPassword}
                             secureTextEntry
-                            textContentType="newPassword"
                             autoComplete="new-password"
                             autoCapitalize="none"
                         />
@@ -62,7 +60,7 @@ export function SecurityScreen() {
                             value={confirm}
                             onChangeText={setConfirm}
                             secureTextEntry
-                            textContentType="newPassword"
+                            autoComplete="new-password"
                             autoCapitalize="none"
                         />
                         <AppText muted>Changing your password signs out your other sessions.</AppText>

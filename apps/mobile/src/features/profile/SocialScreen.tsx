@@ -1,4 +1,5 @@
-import {useState} from "react";
+import {recordNavigationTiming} from "../../lib/diagnostics/navigation-timing";
+import {useEffect, useState} from "react";
 import {FlatList, View, Alert, RefreshControl} from "react-native";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
 import {useInfiniteQuery} from "@tanstack/react-query";
@@ -21,6 +22,10 @@ export function SocialScreen() {
     const [kind, setKind] = useState<Kind>(params.kind ?? "followers");
     const focused = useIsFocused();
     const query = useInfiniteQuery({...socialOptions(kind), enabled: focused});
+    useEffect(() => {
+        if (query.isSuccess) recordNavigationTiming("data-ready", "/profile/social");
+        else if (query.isError) recordNavigationTiming("data-error", "/profile/social");
+    }, [query.isSuccess, query.isError, query.dataUpdatedAt]);
     const mutation = useSocialAction();
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
     const act = (targetId: number, action: Parameters<typeof api.socialAction>[0]["action"]) =>

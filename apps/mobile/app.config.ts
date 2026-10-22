@@ -26,6 +26,7 @@ const config: ExpoConfig = {
     plugins: [
         "expo-router",
         "expo-image",
+        "expo-status-bar",
         "expo-secure-store",
         ["expo-build-properties", {android: {usesCleartextTraffic: isDevelopmentBuild}}],
     ],

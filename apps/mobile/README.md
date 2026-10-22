@@ -6,26 +6,33 @@ options/mutations. Both clients reuse backend services. Admin and imports remain
 ## Implemented core
 
 - Authenticated Profile, Lists, Search, and Settings tabs with native stack screens.
-- Profile identity/background, privacy explanations, social counts/actions, media levels, last three achievements, follows feed, highlights, and paginated recent feed.
+- Profile identity/background, privacy explanations, social counts/actions, media levels, last three achievements, follows feed, highlights,
+  and paginated recent feed.
 - Lists & collections hub with tracking presets, continue, searchable dynamic lists/collections, and paginated detail screens.
 - Advanced statistics using the web domain services, loaded per media type with monthly activity, status breakdowns, and affinities.
 - All six tracking lists with server-side search, status/favorite filters, sorting, pagination, and pull-to-refresh.
 - Provider search (TMDB, IGDB, Google Books, manga), catalog resolution, and media details.
 - Add/remove media, status, score/feeling ratings, favorites, notes, page/chapter/hour progress, TV season/episode progress,
-  season ratings/rewatches, game platform, and repeat counts. Progress reductions preserve the web's explicit monthly-history correction flow.
-- Username/privacy, active lists, score/feeling system, auto-move preference, release notification preferences, password changes, and sign-out.
-- Shared native primitives, selection sheets, media rows, and cached images. Colors are sRGB equivalents of the web dark theme; icons use
-  the native Lucide library. Registration/recovery use the website; they do not automatically sign the native client in.
+  season ratings/rewatches, game platform, and repeat counts. Progress reductions preserve the web's explicit monthly-history correction
+  flow.
+- Username/privacy, active lists, score/feeling system, auto-move preference, release notification preferences, password changes, and
+  sign-out.
+- Expo UI controls (SwiftUI on iOS, Compose on Android): buttons, text fields, native selection menus, switches, grouped settings, and
+  privacy sheets.
+  MyLists media blocks and large virtualized lists stay in React Native. A single Host policy applies the dark appearance and emerald tint;
+  media icons use Lucide. Registration/recovery use the website; they do not automatically sign the native client in.
 
 This is the core implementation, not full web parity. Collections/dynamic-list editing, other-user profiles,
-release calendar/inbox/native push, advanced filters and remaining statistics visualizations, profile image uploads/customization, media tags/custom
+release calendar/inbox/native push, advanced filters and remaining statistics visualizations, profile image uploads/customization, media
+tags/custom
 covers, account deletion, trends, games, year recaps, and native social login remain separate feature work. There are no placeholder
 buttons pretending those flows exist.
 
 ## Structure and boundaries
 
-- `app/(tabs)/`: persistent tabs with independent stacks. Shared array routes keep details in the originating tab; sign-in lives outside the tabs.
-- `src/components/`: shared native primitives, forms, selection sheets, media rows, and loading/error states.
+- `app/(tabs)/`: persistent tabs with independent stacks. Shared array routes keep details in the originating tab; sign-in lives outside the
+  tabs.
+- `src/components/`: thin Expo UI form adapters, the native Host appearance policy, MyLists media blocks, and loading/error states.
 - `src/features/`: profile, lists, media tracking, search, settings, and authentication screens.
 - `src/lib/react-query/query-options/`: mobile query keys, request definitions, and pagination.
 - `src/lib/react-query/query-mutations/`: mutation hooks and cache invalidation.
@@ -56,14 +63,14 @@ The Better Auth endpoints remain `/api/auth/*`. Expo stores the session cookie i
 ignores browser `session_data` cache cookies to prevent renewal/refetch loops while preserving session-token and OAuth cookies. Normal
 requests time out after 15 seconds; provider catalog resolution allows 45 seconds.
 
-
 ## Prerequisites
 
 - Bun for workspace dependency installation; run `bun install --frozen-lockfile` at the repository root.
 - A Node.js version supported by Expo SDK 58 (`^22.13.0`, `^24.3.0`, or 26+). Expo commands run through Node; do not force them through Bun
   with `--bun`.
 - An Android phone for device testing.
-- Expo Go for the initial email/password login test. A development build is needed later for native configuration and social sign-in validation.
+- Expo Go for the initial email/password login test. A development build is needed later for native configuration and social sign-in
+  validation.
 
 The Android SDK is **not needed for cloud builds** or for running Metro. It is needed for `bun run android` and an Android emulator. This
 project installs no SDK or JDK.
@@ -101,11 +108,17 @@ After configuring the backend address and starting the backend as above, run fro
 bun run dev:mobile
 ```
 
-This explicitly targets Expo Go. Scan the QR code using the scanner inside Expo Go on Android. The terminal should say `Using Expo Go`, and the link should start with `exp://`. If an older server is already running with `Using development build`, press `s` in that terminal to switch targets, or stop it with Ctrl+C and restart.
+This explicitly targets Expo Go. Scan the QR code using the scanner inside Expo Go on Android. The terminal should say `Using Expo Go`, and
+the link should start with `exp://`. If an older server is already running with `Using development build`, press `s` in that terminal to
+switch targets, or stop it with Ctrl+C and restart.
 
-The phone and computer must be on the same Wi-Fi, and Expo Go must support the project's Expo SDK 58. If it reports an SDK mismatch, use a compatible Expo Go version from <https://expo.dev/go> or a development build. Email/password login can be tested here; social callbacks and native app configuration still need a development build. Better Auth's Expo server plugin allows Expo Go origins only when the backend runs in development mode.
+The phone and computer must be on the same Wi-Fi, and Expo Go must support the project's Expo SDK 58. If it reports an SDK mismatch, use a
+compatible Expo Go version from <https://expo.dev/go> or a development build. Email/password login can be tested here; social callbacks and
+native app configuration still need a development build. Better Auth's Expo server plugin allows Expo Go origins only when the backend runs
+in development mode.
 
-If QR scanning opens nothing, check the launch target first. If the app opens but cannot connect, confirm that the backend URL opens in the phone's browser. `bun run dev:mobile --tunnel` can help with Metro connectivity but does not expose the backend.
+If QR scanning opens nothing, check the launch target first. If the app opens but cannot connect, confirm that the backend URL opens in the
+phone's browser. `bun run dev:mobile --tunnel` can help with Metro connectivity but does not expose the backend.
 
 ## Cloud development build (no Android SDK)
 
@@ -157,10 +170,51 @@ do not build the app.
 
 On Android, check valid/invalid credentials, unverified email errors, password visibility/autofill, keyboard scrolling, session restoration
 after force-closing, session revocation, unavailable backend/retry, and sign-out. Repeat the authentication flow on iOS before release;
-Android testing does not validate iOS behavior. Check profile images over the LAN, each of the six list types, search cancellation, pagination/filter reset, media add/edit/remove, season
-ratings/rewatches, activity correction choices (including stale previews), settings persistence, keyboard handling, large text, offline/retry,
+Android testing does not validate iOS behavior. Check profile images over the LAN, each of the six list types, search cancellation,
+pagination/filter reset, media add/edit/remove, season
+ratings/rewatches, activity correction choices (including stale previews), settings persistence, keyboard handling, large text,
+offline/retry,
 Android back navigation, account switching/cache isolation, and password/session changes. Repeat on iOS. Native visual/device validation
 and release profiling are required before calling the app release-ready.
 
 EAS project registration, native builds, device validation, store publication, and OTA delivery are not performed by adding this scaffold.
 OTA can be configured after the native development flow is validated.
+
+## Navigation timing on your Android phone
+
+In development, navigation via `useTabPush` prints one `[nav-timing]` JSON report to the Metro terminal after a three-second capture window.
+No native rebuild or additional package is needed. To save logs for the next review, restart Metro from the repository root with:
+
+```bash
+bun run dev:mobile 2>&1 | tee /tmp/mylists-mobile-navigation.log
+```
+
+Reload Expo Go, open Profile, tap Following, and wait four seconds. Go back, repeat the
+same screen three times, then try Followers and a tracking list. Keep the first-open report as well as the repeat reports. The reports are
+saved in `/tmp/mylists-mobile-navigation.log`; alternatively, copy the full `[nav-timing]` lines from Metro for analysis.
+
+The report records navigation dispatch, native-stack transition event callbacks, React commits/render duration, screen layout callbacks,
+and a subsequent JavaScript animation-frame callback. Following/Followers also marks when cached or fetched data is ready. Its Profile
+buttons record `press-in`; time between that and `navigation-requested` includes how long your finger was held down and is not navigation
+lag. Request durations include cookie retrieval, fetch, and JSON decoding; unfinished requests have no duration/outcome yet. Query strings,
+cookies, response bodies, and credentials are not logged.
+
+These are development diagnostics: JS callbacks can be delayed, and a frame callback does not prove pixels were displayed. Compare the gap
+from `navigation-requested` to the first commit/transition/layout with request timings; do not treat total transition duration as input lag.
+A release build comparison is still needed before drawing conclusions about production performance. To disable logging and render profiling,
+start Metro with `EXPO_PUBLIC_NAV_TIMING=0 bun run dev:mobile` from the repository root and reload the app.
+
+## Android navigation findings and Expo UI acceptance
+
+The first five captured Profile → Following/Followers trials showed 199–308 ms from navigation dispatch to the first destination commit.
+Two trials made no API request and still took 244/308 ms. Requests in the other trials started after mount and took 59–80 ms. This rules out
+waiting on the social API as the cause of the initial pause. Transition callback intervals were 477–499 ms; those are JS-delivered event
+observations, not precise native animation or display measurements. The cause of the pre-mount delay is still unconfirmed. The extended
+`navigation-tree-*` profiler events measure React work outside the destination's Page subtree for the next comparison.
+
+After installing dependencies, restart Metro and reload Expo Go. Expo UI is included in SDK 58 Expo Go; a custom development client built
+before this dependency was added needs a new native build. Check first/repeated navigation timings, Android picker labels and dropdowns,
+settings scrolling and toggle persistence, privacy-sheet dismissal/back handling, and pending/disabled/destructive buttons. For text entry,
+check email autofill, password visibility, Next/Go keyboard actions, typing without cursor jumps, external clears after saving, numeric
+progress,
+and multiline notes. Validate these on iOS separately before release. Production performance requires a release-build comparison.

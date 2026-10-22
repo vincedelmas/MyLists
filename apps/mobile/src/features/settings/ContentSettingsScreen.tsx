@@ -1,8 +1,10 @@
 import {useIsFocused} from "expo-router";
 import {useState} from "react";
-import {Switch, View} from "react-native";
+import {View} from "react-native";
+import {Button, Column, FieldGroup, Picker, Switch, Text} from "@expo/ui";
+import {NativeHost} from "../../components/native-host";
 import {useQuery} from "@tanstack/react-query";
-import {AppText, Button, Content, Page, QueryPanel, Section, Select, uiStyles} from "../../components/ui";
+import {AppText, Page, QueryPanel} from "../../components/ui";
 import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
 import {useSettingsMutation} from "../../lib/react-query/query-mutations/settings.mutations";
 import type {MediaType, MobileSettings} from "../../lib/api-client";
@@ -34,90 +36,86 @@ function ContentForm({data}: {data: MobileSettings}) {
             ) as Record<MediaType, boolean>,
         });
     return (
-        <Content>
-            <Section title="Active media lists">
-                <View style={uiStyles.padded}>
-                    <AppText muted>Disabling a list keeps its data and removes it from your published profile.</AppText>
-                    {lists.map((item) => (
-                        <View key={item.mediaType} style={uiStyles.row}>
-                            <AppText style={{flex: 1}}>{mediaLabels[item.mediaType]}</AppText>
+        <View style={{flex: 1}}>
+            {mutation.error && (
+                <AppText accessibilityRole="alert" style={{color: colors.error, padding: 16}}>
+                    {mutation.error.message}
+                </AppText>
+            )}
+            {mutation.isSuccess && (
+                <AppText accessibilityRole="alert" style={{color: colors.accent, padding: 16}}>
+                    Content settings saved.
+                </AppText>
+            )}
+            <NativeHost matchContents={false} style={{flex: 1}}>
+                <FieldGroup>
+                    <FieldGroup.Section title="Active media lists">
+                        {lists.map((item) => (
                             <Switch
-                                accessibilityLabel={`${mediaLabels[item.mediaType]} list`}
+                                key={item.mediaType}
+                                label={mediaLabels[item.mediaType]}
                                 value={item.active}
                                 disabled={
                                     mutation.isPending || item.mediaType === "series" || item.mediaType === "movies"
                                 }
                                 onValueChange={(value) => changeList(item.mediaType, "active", value)}
-                                trackColor={{true: colors.primary}}
-                                thumbColor={item.active ? colors.accent : colors.muted}
                             />
-                        </View>
-                    ))}
-                </View>
-            </Section>
-            <Section title="Tracking preferences">
-                <View style={uiStyles.padded}>
-                    <Select
-                        label="Rating system"
-                        disabled={mutation.isPending}
-                        value={ratingSystem}
-                        onChange={(value) => {
-                            setRatingSystem(value);
-                            mutation.reset();
-                        }}
-                        options={[
-                            {value: "score", label: "Score · 0 to 10"},
-                            {value: "feeling", label: "Feelings"},
-                        ]}
-                    />
-                    <View style={uiStyles.row}>
-                        <AppText style={{flex: 1}}>Move completed TV shows to On Hold when new episodes arrive</AppText>
+                        ))}
+                        <FieldGroup.SectionFooter>
+                            <Text>Disabling a list keeps its data and removes it from your published profile.</Text>
+                        </FieldGroup.SectionFooter>
+                    </FieldGroup.Section>
+                    <FieldGroup.Section title="Tracking preferences">
+                        <Column spacing={8}>
+                            <Text>Rating system</Text>
+                            <Picker
+                                selectedValue={ratingSystem}
+                                enabled={!mutation.isPending}
+                                onValueChange={(value) => {
+                                    setRatingSystem(value);
+                                    mutation.reset();
+                                }}
+                            >
+                                <Picker.Item value="score" label="Score · 0 to 10" />
+                                <Picker.Item value="feeling" label="Feelings" />
+                            </Picker>
+                        </Column>
                         <Switch
-                            accessibilityLabel="Automatically move completed shows to On Hold"
-                            disabled={mutation.isPending}
+                            label="Move completed TV shows to On Hold when new episodes arrive"
                             value={autoMove}
+                            disabled={mutation.isPending}
                             onValueChange={(value) => {
                                 setAutoMove(value);
                                 mutation.reset();
                             }}
-                            trackColor={{true: colors.primary}}
                         />
-                    </View>
-                </View>
-            </Section>
-            <Section title="Release notifications">
-                <View style={uiStyles.padded}>
-                    <AppText muted>Release alerts appear in your MyLists account.</AppText>
-                    {lists
-                        .filter((item) => item.supportsNotifications)
-                        .map((item) => (
-                            <View key={item.mediaType} style={uiStyles.row}>
-                                <AppText style={{flex: 1}}>{mediaLabels[item.mediaType]}</AppText>
+                    </FieldGroup.Section>
+                    <FieldGroup.Section title="Release notifications">
+                        {lists
+                            .filter((item) => item.supportsNotifications)
+                            .map((item) => (
                                 <Switch
-                                    accessibilityLabel={`${mediaLabels[item.mediaType]} release notifications`}
+                                    key={item.mediaType}
+                                    label={mediaLabels[item.mediaType]}
                                     value={item.releaseNotificationsEnabled}
                                     disabled={mutation.isPending}
                                     onValueChange={(value) =>
                                         changeList(item.mediaType, "releaseNotificationsEnabled", value)
                                     }
-                                    trackColor={{true: colors.primary}}
                                 />
-                            </View>
-                        ))}
-                </View>
-            </Section>
-            {mutation.error && (
-                <AppText accessibilityRole="alert" style={{color: colors.error}}>
-                    {mutation.error.message}
-                </AppText>
-            )}
-            {mutation.isSuccess && (
-                <AppText accessibilityRole="alert" style={{color: colors.accent}}>
-                    Content settings saved.
-                </AppText>
-            )}
-            <Button label="Save changes" pending={mutation.isPending} onPress={save} />
-        </Content>
+                            ))}
+                        <FieldGroup.SectionFooter>
+                            <Text>Release alerts appear in your MyLists account.</Text>
+                        </FieldGroup.SectionFooter>
+                    </FieldGroup.Section>
+                    <Button
+                        label={mutation.isPending ? "Saving…" : "Save changes"}
+                        disabled={mutation.isPending}
+                        onPress={save}
+                    />
+                </FieldGroup>
+            </NativeHost>
+        </View>
     );
 }
 export function ContentSettingsScreen() {

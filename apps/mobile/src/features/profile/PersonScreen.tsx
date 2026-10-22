@@ -20,11 +20,12 @@ export function PersonScreen() {
                             {!data.header.isOwn && (
                                 <Button
                                     pending={mutation.isPending}
+                                    secondary={Boolean(data.following)}
                                     label={
                                         data.following === "accepted"
-                                            ? "Unfollow"
+                                            ? "Following"
                                             : data.following === "requested"
-                                              ? "Cancel request"
+                                              ? "Requested"
                                               : data.header.privacy === "private"
                                                 ? "Request to follow"
                                                 : "Follow"

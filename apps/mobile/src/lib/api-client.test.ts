@@ -69,6 +69,34 @@ describe("native API transport", () => {
         }
     });
 
+    it("preserves filter arrays, punctuation and booleans when reading a tracking list", async () => {
+        const fetcher = vi.fn().mockResolvedValue(Response.json({ items: [] }));
+        vi.stubGlobal("fetch", fetcher);
+        await api.list(
+            "movies",
+            {
+                status: ["Completed"],
+                directors: ["Name, With Comma"],
+                genres: ["Action & Adventure"],
+                favorite: true,
+                comment: true,
+                page: 2,
+            },
+            undefined,
+            20,
+        );
+        const url = new URL(fetcher.mock.calls[0][0]);
+        expect(url.searchParams.get("userId")).toBe("20");
+        expect(JSON.parse(url.searchParams.get("filters")!)).toEqual({
+            status: ["Completed"],
+            directors: ["Name, With Comma"],
+            genres: ["Action & Adventure"],
+            favorite: true,
+            comment: true,
+            page: 2,
+        });
+    });
+
     it("uses JSON mutations and keeps path parameters out of the editable payload", async () => {
         const fetcher = vi.fn().mockResolvedValue(Response.json({ kind: "saved" }));
         vi.stubGlobal("fetch", fetcher);

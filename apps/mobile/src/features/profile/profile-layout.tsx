@@ -137,17 +137,23 @@ export const ProfileHeader = memo(function ProfileHeader({
                             borderColor: colors.background,
                         }}
                     />
-                    <View pointerEvents="none" style={{ flex: 1, gap: 4 }}>
-                        <AppText heading style={{ fontSize: 22, lineHeight: 28 }}>
-                            {data.user.name}
-                        </AppText>
-                        <AppText muted style={{ fontSize: 12 }}>
-                            Joined in {new Date(data.user.createdAt).getUTCFullYear()}
-                        </AppText>
+                    <View pointerEvents="box-none" style={{ flex: 1, gap: 8, paddingBottom: 4 }}>
+                        <View pointerEvents="box-none" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                            <View pointerEvents="none" style={{ flex: 1 }}>
+                                <AppText heading style={{ fontSize: 22, lineHeight: 28 }}>
+                                    {data.user.name}
+                                </AppText>
+                            </View>
+                            <PrivacyBadge value={data.user.privacy} />
+                        </View>
+                        <View pointerEvents="none">
+                            <AppText muted style={{ fontSize: 12 }}>
+                                Joined in {new Date(data.user.createdAt).getUTCFullYear()}
+                            </AppText>
+                        </View>
+                        {action}
                     </View>
-                    <PrivacyBadge value={data.user.privacy} />
                 </View>
-                {action}
                 {data.social && (
                     <View
                         pointerEvents="box-none"

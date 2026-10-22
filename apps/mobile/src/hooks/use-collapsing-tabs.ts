@@ -7,7 +7,7 @@ export function useCollapsingTabs<T extends string>(initialTab: T) {
     const offsets = useRef(new Map<T, number>());
     const [initialOffset, setInitialOffset] = useState(0);
     const [headerHeight, setHeaderHeight] = useState(0);
-    const [tabBarHeight, setTabBarHeight] = useState(68);
+    const [tabBarHeight, setTabBarHeight] = useState(52);
     const [viewportHeight, setViewportHeight] = useState(0);
     const onScroll = useMemo(
         () =>

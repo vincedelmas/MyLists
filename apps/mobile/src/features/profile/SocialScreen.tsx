@@ -1,6 +1,7 @@
 import { useTabPush } from "../../hooks/use-tab-push";
 import { colors } from "../../theme";
-import { TopTabs } from "../../components/top-tabs";
+import { SectionTabs } from "../../components/section-tabs";
+import { UsersRound, UserRoundCheck, UserRoundPlus, Send, MoreHorizontal, type LucideIcon } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import type { api } from "../../lib/api-client";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -13,11 +14,11 @@ import { useSocialAction } from "../../lib/react-query/query-mutations/social.mu
 
 type Kind = Parameters<typeof api.social>[0]["kind"];
 
-const kinds: { value: Kind; label: string }[] = [
-    { value: "followers", label: "Followers" },
-    { value: "following", label: "Following" },
-    { value: "requests", label: "Follow requests" },
-    { value: "pending", label: "Sent requests" },
+const kinds: { value: Kind; label: string; icon: LucideIcon }[] = [
+    { value: "followers", label: "Followers", icon: UsersRound },
+    { value: "following", label: "Following", icon: UserRoundCheck },
+    { value: "requests", label: "Requests", icon: UserRoundPlus },
+    { value: "pending", label: "Sent", icon: Send },
 ];
 
 export function SocialScreen() {
@@ -43,8 +44,8 @@ export function SocialScreen() {
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
     return (
-        <Page title={params.userId ? "Connections" : "Your connections"} back>
-            <TopTabs
+        <Page title="Connections" brand back>
+            <SectionTabs
                 value={kind}
                 tabs={
                     params.userId
@@ -61,6 +62,7 @@ export function SocialScreen() {
             <FlatList
                 key={kind}
                 data={items}
+                contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 32 }}
                 windowSize={7}
                 initialNumToRender={12}
                 onEndReachedThreshold={0.5}
@@ -82,7 +84,15 @@ export function SocialScreen() {
                         loading={query.isPending}
                         message={query.error?.message}
                         retry={query.isError ? () => void query.refetch() : undefined}
-                        title={query.isError ? "Couldn’t load connections" : "Nothing to display yet :)"}
+                        title={
+                            query.isError
+                                ? "Couldn’t load connections"
+                                : kind === "requests"
+                                  ? "No follow requests"
+                                  : kind === "pending"
+                                    ? "No pending requests"
+                                    : `No ${kind} yet`
+                        }
                     />
                 }
                 ListFooterComponent={
@@ -93,87 +103,108 @@ export function SocialScreen() {
                     ) : undefined
                 }
                 renderItem={({ item }) => (
-                    <View style={{ padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                        <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+                    <View
+                        style={{
+                            gap: 12,
+                            padding: 14,
+                            borderRadius: 16,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                            backgroundColor: colors.surface,
+                        }}
+                    >
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                             <Pressable
                                 accessibilityRole="button"
                                 accessibilityLabel={`View ${item.username}'s profile`}
                                 onPress={() =>
                                     push({ pathname: "/people/[userId]", params: { userId: String(item.id) } })
                                 }
+                                style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}
                             >
                                 <Cover
                                     uri={item.image}
                                     label={item.username}
-                                    style={{ width: 42, height: 42, borderRadius: 21 }}
+                                    style={{ width: 48, height: 48, borderRadius: 24 }}
                                 />
+                                <View style={{ flex: 1, gap: 3 }}>
+                                    <AppText numberOfLines={1} style={{ fontWeight: "600", fontSize: 15 }}>
+                                        {item.username}
+                                    </AppText>
+                                    <AppText muted style={{ fontSize: 11 }}>
+                                        {item.isOwn
+                                            ? "You"
+                                            : item.myFollowStatus === "requested"
+                                              ? "Request pending"
+                                              : item.myFollowStatus === "accepted"
+                                                ? "Following"
+                                                : item.privacy === "private"
+                                                  ? "Private profile"
+                                                  : "View profile"}
+                                    </AppText>
+                                </View>
                             </Pressable>
-                            <AppText style={{ flex: 1, fontWeight: "600" }}>{item.username}</AppText>
-                        </View>
-                        {kind === "requests" ? (
-                            <View style={{ flexDirection: "row", gap: 10 }}>
+                            {kind !== "requests" && !item.isOwn && (
                                 <Button
-                                    label="Accept"
+                                    secondary={Boolean(item.myFollowStatus)}
                                     disabled={mutation.isPending}
-                                    onPress={() => act(item.id, "accept")}
+                                    pending={mutation.isPending && mutation.variables?.targetId === item.id}
+                                    label={
+                                        item.myFollowStatus === "accepted"
+                                            ? "Following"
+                                            : item.myFollowStatus === "requested"
+                                              ? "Cancel"
+                                              : "Follow"
+                                    }
+                                    onPress={() =>
+                                        item.myFollowStatus === "accepted"
+                                            ? Alert.alert("Unfollow?", `Stop following ${item.username}?`, [
+                                                  { text: "Cancel", style: "cancel" },
+                                                  {
+                                                      text: "Unfollow",
+                                                      style: "destructive",
+                                                      onPress: () => act(item.id, "unfollow"),
+                                                  },
+                                              ])
+                                            : act(item.id, item.myFollowStatus ? "unfollow" : "follow")
+                                    }
                                 />
+                            )}
+                            {kind === "followers" && !params.userId && (
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Manage ${item.username}'s connection`}
+                                    disabled={mutation.isPending}
+                                    hitSlop={8}
+                                    style={{ paddingVertical: 10, minWidth: 28, alignItems: "center" }}
+                                    onPress={() =>
+                                        Alert.alert(item.username, "Manage this follower", [
+                                            { text: "Cancel", style: "cancel" },
+                                            {
+                                                text: "Remove follower",
+                                                style: "destructive",
+                                                onPress: () => act(item.id, "remove"),
+                                            },
+                                        ])
+                                    }
+                                >
+                                    <MoreHorizontal size={20} color={colors.muted} />
+                                </Pressable>
+                            )}
+                        </View>
+                        {kind === "requests" && (
+                            <View style={{ flexDirection: "row", gap: 12, justifyContent: "flex-end" }}>
                                 <Button
                                     secondary
                                     label="Decline"
                                     disabled={mutation.isPending}
                                     onPress={() => act(item.id, "decline")}
                                 />
-                            </View>
-                        ) : (
-                            <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                                {!item.isOwn && (
-                                    <Button
-                                        secondary
-                                        disabled={mutation.isPending}
-                                        label={
-                                            item.myFollowStatus === "accepted"
-                                                ? "Unfollow"
-                                                : item.myFollowStatus === "requested"
-                                                  ? "Cancel request"
-                                                  : item.privacy === "private"
-                                                    ? "Request to follow"
-                                                    : "Follow"
-                                        }
-                                        onPress={() =>
-                                            item.myFollowStatus === "accepted"
-                                                ? Alert.alert("Unfollow?", `Stop following ${item.username}?`, [
-                                                      { text: "Keep following", style: "cancel" },
-                                                      {
-                                                          text: "Unfollow",
-                                                          style: "destructive",
-                                                          onPress: () => act(item.id, "unfollow"),
-                                                      },
-                                                  ])
-                                                : act(item.id, item.myFollowStatus ? "unfollow" : "follow")
-                                        }
-                                    />
-                                )}
-                                {kind === "followers" && !params.userId && (
-                                    <Button
-                                        secondary
-                                        label="Remove follower"
-                                        disabled={mutation.isPending}
-                                        onPress={() =>
-                                            Alert.alert(
-                                                "Remove follower?",
-                                                `${item.username} will stop following you.`,
-                                                [
-                                                    { text: "Cancel", style: "cancel" },
-                                                    {
-                                                        text: "Remove",
-                                                        style: "destructive",
-                                                        onPress: () => act(item.id, "remove"),
-                                                    },
-                                                ],
-                                            )
-                                        }
-                                    />
-                                )}
+                                <Button
+                                    label="Accept request"
+                                    disabled={mutation.isPending}
+                                    onPress={() => act(item.id, "accept")}
+                                />
                             </View>
                         )}
                     </View>

@@ -1,5 +1,6 @@
 import { backendUrl } from "./config";
 import { authClient } from "./auth-client";
+import type * as ListFilters from "../../../../src/lib/server/mobile/list-filters";
 import type * as MediaSections from "../../../../src/lib/server/mobile/media-sections";
 import type * as Media from "../../../../src/lib/server/mobile/media";
 import { timeNavigationRequest } from "./diagnostics/navigation-timing";
@@ -92,6 +93,22 @@ const subjectPath = (path: string, userId?: number) =>
     userId === undefined ? path : `${path}?${queryString({ userId })}`;
 
 export const api = {
+    listFilters: (mediaType: MediaType, signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof ListFilters.getMobileListFilterOptions>>(
+            `/lists/${mediaType}/filters?${queryString({ userId })}`,
+            signal,
+        ),
+    searchListFilters: (
+        mediaType: MediaType,
+        field: Parameters<typeof ListFilters.searchMobileListFilterOptions>[2],
+        query: string,
+        signal?: AbortSignal,
+        userId?: number,
+    ) =>
+        request<Result<typeof ListFilters.searchMobileListFilterOptions>>(
+            `/lists/${mediaType}/filter-search?${queryString({ field, query, userId })}`,
+            signal,
+        ),
     mediaDetails: (params: MediaParams, signal?: AbortSignal) =>
         request<Result<typeof MediaSections.getMobileMediaDetails>>(`${mediaPath(params)}/details`, signal),
     mediaCommunity: (params: MediaParams, page: number, signal?: AbortSignal) =>
@@ -155,7 +172,7 @@ export const api = {
         request<Result<typeof Profile.getMobileAchievements>>(subjectPath("/profile/achievements", userId), signal),
     lists: (signal?: AbortSignal) => request<NonNullable<Result<typeof Media.getMobileLists>>>("/lists", signal),
     list: (mediaType: MediaType, input: ListInput, signal?: AbortSignal, userId?: number) =>
-        request<MobileList>(`/lists/${mediaType}?${queryString({ ...input, userId })}`, signal),
+        request<MobileList>(`/lists/${mediaType}?${queryString({ filters: JSON.stringify(input), userId })}`, signal),
     media: (params: MediaParams, signal?: AbortSignal) => request<MobileMedia>(mediaPath(params), signal),
     addMedia: (params: MediaParams, status?: string) =>
         request<Result<typeof Media.addMobileMedia>>(mediaPath(params), undefined, "POST", { status }),

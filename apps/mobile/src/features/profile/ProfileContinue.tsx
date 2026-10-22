@@ -21,14 +21,16 @@ export function ProfileContinue({ userId }: { userId?: number }) {
                 <AppText heading style={{ fontSize: 17 }}>
                     Continue
                 </AppText>
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="View all titles to continue"
-                    hitSlop={8}
-                    onPress={() => push({ pathname: "/library/[kind]", params: { kind: "continue", userId } })}
-                >
-                    <AppText style={{ fontSize: 12, color: colors.accent }}>View all</AppText>
-                </Pressable>
+                {!userId && (
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="View all titles to continue"
+                        hitSlop={8}
+                        onPress={() => push({ pathname: "/library/[kind]", params: { kind: "continue", userId } })}
+                    >
+                        <AppText style={{ fontSize: 12, color: colors.accent }}>View all</AppText>
+                    </Pressable>
+                )}
             </View>
             <QueryPanel query={query}>
                 {(data) =>

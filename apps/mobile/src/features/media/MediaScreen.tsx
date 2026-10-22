@@ -73,7 +73,7 @@ export function MediaScreen() {
                             { value: "tracking", label: "Tracking", icon: BookmarkCheck },
                             ...(data.canEdit ? [{ value: "edit", label: "Edit", icon: Pencil }] : []),
                         ]}
-                        header={<MediaHero data={data} />}
+                        header={(selectTab) => <MediaHero data={data} onTrack={() => selectTab("tracking")} />}
                     >
                         {(tab) => (
                             <>

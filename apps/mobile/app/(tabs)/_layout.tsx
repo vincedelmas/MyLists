@@ -10,7 +10,6 @@ export default function TabLayout() {
     const insets = useSafeAreaInsets();
     return (
         <Tabs
-            safeAreaInsets={{ bottom: insets.bottom + (Platform.OS === "android" && insets.bottom > 0 ? 2 : 0) }}
             screenOptions={{
                 lazy: true,
                 headerShown: false,
@@ -18,7 +17,13 @@ export default function TabLayout() {
                 tabBarInactiveTintColor: colors.muted,
                 sceneStyle: { backgroundColor: colors.background },
                 tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
-                tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+                tabBarStyle: {
+                    backgroundColor: colors.surface,
+                    borderTopColor: colors.border,
+                    ...(Platform.OS === "android"
+                        ? { height: 56 + insets.bottom + 6, paddingTop: 4, paddingBottom: insets.bottom + 6 }
+                        : {}),
+                },
             }}
         >
             <Tabs.Screen

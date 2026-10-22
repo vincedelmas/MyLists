@@ -82,8 +82,8 @@ describe("mobile media operations", () => {
         const result = await getMobileList(10, "movies", {
             page: 2,
             search: "Film",
-            favorite: "true",
-            status: "Completed",
+            favorite: true,
+            status: ["Completed"],
         });
         expect(mocks.list).toHaveBeenCalledWith(
             10,
@@ -100,7 +100,7 @@ describe("mobile media operations", () => {
     });
 
     it("rejects statuses belonging to another media type", async () => {
-        await expect(getMobileList(10, "movies", { status: "Reading" })).rejects.toThrow();
+        await expect(getMobileList(10, "movies", { status: ["Reading"] })).rejects.toThrow();
         expect(mocks.list).not.toHaveBeenCalled();
     });
 

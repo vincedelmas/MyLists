@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useIsFocused } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Animated, FlatList, Linking, Pressable, RefreshControl, View } from "react-native";
@@ -21,6 +22,7 @@ export function MediaDetailsContent({
     refreshing: boolean;
 }) {
     const focused = useIsFocused();
+    const [expanded, setExpanded] = useState(false);
     const query = useQuery({ ...mediaDetailsOptions(params), enabled: focused });
     const refresh = useMediaRefreshMutation(params);
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
@@ -41,38 +43,76 @@ export function MediaDetailsContent({
                 />
             }
         >
-            <Section title={upcoming ? "Next episode" : "Release"}>
-                <View style={{ padding: 16, gap: 8 }}>
-                    <AppText>{upcoming ?? data.media.releaseDate ?? "Release date to be announced"}</AppText>
-                    {upcoming && (
-                        <AppText muted>
-                            Season {data.media.nextEpisode?.season} · Episode {data.media.nextEpisode?.episode}
+            {data.media.synopsis && (
+                <View style={{ gap: 10 }}>
+                    {data.media.tagline && (
+                        <AppText muted style={{ fontSize: 11, letterSpacing: 1 }}>
+                            {data.media.tagline.toUpperCase()}
                         </AppText>
                     )}
-                    {data.media.provider.url && (
-                        <Button
-                            secondary
-                            label={`Open on ${data.media.provider.name}`}
-                            onPress={() => void Linking.openURL(data.media.provider.url!)}
-                        />
+                    <AppText numberOfLines={expanded ? undefined : 5} style={{ fontSize: 14, lineHeight: 23 }}>
+                        {data.media.synopsis}
+                    </AppText>
+                    {data.media.synopsis.length > 240 && (
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityState={{ expanded }}
+                            onPress={() => setExpanded(!expanded)}
+                            style={{ minHeight: 44, justifyContent: "center" }}
+                        >
+                            <AppText style={{ color: colors.accent, fontSize: 12 }}>
+                                {expanded ? "Show less" : "Read more"}
+                            </AppText>
+                        </Pressable>
                     )}
                 </View>
-            </Section>
-            {data.media.synopsis && (
-                <Section title="Synopsis">
-                    <AppText style={{ padding: 16, lineHeight: 23 }}>{data.media.synopsis}</AppText>
-                </Section>
             )}
+            <View
+                style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    paddingVertical: 12,
+                    borderTopWidth: 1,
+                    borderBottomWidth: 1,
+                    borderColor: colors.border,
+                }}
+            >
+                <View style={{ gap: 4 }}>
+                    <AppText muted style={{ fontSize: 11 }}>
+                        {upcoming ? "Next episode" : "Released"}
+                    </AppText>
+                    <AppText style={{ fontSize: 13 }}>
+                        {upcoming ?? data.media.releaseDate ?? "To be announced"}
+                    </AppText>
+                    {upcoming && (
+                        <AppText muted style={{ fontSize: 12 }}>
+                            S{data.media.nextEpisode?.season} · E{data.media.nextEpisode?.episode}
+                        </AppText>
+                    )}
+                </View>
+                {data.media.provider.url && (
+                    <Button
+                        secondary
+                        label={data.media.provider.name}
+                        onPress={() => void Linking.openURL(data.media.provider.url!)}
+                    />
+                )}
+            </View>
             <Section title="About this title">
                 <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                    {data.media.facts.map((fact) => (
-                        <View key={fact.label} style={{ flexBasis: "50%", padding: 14, gap: 4 }}>
-                            <AppText muted style={{ fontSize: 11 }}>
-                                {fact.label}
-                            </AppText>
-                            <AppText style={{ fontSize: 13 }}>{fact.value}</AppText>
-                        </View>
-                    ))}
+                    {data.media.facts
+                        .filter((fact) => !["Provider score", "Votes", "Runtime (minutes)"].includes(fact.label))
+                        .map((fact) => (
+                            <View key={fact.label} style={{ flexBasis: "50%", padding: 14, gap: 4 }}>
+                                <AppText muted style={{ fontSize: 11 }}>
+                                    {fact.label}
+                                </AppText>
+                                <AppText style={{ fontSize: 13 }}>{fact.value}</AppText>
+                            </View>
+                        ))}
                 </View>
             </Section>
             <QueryPanel query={query}>

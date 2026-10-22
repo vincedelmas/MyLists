@@ -43,3 +43,21 @@ export const mediaEditOptions = (params: MediaParams) =>
         queryKey: ["media", params.mediaType, params.mediaId, "edit"],
         queryFn: ({ signal }) => api.mediaEdit(params, signal),
     });
+
+export const listFiltersOptions = (mediaType: MediaType, userId?: number) =>
+    queryOptions({
+        queryKey: ["lists", mediaType, "filters", userId],
+        queryFn: ({ signal }) => api.listFilters(mediaType, signal, userId),
+    });
+export const listFilterSearchOptions = (
+    mediaType: MediaType,
+    field: Parameters<typeof api.searchListFilters>[1],
+    query: string,
+    userId?: number,
+) =>
+    queryOptions({
+        queryKey: ["lists", mediaType, "filter-search", field, query, userId],
+        queryFn: ({ signal }) => api.searchListFilters(mediaType, field, query, signal, userId),
+        enabled: query.length >= 2,
+        staleTime: 60_000,
+    });

@@ -10,27 +10,29 @@ import { useTabPush } from "../../hooks/use-tab-push";
 import type { MediaType } from "../../lib/api-client";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { FlatList, RefreshControl, View } from "react-native";
+import { getMediaDefinition } from "@/lib/media-definitions/definition.registry";
+import { parseListFilters, countListFilters } from "./list-filters";
 import { getMediaSortOptions } from "@/lib/utils/media/sorting";
 import { useDebouncedValue } from "../../hooks/use-debounced-value";
 import { listOptions } from "../../lib/react-query/query-options/media.options";
-import { AppText, Button, Field, Page, Select, StateView } from "../../components/ui";
+import { AppText, Button, Field, Page, StateView } from "../../components/ui";
 
 export function TrackingListScreen() {
     const focused = useIsFocused();
     const [layout, setLayout] = useState<MediaLayout>("grid");
     const push = useTabPush();
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("");
-    const [favorite, setFavorite] = useState(false);
     const debounced = useDebouncedValue(search.trim());
-    const [sorting, setSorting] = useState("title_asc");
-    const { mediaType, userId } = useLocalSearchParams<{ mediaType: MediaType; userId?: string }>();
+    const {
+        mediaType,
+        userId,
+        filters: serializedFilters,
+    } = useLocalSearchParams<{ mediaType: MediaType; userId?: string; filters?: string }>();
+    const filters = parseListFilters(serializedFilters);
+    const count = countListFilters(filters);
+    const sorting = filters.sorting ?? getMediaDefinition(mediaType).sorting.default;
     const query = useInfiniteQuery({
-        ...listOptions(
-            mediaType,
-            { search: debounced, status, sorting, favorite: favorite ? "true" : undefined },
-            userId ? Number(userId) : undefined,
-        ),
+        ...listOptions(mediaType, { ...filters, search: debounced, sorting }, userId ? Number(userId) : undefined),
         enabled: focused,
     });
 
@@ -53,32 +55,21 @@ export function TrackingListScreen() {
                     onChangeText={setSearch}
                     placeholder="Find a title…"
                 />
-                <View style={{ flexDirection: "row", gap: 12 }}>
-                    <View style={{ flex: 1 }}>
-                        <Select
-                            label="Status"
-                            value={status}
-                            onChange={setStatus}
-                            options={[
-                                { label: "All statuses", value: "" },
-                                ...(first?.statuses ?? []).map((value) => ({ value, label: value })),
-                            ]}
-                        />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Select
-                            label="Sort"
-                            value={sorting}
-                            onChange={setSorting}
-                            options={getMediaSortOptions([mediaType], true)}
-                        />
-                    </View>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                    <Button
+                        secondary
+                        label={`Filters${count ? ` · ${count}` : ""}`}
+                        onPress={() =>
+                            push({
+                                pathname: "/lists/[mediaType]/filters",
+                                params: { mediaType, userId, filters: serializedFilters },
+                            })
+                        }
+                    />
+                    <AppText muted numberOfLines={1} style={{ fontSize: 12, flex: 1, textAlign: "right" }}>
+                        {getMediaSortOptions([mediaType], true).find((item) => item.value === sorting)?.label}
+                    </AppText>
                 </View>
-                <Button
-                    secondary
-                    onPress={() => setFavorite((value) => !value)}
-                    label={favorite ? "Showing favorites · Show all" : "Show favorites"}
-                />
             </View>
             <FlatList
                 data={items}
@@ -91,7 +82,7 @@ export function TrackingListScreen() {
                 keyboardDismissMode="on-drag"
                 keyboardShouldPersistTaps="handled"
                 keyExtractor={(item) => String(item.mediaId)}
-                key={`${layout}:${mediaType}:${debounced}:${status}:${sorting}:${favorite}`}
+                key={`${layout}:${mediaType}:${debounced}:${serializedFilters}`}
                 onEndReached={() => {
                     if (focused && query.hasNextPage && !query.isFetching) {
                         void query.fetchNextPage();

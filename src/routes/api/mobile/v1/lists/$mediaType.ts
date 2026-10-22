@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/mobile/v1/lists/$mediaType")({
                     getMobileList(
                         await resolveMobileProfileUser(request, userId),
                         mediaTypeFieldSchema.parse(params.mediaType),
-                        listInputSchema.parse(Object.fromEntries(new URL(request.url).searchParams)),
+                        listInputSchema.parse(JSON.parse(new URL(request.url).searchParams.get("filters") ?? "{}")),
                         userId,
                     ),
                 ),

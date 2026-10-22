@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.12.0](https://github.com/vincedelmas/MyLists/compare/v3.11.0...v3.12.0) (2026-10-22)
+
+
+### Features
+
+* add per-type and per-media release notification preferences ([9d3e1b9](https://github.com/vincedelmas/MyLists/commit/9d3e1b92e34cb215596a1958d4cac678d5a65f40))
+* add user search to community activity ([0767b9d](https://github.com/vincedelmas/MyLists/commit/0767b9d7a89241ede060546aabe31bde76164a4f))
+* **media:** add TMDB & IGDB backdrops using provider data ([f08eef9](https://github.com/vincedelmas/MyLists/commit/f08eef9124138f6231c3fd13d55c55aae8c0f3ba))
+* **media:** google cover search across forms ([1bf8957](https://github.com/vincedelmas/MyLists/commit/1bf8957ce4220020d570a5672450af55fb8c8e63))
+
+
+### Bug Fixes
+
+* **analytics:** temporarily use full PostHog SDK for surveys ([153548e](https://github.com/vincedelmas/MyLists/commit/153548ed0841d6e4423816118276fe99b458f51d))
+* **imports:** prioritize IMDb IDs over title matching ([dbb2cd0](https://github.com/vincedelmas/MyLists/commit/dbb2cd0e167f61a5f07f970a12d7c29bb63576d3))
+
 ## [3.11.0](https://github.com/vincedelmas/MyLists/compare/v3.10.0...v3.11.0) (2026-10-19)
 
 

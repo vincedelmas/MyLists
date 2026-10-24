@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.13.1](https://github.com/vincedelmas/MyLists/compare/v3.13.0...v3.13.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* include frontend config in Docker builds ([f17ff51](https://github.com/vincedelmas/MyLists/commit/f17ff517a9258784eddc18e46e1671c1ffc0ed1e))
+
 ## [3.13.0](https://github.com/vincedelmas/MyLists/compare/v3.12.0...v3.13.0) (2026-10-24)
 
 

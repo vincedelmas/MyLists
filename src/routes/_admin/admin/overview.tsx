@@ -1,10 +1,13 @@
 import {capitalize} from "@/lib/utils/formatting/text";
-import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {formatNumber} from "@/lib/utils/formatting/number";
+import {createFileRoute, Link} from "@tanstack/react-router";
+import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {RecentUsers} from "@/lib/client/components/admin/RecentUsers";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
+import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
 import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 import {Plug, Smile, Star, UserCheck, UserPlus, Users} from "lucide-react";
@@ -115,6 +118,50 @@ function OverviewPage() {
                     </CardContent>
                 </Card>
             </div>
+            <Card className="mt-6 min-w-0">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        MCP connected users
+                        <Badge variant="secondary">
+                            {formatNumber(apiData.mcpConnectedUsers.count)}
+                        </Badge>
+                    </CardTitle>
+                    <CardDescription>
+                        Accounts that have authorized at least one enabled MCP client
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {apiData.mcpConnectedUsers.items.length === 0 ?
+                        <EmptyState
+                            icon={Plug}
+                            className="py-8"
+                            message="No users have an MCP connection yet."
+                        />
+                        :
+                        <ul className="grid max-h-86 gap-3 overflow-y-auto pr-1 scrollbar-thin sm:grid-cols-2 xl:grid-cols-3">
+                            {apiData.mcpConnectedUsers.items.map(user =>
+                                <li key={user.id} className="min-w-0">
+                                    <Link
+                                        to="/profile/$username"
+                                        params={{ username: user.name }}
+                                        className="flex min-w-0 items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted
+                                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                        <ProfileIcon
+                                            user={user}
+                                            fallbackSize="text-sm"
+                                            className="size-9 shrink-0 border-2"
+                                        />
+                                        <span className="truncate text-sm font-medium">
+                                            {user.name}
+                                        </span>
+                                    </Link>
+                                </li>
+                            )}
+                        </ul>
+                    }
+                </CardContent>
+            </Card>
         </DashboardShell>
     );
 }

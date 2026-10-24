@@ -5,7 +5,7 @@ import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 import {MCP_READ_SCOPE, MCP_RESOURCE, MCP_WRITE_SCOPE} from "@/lib/server/core/mcp/config";
-import {getMcpAccess, getMcpConnectedUserCount, revokeMcpConnection} from "./mcp.repository";
+import {getMcpAccess, getMcpConnectedUsers, revokeMcpConnection} from "./mcp.repository";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
@@ -48,22 +48,25 @@ describe("MCP live authorization", () => {
         sqlite.close();
     });
 
-    it("counts distinct connected users and excludes disabled, unrelated, and revoked grants", () => {
-        expect(getMcpConnectedUserCount()).toBe(2);
+    it("lists distinct connected users and excludes disabled, unrelated, and revoked grants", () => {
+        expect(getMcpConnectedUsers()).toEqual([
+            { id: 1, name: "user1", image: null },
+            { id: 2, name: "user2", image: null },
+        ]);
 
         dbContext.db.update(schema.oauthClient).set({ disabled: true }).where(eq(schema.oauthClient.clientId, "assistant")).run();
-        expect(getMcpConnectedUserCount()).toBe(1);
+        expect(getMcpConnectedUsers().map(user => user.id)).toEqual([1]);
 
         dbContext.db.update(schema.oauthClient).set({ disabled: null }).run();
-        expect(getMcpConnectedUserCount()).toBe(2);
+        expect(getMcpConnectedUsers()).toHaveLength(2);
 
         dbContext.db.update(schema.oauthConsent).set({ resources: ["https://other.example.invalid/mcp"] }).where(eq(schema.oauthConsent.userId, 2)).run();
-        expect(getMcpConnectedUserCount()).toBe(1);
+        expect(getMcpConnectedUsers().map(user => user.id)).toEqual([1]);
 
         revokeMcpConnection(1, "assistant");
-        expect(getMcpConnectedUserCount()).toBe(1);
+        expect(getMcpConnectedUsers().map(user => user.id)).toEqual([1]);
         revokeMcpConnection(1, "other-assistant");
-        expect(getMcpConnectedUserCount()).toBe(0);
+        expect(getMcpConnectedUsers()).toHaveLength(0);
     });
 
     it("intersects token scopes with current consent", () => {

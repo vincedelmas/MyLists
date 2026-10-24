@@ -1,11 +1,33 @@
 import {AchievementDifficulty, MediaType, RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
 import type {HighlightedMediaResolvedSettings, ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
-import type {AchievementsType, ExtractListByType, MediaGlobalSummaryType, PerMediaSummaryType, UserUpdateType} from "@/lib/types/query.options.types";
+import type {
+    AchievementsType,
+    ExtractListByType,
+    MediaGlobalSummaryType,
+    PerMediaSummaryType,
+    UserUpdateType
+} from "@/lib/types/query.options.types";
 
 
 export const ONBOARDING_MOVIE_ID = -101;
 
 export const ONBOARDING_PROFILE_NAME = "Alex";
+
+
+const onboardingCover = `data:image/svg+xml,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">
+        <rect width="300" height="450" fill="#18242c"/>
+        <rect x="16" y="16" width="268" height="418" rx="10" fill="none" stroke="#34454d"/>
+        <g fill="none" stroke="#7db9a7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="142" cy="193" r="4"/>
+            <path d="m127 222 13-13 10 10 10-15 13 18"/>
+            <rect x="126" y="177" width="48" height="58" rx="5"/>
+        </g>
+        <text x="150" y="264" text-anchor="middle" font-family="sans-serif" font-size="15" letter-spacing="1" fill="#d9e6e2">
+            COVER PREVIEW
+        </text>
+    </svg>
+`)}`;
 
 
 const highlighted = (items: ResolvedHighlightedMediaTabConfig["items"] = []): ResolvedHighlightedMediaTabConfig => ({
@@ -17,32 +39,32 @@ const highlighted = (items: ResolvedHighlightedMediaTabConfig["items"] = []): Re
 
 const highlightedItems = [
     {
-        mediaId: ONBOARDING_MOVIE_ID,
-        mediaName: "Interstellar",
-        mediaType: MediaType.MOVIES,
         releaseDate: "2014",
-        mediaCover: "/static/movies-covers/642b983912f6118acb9813050d0d9a88.jpg",
+        mediaName: "Interstellar",
+        mediaCover: onboardingCover,
+        mediaType: MediaType.MOVIES,
+        mediaId: ONBOARDING_MOVIE_ID,
     },
     {
         mediaId: -102,
-        mediaType: MediaType.MOVIES,
-        mediaName: "The Lord of the Rings: The Two Towers",
         releaseDate: "2002",
-        mediaCover: "/static/movies-covers/1b0ed5d79e487aee89309b45e1edce85.jpg",
+        mediaType: MediaType.MOVIES,
+        mediaCover: onboardingCover,
+        mediaName: "The Lord of the Rings: The Two Towers",
     },
     {
         mediaId: -103,
-        mediaType: MediaType.SERIES,
-        mediaName: "13 Reasons Why",
         releaseDate: "2017",
-        mediaCover: "/static/series-covers/445669e4462e2b0e0a6c49a92c8ead0e.jpg",
+        mediaName: "13 Reasons Why",
+        mediaType: MediaType.SERIES,
+        mediaCover: onboardingCover,
     },
     {
         mediaId: -104,
-        mediaType: MediaType.BOOKS,
-        mediaName: "Journal d'un AssaSynth",
         releaseDate: "2017",
-        mediaCover: "/static/books-covers/750104f47c8fe8b13398bcbf6c286c6b.jpg",
+        mediaType: MediaType.BOOKS,
+        mediaCover: onboardingCover,
+        mediaName: "Journal d'un AssaSynth",
     },
 ];
 
@@ -208,9 +230,9 @@ const followsUpdates = [
         userId: -3,
         mediaId: -106,
         username: "Morgan",
-        mediaType: MediaType.SERIES,
-        updateType: UpdateType.TV,
         mediaName: "Severance",
+        updateType: UpdateType.TV,
+        mediaType: MediaType.SERIES,
         timestamp: "2026-06-18 17:20:00",
         payload: { old_value: [1, 7], new_value: [1, 8] },
     },
@@ -219,9 +241,9 @@ const followsUpdates = [
         userId: -4,
         mediaId: -107,
         username: "Charlie",
+        mediaName: "Arrival",
         mediaType: MediaType.MOVIES,
         updateType: UpdateType.STATUS,
-        mediaName: "Arrival",
         timestamp: "2026-06-18 15:05:00",
         payload: { old_value: Status.PLAN_TO_WATCH, new_value: Status.COMPLETED },
     },
@@ -241,9 +263,9 @@ const followsUpdates = [
         userId: -6,
         mediaId: -109,
         username: "Taylor",
+        mediaName: "Vinland Saga",
         mediaType: MediaType.MANGA,
         updateType: UpdateType.CHAPTER,
-        mediaName: "Vinland Saga",
         timestamp: "2026-06-17 19:10:00",
         payload: { old_value: 117, new_value: 121 },
     },
@@ -307,13 +329,13 @@ export const onboardingMovieFixture = {
     customCover: null,
     status: Status.COMPLETED,
     mediaName: "Interstellar",
+    imageCover: onboardingCover,
     mediaId: ONBOARDING_MOVIE_ID,
     addedAt: "2026-01-10 12:00:00",
     releaseNotificationsEnabled: true,
     lastUpdated: "2026-06-18 20:30:00",
     ratingSystem: RatingSystemType.SCORE,
     comment: "A favorite for the soundtrack and its sense of scale.",
-    imageCover: "/static/movies-covers/642b983912f6118acb9813050d0d9a88.jpg",
     tags: [
         { id: -1, name: "Sci-Fi" },
         { id: -2, name: "Top 10" },

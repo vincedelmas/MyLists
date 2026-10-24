@@ -81,15 +81,6 @@ versions.
 Imports are processed using the `import-drain` CLI. Schedule it regularly (i.e., every 2 min). Linux `flock` from util-linux prevents
 overlapping drain workers.
 
-### Docker Deployment
-
-Docker deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).
-
-The Docker Compose setup builds the app image and starts Redis.
-It mounts persistent storage for SQLite, images, and Redis data.
-Provide cron/maintenance scheduling and public HTTPS from your deployment platform when needed.
-PostHog is optional and disabled when its public key is empty.
-
 ---
 
 ### Environment Variables

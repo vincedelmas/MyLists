@@ -41,3 +41,4 @@ dist
 /playwright-report/
 /test-results/
 .expo
+/apps/mobile/expo-env.d.ts

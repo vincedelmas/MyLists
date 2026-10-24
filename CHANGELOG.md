@@ -1,5 +1,30 @@
 # Changelog
 
+## [3.14.0](https://github.com/vincedelmas/MyLists/compare/v3.13.1...v3.14.0) (2026-10-24)
+
+
+### Features
+
+* **admin:** list users with MCP connections ([8f1d654](https://github.com/vincedelmas/MyLists/commit/8f1d654b9a1959f0b819a666222c645ecae4b5ad))
+* **feature-votes:** display tab counts as badges ([45a66a6](https://github.com/vincedelmas/MyLists/commit/45a66a66448b22172a6d9ff90785609997ee01b3))
+
+
+### Bug Fixes
+
+* **auth:** disable automatic JWT session header ([2d51535](https://github.com/vincedelmas/MyLists/commit/2d51535d953ecd8f29d6e43721992511e75ccbfe))
+* **mcp:** enforce SQLite query memory limits with system library ([2d51535](https://github.com/vincedelmas/MyLists/commit/2d51535d953ecd8f29d6e43721992511e75ccbfe))
+* **onboarding:** use self-contained SVG preview covers ([a7dd2e7](https://github.com/vincedelmas/MyLists/commit/a7dd2e7c3e02834463697528a9013ba001dcd0a4))
+
+
+### Performance Improvements
+
+* **docker:** remove unused musl binaries ([3bcccf8](https://github.com/vincedelmas/MyLists/commit/3bcccf8789d8cb02a2140e11ad74d81fcb1d0fe1))
+
+
+### Code Refactoring
+
+* **search:** simplify search navigation API ([3b13b97](https://github.com/vincedelmas/MyLists/commit/3b13b97873bef779a8638af292b3402ef20d3193))
+
 ## [3.13.1](https://github.com/vincedelmas/MyLists/compare/v3.13.0...v3.13.1) (2026-10-24)
 
 

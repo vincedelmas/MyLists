@@ -1,4 +1,13 @@
 ARG BUN_VERSION=1.4.4
+FROM oven/bun:${BUN_VERSION}-slim AS production-deps
+WORKDIR /app
+COPY package.json bun.lock ./
+# Avoid pulling optional framework peers (Next.js, Playwright) into runtime
+# Prune musl variants whose package metadata does not declare their libc.
+RUN bun install --frozen-lockfile --production --omit=peer --libc=glibc \
+    && rm -rf node_modules/@libsql/linux-*-musl node_modules/lightningcss-linux-*-musl
+
+
 FROM oven/bun:${BUN_VERSION} AS build
 WORKDIR /app
 COPY package.json bun.lock ./
@@ -21,10 +30,10 @@ RUN mkdir -p /tmp/build-db && \
     bun run build
 
 
-FROM oven/bun:${BUN_VERSION} AS runtime
+FROM oven/bun:${BUN_VERSION}-slim AS runtime
 WORKDIR /app
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates libsqlite3-0 \
+    && apt-get install -y --no-install-recommends ca-certificates libsqlite3-0 libstdc++6 util-linux \
     && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production \
     PORT=3000 \
@@ -33,7 +42,7 @@ ENV NODE_ENV=production \
     UPLOADS_DIR_NAME=images \
     REDIS_URL=redis://redis:6379
 
-COPY --from=build --chown=bun:bun /app/node_modules ./node_modules
+COPY --from=production-deps --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=build --chown=bun:bun /app/dist ./dist
 COPY --chown=bun:bun package.json bun.lock drizzle.config.ts tsconfig.json ./
 COPY --chown=bun:bun src ./src

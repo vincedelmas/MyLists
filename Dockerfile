@@ -1,42 +1,56 @@
-FROM oven/bun:1.3.14 AS build
-
+ARG BUN_VERSION=1.4.4
+FROM oven/bun:${BUN_VERSION}-slim AS production-deps
 WORKDIR /app
+COPY package.json bun.lock ./
+# Avoid pulling optional framework peers (Next.js, Playwright) into runtime
+# Prune musl variants whose package metadata does not declare their libc.
+RUN bun install --frozen-lockfile --production --omit=peer --libc=glibc \
+    && rm -rf node_modules/@libsql/linux-*-musl node_modules/lightningcss-linux-*-musl
 
-COPY package.json bun.lock bunfig.toml ./
-COPY apps/mobile/package.json ./apps/mobile/package.json
+
+FROM oven/bun:${BUN_VERSION} AS build
+WORKDIR /app
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
-
 COPY . .
 
-RUN --mount=type=bind,source=.env.docker,target=/app/.env \
+
+ARG VITE_BASE_URL
+ARG VITE_CONTACT_MAIL
+ARG VITE_PUBLIC_POSTHOG_KEY
+ARG VITE_PUBLIC_POSTHOG_HOST
+RUN test -n "$VITE_BASE_URL"
+RUN mkdir -p /tmp/build-db && \
+    VITE_BASE_URL="$VITE_BASE_URL" \
+    VITE_CONTACT_MAIL="$VITE_CONTACT_MAIL" \
+    VITE_PUBLIC_POSTHOG_KEY="$VITE_PUBLIC_POSTHOG_KEY" \
+    VITE_PUBLIC_POSTHOG_HOST="$VITE_PUBLIC_POSTHOG_HOST" \
+    DATABASE_URL=/tmp/build-db/site.db \
     SKIP_ENV_VALIDATION=true \
     bun run build
 
-FROM oven/bun:1.3.14 AS runtime
 
+FROM oven/bun:${BUN_VERSION}-slim AS runtime
 WORKDIR /app
-
-ENV NODE_ENV=production
-
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates util-linux \
+    && apt-get install -y --no-install-recommends ca-certificates libsqlite3-0 libstdc++6 util-linux \
     && rm -rf /var/lib/apt/lists/*
+ENV NODE_ENV=production \
+    PORT=3000 \
+    DATABASE_URL=/data/database/site.db \
+    BASE_UPLOADS_LOCATION=/data/images \
+    UPLOADS_DIR_NAME=images \
+    REDIS_URL=redis://redis:6379
 
-COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/dist /app/dist
-COPY --from=build /app/public/static /app/public/static
-COPY --from=build /app/package.json /app/package.json
-COPY --from=build /app/bun.lock /app/bun.lock
-COPY --from=build /app/server.ts /app/server.ts
-COPY --from=build /app/src /app/src
-COPY --from=build /app/drizzle /app/drizzle
-COPY --from=build /app/drizzle.config.ts /app/drizzle.config.ts
-COPY --from=build /app/tsconfig.json /app/tsconfig.json
-COPY docker/app-entrypoint.sh /usr/local/bin/mylists-entrypoint
-
-RUN chmod +x /usr/local/bin/mylists-entrypoint
-
+COPY --from=production-deps --chown=bun:bun /app/node_modules ./node_modules
+COPY --from=build --chown=bun:bun /app/dist ./dist
+COPY --chown=bun:bun package.json bun.lock drizzle.config.ts tsconfig.json ./
+COPY --chown=bun:bun src ./src
+COPY --chown=bun:bun drizzle ./drizzle
+COPY --chown=bun:bun public ./public
+RUN mkdir -p /data/database /data/images && chown -R bun:bun /data
+USER bun
 EXPOSE 3000
 
-ENTRYPOINT ["mylists-entrypoint"]
+
 CMD ["bun", "dist/server.js"]

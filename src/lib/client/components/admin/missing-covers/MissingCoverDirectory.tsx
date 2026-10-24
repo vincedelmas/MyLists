@@ -37,10 +37,7 @@ export function MissingCoverDirectory({ data, filters, isRefreshing, isRefreshEr
     const fieldId = useId();
     const queryClient = useQueryClient();
     const [selectedKey, setSelectedKey] = useState<string>();
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<AdminMissingCoversSearch>({
-        search: filters.search ?? "",
-        options: { resetScroll: false },
-    });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false });
 
     const hasFilters = Boolean(filters.search || filters.mediaType);
     const selected = data.items.find(item => `${item.mediaType}:${item.mediaId}` === selectedKey) ?? data.items[0];

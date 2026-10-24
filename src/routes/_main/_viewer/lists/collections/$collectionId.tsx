@@ -58,6 +58,8 @@ function CollectionViewer() {
     const navigate = Route.useNavigate();
     const queryClient = useQueryClient();
     const { collectionId } = Route.useParams();
+    const { isAnonymous, currentUser } = useAuth();
+    const { fromCommunity, ...filters } = Route.useSearch();
     const countedCollection = useRef<number | null>(null);
     const { mutate: recordView } = useMutation({ mutationFn: postRecordCollectionView, meta: { noErrorToast: true } });
 
@@ -67,15 +69,13 @@ function CollectionViewer() {
         recordView({ data: { collectionId } });
     }, [collectionId, recordView]);
 
-    const { isAnonymous, currentUser } = useAuth();
-    const { fromCommunity, ...filters } = Route.useSearch();
+    const searchInput = useSearchNavigate(filters);
     const copyMutation = useCopyCollectionMutation(collectionId);
-
     const [filtersOpen, setFiltersOpen] = useState(false);
+
     const { collectionDetailsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(collectionDetailsQueryOptions).data;
     const toggleLikeMutation = useToggleCollectionLikeMutation(collectionId);
-    const searchInput = useSearchNavigate<typeof filters>({ search: filters.search ?? "" });
 
     const filterOptionsQuery = useQuery({
         ...collectionDetailsReadOptions(collectionId, filters, true),
@@ -102,8 +102,6 @@ function CollectionViewer() {
     };
 
     const handleRemoveFilter = (key: MediaBrowseFilterKey, value?: string, scope?: MediaBrowseFilterScope) => {
-        if (key === "search") searchInput.setLocalSearch("");
-
         if (key === "library") {
             handleLibraryChange("all");
             return;
@@ -132,8 +130,6 @@ function CollectionViewer() {
     };
 
     const handleResetFilters = () => {
-        searchInput.setLocalSearch("");
-
         handleFilterChange({
             tags: undefined,
             genres: undefined,

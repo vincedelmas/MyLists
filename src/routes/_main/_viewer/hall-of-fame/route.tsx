@@ -1,20 +1,20 @@
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {hallOfFameSearchSchema} from "@/lib/schemas";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Trophy, UsersRound, UserX} from "lucide-react";
-import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {HofCard} from "@/lib/client/components/hall-of-fame/HofCard";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {HallOfFameSearch, hallOfFameSearchSchema} from "@/lib/schemas";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {hallOfFameOptions} from "@/lib/client/react-query/query-options";
 import {HofRanking} from "@/lib/client/components/hall-of-fame/HofRanking";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {Field, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
@@ -49,7 +49,7 @@ function HallOfFamePage() {
     const { hallOfFameQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(hallOfFameQueryOptions).data;
     const { page = 1, sorting = "normalized", search = "" } = filters;
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<HallOfFameSearch>({ search, options: { resetScroll: false } });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false });
 
     return (
         <div className="mb-8 flex flex-col pt-8">

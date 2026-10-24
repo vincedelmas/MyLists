@@ -9,12 +9,89 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
+  packages: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+
+    outputs:
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      build_server: ${{ steps.targets.outputs.build_server }}
+      build_mobile: ${{ steps.targets.outputs.build_mobile }}
+      release_created: ${{ steps.release.outputs.release_created }}
+
     steps:
-      - uses: googleapis/release-please-action@v5
+      - name: Determine release targets
+        id: targets
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: context.sha });
+
+            const releasePr = prs.find(pr => pr.merged_at && pr.base.ref === "main" && pr.head.ref.startsWith("release-please--"));
+            const labels = new Set(releasePr?.labels.map(label => label.name) ?? []);
+
+            const serverOnly = labels.has("server-only");
+            const mobileOnly = labels.has("mobile-only");
+
+            if (serverOnly && mobileOnly) {
+              core.setFailed("Choose either server-only or mobile-only, not both.");
+              return;
+            }
+
+            core.setOutput("build_server", String(!mobileOnly));
+            core.setOutput("build_mobile", String(!serverOnly));
+
+            core.info(`Release PR: ${releasePr?.number ?? "none"}`);
+            core.info(`Build server: ${!mobileOnly}`);
+            core.info(`Build mobile: ${!serverOnly}`);
+
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v5
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  server-image:
+    name: Publish MyLists Docker image
+    needs: release-please
+    if: >-
+      ${{
+        needs.release-please.outputs.release_created == 'true' &&
+        needs.release-please.outputs.build_server == 'true'
+      }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            VITE_BASE_URL=${{ vars.VITE_BASE_URL }}
+            VITE_CONTACT_MAIL=${{ vars.VITE_CONTACT_MAIL }}
+            VITE_PUBLIC_POSTHOG_KEY=${{ vars.VITE_PUBLIC_POSTHOG_KEY }}
+            VITE_PUBLIC_POSTHOG_HOST=${{ vars.VITE_PUBLIC_POSTHOG_HOST }}
+          tags: |
+            ghcr.io/vincedelmas/mylists:${{ needs.release-please.outputs.tag_name }}
+            ghcr.io/vincedelmas/mylists:latest

@@ -1,4 +1,3 @@
-import type z from "zod";
 import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatNumber} from "@/lib/utils/formatting/number";
@@ -55,9 +54,7 @@ function ListsPage() {
     const filters = Route.useSearch();
     const { username } = Route.useParams();
     const { viewsQueryOptions, collectionsQueryOptions } = Route.useRouteContext();
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<z.infer<typeof listsSearchSchema>>({
-        search: filters.search ?? "", options: { resetScroll: false }, resetFilters: { dynamicPage: 1 },
-    });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false, resetFilters: { dynamicPage: 1 } });
 
     const viewsQuery = useSuspenseQuery(viewsQueryOptions);
     const collectionsQuery = useSuspenseQuery(collectionsQueryOptions);

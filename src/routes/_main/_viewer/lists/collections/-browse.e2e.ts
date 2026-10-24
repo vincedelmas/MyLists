@@ -82,6 +82,19 @@ test("creates, ranks, annotates and copies a collection across every media type 
     await expect.poll(readViewCount).toBe(1);
     await collectionSearch.fill("");
     await expect(page).not.toHaveURL(/search=/);
+    await expect(collectionSearch).toHaveValue("");
+
+    await collectionSearch.fill("No matching title");
+    await expect(page).toHaveURL(/search=No/);
+    await page.getByRole("button", { name: "Remove Search: No matching title", exact: true }).click();
+    await expect(collectionSearch).toHaveValue("");
+    await expect(page).not.toHaveURL(/search=/);
+
+    await collectionSearch.fill("Another missing title");
+    await expect(page).toHaveURL(/search=Another/);
+    await page.getByRole("button", { name: "Reset filters", exact: true }).click();
+    await expect(collectionSearch).toHaveValue("");
+    await expect(page).not.toHaveURL(/search=/);
 
     const controls = page.getByRole("group", { name: "Media browsing controls", exact: true });
     await controls.getByRole("button", { name: "Table view", exact: true }).click();

@@ -9,19 +9,22 @@ type BaseSearchParams = {
 }
 
 
-type UseSearchNavigateProps<T extends BaseSearchParams> = {
-    search: string;
+type UseSearchNavigateOptions<T extends BaseSearchParams> = NavigateOptions & {
     delay?: number;
-    options?: NavigateOptions;
     resetFilters?: Partial<T>;
 };
 
 
-export const useSearchNavigate = <T extends BaseSearchParams>({ search, delay = 400, options, resetFilters }: UseSearchNavigateProps<T>) => {
+export const useSearchNavigate = <T extends BaseSearchParams>(filters: T, { delay = 400, resetFilters, ...options }: UseSearchNavigateOptions<T> = {}) => {
     const navigate = useNavigate();
-    const [input, setInput] = useState({ urlSearch: search, value: search, navigatedSearch: search });
+    const search = filters.search ?? "";
+    const [input, setInput] = useState({
+        value: search,
+        urlSearch: search,
+        navigatedSearch: search,
+    });
 
-    // Keep newer typed text when our debounced navigation arrives, reset it for external URL changes
+    // Keep newer typed text when our debounced nav arrives, reset for external URL changes
     if (input.urlSearch !== search) {
         setInput({
             urlSearch: search,
@@ -32,9 +35,16 @@ export const useSearchNavigate = <T extends BaseSearchParams>({ search, delay = 
 
     const localSearch = input.value;
 
-    const setLocalSearch = (value: string) => setInput(current => ({ ...current, value }));
+    const setLocalSearch = (value: string) => {
+        setInput(curr => ({ ...curr, value }));
+    }
 
     const updateFilters = (updater: Partial<T>) => {
+        if ("search" in updater) {
+            const value = updater.search ?? "";
+            setInput(curr => ({ ...curr, value, navigatedSearch: value }));
+        }
+
         void navigate({ search: prev => ({ ...prev, ...updater }), replace: true, ...options });
     };
 
@@ -43,17 +53,20 @@ export const useSearchNavigate = <T extends BaseSearchParams>({ search, delay = 
         setLocalSearch(value);
 
         if (value === "") {
-            setInput(current => ({ ...current, navigatedSearch: "" }));
             updateFilters({ ...resetFilters, search: undefined, page: 1 } as Partial<T>);
         }
     };
 
     useDebounceCallback(localSearch, delay, () => {
         if (localSearch !== input.navigatedSearch && localSearch !== search && localSearch !== "") {
-            setInput(current => ({ ...current, navigatedSearch: localSearch }));
             updateFilters({ ...resetFilters, search: localSearch, page: 1 } as Partial<T>);
         }
     });
 
-    return { localSearch, setLocalSearch, handleInputChange, updateFilters };
+    return {
+        localSearch,
+        updateFilters,
+        setLocalSearch,
+        handleInputChange,
+    };
 };

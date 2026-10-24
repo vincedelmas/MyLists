@@ -45,12 +45,12 @@ function TasteMatchesPage() {
     const filters = Route.useSearch();
     const { tasteMatchesQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(tasteMatchesQueryOptions).data;
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters);
     const { page = 1, search = "", activeTab = "all", hideFollowed = false, sorting = "match" } = filters;
 
     const activeMediaTypes = getActiveMediaTypes(currentUser?.settings);
     const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "all" });
     const currentActiveTab = activeTab !== "all" && activeMediaTypes.includes(activeTab) ? activeTab : "all";
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<TasteMatchesSearch>({ search });
 
     const handleSortChange = (value: TasteMatchesSearch["sorting"] | null) => {
         if (value === null) return;

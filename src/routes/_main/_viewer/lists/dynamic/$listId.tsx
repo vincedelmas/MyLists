@@ -54,12 +54,9 @@ function DynamicListPage() {
     const { listId } = Route.useParams();
     const [filtersOpen, setFiltersOpen] = useState(false);
     const { page, view: displayOverride, ...filters } = Route.useSearch();
+    const { localSearch, handleInputChange, setLocalSearch } = useSearchNavigate(filters, { resetScroll: false });
     const { view, results, isOwner, owner, activeMediaTypes } = useSuspenseQuery(dynamicListOptions(listId, page, filters)).data;
     const filterOptionsQuery = useQuery({ ...dynamicListOptions(listId, page, filters, true), enabled: filtersOpen });
-    const { localSearch, handleInputChange, setLocalSearch } = useSearchNavigate({
-        search: filters.search ?? "",
-        options: { resetScroll: false },
-    });
 
     const mediaTypes = results.mediaTypes;
     const isGrid = displayOverride ? displayOverride === "grid" : view.spec.display === "grid";

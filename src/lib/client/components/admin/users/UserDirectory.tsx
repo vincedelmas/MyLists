@@ -37,9 +37,7 @@ const DEFAULT = { search: "", page: 1, sorting: "updatedAt" } satisfies SearchTy
 export function UserDirectory({ apiData, filters, isPending, onUpdateUser, onImpersonate }: UserDirectoryProps) {
     const { search = DEFAULT.search } = filters;
     const sortingState = [{ id: filters.sorting ?? DEFAULT.sorting, desc: filters.sortDesc ?? true }];
-    const { localSearch, setLocalSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({
-        search, options: { resetScroll: false },
-    });
+    const { localSearch, setLocalSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false });
 
     const { pagination, onPaginationChange } = useTablePagination({
         page: filters.page,

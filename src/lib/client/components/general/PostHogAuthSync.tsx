@@ -1,5 +1,5 @@
 import {useEffect} from "react";
-import PostHog from "posthog-js-lite";
+import posthogClient, {type PostHog} from "posthog-js";
 import {clientEnv} from "@/env/client";
 import {useLocation} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -19,9 +19,15 @@ export function PostHogAuthSync() {
     useEffect(() => {
         if (isSensitiveRoute || !import.meta.env.PROD || !clientEnv.VITE_PUBLIC_POSTHOG_KEY) return;
 
-        posthog ??= new PostHog(clientEnv.VITE_PUBLIC_POSTHOG_KEY, {
-            personProfiles: "identified_only",
-            host: clientEnv.VITE_PUBLIC_POSTHOG_HOST || undefined,
+        posthog ??= posthogClient.init(clientEnv.VITE_PUBLIC_POSTHOG_KEY, {
+            person_profiles: "identified_only",
+            api_host: clientEnv.VITE_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com",
+            persistence: "localStorage",
+            capture_pageview: false,
+            capture_pageleave: false,
+            autocapture: false,
+            disable_session_recording: true,
+            disable_surveys: false,
         });
 
         posthog.capture("$pageview");

@@ -1,5 +1,60 @@
 # Changelog
 
+## [3.14.0](https://github.com/vincedelmas/MyLists/compare/v3.13.1...v3.14.0) (2026-10-24)
+
+
+### Features
+
+* **admin:** list users with MCP connections ([8f1d654](https://github.com/vincedelmas/MyLists/commit/8f1d654b9a1959f0b819a666222c645ecae4b5ad))
+* **feature-votes:** display tab counts as badges ([45a66a6](https://github.com/vincedelmas/MyLists/commit/45a66a66448b22172a6d9ff90785609997ee01b3))
+
+
+### Bug Fixes
+
+* **auth:** disable automatic JWT session header ([2d51535](https://github.com/vincedelmas/MyLists/commit/2d51535d953ecd8f29d6e43721992511e75ccbfe))
+* **mcp:** enforce SQLite query memory limits with system library ([2d51535](https://github.com/vincedelmas/MyLists/commit/2d51535d953ecd8f29d6e43721992511e75ccbfe))
+* **onboarding:** use self-contained SVG preview covers ([a7dd2e7](https://github.com/vincedelmas/MyLists/commit/a7dd2e7c3e02834463697528a9013ba001dcd0a4))
+
+
+### Performance Improvements
+
+* **docker:** remove unused musl binaries ([3bcccf8](https://github.com/vincedelmas/MyLists/commit/3bcccf8789d8cb02a2140e11ad74d81fcb1d0fe1))
+
+
+### Code Refactoring
+
+* **search:** simplify search navigation API ([3b13b97](https://github.com/vincedelmas/MyLists/commit/3b13b97873bef779a8638af292b3402ef20d3193))
+
+## [3.13.1](https://github.com/vincedelmas/MyLists/compare/v3.13.0...v3.13.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* include frontend config in Docker builds ([f17ff51](https://github.com/vincedelmas/MyLists/commit/f17ff517a9258784eddc18e46e1671c1ffc0ed1e))
+
+## [3.13.0](https://github.com/vincedelmas/MyLists/compare/v3.12.0...v3.13.0) (2026-10-24)
+
+
+### Features
+
+* containerize MyLists server ([a3564d2](https://github.com/vincedelmas/MyLists/commit/a3564d24e1d563423bb6b1116b00d29d36709525))
+
+## [3.12.0](https://github.com/vincedelmas/MyLists/compare/v3.11.0...v3.12.0) (2026-10-22)
+
+
+### Features
+
+* add per-type and per-media release notification preferences ([9d3e1b9](https://github.com/vincedelmas/MyLists/commit/9d3e1b92e34cb215596a1958d4cac678d5a65f40))
+* add user search to community activity ([0767b9d](https://github.com/vincedelmas/MyLists/commit/0767b9d7a89241ede060546aabe31bde76164a4f))
+* **media:** add TMDB & IGDB backdrops using provider data ([f08eef9](https://github.com/vincedelmas/MyLists/commit/f08eef9124138f6231c3fd13d55c55aae8c0f3ba))
+* **media:** google cover search across forms ([1bf8957](https://github.com/vincedelmas/MyLists/commit/1bf8957ce4220020d570a5672450af55fb8c8e63))
+
+
+### Bug Fixes
+
+* **analytics:** temporarily use full PostHog SDK for surveys ([153548e](https://github.com/vincedelmas/MyLists/commit/153548ed0841d6e4423816118276fe99b458f51d))
+* **imports:** prioritize IMDb IDs over title matching ([dbb2cd0](https://github.com/vincedelmas/MyLists/commit/dbb2cd0e167f61a5f07f970a12d7c29bb63576d3))
+
 ## [3.11.0](https://github.com/vincedelmas/MyLists/compare/v3.10.0...v3.11.0) (2026-10-19)
 
 

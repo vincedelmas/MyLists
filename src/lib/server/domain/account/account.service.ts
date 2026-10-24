@@ -2,8 +2,8 @@ import {user} from "@/lib/server/database/schema";
 import {CacheManager} from "@/lib/server/core/cache-manager";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
+import {getMcpConnectedUsers} from "@/lib/server/domain/mcp/mcp.repository";
 import {AdminUpdatePayload, GeneralSettings, SearchType} from "@/lib/schemas";
-import {getMcpConnectedUserCount} from "@/lib/server/domain/mcp/mcp.repository";
 import {AccountRepository} from "@/lib/server/domain/account/account.repository";
 import {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
 
@@ -29,6 +29,7 @@ export class AccountService {
     }
 
     async getUserOverviewForAdmin() {
+        const mcpConnectedUsers = getMcpConnectedUsers();
         const userStats = await this.repository.getUserStatsForAdmin();
         const recentUsers = await this.repository.getActiveUsersForAdmin(20);
         const usersPerPrivacy = await this.repository.getUsersPerPrivacyValueForAdmin();
@@ -40,7 +41,8 @@ export class AccountService {
             usersPerPrivacy,
             cumulativeUsersPerMonth,
             mcpConnectedUsers: {
-                count: getMcpConnectedUserCount(),
+                items: mcpConnectedUsers,
+                count: mcpConnectedUsers.length,
             },
         };
     }

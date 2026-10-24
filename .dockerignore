@@ -1,19 +1,32 @@
+# Git / IDE
 .git
+.github
 .idea
-.tanstack
+
+# Dependencies / Build
 node_modules
+**/node_modules
 dist
+.tanstack
+coverage
 instance
 
+# Env / Secrets
+.env
 .env.*
-!.env.docker
-!.env.docker.example
+secrets/
 
-.DS_Store
+# Logs
 *.log
-coverage
+.DS_Store
 
+# Mobile app
+apps/mobile/
+
+# Uploaded images
 public/static/**
+
+# Keep default images
 !public/static/
 !public/static/*/
 !public/static/*/default.jpg

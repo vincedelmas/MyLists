@@ -26,7 +26,11 @@ one unified interface.
 
 Ensure you have [Bun](https://bun.sh) installed on your machine.
 
-The Expo mobile app lives in [`apps/mobile`](apps/mobile/README.md). Its development setup is separate from the web server.
+The Expo mobile app lives in [`apps/mobile`](apps/mobile/README.md). Its dev setup is separate from the web server.
+
+MCP insight queries also require the system SQLite shared library (`libsqlite3-0` on Debian/Ubuntu, `sqlite` on Arch Linux).
+Docker includes it. The isolated query process uses this library with memory accounting enabled to enforce its 128 MiB SQLite
+heap limit; Bun's bundled SQLite disables that accounting starting in Bun 1.4.4.
 
 1. **Clone the repo**
    ```bash
@@ -82,15 +86,6 @@ versions.
 
 Imports are processed using the `import-drain` CLI. Schedule it regularly (i.e., every 2 min). Linux `flock` from util-linux prevents
 overlapping drain workers.
-
-### Docker Deployment
-
-Docker deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).
-
-The Docker Compose setup builds the app image and starts Redis.
-It mounts persistent storage for SQLite, images, and Redis data.
-Provide cron/maintenance scheduling and public HTTPS from your deployment platform when needed.
-PostHog is optional and disabled when its public key is empty.
 
 ---
 

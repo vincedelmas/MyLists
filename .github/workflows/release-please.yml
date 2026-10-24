@@ -89,6 +89,9 @@ jobs:
           push: true
           build-args: |
             VITE_BASE_URL=${{ vars.VITE_BASE_URL }}
+            VITE_CONTACT_MAIL=${{ vars.VITE_CONTACT_MAIL }}
+            VITE_PUBLIC_POSTHOG_KEY=${{ vars.VITE_PUBLIC_POSTHOG_KEY }}
+            VITE_PUBLIC_POSTHOG_HOST=${{ vars.VITE_PUBLIC_POSTHOG_HOST }}
           tags: |
             ghcr.io/vincedelmas/mylists:${{ needs.release-please.outputs.tag_name }}
             ghcr.io/vincedelmas/mylists:latest

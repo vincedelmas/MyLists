@@ -46,10 +46,10 @@ function JobInfoPage() {
     const filters = Route.useSearch();
     const { isAnonymous } = useAuth();
     const navigate = Route.useNavigate();
+    const searchInput = useSearchNavigate(filters);
     const { mediaType, job, name } = Route.useParams();
     const { jobDetailsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(jobDetailsQueryOptions).data;
-    const searchInput = useSearchNavigate<MediaCatalogBrowseFilters>({ search: filters.search ?? "" });
 
     const isGrid = filters.display !== "table";
     const MediaIcon = THEME_ICONS_MAP[mediaType];
@@ -62,18 +62,11 @@ function JobInfoPage() {
     };
 
     const handleRemoveFilter = (key: MediaBrowseFilterKey) => {
-        if (key === "search") searchInput.setLocalSearch("");
         handleFilterChange({ [key]: undefined });
     };
 
     const handleResetFilters = () => {
-        searchInput.setLocalSearch("");
-
-        handleFilterChange({
-            search: undefined,
-            library: undefined,
-            sorting: undefined,
-        });
+        handleFilterChange({ search: undefined, library: undefined, sorting: undefined });
     };
 
     const onPageChange = async (newPage: number) => {

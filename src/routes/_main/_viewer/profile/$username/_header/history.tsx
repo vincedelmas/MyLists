@@ -1,10 +1,10 @@
 import {useState} from "react";
+import {simpleSearchSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {SimpleSearch, simpleSearchSchema} from "@/lib/schemas";
 import {Payload} from "@/lib/client/components/general/Payload";
 import {DataTable} from "@/lib/client/components/general/DataTable";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -43,9 +43,7 @@ function AllUpdates() {
     const apiData = useSuspenseQuery(allUpdatesQueryOptions).data;
     const [rowSelected, setRowSelected] = useState<RowSelectionState>({});
     const deleteUpdateMutation = useDeleteAllUpdatesMutation(username, filters);
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SimpleSearch>({
-        search: filters.search ?? "", options: { resetScroll: false }
-    });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false });
 
     const isCurrent = (currentUser?.name === username);
 

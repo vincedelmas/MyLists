@@ -51,10 +51,9 @@ function AdminListsActivityPage() {
     const { listsOverviewQueryOptions, listsQueryOptions } = Route.useRouteContext();
 
     const filters = Route.useSearch();
-    const { search = DEFAULT.search } = filters;
     const apiData = useSuspenseQuery(listsQueryOptions).data;
     const stats = useSuspenseQuery(listsOverviewQueryOptions).data;
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<AdminListsSearch>({ search, options: { resetScroll: false } });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false });
 
     const isDynamic = filters.listType === "dynamic";
     const sortingState = [{ id: filters.sorting ?? DEFAULT.sorting, desc: filters.sortDesc ?? true }];

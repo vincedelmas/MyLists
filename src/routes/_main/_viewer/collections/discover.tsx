@@ -2,9 +2,9 @@ import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {collectionsBrowseFiltersSchema} from "@/lib/schemas";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -12,7 +12,7 @@ import {Pagination} from "@/lib/client/components/general/Pagination";
 import {LibraryBig, ListOrdered, Plus, UsersRound} from "lucide-react";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
-import {collectionsBrowseFiltersSchema, CommunitySearch} from "@/lib/schemas";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {communityCollectionsOptions} from "@/lib/client/react-query/query-options";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
@@ -39,7 +39,7 @@ function CollectionsDiscoverPage() {
     const { page = 1, search = "", mediaType } = filters;
     const { communityCollectionsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(communityCollectionsQueryOptions).data;
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<CommunitySearch>({ search });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters);
 
     const hasFilters = Boolean(search || mediaType);
     const mediaTypeItems = createMediaSelectItems(ALL_MEDIA_TYPES, { leading: "all", leadingLabel: "All types" });

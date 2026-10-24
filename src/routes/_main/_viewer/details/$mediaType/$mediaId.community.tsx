@@ -36,7 +36,7 @@ function MediaCommunityActivityPage() {
     const { mediaType } = Route.useParams();
     const { communityActivityQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(communityActivityQueryOptions).data;
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate({ search: filters.search ?? "" });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters);
 
     return (
         <div className="flex flex-col mx-auto mb-8 pt-6">

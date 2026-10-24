@@ -26,7 +26,7 @@ const features = tableFeatures({ rowPaginationFeature });
 
 export function UpdateHistoryTable({ history, filters }: UpdateHistoryTableProps) {
     const { search = "" } = filters;
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search, options: { resetScroll: false } });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false });
     const { pagination, onPaginationChange } = useTablePagination({
         page: filters.page,
         pageSize: filters.perPage ?? 25,

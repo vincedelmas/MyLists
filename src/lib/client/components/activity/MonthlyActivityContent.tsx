@@ -75,6 +75,7 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
     const canEdit = currentUser?.name === username;
     const [addActivity, setAddActivity] = useState(false);
     const [editActivity, setEditActivity] = useState<MonthlyActivityEditor | null>(null);
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false });
     const [occurrencesActivity, setOccurrencesActivity] = useState<MonthlyActivityEditor | null>(null);
 
     const apiData = useSuspenseQuery(activityQueryOptions).data;
@@ -83,10 +84,6 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
 
     const { page, view, display, sort, activeTab, hiddenOnly, activityKind, year, month, search = "" } = filters;
     const hasFilters = search !== "" || activityKind !== ActivityKind.ALL || hiddenOnly || activeTab !== "all";
-
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<MonthlyActivitySearch>({
-        search, options: { resetScroll: false },
-    });
 
     const activeMediaTypes = currentUser
         ? getActiveMediaTypes(currentUser.settings)

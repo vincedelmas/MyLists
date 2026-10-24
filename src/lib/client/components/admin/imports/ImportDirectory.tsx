@@ -34,10 +34,7 @@ const statusOptions = [
 export function ImportDirectory({ filters, history, isRefreshing, isRefreshError, onRefresh }: ImportDirectoryProps) {
     const fieldId = useId();
     const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<AdminImportsSearch>({
-        search: filters.search ?? "",
-        options: { resetScroll: false },
-    });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false });
 
     const selectedJob = history.items.find(job => job.id === selectedJobId);
 

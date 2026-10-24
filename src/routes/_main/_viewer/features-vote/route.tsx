@@ -98,11 +98,25 @@ function FeatureVotesPage() {
         {
             id: "active",
             isAccent: true,
-            label: "Active",
+            label: (
+                <span className="inline-flex items-center gap-2">
+                    Active
+                    <Badge variant={activeTab === "active" ? "default" : "secondary"} className="min-w-5 px-1.5">
+                        {apiData.items.filter(item => ACTIVE_STATUSES.includes(item.status)).length}
+                    </Badge>
+                </span>
+            ),
         },
         ...Object.values(FeatureStatus).map((status) => ({
             id: status,
-            label: status,
+            label: (
+                <span className="inline-flex items-center gap-2">
+                    {status}
+                    <Badge variant={activeTab === status ? "default" : "secondary"} className="min-w-5 px-1.5">
+                        {apiData.items.filter(item => item.status === status).length}
+                    </Badge>
+                </span>
+            ),
             isAccent: true,
         }))
     ];
@@ -112,14 +126,17 @@ function FeatureVotesPage() {
             <PageHeader
                 asideIcon={ListChecks}
                 eyebrowIcon={Lightbulb}
-                title="Help shape MyLists"
                 eyebrow="Feature ideas"
+                title="Help shape MyLists"
                 description="Share an idea or vote for the changes you’d most like to see."
                 asideValue={<>{filteredRequests.length} {filteredRequests.length === 1 ? "idea" : "ideas"}</>}
                 asideLabel={searchQuery ? "Ideas found" : activeTab === "active" ? "Open ideas" : `${activeTab} ideas`}
             />
 
-            <section className="mt-7 grid grid-cols-[minmax(0,1.08fr)_minmax(19rem,0.92fr)] overflow-hidden rounded-xl border shadow-xs max-lg:grid-cols-1">
+            <section
+                className="mt-7 grid grid-cols-[minmax(0,1.08fr)_minmax(19rem,0.92fr)] overflow-hidden rounded-xl border
+                shadow-xs max-lg:grid-cols-1"
+            >
                 <div className="relative overflow-hidden border-r p-6 max-lg:border-b max-lg:border-r-0 sm:p-7">
                     <LockedContent
                         showAuthButtons={true}

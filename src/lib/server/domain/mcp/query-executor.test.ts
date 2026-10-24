@@ -3,6 +3,7 @@ import {describe, expect, it} from "vitest";
 import {QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
 import {validateQuerySql} from "./query-validation";
 import {executeSnapshotQuery} from "./query-executor";
+import queryProcessSource from "./query-process.js?raw";
 
 
 const createSnapshot = (count = 3, title = "Movie") => {
@@ -34,6 +35,14 @@ describe("isolated insight query execution", () => {
         const snapshot = createSnapshot();
         await expect(executeSnapshotQuery(snapshot, { sql: "DELETE FROM entries" })).rejects.toThrow("readonly");
         expect(await executeSnapshotQuery(snapshot, { sql: "SELECT count(*) AS count FROM entries" })).toMatchObject({ rows: [[3]] });
+    });
+
+    it("preserves bound text, embedded NULs, fractional numbers and nulls", async () => {
+        const text = "é\0日本";
+        expect(await executeSnapshotQuery(createSnapshot(), {
+            sql: "SELECT $text AS text, $number AS number, $nothing AS empty_value",
+            parameters: { text, number: 1.5, nothing: null },
+        })).toMatchObject({ columns: ["text", "number", "empty_value"], rows: [[text, 1.5, null]] });
     });
 
     it("bounds returned rows and distinguishes exact-size results from truncation", async () => {
@@ -86,8 +95,32 @@ describe("isolated insight query execution", () => {
     });
 
     it("stops SQLite allocations that exceed the per-process heap budget", async () => {
-        await expect(executeSnapshotQuery(createSnapshot(), {
-            sql: validateQuerySql("WITH RECURSIVE strings(n, value) AS (SELECT 0, 'x' UNION ALL SELECT n + 1, value || value FROM strings WHERE n < 30) SELECT length(value) FROM strings ORDER BY n DESC LIMIT 1"),
-        })).rejects.toThrow(/memory|resource limits/i);
+        const snapshot = createSnapshot();
+        const bytes = QUERY_LIMITS.sqliteHeapBytes + 32 * 1024 * 1024;
+        const input = {
+            sql: validateQuerySql("SELECT length(randomblob($bytes)) AS size"),
+            parameters: { bytes },
+        };
+
+        // Run the identical worker and allocation with a larger cap first. Returning
+        // only the length avoids hitting the response-size or binary-value limits.
+        const control = Bun.spawn([process.execPath, "--no-env-file", "--eval", queryProcessSource], {
+            stdout: "pipe",
+            stderr: "pipe",
+            env: { TZ: "UTC" },
+            stdin: new Blob([JSON.stringify({
+                ...input,
+                maxRows: QUERY_LIMITS.defaultRows,
+                maxResponseBytes: QUERY_LIMITS.maxResponseBytes,
+                sqliteHeapBytes: bytes * 2,
+            }) + "\n", Buffer.from(snapshot)]),
+        });
+        const output = await new Response(control.stdout).json();
+        expect(await control.exited).toBe(0);
+        expect(output).toMatchObject({ columns: ["size"], rows: [[bytes]], truncated: false });
+
+        await expect(executeSnapshotQuery(snapshot, input)).rejects.toThrow("out of memory");
+        expect(await executeSnapshotQuery(snapshot, { sql: "SELECT count(*) AS count FROM entries" }))
+            .toMatchObject({ rows: [[3]] });
     });
 });

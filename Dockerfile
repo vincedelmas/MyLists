@@ -24,7 +24,7 @@ RUN mkdir -p /tmp/build-db && \
 FROM oven/bun:${BUN_VERSION} AS runtime
 WORKDIR /app
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
+    && apt-get install -y --no-install-recommends ca-certificates libsqlite3-0 \
     && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production \
     PORT=3000 \

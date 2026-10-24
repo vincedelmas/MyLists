@@ -329,7 +329,7 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         },
     },
     plugins: [
-        jwt(),
+        jwt({ disableSettingJwtHeader: true }),
         mcp({
             scopes: MCP_SCOPES,
             resource: MCP_RESOURCE,

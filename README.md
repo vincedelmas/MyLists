@@ -26,6 +26,10 @@ one unified interface.
 
 Ensure you have [Bun](https://bun.sh) installed on your machine.
 
+MCP insight queries also require the system SQLite shared library (`libsqlite3-0` on Debian/Ubuntu, `sqlite` on Arch Linux).
+Docker includes it. The isolated query process uses this library with memory accounting enabled to enforce its 128 MiB SQLite
+heap limit; Bun's bundled SQLite disables that accounting starting in Bun 1.4.4.
+
 1. **Clone the repo**
    ```bash
    git clone https://github.com/crossoufire/MyLists.git

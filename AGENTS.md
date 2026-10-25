@@ -7,6 +7,8 @@
   policy. Keep server dependencies out of shared definitions and utilities.
 - Keep tests beside their modules and use direct imports when moving code; do not leave forwarding modules at the old paths.
 - Do not build the project unless explicitly asked.
+- For mobile UI changes and features, check the corresponding web app implementation first. Keep labels, colors, formatting,
+  and visual conventions close to the web app, and verify mobile layouts over ADB when a phone is available.
 - Create tests only when they are really necessary.
 - Avoid creating functions that are used only once when possible. First look for an existing function that already works or can be lightly
   modified to support the use case.

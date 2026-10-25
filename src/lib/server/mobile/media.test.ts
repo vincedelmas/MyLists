@@ -51,6 +51,7 @@ beforeEach(() => {
                 status: "Completed",
                 rating: 8,
                 favorite: true,
+                comment: "A favorite film",
             },
         ],
     });
@@ -90,7 +91,8 @@ describe("mobile media operations", () => {
             10,
             expect.objectContaining({ page: 2, perPage: 30, favorite: true, status: ["Completed"] }),
         );
-        expect(result.items[0]).toMatchObject({ mediaId: 7, cover: "/static/cover.jpg" });
+        expect(result.items[0]).toMatchObject({ mediaId: 7, cover: "/static/cover.jpg", hasComment: true });
+        expect(result.items[0]).not.toHaveProperty("comment");
     });
 
     it("keeps the list subject and viewer distinct for visited profiles", async () => {
@@ -101,6 +103,16 @@ describe("mobile media operations", () => {
 
     it("rejects statuses belonging to another media type", async () => {
         await expect(getMobileList(10, "movies", { status: ["Reading"] })).rejects.toThrow();
+        expect(mocks.list).not.toHaveBeenCalled();
+    });
+
+    it("translates mobile sort keys to the tracking query's web labels", async () => {
+        await getMobileList(10, "movies", { sorting: "rating_highest" });
+        expect(mocks.list).toHaveBeenCalledWith(10, 10, expect.objectContaining({ sorting: "Rating +" }));
+    });
+
+    it("rejects unsupported sorting before querying the list", async () => {
+        await expect(getMobileList(10, "movies", { sorting: "unsupported" })).rejects.toThrow();
         expect(mocks.list).not.toHaveBeenCalled();
     });
 

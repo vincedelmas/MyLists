@@ -1,22 +1,18 @@
-import { useCallback, useState } from "react";
-import { useIsFocused } from "expo-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FlatList, Keyboard, Pressable, RefreshControl, StyleSheet, View, ScrollView } from "react-native";
-import { ChartNoAxesColumnIncreasing, Clapperboard, Clock3, Search, Trophy } from "lucide-react-native";
-import { AppText, Button, Cover, Field, Page, QueryPanel, StateView } from "../../components/ui";
-import { SectionTabs } from "../../components/section-tabs";
-import { useDebouncedValue } from "../../hooks/use-debounced-value";
-import { usePuzzleReset } from "../../hooks/use-puzzle-reset";
-import { useSwipeTabs } from "../../hooks/use-swipe-tabs";
-import { useTabPush } from "../../hooks/use-tab-push";
-import {
-    moviedleOptions,
-    moviedleLeaderboardOptions,
-    moviedleSuggestionsOptions,
-} from "../../lib/react-query/query-options/moviedle.options";
-import { useMoviedleGuess } from "../../lib/react-query/query-mutations/moviedle.mutations";
-import type { api } from "../../lib/api-client";
-import { colors, spacing } from "../../theme";
+import {useIsFocused} from "expo-router";
+import {colors, spacing} from "../../theme";
+import type {api} from "../../lib/api-client";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {PagedTabs} from "../../components/paged-tabs";
+import {usePuzzleReset} from "../../hooks/use-puzzle-reset";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {useDebouncedValue} from "../../hooks/use-debounced-value";
+import {useCallback, useState} from "react";
+import {useMoviedleGuess} from "../../lib/react-query/query-mutations/moviedle.mutations";
+import {AppText, Button, Cover, Field, Page, QueryPanel, StateView} from "../../components/ui";
+import {ChartNoAxesColumnIncreasing, Clapperboard, Clock3, Search, Trophy} from "lucide-react-native";
+import {FlatList, Keyboard, Pressable, RefreshControl, StyleSheet, View, ScrollView} from "react-native";
+import {moviedleOptions, moviedleLeaderboardOptions, moviedleSuggestionsOptions} from "../../lib/react-query/query-options/moviedle.options";
+
 
 type Daily = Awaited<ReturnType<typeof api.moviedle>>;
 const tabs = [
@@ -25,15 +21,18 @@ const tabs = [
     { value: "leaderboard", label: "Leaderboard", icon: Trophy },
 ] as const;
 
+
 function ResetCountdown({ resetsAt }: { resetsAt: string }) {
     const client = useQueryClient();
     const reset = useCallback(() => {
         void client.invalidateQueries({ queryKey: ["moviedle"] });
     }, [client]);
+
     const countdown = usePuzzleReset(resetsAt, reset);
+
     return (
         <View style={styles.countdown}>
-            <Clock3 size={13} color={colors.muted} />
+            <Clock3 size={13} color={colors.muted}/>
             <AppText muted style={styles.caption}>
                 New poster in {countdown}
             </AppText>
@@ -41,44 +40,56 @@ function ResetCountdown({ resetsAt }: { resetsAt: string }) {
     );
 }
 
-function DailyGame({ data, refreshing, refetch }: { data: Daily; refreshing: boolean; refetch: () => unknown }) {
-    const focused = useIsFocused();
+
+interface DailyGameProps {
+    data: Daily;
+    active: boolean;
+    refreshing: boolean;
+    refetch: () => unknown;
+}
+
+
+function DailyGame({ data, refreshing, refetch, active }: DailyGameProps) {
     const push = useTabPush();
+    const focused = useIsFocused();
+    const mutation = useMoviedleGuess();
     const [search, setSearch] = useState("");
+    const debounced = useDebouncedValue(search.trim());
+    const [suggestionsOpen, setSuggestionsOpen] = useState(true);
     const [posterArea, setPosterArea] = useState({ width: 0, height: 0 });
     const posterWidth = Math.min(posterArea.width, posterArea.height * 2 / 3);
-    const [suggestionsOpen, setSuggestionsOpen] = useState(true);
-    const debounced = useDebouncedValue(search.trim());
-    const mutation = useMoviedleGuess();
+
     const completed = !!data.userData?.completed;
-    const suggestions = useQuery({
-        ...moviedleSuggestionsOptions(debounced),
-        enabled: focused && !completed && debounced.length >= 2,
-    });
+    const suggestions = useQuery({ ...moviedleSuggestionsOptions(debounced), enabled: focused && active && !completed && debounced.length >= 2 });
+
     const searching = search.trim() !== debounced || suggestions.isFetching;
     const items = !suggestionsOpen || searching || suggestions.error || completed ? [] : (suggestions.data ?? []);
+
     const guess = (action: "guess" | "skip") => {
         Keyboard.dismiss();
-        mutation.mutate(
-            action === "guess"
-                ? { mediadleId: data.mediadleId, action, guess: search.trim() }
-                : { mediadleId: data.mediadleId, action },
-            { onSuccess: () => setSearch("") },
-        );
+        mutation.mutate(action === "guess"
+            ? { mediadleId: data.mediadleId, action, guess: search.trim() }
+            : { mediadleId: data.mediadleId, action }, {
+            onSuccess: () => setSearch(""),
+        });
     };
+
     return (
         <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={[styles.content, styles.gameContent]}
             refreshControl={
-                <RefreshControl tintColor={colors.accent} refreshing={refreshing} onRefresh={() => void refetch()} />
+                <RefreshControl
+                    refreshing={refreshing}
+                    tintColor={colors.accent}
+                    onRefresh={() => void refetch()}
+                />
             }
         >
             <View style={styles.intro}>
                 <AppText muted style={styles.caption}>
                     DAILY POSTER · #{String(data.mediadleId).padStart(4, "0")}
                 </AppText>
-                <AppText muted>One movie. {data.maxAttempts} attempts.</AppText>
             </View>
             <View
                 style={styles.posterWrap}
@@ -86,15 +97,17 @@ function DailyGame({ data, refreshing, refetch }: { data: Daily; refreshing: boo
             >
                 <View style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]}>
                     <Cover
-                        uri={data.result?.cover ?? `data:image/png;base64,${data.pixelatedCover}`}
                         label={data.result?.name ?? "Today's pixelated movie poster"}
+                        uri={data.result?.cover ?? `data:image/png;base64,${data.pixelatedCover}`}
                         style={[styles.poster, { width: posterWidth, height: posterWidth * 3 / 2 }]}
                     />
                 </View>
             </View>
             <View style={styles.controls}>
                 <View style={styles.attemptHeading}>
-                    <AppText style={styles.heading}>Attempts</AppText>
+                    <AppText style={styles.heading}>
+                        Attempts
+                    </AppText>
                     <AppText muted>
                         {data.userData?.attempts ?? 0} / {data.maxAttempts}
                     </AppText>
@@ -106,23 +119,28 @@ function DailyGame({ data, refreshing, refetch }: { data: Daily; refreshing: boo
                             style={[
                                 styles.attempt,
                                 index < (data.userData?.attempts ?? 0) &&
-                                    (data.userData?.succeeded && index === data.userData.attempts - 1
-                                        ? styles.correct
-                                        : styles.used),
+                                (data.userData?.succeeded && index === data.userData.attempts - 1
+                                    ? styles.correct
+                                    : styles.used),
                             ]}
                         />
                     ))}
                 </View>
-                {completed ? (
+                {completed ?
                     <View style={styles.result}>
-                        <AppText heading>{data.userData?.succeeded ? "That's a wrap!" : "End credits"}</AppText>
-                        <AppText>{data.result?.name}</AppText>
+                        <AppText heading>
+                            {data.userData?.succeeded ? "That's a wrap!" : "End credits"}
+                        </AppText>
+                        <AppText>
+                            {data.result?.name}
+                        </AppText>
                         <AppText muted>
                             {data.userData?.succeeded
                                 ? `Found in ${data.userData.attempts} ${data.userData.attempts === 1 ? "try" : "tries"}.`
-                                : "A new poster arrives tomorrow."}
+                                : "A new poster arrives tomorrow."
+                            }
                         </AppText>
-                        {data.result && (
+                        {data.result &&
                             <Button
                                 secondary
                                 label="View movie"
@@ -133,35 +151,36 @@ function DailyGame({ data, refreshing, refetch }: { data: Daily; refreshing: boo
                                     })
                                 }
                             />
-                        )}
+                        }
                     </View>
-                ) : (
+                    :
                     <>
-                        {mutation.data && !mutation.data.correct && (
+                        {mutation.data && !mutation.data.correct &&
                             <AppText accessibilityRole="alert" muted>
                                 {mutation.variables?.action === "skip"
                                     ? "Skipped. The poster is a little clearer."
-                                    : "Not quite. The poster is a little clearer."}
+                                    : "Not quite. The poster is a little clearer."
+                                }
                             </AppText>
-                        )}
+                        }
                         <Field
-                            label="Which movie is it?"
-                            placeholder="Search for a movie title"
                             value={search}
+                            autoCorrect={false}
+                            returnKeyType="search"
+                            label="Which movie is it?"
+                            editable={!mutation.isPending}
+                            placeholder="Search for a movie title"
                             onChangeText={(text) => {
                                 setSearch(text);
                                 setSuggestionsOpen(true);
                             }}
-                            editable={!mutation.isPending}
-                            autoCorrect={false}
-                            returnKeyType="search"
                         />
-                        {!completed && (
+                        {!completed &&
                             <View style={styles.guessActions}>
                                 <Button
                                     label="Guess movie"
-                                    pending={mutation.isPending}
                                     disabled={!search.trim()}
+                                    pending={mutation.isPending}
                                     onPress={() => guess("guess")}
                                 />
                                 <Button
@@ -171,57 +190,70 @@ function DailyGame({ data, refreshing, refetch }: { data: Daily; refreshing: boo
                                     onPress={() => guess("skip")}
                                 />
                             </View>
-                        )}
-                        {search.trim().length >= 2 && searching && <AppText muted>Searching movies…</AppText>}
-                        {suggestionsOpen &&
-                            search.trim().length >= 2 &&
-                            !searching &&
-                            !items.length &&
-                            !suggestions.error && (
-                                <AppText muted>No suggestions. You can still guess the title you entered.</AppText>
-                            )}
-                        {suggestions.error && (
+                        }
+                        {(search.trim().length >= 2 && searching) &&
+                            <AppText muted>
+                                Searching movies...
+                            </AppText>
+                        }
+                        {(suggestionsOpen && search.trim().length >= 2 && !searching && !items.length && !suggestions.error) &&
+                            <AppText muted>
+                                No suggestions. You can still guess the title you entered.
+                            </AppText>
+                        }
+                        {suggestions.error &&
                             <StateView
                                 title="Couldn’t load suggestions"
                                 message={suggestions.error.message}
                                 retry={() => void suggestions.refetch()}
                             />
-                        )}
+                        }
                     </>
-                )}
-                {mutation.error && (
+                }
+                {mutation.error &&
                     <View style={styles.error}>
-                        <AppText accessibilityRole="alert">{mutation.error.message}</AppText>
+                        <AppText accessibilityRole="alert">
+                            {mutation.error.message}
+                        </AppText>
                         <AppText muted>
                             Your progress has been reloaded. Check the attempt count before trying again.
                         </AppText>
                     </View>
-                )}
-                {items.map((item) => (
+                }
+                {items.map((item) =>
                     <Pressable
                         key={item.id}
                         accessibilityRole="button"
-                        accessibilityLabel={`Select ${item.name}`}
                         disabled={mutation.isPending}
+                        accessibilityLabel={`Select ${item.name}`}
+                        style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}
                         onPress={() => {
                             setSearch(item.name);
                             setSuggestionsOpen(false);
                             Keyboard.dismiss();
                         }}
-                        style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}
                     >
-                        <Search size={16} color={colors.muted} />
-                        <AppText style={styles.flex}>{item.name}</AppText>
+                        <Search
+                            size={16}
+                            color={colors.muted}
+                        />
+                        <AppText style={styles.flex}>
+                            {item.name}
+                        </AppText>
                     </Pressable>
-                ))}
+                )}
             </View>
-            <ResetCountdown resetsAt={data.resetsAt} />
+            <ResetCountdown
+                resetsAt={data.resetsAt}
+            />
         </ScrollView>
     );
 }
 
+
 function GameStats({ data }: { data: Daily }) {
     const stats = data.userData?.stats;
+
     const metrics = [
         ["Played", stats?.totalPlayed ?? 0],
         ["Won", stats?.totalWon ?? 0],
@@ -230,33 +262,42 @@ function GameStats({ data }: { data: Daily }) {
         ["Best streak", stats?.bestStreak ?? 0],
         ["Average attempts", (stats?.averageAttempts ?? 0).toFixed(1)],
     ] as const;
+
     const distribution = Array.from({ length: data.maxAttempts }, (_, index) => ({
         attempt: index + 1,
         count: stats?.attempts.filter((item) => item.attempts === index + 1).length ?? 0,
     }));
+
     const maxCount = Math.max(1, ...distribution.map((item) => item.count));
+
     return (
         <FlatList
             data={distribution}
-            keyExtractor={(item) => String(item.attempt)}
             contentContainerStyle={styles.content}
+            keyExtractor={(item) => String(item.attempt)}
             ListHeaderComponent={
                 <View style={styles.stack}>
-                    <AppText heading>Your stats</AppText>
+                    <AppText heading>
+                        Your stats
+                    </AppText>
                     <View style={styles.metrics}>
                         {metrics.map(([label, value]) => (
                             <View key={label} style={styles.metric}>
-                                <AppText style={styles.metricValue}>{value}</AppText>
+                                <AppText style={styles.metricValue}>
+                                    {value}
+                                </AppText>
                                 <AppText muted style={styles.caption}>
                                     {label}
                                 </AppText>
                             </View>
                         ))}
                     </View>
-                    <AppText style={styles.heading}>Attempts per completed puzzle</AppText>
+                    <AppText style={styles.heading}>
+                        Attempts per completed puzzle
+                    </AppText>
                 </View>
             }
-            renderItem={({ item }) => (
+            renderItem={({ item }) =>
                 <View style={styles.distribution}>
                     <AppText muted style={styles.rank}>
                         {item.attempt}
@@ -264,25 +305,31 @@ function GameStats({ data }: { data: Daily }) {
                     <View style={[styles.bar, { flex: Math.max(item.count, 1) }]}>
                         <AppText>{item.count}</AppText>
                     </View>
-                    <View style={{ flex: Math.max(0, maxCount - item.count) }} />
+                    <View style={{ flex: Math.max(0, maxCount - item.count) }}/>
                 </View>
-            )}
-            ListFooterComponent={<ResetCountdown resetsAt={data.resetsAt} />}
+            }
+            ListFooterComponent={
+                <ResetCountdown
+                    resetsAt={data.resetsAt}
+                />
+            }
         />
     );
 }
 
+
 function Leaderboard() {
+    const push = useTabPush();
     const focused = useIsFocused();
     const query = useQuery({ ...moviedleLeaderboardOptions, enabled: focused });
-    const push = useTabPush();
+
     return (
         <QueryPanel query={query}>
             {(data) => (
                 <FlatList
                     data={data.entries}
-                    keyExtractor={(item) => String(item.userId)}
                     contentContainerStyle={styles.content}
+                    keyExtractor={(item) => String(item.userId)}
                     refreshControl={
                         <RefreshControl
                             tintColor={colors.accent}
@@ -292,26 +339,38 @@ function Leaderboard() {
                     }
                     ListHeaderComponent={
                         <View style={styles.stack}>
-                            <AppText heading>Leaderboard</AppText>
-                            <AppText muted>Ranked by wins, best streak, then average attempts.</AppText>
-                            {data.currentUserEntry && (
-                                <AppText style={styles.heading}>Your rank · #{data.currentUserEntry.rank}</AppText>
-                            )}
+                            <AppText heading>
+                                Leaderboard
+                            </AppText>
+                            <AppText muted>
+                                Ranked by wins, best streak, then average attempts.
+                            </AppText>
+                            {data.currentUserEntry &&
+                                <AppText style={styles.heading}>
+                                    Your rank · #{data.currentUserEntry.rank}
+                                </AppText>
+                            }
                         </View>
                     }
-                    renderItem={({ item }) => (
+                    renderItem={({ item }) =>
                         <Pressable
+                            style={styles.leader}
                             accessibilityRole="button"
                             accessibilityLabel={`View ${item.name}'s profile`}
                             onPress={() => push({ pathname: "/people/[userId]", params: { userId: item.userId } })}
-                            style={styles.leader}
                         >
                             <AppText muted style={styles.rank}>
                                 {item.rank}
                             </AppText>
-                            <Cover uri={item.image} label={item.name} style={styles.avatar} />
+                            <Cover
+                                uri={item.image}
+                                label={item.name}
+                                style={styles.avatar}
+                            />
                             <View style={styles.flex}>
-                                <AppText style={styles.heading}>{item.name}</AppText>
+                                <AppText style={styles.heading}>
+                                    {item.name}
+                                </AppText>
                                 <AppText muted style={styles.caption}>
                                     {item.bestStreak} best streak · {item.averageAttempts.toFixed(1)} avg.
                                 </AppText>
@@ -321,7 +380,7 @@ function Leaderboard() {
                                 <AppText muted> wins</AppText>
                             </AppText>
                         </Pressable>
-                    )}
+                    }
                     ListEmptyComponent={
                         <StateView
                             title="The leaderboard is waiting"
@@ -334,37 +393,33 @@ function Leaderboard() {
     );
 }
 
+
 export function MoviedleScreen() {
     const focused = useIsFocused();
     const [tab, setTab] = useState<"play" | "stats" | "leaderboard">("play");
     const query = useQuery({ ...moviedleOptions, enabled: focused });
-    const swipeHandlers = useSwipeTabs(tabs, tab, setTab);
     return (
         <Page title="Moviedle" brand back>
-            <View style={styles.flex} {...swipeHandlers}>
-                <SectionTabs tabs={tabs} value={tab} onChange={setTab} />
-                {tab === "leaderboard" ? (
-                    <Leaderboard />
-                ) : (
+            <PagedTabs tabs={tabs} value={tab} onChange={setTab}>
+                {(value) => value === "leaderboard" ? <Leaderboard /> : (
                     <QueryPanel query={query}>
-                        {(data) =>
-                            tab === "play" ? (
-                                <DailyGame
-                                    key={data.mediadleId}
-                                    data={data}
-                                    refreshing={query.isRefetching}
-                                    refetch={query.refetch}
-                                />
-                            ) : (
-                                <GameStats data={data} />
-                            )
-                        }
+                        {(data) => value === "play" ? (
+                            <DailyGame
+                                key={data.mediadleId}
+                                data={data}
+                                active={tab === "play"}
+                                refreshing={query.isRefetching}
+                                refetch={query.refetch}
+                            />
+                        ) : <GameStats data={data} />}
                     </QueryPanel>
                 )}
-            </View>
+            </PagedTabs>
         </Page>
     );
 }
+
+
 const styles = StyleSheet.create({
     content: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl },
     stack: { gap: spacing.lg },

@@ -9,7 +9,7 @@ describe("mobile activity payloads", () => {
         ["tv", [1, 2], [2, 1], "S1 · E2 → S2 · E1"],
         ["rating", null, 0, "Rating: Not set → 0/10"],
         ["favorite", false, true, "Not a favorite → Favorite"],
-        ["comment", "Old note", "New note", "Notes: Old note → New note"],
+        ["comment", "Old note", "New note", "Comments: Old note → New note"],
         ["platform", null, "PC", "Platform: Not set → PC"],
         ["redo", 0, 1, "Repeats: 0× → 1×"],
     ] as const)("shows both saved values for %s updates", (updateType, oldValue, newValue, expected) => {

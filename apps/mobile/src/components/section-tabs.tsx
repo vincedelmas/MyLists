@@ -8,6 +8,7 @@ interface SectionTabsProps<T extends string> {
     onChange: (value: T) => void;
     onLayout?: ViewProps["onLayout"];
     scrollable?: boolean;
+    showIndicator?: boolean;
     tabs: readonly {
         value: T;
         label: string;
@@ -30,6 +31,7 @@ export function SectionTabs<T extends string>({
     onLayout,
     action,
     scrollable = false,
+    showIndicator = true,
 }: SectionTabsProps<T>) {
     const content = (
         <>
@@ -43,7 +45,7 @@ export function SectionTabs<T extends string>({
                     style={({ pressed }) => [
                         styles.tab,
                         scrollable && styles.scrollTab,
-                        value === key && styles.selected,
+                        showIndicator && value === key && styles.selected,
                         pressed && styles.pressed,
                     ]}
                 >

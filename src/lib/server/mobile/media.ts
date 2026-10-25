@@ -9,6 +9,7 @@ import { InactiveMediaTypeError } from "@/lib/utils/error-classes";
 import { toActor, hasRequiredRole } from "@/lib/server/authorization";
 import { mediaListSearchSchema } from "@/lib/schemas/media-lists.schema";
 import { getMediaDefinition } from "@/lib/media-definitions/definition.registry";
+import { getMediaSortLabel } from "@/lib/utils/media/sorting";
 import { isManualBookId } from "@/lib/media-definitions/books/book.definition.server";
 import type { MediaListDataByType } from "@/lib/server/domain/media/media-list.types";
 import { getMediaRefreshAvailability } from "@/lib/server/domain/media/media-refresh";
@@ -43,8 +44,10 @@ export const getMobileList = async (
     }
 
     const status = input.status ? z.array(z.enum(definition.statuses)).parse(input.status) : undefined;
+    const sortKey = z.enum(definition.sorting.options).parse(input.sorting ?? definition.sorting.default);
     const result = (await container.registries.mediaService.get(mediaType).getMediaList(viewerId, userId, {
         ...input,
+        sorting: getMediaSortLabel(definition, sortKey),
         perPage: 30,
         favorite: input.favorite,
         status,
@@ -60,6 +63,7 @@ export const getMobileList = async (
             name: item.mediaName,
             mediaId: item.mediaId,
             favorite: item.favorite,
+            hasComment: Boolean(item.comment),
             cover: mobileImagePath(item.imageCover),
         })),
     };

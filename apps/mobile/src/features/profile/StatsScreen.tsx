@@ -32,7 +32,7 @@ export function StatsContent({ userId }: { userId?: number }) {
                         ["Favorites", data.totalFavorites],
                         ["Rated", data.totalRated],
                         ["Re-experienced", data.totalRedo],
-                        ["Notes", data.totalComments],
+                        ["Comments", data.totalComments],
                     ] as const;
 
                     return (
@@ -58,6 +58,7 @@ export function StatsContent({ userId }: { userId?: number }) {
                                             (type) => ({
                                                 value: type,
                                                 label: mediaLabels[type],
+                                                mediaType: type,
                                             }),
                                         ),
                                     ]}

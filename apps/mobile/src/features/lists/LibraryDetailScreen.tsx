@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {colors} from "../../theme";
-import {ratingLabel} from "../../lib/ratings";
+import {MediaListDetails} from "../../components/media-list-details";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {Page, StateView} from "../../components/ui";
 import {MediaCard} from "../../components/media-card";
@@ -64,20 +64,21 @@ export function LibraryDetailScreen() {
                         layout={layout}
                         name={item.name}
                         cover={item.cover}
-                        detail={[
-                            item.status,
-                            item.rating == null ? null : ratingLabel(item.rating, first?.ratingSystem ?? "score"),
-                            item.favorite ? "♥" : null,
-                        ]
-                            .filter(Boolean)
-                            .join(" · ")}
                         onPress={() =>
                             push({
                                 pathname: "/media/[mediaType]/[mediaId]",
                                 params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
                             })
                         }
-                    />
+                    >
+                        <MediaListDetails
+                            status={item.status}
+                            rating={item.rating}
+                            favorite={item.favorite}
+                            hasComment={item.hasComment}
+                            ratingSystem={first?.ratingSystem ?? "score"}
+                        />
+                    </MediaCard>
                 )}
 
                 ListFooterComponent={

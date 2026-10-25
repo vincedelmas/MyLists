@@ -1,9 +1,8 @@
 import { useTabPush } from "../../hooks/use-tab-push";
-import { useSwipeTabs } from "../../hooks/use-swipe-tabs";
 import { colors } from "../../theme";
 import { ConfirmationSheet } from "../../components/confirmation-sheet";
 import { useConfirmation } from "../../hooks/use-confirmation";
-import { SectionTabs } from "../../components/section-tabs";
+import { PagedTabs } from "../../components/paged-tabs";
 import { UsersRound, UserRoundCheck, UserRoundPlus, Send, MoreHorizontal, type LucideIcon } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import type { api } from "../../lib/api-client";
@@ -26,24 +25,42 @@ const kinds: { value: Kind; label: string; icon: LucideIcon }[] = [
 
 export function SocialScreen() {
     const focused = useIsFocused();
+    const params = useLocalSearchParams<{ kind?: Kind; userId?: string }>();
+    const userId = params.userId ? Number(params.userId) : undefined;
+    const [kind, setKind] = useState<Kind>(params.kind ?? "followers");
+    const tabs = useMemo(() => userId
+        ? kinds.filter((item) => item.value === "followers" || item.value === "following")
+        : kinds, [userId]);
+    const counts = useInfiniteQuery({ ...socialOptions(kind, userId), enabled: focused });
+    useEffect(() => {
+        if (counts.isSuccess) recordNavigationTiming("data-ready", "/profile/social");
+        else if (counts.isError) recordNavigationTiming("data-error", "/profile/social");
+    }, [counts.isSuccess, counts.isError, counts.dataUpdatedAt]);
+
+    return (
+        <Page title="Connections" brand back>
+            <PagedTabs
+                value={kind}
+                onChange={setKind}
+                tabs={tabs.map((tab) => ({ ...tab, count: counts.data?.pages[0]?.counts[tab.value] }))}
+            >
+                {(value) => <ConnectionsContent kind={value} userId={userId} active={kind === value} />}
+            </PagedTabs>
+        </Page>
+    );
+}
+
+function ConnectionsContent({ kind, userId, active }: { kind: Kind; userId?: number; active: boolean }) {
+    const focused = useIsFocused();
     const push = useTabPush();
     const mutation = useSocialAction();
     const { confirmation, confirm, dismiss } = useConfirmation();
-    const params = useLocalSearchParams<{ kind?: Kind; userId?: string }>();
-    const [kind, setKind] = useState<Kind>(params.kind ?? "followers");
-    const tabs = useMemo(() => params.userId
-        ? kinds.filter((item) => item.value === "followers" || item.value === "following")
-        : kinds, [params.userId]);
-    const swipeHandlers = useSwipeTabs(tabs, kind, setKind);
     const query = useInfiniteQuery({
-        ...socialOptions(kind, params.userId ? Number(params.userId) : undefined),
+        ...socialOptions(kind, userId),
         enabled: focused,
     });
 
-    useEffect(() => {
-        if (query.isSuccess) recordNavigationTiming("data-ready", "/profile/social");
-        else if (query.isError) recordNavigationTiming("data-error", "/profile/social");
-    }, [query.isSuccess, query.isError, query.dataUpdatedAt]);
+
 
     const act = (targetId: number, action: Parameters<typeof api.socialAction>[0]["action"]) => {
         return mutation.mutate({ targetId, action });
@@ -52,15 +69,8 @@ export function SocialScreen() {
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
     return (
-        <Page title="Connections" brand back>
-            <View style={{ flex: 1 }} {...swipeHandlers}>
-                <View style={{ paddingTop: 10 }}>
-                    <SectionTabs
-                        value={kind}
-                        tabs={tabs.map((tab) => ({...tab, count: query.data?.pages[0]?.counts[tab.value]}))}
-                        onChange={setKind}
-                    />
-                </View>
+        <>
+            <View style={{ flex: 1 }}>
                 {mutation.error && (
                     <AppText accessibilityRole="alert" style={{ color: colors.error, padding: 16 }}>
                         {mutation.error.message}
@@ -75,7 +85,7 @@ export function SocialScreen() {
                     onEndReachedThreshold={0.5}
                     keyExtractor={(item) => String(item.id)}
                     onEndReached={() => {
-                        if (focused && query.hasNextPage && !query.isFetching) {
+                        if (focused && active && query.hasNextPage && !query.isFetching) {
                             void query.fetchNextPage();
                         }
                     }}
@@ -178,7 +188,7 @@ export function SocialScreen() {
                                         />
                                     </View>
                                 )}
-                                {kind === "followers" && !params.userId && (
+                                {kind === "followers" && !userId && (
                                     <Pressable
                                         accessibilityRole="button"
                                         accessibilityLabel={`Manage ${item.username}'s connection`}
@@ -218,6 +228,6 @@ export function SocialScreen() {
                 />
             </View>
             <ConfirmationSheet confirmation={confirmation} dismiss={dismiss} />
-        </Page>
+        </>
     );
 }

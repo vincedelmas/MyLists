@@ -138,10 +138,10 @@ export const ProfileHeader = memo(function ProfileHeader({
                         />
                         <View style={{
                             position: "absolute", bottom: 0, right: -4,
-                            borderRadius: 20, borderWidth: 4, borderColor: colors.background,
-                            backgroundColor: colors.primary, paddingHorizontal: 12, paddingVertical: 3,
+                            borderRadius: 16, borderWidth: 3, borderColor: colors.background,
+                            backgroundColor: colors.primary, paddingHorizontal: 9, paddingVertical: 1,
                         }}>
-                            <AppText style={{ fontSize: 12, fontWeight: "700", color: colors.accentText }}>
+                            <AppText style={{ fontSize: 10, lineHeight: 14, fontWeight: "700", color: colors.accentText }}>
                                 Lvl. {data.user.level}
                             </AppText>
                         </View>

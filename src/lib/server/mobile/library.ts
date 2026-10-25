@@ -86,6 +86,7 @@ export const getMobileLibraryDetail = async (
                 name: item.mediaName,
                 mediaId: item.mediaId,
                 favorite: item.favorite,
+                hasComment: Boolean(item.comment),
                 mediaType: item.mediaType,
                 cover: mobileImagePath(
                     getImageUrl(getServerMediaDefinition(item.mediaType).identity.coverDirectory, item.imageCover),
@@ -109,6 +110,7 @@ export const getMobileLibraryDetail = async (
                 name: item.mediaName,
                 mediaId: item.mediaId,
                 favorite: item.favorite,
+                hasComment: Boolean(item.comment),
                 mediaType: item.mediaType,
                 cover: mobileImagePath(item.imageCover),
             })),
@@ -130,6 +132,7 @@ export const getMobileLibraryDetail = async (
             name: item.mediaName,
             mediaId: item.mediaId,
             favorite: item.favorite,
+            hasComment: Boolean(item.userMedia?.comment),
             mediaType: item.mediaType,
             cover: mobileImagePath(item.mediaCover),
         })),

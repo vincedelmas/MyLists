@@ -1,18 +1,21 @@
+import {BottomSheet, RNHostView} from "@expo/ui";
+import {NativeHost} from "../../components/native-host";
+import {FilterValues} from "./filter-values";
 import {useState} from "react";
 import {colors} from "../../theme";
-import {useIsFocused} from "expo-router";
+import {router, useIsFocused} from "expo-router";
 import {mediaLabels} from "../../lib/media";
-import {ratingLabel} from "../../lib/ratings";
+import {MediaListDetails} from "../../components/media-list-details";
 import {useLocalSearchParams} from "expo-router";
 import {useTabPush} from "../../hooks/use-tab-push";
 import type {MediaType} from "../../lib/api-client";
 import {MediaCard} from "../../components/media-card";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import {FlatList, RefreshControl, View} from "react-native";
+import {FlatList, RefreshControl, View, useWindowDimensions} from "react-native";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {parseListFilters, countListFilters} from "./list-filters";
-import {AppText, Button, Field, Page, StateView} from "../../components/ui";
+import {AppText, Button, Field, Page, Select, StateView} from "../../components/ui";
 import {LayoutToggle, type MediaLayout} from "../../components/layout-toggle";
 import {listOptions} from "../../lib/react-query/query-options/media.options";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
@@ -22,13 +25,15 @@ export function TrackingListScreen() {
     const push = useTabPush();
     const focused = useIsFocused();
     const [search, setSearch] = useState("");
+    const [statusesOpen, setStatusesOpen] = useState(false);
+    const { width, height } = useWindowDimensions();
     const [layout, setLayout] = useState<MediaLayout>("grid");
 
     const debounced = useDebouncedValue(search.trim());
     const { mediaType, userId, filters: serializedFilters } = useLocalSearchParams<{ mediaType: MediaType; userId?: string; filters?: string }>();
 
     const filters = parseListFilters(serializedFilters);
-    const count = countListFilters(filters);
+    const count = countListFilters({ ...filters, status: undefined });
     const sorting = filters.sorting ?? getMediaDefinition(mediaType).sorting.default;
 
     const query = useInfiniteQuery({
@@ -55,6 +60,24 @@ export function TrackingListScreen() {
                     onChangeText={setSearch}
                     placeholder="Find a title…"
                 />
+                <View style={{ flexDirection: "row", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                        <AppText muted style={{ fontSize: 12, marginBottom: 8 }}>Status</AppText>
+                        <Button
+                            secondary
+                            label={!filters.status?.length ? "All statuses" : filters.status.length === 1 ? filters.status[0] : `${filters.status.length} statuses`}
+                            onPress={() => setStatusesOpen(true)}
+                        />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Select
+                            label="Sort by"
+                            value={sorting}
+                            options={getMediaSortOptions([mediaType], true)}
+                            onChange={(sorting) => router.setParams({ filters: JSON.stringify({ ...filters, sorting }) })}
+                        />
+                    </View>
+                </View>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                     <Button
                         secondary
@@ -66,11 +89,7 @@ export function TrackingListScreen() {
                             })
                         }
                     />
-                    <AppText muted numberOfLines={1} style={{ fontSize: 12, flex: 1, textAlign: "right" }}>
-                        {getMediaSortOptions([mediaType], true)
-                            .find((item) => item.value === sorting)?.label
-                        }
-                    </AppText>
+
                 </View>
             </View>
             <FlatList
@@ -110,18 +129,21 @@ export function TrackingListScreen() {
                         layout={layout}
                         name={item.name}
                         cover={item.cover}
-                        detail={[
-                            item.status,
-                            item.rating == null ? null : ratingLabel(item.rating, first?.ratingSystem ?? "score"),
-                            item.favorite ? "♥" : null,
-                        ].filter(Boolean).join(" · ")}
                         onPress={() =>
                             push({
                                 pathname: "/media/[mediaType]/[mediaId]",
                                 params: { mediaType: mediaType, mediaId: String(item.mediaId) },
                             })
                         }
-                    />
+                    >
+                        <MediaListDetails
+                            status={item.status}
+                            rating={item.rating}
+                            favorite={item.favorite}
+                            hasComment={item.hasComment}
+                            ratingSystem={first?.ratingSystem ?? "score"}
+                        />
+                    </MediaCard>
                 )}
 
                 ListFooterComponent={
@@ -140,6 +162,25 @@ export function TrackingListScreen() {
                     ) : undefined
                 }
             />
+            {statusesOpen && (
+                <NativeHost>
+                    <BottomSheet isPresented onDismiss={() => setStatusesOpen(false)} snapPoints={["full"]} contentPadding={0}>
+                        <RNHostView matchContents={{ vertical: true }}>
+                            <View style={{ width: width - 32, height: height * 0.72 }}>
+                                <FilterValues
+                                    mediaType={mediaType}
+                                    userId={userId ? Number(userId) : undefined}
+                                    group={{ key: "status", label: "Status", searchable: false, options: [...getMediaDefinition(mediaType).statuses] }}
+                                    selected={filters.status ?? []}
+                                    close={() => setStatusesOpen(false)}
+                                    onChange={(status) => router.setParams({ filters: JSON.stringify({ ...filters, status: status.length ? status : undefined }) })}
+                                />
+                            </View>
+                        </RNHostView>
+                    </BottomSheet>
+                </NativeHost>
+            )}
+
         </Page>
     );
 }

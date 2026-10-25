@@ -15,6 +15,7 @@ export const colors = {
     error: "#FF6467",
     rating: "#F5A91F",
     favorite: "#FF6A68",
+    info: "#58B8F9",
 };
 
 

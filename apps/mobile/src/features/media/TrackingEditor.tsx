@@ -261,13 +261,13 @@ export function TrackingEditor({
             </View>
             <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Edit your notes"
+                accessibilityLabel="Edit your comments"
                 onPress={() => setEditor("notes")}
                 style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             >
                 <MessageSquare size={19} color={colors.muted} />
                 <View style={styles.rowText}>
-                    <AppText style={styles.heading}>Your notes</AppText>
+                    <AppText style={styles.heading}>Your comments</AppText>
                     <AppText muted numberOfLines={3}>
                         {tracking.comment || "Add a thought about this title"}
                     </AppText>
@@ -305,7 +305,7 @@ export function TrackingEditor({
                         {
                             progress: "Edit progress",
                             rating: "Your rating",
-                            notes: "Your notes",
+                            notes: "Your comments",
                             platform: "Platform",
                             season: "Season tracking",
                             repeats: "Repeats",
@@ -326,7 +326,7 @@ export function TrackingEditor({
                     )}
                     {editor === "notes" && (
                         <TrackingField
-                            label="Notes"
+                            label="Comments"
                             initial={tracking.comment ?? ""}
                             pending={pending}
                             multiline

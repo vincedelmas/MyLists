@@ -80,7 +80,7 @@ export function MediaTrackingContent({
                     ) : data.active ? (
                         <Section title="Start tracking">
                             <View style={styles.startTracking}>
-                                <AppText muted>Keep your progress, rating and notes here.</AppText>
+                                <AppText muted>Keep your progress, rating and comments here.</AppText>
                                 <Button label="Add to your list" pending={pending} onPress={add} />
                             </View>
                         </Section>
@@ -113,7 +113,7 @@ export function MediaTrackingContent({
                                 onPress={() =>
                                     Alert.alert(
                                         "Remove from your list?",
-                                        "Your rating, notes, progress and tracking history for this title will be removed.",
+                                        "Your rating, comments, progress and tracking history for this title will be removed.",
                                         [
                                             { text: "Cancel", style: "cancel" },
                                             { text: "Remove", style: "destructive", onPress: remove },

@@ -1,15 +1,17 @@
-import { useCallback, useState } from "react";
+import { formatDate } from "@/lib/utils/formatting/date";
+import { zeroPad } from "@/lib/utils/formatting/number";
+import { useEffect, useState } from "react";
 import { Linking, FlatList, Pressable, RefreshControl, View } from "react-native";
-import { useFocusEffect, useIsFocused } from "expo-router";
+import { useIsFocused } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, UsersRound, ExternalLink, X } from "lucide-react-native";
 import { AppText, Button, Cover, Page, StateView } from "../../components/ui";
-import { SectionTabs } from "../../components/section-tabs";
+import { PagedTabs } from "../../components/paged-tabs";
 import { notificationsOptions } from "../../lib/react-query/query-options/notifications.options";
 import { useNotificationAction } from "../../lib/react-query/query-mutations/notifications.mutations";
 import { useSocialAction } from "../../lib/react-query/query-mutations/social.mutations";
 import { useTabPush } from "../../hooks/use-tab-push";
-import { mediaIcons, mediaLabels } from "../../lib/media";
+import { mediaIcons, mediaLabels, mediaColors } from "../../lib/media";
 import { backendUrl } from "../../lib/config";
 import { colors } from "../../theme";
 
@@ -21,44 +23,40 @@ const messages = {
     feature_request_created: "submitted a feature request",
     feature_request_updated: "updated your feature request",
 };
+const notificationTabs = [
+    { value: "media", label: "Media", icon: Bell },
+    { value: "social", label: "Social", icon: UsersRound },
+] as const;
+
 export function NotificationsScreen() {
     const [type, setType] = useState<"media" | "social">("media");
+    const mutation = useNotificationAction();
+    return (
+        <Page title="Notifications" brand back action={
+            <Button secondary label="Mark read" disabled={mutation.isPending}
+                onPress={() => mutation.mutate({ action: "read", type })} />
+        }>
+            {mutation.error && <AppText accessibilityRole="alert" style={{ padding: 16, color: colors.error }}>{mutation.error.message}</AppText>}
+            <PagedTabs tabs={notificationTabs} value={type} onChange={setType}>
+                {(value) => <NotificationContent type={value} active={type === value} />}
+            </PagedTabs>
+        </Page>
+    );
+}
+
+function NotificationContent({ type, active }: { type: "media" | "social"; active: boolean }) {
     const focused = useIsFocused();
     const query = useQuery({ ...notificationsOptions(type), enabled: focused });
     const mutation = useNotificationAction();
     const { mutate: markRead } = mutation;
     const social = useSocialAction();
     const push = useTabPush();
-    useFocusEffect(
-        useCallback(
-            () => () => {
-                if (query.isSuccess) markRead({ action: "read", type });
-            },
-            [type, query.isSuccess, markRead],
-        ),
-    );
+    useEffect(() => {
+        if (!focused || !active || !query.isSuccess) return;
+        return () => markRead({ action: "read", type });
+    }, [focused, active, type, query.isSuccess, markRead]);
     return (
-        <Page
-            title="Notifications"
-            brand
-            back
-            action={
-                <Button
-                    secondary
-                    label="Mark read"
-                    disabled={mutation.isPending}
-                    onPress={() => mutation.mutate({ action: "read", type })}
-                />
-            }
-        >
-            <SectionTabs
-                value={type}
-                onChange={setType}
-                tabs={[
-                    { value: "media", label: "Media", icon: Bell },
-                    { value: "social", label: "Social", icon: UsersRound },
-                ]}
-            />
+        <>
             {(mutation.error || social.error) && (
                 <AppText accessibilityRole="alert" style={{ padding: 16, color: colors.error }}>
                     {mutation.error?.message ?? social.error?.message}
@@ -118,7 +116,7 @@ export function NotificationsScreen() {
                                         style={{ width: 40, height: 40, borderRadius: 20 }}
                                     />
                                 ) : (
-                                    <Icon size={24} color={colors.accent} />
+                                    <Icon size={24} color={mediaColors[item.mediaType]} />
                                 )}
                                 <View style={{ flex: 1, gap: 5 }}>
                                     <AppText style={{ fontWeight: "600" }}>
@@ -126,7 +124,7 @@ export function NotificationsScreen() {
                                     </AppText>
                                     <AppText muted style={{ fontSize: 12 }}>
                                         {item.kind === "media"
-                                            ? `${mediaLabels[item.mediaType]}${item.season != null ? ` · S${item.season} E${item.episode}${item.isSeasonFinale ? " · Season finale" : ""}` : ""} · ${item.releaseDate ?? "Upcoming"}`
+                                            ? `${mediaLabels[item.mediaType]}${item.season != null ? ` · S${zeroPad(item.season)}.E${zeroPad(item.episode)}${item.isSeasonFinale ? " · Season finale" : ""}` : ""} · ${item.releaseDate ? formatDate(item.releaseDate) : "Upcoming"}`
                                             : messages[item.type]}
                                     </AppText>
                                 </View>
@@ -193,6 +191,6 @@ export function NotificationsScreen() {
                     );
                 }}
             />
-        </Page>
+        </>
     );
 }

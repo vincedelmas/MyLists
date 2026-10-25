@@ -10,7 +10,8 @@ import { AchievementRow } from "./AchievementRow";
 import { ProgressBar } from "../../components/ProgressBar";
 import { ProfileQueryPanel } from "./ProfileQueryPanel";
 import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { AppText, QueryPanel, StateView, Section, Select } from "../../components/ui";
+import { AppText, QueryPanel, StateView, Section } from "../../components/ui";
+import { FilterButtons } from "../../components/filter-buttons";
 import { achievementsOptions, recentAchievementsOptions } from "../../lib/react-query/query-options/profile.options";
 
 export function AchievementsContent({ userId }: { userId?: number }) {
@@ -52,7 +53,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                     </QueryPanel>
                                 </Section>
                                 <AppText heading>All achievements</AppText>
-                                <Select
+                                <FilterButtons
                                     label="Media type"
                                     value={mediaType}
                                     onChange={setMediaType}
@@ -61,6 +62,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                         ...[...new Set(items.map((item) => item.mediaType))].map((value) => ({
                                             value,
                                             label: mediaLabels[value],
+                                            mediaType: value,
                                         })),
                                     ]}
                                 />

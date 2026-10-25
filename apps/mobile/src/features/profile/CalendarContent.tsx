@@ -176,10 +176,12 @@ export function CalendarContent({ userId }: { userId?: number }) {
                                     value={mediaType}
                                     onChange={setMediaType}
                                     options={[
-                                        { value: "all", label: "All media" },
+                                        { value: "all", label: "All media", count: query.data!.items.length },
                                         ...(query.data?.mediaTypes ?? []).map((value) => ({
                                             value,
                                             label: mediaLabels[value],
+                                            mediaType: value,
+                                            count: query.data!.items.filter((item) => item.mediaType === value).length,
                                         })),
                                     ]}
                                 />
@@ -233,7 +235,7 @@ export function CalendarContent({ userId }: { userId?: number }) {
                                     opacity: pressed ? 0.6 : 1,
                                 })}
                             >
-                                <Cover uri={item.cover} label={item.mediaName} />
+                                <Cover uri={item.cover} label={item.mediaName} style={{ width: 72, height: 108 }} />
                                 <View style={{ flex: 1, gap: 6 }}>
                                     <AppText style={{ fontWeight: "600" }}>{item.mediaName}</AppText>
                                     <AppText muted>

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/api/mobile/v1/profile/calendar")({
             GET: ({ request }) =>
                 mobileRequest(request, async (userId) =>
                     getMobileCalendar(
-                        await resolveMobileProfileUser(request, userId),
+                        await resolveMobileProfileUser(request, userId, { ownerOnly: true }),
                         releaseCalendarRangeSchema.parse(Object.fromEntries(new URL(request.url).searchParams)),
                         userId,
                     ),

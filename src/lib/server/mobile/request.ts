@@ -16,6 +16,11 @@ const json = (data: unknown, status = 200) => {
 
 export const mobileRequest = async (request: Request, load: (userId: number) => Promise<unknown>) => {
     try {
+        const user = await getRequestUser(request.headers);
+        if (!user) {
+            return json({ error: { message: "Sign in to continue." } }, 401);
+        }
+
         if (!["GET", "HEAD"].includes(request.method)) {
             const origin = request.headers.get("origin");
 
@@ -26,11 +31,6 @@ export const mobileRequest = async (request: Request, load: (userId: number) => 
             if (!request.headers.get("content-type")?.startsWith("application/json")) {
                 return json({ error: { message: "Send a JSON request body." } }, 415);
             }
-        }
-
-        const user = await getRequestUser(request.headers);
-        if (!user) {
-            return json({ error: { message: "Sign in to continue." } }, 401);
         }
 
         const data = await load(user.id);

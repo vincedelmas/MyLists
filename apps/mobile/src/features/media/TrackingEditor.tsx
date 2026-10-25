@@ -4,7 +4,7 @@ import {ChevronRight, Heart, MessageSquare, Pencil, RotateCcw, Star} from "lucid
 import {AppText, Button, Field, Select} from "../../components/ui";
 import {Rating} from "../../components/rating";
 import {RatingInput} from "./RatingInput";
-import {TrackingSheet} from "./tracking-sheet";
+import {ActionSheet} from "../../components/action-sheet";
 import {TrackingField} from "./TrackingField";
 import type {MobileMedia, UpdateInput} from "../../lib/api-client";
 import {colors, spacing, statusColors} from "../../theme";
@@ -300,7 +300,7 @@ export function TrackingEditor({
                 </Pressable>
             ) : null}
             {editor && (
-                <TrackingSheet
+                <ActionSheet
                     title={
                         {
                             progress: "Edit progress",
@@ -399,7 +399,7 @@ export function TrackingEditor({
                             )}
                         </View>
                     )}
-                </TrackingSheet>
+                </ActionSheet>
             )}
         </View>
     );

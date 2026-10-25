@@ -5,8 +5,10 @@ import {backendUrl} from "../../lib/config";
 import {openBrowserAsync} from "expo-web-browser";
 import {Alert, Pressable, View} from "react-native";
 import {AppText, Content, Page, Section} from "../../components/ui";
-import {ChartNoAxesCombined, Clapperboard, ExternalLink, HeartHandshake, History, LibraryBig, TrendingUp, Trophy} from "lucide-react-native";
+import {ChartNoAxesCombined, Clapperboard, ExternalLink, HeartHandshake, History, LibraryBig, Coffee, TrendingUp, Trophy} from "lucide-react-native";
 
+
+const nativePages = new Set(["/moviedle", "/hall-of-fame", "/trends"]);
 
 const sections = [
     {
@@ -96,9 +98,9 @@ export function CommunityScreen() {
                             <Pressable
                                 key={path}
                                 disabled={opening}
-                                accessibilityRole={path === "/moviedle" ? "button" : "link"}
-                                onPress={() => path === "/moviedle" ? push("/moviedle") : void open(path)}
-                                accessibilityLabel={path === "/moviedle" ? title : `${title}. Opens in browser`}
+                                accessibilityRole={nativePages.has(path) ? "button" : "link"}
+                                onPress={() => nativePages.has(path) ? push("/moviedle") : void open(path)}
+                                accessibilityLabel={nativePages.has(path) ? title : `${title}. Opens in browser`}
                                 style={({ pressed }) => ({
                                     gap: 14,
                                     padding: 16,
@@ -118,11 +120,24 @@ export function CommunityScreen() {
                                     </AppText>
                                 </View>
 
-                                {path !== "/moviedle" && <ExternalLink size={17} color={colors.muted}/>}
+                                {!nativePages.has(path) && <ExternalLink size={17} color={colors.muted}/>}
                             </Pressable>
                         )}
                     </Section>
                 ))}
+                <Pressable accessibilityRole="link" accessibilityLabel="Buy me a coffee. Opens in browser" disabled={opening}
+                           onPress={() => void open("https://www.buymeacoffee.com/crossoufire")} style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    paddingVertical: 20,
+                    opacity: pressed ? 0.6 : 1
+                })}>
+                    <Coffee size={18} color={colors.rating}/>
+                    <AppText style={{ color: colors.rating, fontSize: 13 }}>Buy me a coffee</AppText>
+                    <ExternalLink size={14} color={colors.muted}/>
+                </Pressable>
             </Content>
         </Page>
     );

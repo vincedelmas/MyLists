@@ -73,13 +73,15 @@ export const getMobileLibraryDetail = async (
             .map((setting) => setting.mediaType)
             .filter((type) => type !== "movies");
 
-        const visible = viewerId === userId || (await services.profile.getContinueVisibility(userId));
+        const showPreview = await services.profile.getContinueVisibility(userId);
+        const visible = viewerId === userId || showPreview;
         const all = visible ? await getContinueItems(userId, active) : [];
 
         return {
             page: input.page,
             title: "Continue",
             visible,
+            showPreview,
             ratingSystem: user.ratingSystem,
             pages: Math.ceil(all.length / 30),
             items: all.slice((input.page - 1) * 30, input.page * 30).map((item) => ({

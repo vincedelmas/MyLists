@@ -5,13 +5,14 @@ import {Page, StateView} from "../../components/ui";
 import {colors} from "../../theme";
 import {historyOptions} from "../../lib/react-query/query-options/history.options";
 import {FeedRows} from "./ProfileFeed";
+import {ConfirmationSheet} from "../../components/confirmation-sheet";
 import {useFeedDeletion} from "./use-feed-deletion";
 
 export function FeedScreen() {
     const { userId } = useLocalSearchParams<{ userId?: string }>();
     const focused = useIsFocused();
     const query = useInfiniteQuery({ ...historyOptions(userId ? Number(userId) : undefined), enabled: focused });
-    const deleteUpdate = useFeedDeletion();
+    const { deleteUpdate, confirmationProps } = useFeedDeletion();
     const items = query.data?.pages.flatMap(page => page.items) ?? [];
 
     return (
@@ -32,6 +33,7 @@ export function FeedScreen() {
                 ListFooterComponent={query.isFetchingNextPage ? <StateView loading/> : items.length && query.error ?
                     <StateView title="Couldn’t load more updates" retry={() => void query.fetchNextPage()}/> : undefined}
             />
+            <ConfirmationSheet {...confirmationProps}/>
         </Page>
     );
 }

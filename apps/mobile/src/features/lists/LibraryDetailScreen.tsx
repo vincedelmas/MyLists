@@ -2,7 +2,8 @@ import {useState} from "react";
 import {ContinueActions} from "../profile/ContinueActions";
 import {Page} from "../../components/ui";
 import {MediaList} from "../../components/media-list";
-import {useInfiniteQuery} from "@tanstack/react-query";
+import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
+import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
 import {LayoutToggle, type MediaLayout} from "../../components/layout-toggle";
 import {libraryDetailOptions} from "../../lib/react-query/query-options/library.options";
@@ -10,7 +11,9 @@ import {libraryDetailOptions} from "../../lib/react-query/query-options/library.
 
 export function LibraryDetailScreen() {
     const focused = useIsFocused();
-    const [layout, setLayout] = useState<MediaLayout>("grid");
+    const settings = useQuery({ ...settingsOptions, enabled: focused });
+    const [selectedLayout, setLayout] = useState<MediaLayout | null>(null);
+    const layout = selectedLayout ?? (settings.data?.gridListView === false ? "list" : "grid");
     const { kind, id, userId } = useLocalSearchParams<{ kind: "collection" | "dynamic" | "continue"; id?: string; userId?: string }>();
     const query = useInfiniteQuery({
         ...libraryDetailOptions(kind, id ? Number(id) : undefined, userId ? Number(userId) : undefined),

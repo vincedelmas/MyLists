@@ -74,6 +74,13 @@ describe("mobile library access", () => {
         expect(mocks.visibility).toHaveBeenCalledWith(20);
         expect(mocks.continue).not.toHaveBeenCalled();
     });
+    it("hides the owner's profile preview while keeping their Continue list accessible", async () => {
+        mocks.visibility.mockResolvedValue(false);
+        mocks.continue.mockResolvedValue([]);
+        const data = await getMobileLibraryDetail(10, { kind: "continue", page: 1, search: "" }, 10);
+        expect(data).toMatchObject({ visible: true, showPreview: false });
+        expect(mocks.continue).toHaveBeenCalledWith(10, []);
+    });
     it("loads a visible Continue list for the subject", async () => {
         mocks.visibility.mockResolvedValue(true);
         mocks.continue.mockResolvedValue([]);

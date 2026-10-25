@@ -1,3 +1,4 @@
+import {deleteConfirmedAccount} from "@/lib/server/domain/account/delete-account";
 import {APIError} from "better-auth/api";
 import {auth} from "@/lib/server/core/auth";
 import {MediaType} from "@/lib/utils/enums";
@@ -13,7 +14,6 @@ import {saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     deleteAccountSchema,
-    DeleteAccountForm,
     downloadListAsCsvSchema,
     generalSettingsSchema,
     highlightedMediaSearchSchema,
@@ -165,33 +165,7 @@ export const postDeleteUserAccount = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(deleteAccountSchema)
     .handler(async ({ data: { currentPassword, confirmation }, context: { currentUser } }) => {
-        const accountService = await getContainer().then((c) => c.services.account);
-        const { hasPassword, providers } = accountService.getAccountSecurity(currentUser.id);
-
-        if (hasPassword || providers.length === 0) {
-            if (!currentPassword) {
-                throw new ValidationError<Pick<PasswordSettingsForm, "currentPassword">>("currentPassword", "Current password is required");
-            }
-            try {
-                await auth.api.verifyPassword({
-                    headers: getRequest().headers,
-                    body: { password: currentPassword },
-                });
-            }
-            catch (error) {
-                if (!(error instanceof APIError) || error.body?.code !== "INVALID_PASSWORD") {
-                    throw error;
-                }
-
-                throw new ValidationError<Pick<PasswordSettingsForm, "currentPassword">>("currentPassword", "Current password incorrect");
-            }
-        }
-
-        if (!hasPassword && providers.length > 0 && confirmation !== "DELETE") {
-            throw new ValidationError<DeleteAccountForm>("confirmation", 'Type DELETE to confirm account deletion.');
-        }
-
-        const result = accountService.deleteUserAccount({ userId: currentUser.id, type: "manual" });
+        const result = await deleteConfirmedAccount(currentUser.id, getRequest().headers, { currentPassword, confirmation });
 
         clearAdminCookie();
 

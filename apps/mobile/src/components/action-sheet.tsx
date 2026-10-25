@@ -1,21 +1,23 @@
-import {trackingSheetModifiers} from "./tracking-sheet-insets";
+import {actionSheetModifiers} from "./action-sheet-insets";
 import type {ReactNode} from "react";
 import {BottomSheet, RNHostView} from "@expo/ui";
 import {ScrollView, StyleSheet, View, useWindowDimensions} from "react-native";
-import {NativeHost} from "../../components/native-host";
-import {AppText} from "../../components/ui";
-import {colors, spacing} from "../../theme";
+import {NativeHost} from "./native-host";
+import {AppText} from "./ui";
+import {colors, spacing} from "../theme";
 
-export function TrackingSheet({
-                                  title,
-                                  error,
-                                  dismiss,
-                                  children,
-                              }: {
+export function ActionSheet({
+                                title,
+                                error,
+                                dismiss,
+                                children,
+                                compact = false,
+                            }: {
     title: string;
     error?: string;
     dismiss: () => void;
     children: ReactNode;
+    compact?: boolean;
 }) {
     const { width, height } = useWindowDimensions();
     return (
@@ -23,7 +25,7 @@ export function TrackingSheet({
             <BottomSheet
                 isPresented
                 onDismiss={dismiss}
-                modifiers={trackingSheetModifiers}
+                modifiers={actionSheetModifiers}
                 containerColor={colors.surface}
             >
                 <RNHostView matchContents={{ vertical: true }}>
@@ -31,9 +33,9 @@ export function TrackingSheet({
                         <ScrollView
                             style={{ flexGrow: 0 }}
                             keyboardShouldPersistTaps="handled"
-                            contentContainerStyle={styles.content}
+                            contentContainerStyle={[styles.content, compact && { gap: spacing.lg }]}
                         >
-                            <AppText heading>{title}</AppText>
+                            {!compact && <AppText heading>{title}</AppText>}
                             {error && (
                                 <AppText accessibilityRole="alert" style={styles.error}>
                                     {error}

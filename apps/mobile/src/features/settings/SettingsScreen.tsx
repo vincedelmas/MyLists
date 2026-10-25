@@ -1,6 +1,9 @@
 import {useTabPush} from "../../hooks/use-tab-push";
 import {useIsFocused} from "expo-router";
-import {Alert, View} from "react-native";
+import {LogOut} from "lucide-react-native";
+import {ConfirmationSheet} from "../../components/confirmation-sheet";
+import {useConfirmation} from "../../hooks/use-confirmation";
+import {View} from "react-native";
 import {useQuery} from "@tanstack/react-query";
 import {Button, FieldGroup, ListItem, Text} from "@expo/ui";
 import {NativeHost} from "../../components/native-host";
@@ -13,6 +16,7 @@ export function SettingsScreen() {
     const push = useTabPush();
     const focused = useIsFocused();
     const query = useQuery({ ...settingsOptions, enabled: focused });
+    const { confirmation, confirm, dismiss } = useConfirmation();
     const signOut = useSignOutMutation();
     return (
         <Page title="Settings">
@@ -39,12 +43,16 @@ export function SettingsScreen() {
                                     >
                                         Content & lists
                                     </ListItem>
+                                    <ListItem onPress={() => push("/settings/profile")} supportingText="Continue preview and pinned lists & collections">Profile
+                                        customization</ListItem>
                                     <ListItem
                                         onPress={() => push("/settings/security")}
                                         supportingText="Password and account access"
                                     >
-                                        Security
+                                        Email & password
                                     </ListItem>
+                                    <ListItem onPress={() => push("/settings/apps")} supportingText="Manage assistant access to your lists">Connected apps</ListItem>
+                                    <ListItem onPress={() => push("/settings/danger")} supportingText="Permanently delete your account">Danger zone</ListItem>
                                 </FieldGroup.Section>
                                 <FieldGroup.Section>
                                     <Button
@@ -52,18 +60,14 @@ export function SettingsScreen() {
                                         variant="outlined"
                                         disabled={signOut.isPending}
                                         onPress={() =>
-                                            Alert.alert(
-                                                "Sign out?",
-                                                "You’ll need to sign in again to access your lists.",
-                                                [
-                                                    { text: "Cancel", style: "cancel" },
-                                                    {
-                                                        text: "Sign out",
-                                                        style: "destructive",
-                                                        onPress: () => signOut.mutate(),
-                                                    },
-                                                ],
-                                            )
+                                            confirm({
+                                                title: "Sign out?",
+                                                message: "You’ll need to sign in again to access your lists.",
+                                                label: "Sign out",
+                                                cancelLabel: "Stay signed in",
+                                                icon: LogOut,
+                                                onConfirm: () => signOut.mutate()
+                                            })
                                         }
                                     />
                                     <FieldGroup.SectionFooter>
@@ -75,6 +79,7 @@ export function SettingsScreen() {
                     </View>
                 )}
             </QueryPanel>
+            <ConfirmationSheet confirmation={confirmation} dismiss={dismiss}/>
         </Page>
     );
 }

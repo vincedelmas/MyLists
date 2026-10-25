@@ -16,6 +16,8 @@ function ContentForm({ data }: { data: MobileSettings }) {
     const mutation = useSettingsMutation();
     const [lists, setLists] = useState(data.lists);
     const [ratingSystem, setRatingSystem] = useState(data.ratingSystem);
+    const [gridListView, setGridListView] = useState(data.gridListView);
+    const [searchSelector, setSearchSelector] = useState(data.searchSelector);
     const [autoMove, setAutoMove] = useState(data.autoMoveCompletedTvToOnHold);
 
     const changeList = (mediaType: MediaType, key: "active" | "releaseNotificationsEnabled", value: boolean) => {
@@ -29,8 +31,8 @@ function ContentForm({ data }: { data: MobileSettings }) {
         mutation.mutate({
             ratingSystem,
             section: "content",
-            gridListView: data.gridListView,
-            searchSelector: data.searchSelector,
+            gridListView,
+            searchSelector,
             autoMoveCompletedTvToOnHold: autoMove,
             anime: lists.find((item) => item.mediaType === "anime")!.active,
             games: lists.find((item) => item.mediaType === "games")!.active,
@@ -74,6 +76,27 @@ function ContentForm({ data }: { data: MobileSettings }) {
                             </Text>
                         </FieldGroup.SectionFooter>
                     </FieldGroup.Section>
+                    <FieldGroup.Section title="Display preferences">
+                        <Column spacing={8}>
+                            <Text>Navbar Search Selector</Text>
+                            <Picker selectedValue={searchSelector} enabled={!mutation.isPending} onValueChange={value => {
+                                setSearchSelector(value);
+                                mutation.reset();
+                            }}>
+                                <Picker.Item value="tmdb" label="Media"/><Picker.Item value="books" label="Books"/><Picker.Item value="igdb" label="Games"/><Picker.Item
+                                value="manga" label="Manga"/><Picker.Item value="users" label="Users"/>
+                            </Picker>
+                        </Column>
+                        <Column spacing={8}>
+                            <Text>Default List View Mode</Text>
+                            <Picker selectedValue={gridListView ? "grid" : "list"} enabled={!mutation.isPending} onValueChange={value => {
+                                setGridListView(value === "grid");
+                                mutation.reset();
+                            }}>
+                                <Picker.Item value="grid" label="Grid"/><Picker.Item value="list" label="List"/>
+                            </Picker>
+                        </Column>
+                    </FieldGroup.Section>
                     <FieldGroup.Section title="Tracking preferences">
                         <Column spacing={8}>
                             <Text>Rating system</Text>
@@ -87,10 +110,10 @@ function ContentForm({ data }: { data: MobileSettings }) {
                             >
                                 <Picker.Item
                                     value="score"
-                                    label="Score · 0 to 10"/>
+                                    label="Score (numeric)"/>
                                 <Picker.Item
                                     value="feeling"
-                                    label="Feelings"
+                                    label="Feeling (emoticons)"
                                 />
                             </Picker>
                         </Column>

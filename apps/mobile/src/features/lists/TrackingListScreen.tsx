@@ -6,7 +6,8 @@ import {useLocalSearchParams} from "expo-router";
 import {useTabPush} from "../../hooks/use-tab-push";
 import type {MediaType} from "../../lib/api-client";
 import {MediaList} from "../../components/media-list";
-import {useInfiniteQuery} from "@tanstack/react-query";
+import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
+import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
 import {View} from "react-native";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
@@ -22,7 +23,9 @@ export function TrackingListScreen() {
     const focused = useIsFocused();
     const [search, setSearch] = useState("");
     const [statusesOpen, setStatusesOpen] = useState(false);
-    const [layout, setLayout] = useState<MediaLayout>("grid");
+    const settings = useQuery({ ...settingsOptions, enabled: focused });
+    const [selectedLayout, setLayout] = useState<MediaLayout | null>(null);
+    const layout = selectedLayout ?? (settings.data?.gridListView === false ? "list" : "grid");
 
     const debounced = useDebouncedValue(search.trim());
     const { mediaType, userId, filters: serializedFilters } = useLocalSearchParams<{ mediaType: MediaType; userId?: string; filters?: string }>();

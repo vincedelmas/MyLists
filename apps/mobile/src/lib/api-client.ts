@@ -1,3 +1,6 @@
+import type * as Community from "../../../../src/lib/server/mobile/community";
+import type {getMcpConnections} from "../../../../src/lib/server/domain/mcp/mcp.repository";
+import type {DeleteAccountForm} from "../../../../src/lib/schemas/user-settings.schema";
 import type * as Moviedle from "../../../../src/lib/server/mobile/moviedle";
 import {backendUrl} from "./config";
 import {authClient} from "./auth-client";
@@ -96,6 +99,13 @@ const subjectPath = (path: string, userId?: number) =>
     userId === undefined ? path : `${path}?${queryString({ userId })}`;
 
 export const api = {
+    trends: (signal?: AbortSignal) => request<Result<typeof Community.getMobileTrends>>("/trends", signal),
+    hallOfFame: (input: Parameters<typeof Community.getMobileHallOfFame>[1], signal?: AbortSignal) => request<Result<typeof Community.getMobileHallOfFame>>(`/hall-of-fame?${queryString(input)}`, signal),
+    profileSettings: (signal?: AbortSignal) => request<Result<typeof Settings.getMobileProfileSettings>>("/settings/profile", signal),
+    accountSecurity: (signal?: AbortSignal) => request<Result<typeof Settings.getMobileAccountSecurity>>("/settings/security", signal),
+    connectedApps: (signal?: AbortSignal) => request<Result<typeof getMcpConnections>>("/settings/apps", signal),
+    disconnectApp: (clientId: string) => request<{ disconnected: boolean }>("/settings/apps", undefined, "POST", { clientId }),
+    deleteAccount: (input: DeleteAccountForm) => request<{ deleted: boolean }>("/settings/security", undefined, "DELETE", input),
     moviedle: (signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedle>>("/moviedle", signal),
     moviedleSuggestions: (query: string, signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedleSuggestions>>(`/moviedle/suggestions?${queryString({ query })}`, signal),
     moviedleLeaderboard: (signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedleLeaderboard>>("/moviedle/leaderboard", signal),

@@ -7,6 +7,7 @@ import {colors} from "../../theme";
 import {mediaIcons, mediaColors} from "../../lib/media";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {AppText, Cover, QueryPanel, Card} from "../../components/ui";
+import {ConfirmationSheet} from "../../components/confirmation-sheet";
 import {useFeedDeletion} from "./use-feed-deletion";
 import {formatActivity} from "./profile-formatting";
 import {profileActivityOptions, profileFollowsFeedOptions} from "../../lib/react-query/query-options/profile.options";
@@ -17,7 +18,7 @@ type RatingSystem = MobileProfile["user"]["ratingSystem"];
 export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSystem; userId?: number }) {
     const focused = useIsFocused();
     const push = useTabPush();
-    const deleteUpdate = useFeedDeletion();
+    const { deleteUpdate, confirmationProps } = useFeedDeletion();
     const mine = useQuery({ ...profileActivityOptions(userId), enabled: focused });
     const following = useQuery({ ...profileFollowsFeedOptions(userId), enabled: focused });
     return (
@@ -64,6 +65,7 @@ export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSyst
                     )}
                 </View>
             ))}
+            <ConfirmationSheet {...confirmationProps}/>
         </>
     );
 }

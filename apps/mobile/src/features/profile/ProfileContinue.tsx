@@ -14,7 +14,7 @@ export function ProfileContinue({ userId }: { userId?: number }) {
     const push = useTabPush();
     const query = useQuery({ ...profileContinueOptions(userId), enabled: focused });
 
-    if (userId && query.data && "visible" in query.data && !query.data.visible) return null;
+    if (query.data && "showPreview" in query.data && !query.data.showPreview) return null;
 
     return (
         <View style={{ gap: 12 }}>

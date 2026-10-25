@@ -1,85 +1,87 @@
 import {useState} from "react";
 import {View} from "react-native";
-import {colors} from "../../theme";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
+import {launchImageLibraryAsync} from "expo-image-picker";
 import type {MobileSettings} from "../../lib/api-client";
 import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
 import {useSettingsMutation} from "../../lib/react-query/query-mutations/settings.mutations";
-import {AppText, Button, Content, Field, Page, QueryPanel, Section, Select, uiStyles} from "../../components/ui";
+import {AppText, Button, Content, Cover, Field, Page, QueryPanel, Section, Select, uiStyles} from "../../components/ui";
+import {SettingsFeedback} from "./settings-feedback";
 
+type ImageKey = "profileImage" | "backgroundImage";
 
 function GeneralForm({ data }: { data: MobileSettings }) {
     const mutation = useSettingsMutation();
     const [privacy, setPrivacy] = useState(data.privacy);
     const [username, setUsername] = useState(data.username);
+    const [images, setImages] = useState<Partial<Record<ImageKey, { uri: string; data: string }>>>({});
+    const [imageError, setImageError] = useState("");
+    const [picking, setPicking] = useState(false);
+    const pick = async (key: ImageKey) => {
+        setImageError("");
+        setPicking(true);
+        try {
+            const result = await launchImageLibraryAsync({
+                mediaTypes: ["images"],
+                allowsEditing: true,
+                aspect: key === "profileImage" ? [1, 1] : [3, 1],
+                quality: 0.9,
+                base64: true
+            });
+            if (!result.canceled) {
+                const image = result.assets[0];
+                if (image.base64!.length > 13_650_000) {
+                    setImageError("Image must be less than 10MB.");
+                    return;
+                }
+                setImages(current => ({ ...current, [key]: { uri: image.uri, data: image.base64! } }));
+                mutation.reset();
+            }
+        }
+        catch {
+            setImageError("Couldn’t open your photos. Please try again.");
+        }
+        finally {
+            setPicking(false);
+        }
+    };
 
     return (
         <Content>
-            <Section title="Profile">
-                <View style={uiStyles.padded}>
-                    <Field
-                        maxLength={15}
-                        label="Username"
-                        value={username}
-                        autoCorrect={false}
-                        autoCapitalize="none"
-                        editable={!mutation.isPending}
-                        onChangeText={(value) => {
-                            setUsername(value);
-                            mutation.reset();
-                        }}
-                    />
-                    <Select
-                        value={privacy}
-                        label="Profile visibility"
-                        disabled={mutation.isPending}
-                        onChange={(value) => {
-                            setPrivacy(value);
-                            mutation.reset();
-                        }}
-                        options={[
-                            { value: "public", label: "Public" },
-                            { value: "restricted", label: "Signed-in users" },
-                            { value: "private", label: "Private · accepted followers" },
-                        ]}
-                    />
-                    <AppText muted>
-                        Public profiles are visible to everyone. Restricted profiles require sign-in. Private profile
-                        content is visible to you and accepted followers.
-                    </AppText>
+            <Section title="Identity & Access"><View style={uiStyles.padded}>
+                <Field maxLength={15} label="Username" value={username} autoCorrect={false} autoCapitalize="none" editable={!mutation.isPending} onChangeText={value => {
+                    setUsername(value);
+                    mutation.reset();
+                }}/>
+                <Select value={privacy} label="Privacy" disabled={mutation.isPending} onChange={value => {
+                    setPrivacy(value);
+                    mutation.reset();
+                }} options={[{ value: "public", label: "Public" }, { value: "restricted", label: "Restricted" }, { value: "private", label: "Private" }]}/>
+                <AppText muted style={{ fontSize: 12 }}>Public: anyone. Restricted: signed-in users. Private: only you and approved followers can see your profile, lists, stats,
+                    and media updates.</AppText>
+            </View></Section>
+            <Section title="Profile Personalized Covers"><View style={uiStyles.padded}>
+                <AppText muted style={{ fontSize: 12 }}>Personalize your avatar and profile backdrop.</AppText>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+                    <Cover uri={images.profileImage?.uri ?? data.image} style={{ width: 80, height: 80, borderRadius: 40 }}/>
+                    <Button secondary label="Choose profile image" disabled={picking || mutation.isPending} onPress={() => void pick("profileImage")}/>
                 </View>
-            </Section>
-            {mutation.error &&
-                <AppText accessibilityRole="alert" style={{ color: colors.error }}>
-                    {mutation.error.message}
-                </AppText>
-            }
-
-            {mutation.isSuccess &&
-                <AppText accessibilityRole="alert" style={{ color: colors.accent }}>
-                    Profile settings saved.
-                </AppText>
-            }
-            <Button
-                label="Save changes"
-                pending={mutation.isPending}
-                onPress={() => mutation.mutate({ section: "general", username: username.trim(), privacy })}
-            />
+                <Cover uri={images.backgroundImage?.uri ?? data.backgroundImage} style={{ width: "100%", height: 110 }}/>
+                <Button secondary label="Choose background image" disabled={picking || mutation.isPending} onPress={() => void pick("backgroundImage")}/>
+            </View></Section>
+            <SettingsFeedback error={imageError || mutation.error?.message} success={mutation.isSuccess && "Profile settings saved."}/>
+            <Button label="Save changes" pending={mutation.isPending} disabled={picking} onPress={() => mutation.mutate({
+                section: "general", username: username.trim(), privacy,
+                profileImage: images.profileImage ? { data: images.profileImage.data, mimeType: "image/jpeg" } : undefined,
+                backgroundImage: images.backgroundImage ? { data: images.backgroundImage.data, mimeType: "image/jpeg" } : undefined,
+            }, { onSuccess: () => setImages({}) })}/>
         </Content>
     );
 }
 
-
 export function GeneralSettingsScreen() {
     const focused = useIsFocused();
     const query = useQuery({ ...settingsOptions, enabled: focused });
-
-    return (
-        <Page title="General settings" back>
-            <QueryPanel query={query}>
-                {(data) => <GeneralForm data={data}/>}
-            </QueryPanel>
-        </Page>
-    );
+    return <Page title="General" back><QueryPanel query={query}>{data => <GeneralForm data={data}/>}</QueryPanel></Page>;
 }

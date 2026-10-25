@@ -13,7 +13,7 @@ import {getGamesColumns} from "@/lib/client/components/media/games/GamesListColu
 import {GamesUserDetails} from "@/lib/client/components/media/games/GamesUserDetails";
 import {GamesExtraSections} from "@/lib/client/components/media/games/GamesExtraSections";
 import {GamesUpComingAlert} from "@/lib/client/components/media/games/GamesUpComingAlert";
-import {getGamesContinueProgress} from "@/lib/client/components/media/games/continue-progress";
+import {getGamesContinueProgress} from "@/lib/utils/media/continue";
 import {gameSearchFilterDefinition} from "@/lib/client/components/media/games/GameSearchFilters";
 
 

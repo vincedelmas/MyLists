@@ -17,8 +17,8 @@ import {useResolveMutation} from "../../lib/react-query/query-mutations/media.mu
 
 const providers = [
     { value: "tmdb", label: "Movies & TV", icon: Monitor },
-    { value: "igdb", label: "Games", icon: Gamepad2 },
     { value: "books", label: "Books", icon: Library },
+    { value: "igdb", label: "Games", icon: Gamepad2 },
     { value: "manga", label: "Manga", icon: BookImage },
     { value: "users", label: "People", icon: UserRound },
 ] as const;
@@ -65,6 +65,7 @@ export function SearchScreen() {
                 ListHeaderComponent={
                     <View style={{ padding: 16, gap: 12 }}>
                         <Field
+                            clearable
                             key={focusKey}
                             autoFocus
                             label="Search"

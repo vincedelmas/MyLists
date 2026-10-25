@@ -20,8 +20,9 @@ interface MediaListItem {
     hasComment: boolean;
 }
 
-interface MediaListProps {
-    items: MediaListItem[];
+interface MediaListProps<T extends MediaListItem> {
+    items: T[];
+    onItemPress?: (item: T) => void;
     layout: MediaLayout;
     ratingSystem: "score" | "feeling";
     emptyTitle: string;
@@ -39,7 +40,7 @@ interface MediaListProps {
     };
 }
 
-export function MediaList({ items, layout, ratingSystem, emptyTitle, emptyMessage, footer, query }: MediaListProps) {
+export function MediaList<T extends MediaListItem>({ items, layout, ratingSystem, emptyTitle, emptyMessage, footer, query, onItemPress }: MediaListProps<T>) {
     const focused = useIsFocused();
     const push = useTabPush();
 
@@ -79,7 +80,7 @@ export function MediaList({ items, layout, ratingSystem, emptyTitle, emptyMessag
                     layout={layout}
                     name={item.name}
                     cover={item.cover}
-                    onPress={() => push({
+                    onPress={() => onItemPress ? onItemPress(item) : push({
                         pathname: "/media/[mediaType]/[mediaId]",
                         params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
                     })}

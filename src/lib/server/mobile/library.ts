@@ -1,11 +1,13 @@
 import * as z from "zod";
-import { toActor } from "@/lib/server/authorization";
-import { getContainer } from "@/lib/server/core/container";
-import { mobileImagePath } from "@/lib/server/mobile/images";
-import { getImageUrl } from "@/lib/server/core/images/image-url";
-import { getContinueItems } from "@/lib/server/domain/continue/continue.repository";
-import { getServerMediaDefinition } from "@/lib/media-definitions/definition.registry.server";
-import { dynamicListsRepository } from "@/lib/server/domain/dynamic-lists/dynamic-lists.repository";
+import {getTvContinueProgress, getBooksContinueProgress, getGamesContinueProgress, getMangaContinueProgress} from "@/lib/utils/media/continue";
+import {mediaTypeMediaIdSchema} from "@/lib/schemas/common.schema";
+import {toActor} from "@/lib/server/authorization";
+import {getContainer} from "@/lib/server/core/container";
+import {mobileImagePath} from "@/lib/server/mobile/images";
+import {getImageUrl} from "@/lib/server/core/images/image-url";
+import {getContinueItems} from "@/lib/server/domain/continue/continue.repository";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
+import {dynamicListsRepository} from "@/lib/server/domain/dynamic-lists/dynamic-lists.repository";
 import {
     getDynamicListResults,
     getDynamicListSummaries,
@@ -81,6 +83,10 @@ export const getMobileLibraryDetail = async (
             ratingSystem: user.ratingSystem,
             pages: Math.ceil(all.length / 30),
             items: all.slice((input.page - 1) * 30, input.page * 30).map((item) => ({
+                progress: item.mediaType === "series" || item.mediaType === "anime" ? getTvContinueProgress(item)
+                    : item.mediaType === "books" ? getBooksContinueProgress(item)
+                        : item.mediaType === "games" ? getGamesContinueProgress(item)
+                            : getMangaContinueProgress(item),
                 status: item.status,
                 rating: item.rating,
                 name: item.mediaName,
@@ -137,4 +143,12 @@ export const getMobileLibraryDetail = async (
             cover: mobileImagePath(item.mediaCover),
         })),
     };
+};
+
+export const continueMobileMediaSchema = mediaTypeMediaIdSchema.extend({ mediaType: z.enum(["series", "anime", "books", "games", "manga"]) });
+
+export const continueMobileMedia = async (userId: number, input: z.infer<typeof continueMobileMediaSchema>) => {
+    const { services } = await getContainer();
+    const { item, completed } = services.mediaTracking.continueUserMedia({ userId, ...input });
+    return { completed, available: item !== null };
 };

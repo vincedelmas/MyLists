@@ -96,6 +96,7 @@ export function ListsScreen() {
                                 Find a saved list
                             </AppText>
                             <Field
+                                clearable
                                 value={search}
                                 autoCorrect={false}
                                 onChangeText={setSearch}

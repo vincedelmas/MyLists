@@ -48,6 +48,7 @@ export function TrackingListScreen() {
         >
             <View style={{ padding: 16, gap: 12 }}>
                 <Field
+                    clearable
                     value={search}
                     autoCorrect={false}
                     returnKeyType="search"

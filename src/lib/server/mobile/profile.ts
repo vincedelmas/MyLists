@@ -1,16 +1,18 @@
 import * as z from "zod";
-import { inArray } from "drizzle-orm";
-import { user as userTable } from "@/lib/server/database/schema";
-import { getDbClient } from "@/lib/server/database/async-storage";
-import { withMobileActivityCovers } from "./activity";
-import { toActor } from "@/lib/server/authorization";
-import { getContainer } from "@/lib/server/core/container";
-import { mobileImagePath } from "@/lib/server/mobile/images";
-import { calculateMediaLevel } from "@/lib/utils/media/level";
-import { dateFromUTCInput } from "@/lib/utils/formatting/date";
-import { mediaTypeFieldSchema } from "@/lib/schemas/common.schema";
-import { InactiveMediaTypeError } from "@/lib/utils/error-classes";
-import { getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS } from "@/lib/server/core/cache-keys";
+import {inArray} from "drizzle-orm";
+import {user as userTable} from "@/lib/server/database/schema";
+import {getDbClient} from "@/lib/server/database/async-storage";
+import {withMobileActivityCovers} from "./activity";
+import {toActor} from "@/lib/server/authorization";
+import {getContainer} from "@/lib/server/core/container";
+import {mobileImagePath} from "@/lib/server/mobile/images";
+import {calculateMediaLevel} from "@/lib/utils/media/level";
+import {dateFromUTCInput} from "@/lib/utils/formatting/date";
+import {mediaTypeFieldSchema} from "@/lib/schemas/common.schema";
+import {getProfilePinnedItems} from "@/lib/server/domain/profile/profile-pins.queries";
+import {deleteUserUpdatesSchema} from "@/lib/schemas/user-media.schema";
+import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
+import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 
 export const statsTabSchema = z.union([z.literal("overview"), mediaTypeFieldSchema]).default("overview");
 
@@ -20,13 +22,15 @@ export const getMobileProfile = async (userId: number) => {
     const user = await services.account.getUserById(userId);
     if (!user) return null;
 
-    const [social, lists] = await Promise.all([
+    const [social, lists, summary] = await Promise.all([
         services.social.getFollowCount(userId),
         services.stats.userPerMediaSummaryStats(userId),
+        services.stats.userPreComputedStatsSummary(userId),
     ]);
 
     return {
         social,
+        summary: { totalDays: summary.totalDays, totalEntries: summary.totalEntries, avgRated: summary.avgRated, percentRated: summary.percentRated },
         lists: lists.map(({ mediaType, entriesFavorites, timeSpent, totalEntries }) => ({
             mediaType,
             timeSpent,
@@ -103,13 +107,19 @@ export const getMobileProfileExtras = async (userId: number, viewerId = userId) 
     const ids = [...new Set(followsFeed.map((item) => item.userId))];
     const people = ids.length
         ? getDbClient()
-              .select({ id: userTable.id, image: userTable.image, ratingSystem: userTable.ratingSystem })
-              .from(userTable)
-              .where(inArray(userTable.id, ids))
-              .all()
+            .select({ id: userTable.id, image: userTable.image, ratingSystem: userTable.ratingSystem })
+            .from(userTable)
+            .where(inArray(userTable.id, ids))
+            .all()
         : [];
     const authors = new Map(people.map((person) => [person.id, person]));
+    const pinnedItems = await getProfilePinnedItems(userId, toActor({ id: viewerId }));
+    const pins = pinnedItems.map(item => item.kind === "dynamic"
+        ? { kind: item.kind, id: item.view.id, title: item.view.spec.title, total: item.preview.total }
+        : { kind: item.kind, id: item.collection.id, title: item.collection.title, total: item.collection.itemsCount });
+
     return {
+        pins,
         followsFeed: withMobileActivityCovers(followsFeed).map((item) => {
             const author = authors.get(item.userId)!;
             return {
@@ -170,4 +180,10 @@ export const getMobileHistory = async (userId: number, page: number) => {
             timestamp: dateFromUTCInput(item.timestamp).toISOString(),
         })),
     };
+};
+
+export const deleteMobileHistory = async (userId: number, input: z.infer<typeof deleteUserUpdatesSchema>) => {
+    const { services } = await getContainer();
+    await services.updateHistory.deleteUserUpdates(userId, input.updateIds, false);
+    return { deleted: true };
 };

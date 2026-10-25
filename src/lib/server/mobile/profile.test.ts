@@ -1,16 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {
     getMobileProfile,
+    deleteMobileHistory,
     getMobileProfileActivity,
     getMobileProfileExtras,
     getMobileAchievements,
     getMobileRecentAchievements,
     getMobileStats,
 } from "./profile";
-import { mobileRequest } from "./request";
+import {mobileRequest} from "./request";
 
 const mocks = vi.hoisted(() => ({
     earned: vi.fn(),
+    pins: vi.fn(),
+    deleteUpdates: vi.fn(),
     avatars: vi.fn(),
     catalog: vi.fn(),
     feed: vi.fn(),
@@ -24,6 +27,7 @@ const mocks = vi.hoisted(() => ({
     highlights: vi.fn(),
     activity: vi.fn(),
 }));
+vi.mock("@/lib/server/domain/profile/profile-pins.queries", () => ({ getProfilePinnedItems: mocks.pins }));
 vi.mock("./activity", () => ({
     withMobileActivityCovers: (items: readonly Record<string, unknown>[]) =>
         items.map((item) => ({ ...item, cover: null })),
@@ -38,7 +42,10 @@ vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         cacheManager: { wrap: mocks.wrap },
         services: {
-            account: { getUserById: mocks.user, updateUserLastSeen: async () => {} },
+            account: {
+                getUserById: mocks.user, updateUserLastSeen: async () => {
+                }
+            },
             social: { getFollowCount: mocks.social },
             achievements: { getAchievementsDetails: mocks.earned, getUserAchievements: mocks.catalog },
             stats: {
@@ -47,7 +54,7 @@ vi.mock("@/lib/server/core/container", () => ({
                 userPerMediaSummaryStats: mocks.lists,
             },
             profile: { resolveHighlightedMedia: mocks.highlights },
-            updateHistory: { getUserUpdates: mocks.activity, getFollowsUpdates: mocks.feed },
+            updateHistory: { deleteUserUpdates: mocks.deleteUpdates, getUserUpdates: mocks.activity, getFollowsUpdates: mocks.feed },
         },
     }),
 }));
@@ -71,6 +78,7 @@ beforeEach(() => {
         image: "http://localhost:3000/static/avatar.jpg",
         backgroundImage: "http://localhost:3000/static/background.jpg",
     });
+    mocks.pins.mockResolvedValue([]);
     mocks.earned.mockResolvedValue([]);
     mocks.avatars.mockReturnValue([]);
     mocks.feed.mockResolvedValue([]);
@@ -80,6 +88,8 @@ beforeEach(() => {
     mocks.stats.mockResolvedValue({
         totalEntries: 3,
         totalHours: 4,
+        totalDays: 4 / 24,
+        percentRated: 50,
         totalFavorites: 2,
         totalRated: 1,
         avgRated: 8,
@@ -113,7 +123,7 @@ describe("isolated mobile profile API", () => {
         expect(response.status).toBe(200);
         expect(mocks.session).toHaveBeenCalledWith({ headers: req.headers, query: { disableCookieCache: true } });
         expect(mocks.user).toHaveBeenCalledWith(10);
-        expect(mocks.stats).not.toHaveBeenCalled();
+        expect(mocks.stats).toHaveBeenCalledWith(10);
         expect(mocks.highlights).not.toHaveBeenCalled();
         expect(await response.json()).toEqual({
             user: {
@@ -126,6 +136,7 @@ describe("isolated mobile profile API", () => {
                 image: "/static/avatar.jpg",
                 backgroundImage: "/static/background.jpg",
             },
+            summary: { totalDays: 4 / 24, totalEntries: 3, avgRated: 8, percentRated: 50 },
             social: { followsCount: 1, followersCount: 2 },
             lists: [{ mediaType: "movies", entriesFavorites: 2, timeSpent: 4, totalEntries: 3, level: 3 }],
         });
@@ -143,6 +154,7 @@ describe("isolated mobile profile API", () => {
     it("filters a visited user's follows feed using the visitor, rather than impersonating the subject", async () => {
         await getMobileProfileExtras(20, 10);
         expect(mocks.feed).toHaveBeenCalledWith(20, { kind: "user", id: 10, role: "user" }, 10);
+        expect(mocks.pins).toHaveBeenCalledWith(20, { kind: "user", id: 10, role: "user" });
     });
 
     it("attaches the author's avatar and rating preference without changing the saved payload", async () => {
@@ -164,6 +176,11 @@ describe("isolated mobile profile API", () => {
             ratingSystem: "feeling",
             payload,
         });
+    });
+
+    it("deletes history only through the verified owner's scoped service", async () => {
+        await deleteMobileHistory(10, { updateIds: [7], returnData: false });
+        expect(mocks.deleteUpdates).toHaveBeenCalledWith(10, [7], false);
     });
 
     it("loads only the three latest achievements when requested", async () => {

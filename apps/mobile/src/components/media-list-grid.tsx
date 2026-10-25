@@ -4,7 +4,7 @@ import {Play} from "lucide-react-native";
 import {Pressable, View} from "react-native";
 import {useTabPush} from "../hooks/use-tab-push";
 import type {MobileProfile} from "../lib/api-client";
-import {mediaIcons, mediaColors, mediaLabels} from "../lib/media";
+import {mediaIcons, mediaColors, mediaLabels, compareMediaTypes} from "../lib/media";
 
 interface MediaListGridProps {
     userId?: number;
@@ -16,7 +16,7 @@ export function MediaListGrid({ lists, userId, includeContinue = false }: MediaL
     const push = useTabPush();
 
     const tiles = [
-        ...lists.map((list) => ({
+        ...[...lists].sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType)).map((list) => ({
             level: list.level,
             key: list.mediaType,
             icon: mediaIcons[list.mediaType],

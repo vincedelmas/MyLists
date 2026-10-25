@@ -2,7 +2,7 @@ import {Pressable, View} from "react-native";
 import {AppText} from "./ui";
 import {colors} from "../theme";
 import {LayoutGrid} from "lucide-react-native";
-import {mediaColors, mediaIcons} from "../lib/media";
+import {mediaColors, mediaIcons, compareMediaTypes} from "../lib/media";
 import type {MediaType} from "../lib/api-client";
 
 export function FilterButtons<T extends string>({ value, options, onChange, label }: {
@@ -13,7 +13,7 @@ export function FilterButtons<T extends string>({ value, options, onChange, labe
 }) {
     return (
         <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {options.map((option) => {
+            {[...options].sort((a, b) => a.mediaType && b.mediaType ? compareMediaTypes(a.mediaType, b.mediaType) : 0).map((option) => {
                 const Icon = option.mediaType ? mediaIcons[option.mediaType] : LayoutGrid;
                 const color = option.mediaType ? mediaColors[option.mediaType] : colors.accent;
                 const selected = option.value === value;

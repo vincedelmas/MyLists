@@ -1,10 +1,14 @@
-import { resolveMobileProfileUser } from "@/lib/server/mobile/profile-access";
-import { createFileRoute } from "@tanstack/react-router";
-import { mobileRequest } from "@/lib/server/mobile/request";
-import { getMobileLibraryDetail, libraryDetailSchema } from "@/lib/server/mobile/library";
+import {resolveMobileProfileUser} from "@/lib/server/mobile/profile-access";
+import {createFileRoute} from "@tanstack/react-router";
+import {mobileRequest} from "@/lib/server/mobile/request";
+import {getMobileLibraryDetail, libraryDetailSchema, continueMobileMedia, continueMobileMediaSchema} from "@/lib/server/mobile/library";
+
 export const Route = createFileRoute("/api/mobile/v1/library/detail")({
     server: {
         handlers: {
+            POST: ({ request }) => mobileRequest(request, async (userId) =>
+                continueMobileMedia(userId, continueMobileMediaSchema.parse(await request.json())),
+            ),
             GET: ({ request }) =>
                 mobileRequest(request, async (userId) =>
                     getMobileLibraryDetail(

@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getMobileLibrary, getMobileLibraryDetail, libraryDetailSchema } from "./library";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {getMobileLibrary, getMobileLibraryDetail, libraryDetailSchema, continueMobileMedia, continueMobileMediaSchema} from "./library";
 
 const mocks = vi.hoisted(() => ({
     user: vi.fn(),
+    saveContinue: vi.fn(),
     visibility: vi.fn(),
     continue: vi.fn(),
     collections: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3
 vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         services: {
+            mediaTracking: { continueUserMedia: mocks.saveContinue },
             profile: { getContinueVisibility: mocks.visibility },
             account: { getUserById: mocks.user },
             collections: { getPaginatedUserCollections: mocks.collections, getCollectionDetails: mocks.detail },
@@ -98,6 +100,24 @@ describe("mobile library access", () => {
         await expect(getMobileLibraryDetail(20, { kind: "collection", id: 30, page: 1, search: "" }, 10))
             .rejects.toThrow("Unauthorized");
         expect(mocks.detail).toHaveBeenCalledWith(30, "read", { kind: "user", id: 10, role: "user" }, { page: 1 });
+    });
+    it("uses the web continue rules to expose game and book quick actions", async () => {
+        mocks.continue.mockResolvedValue([
+            { mediaType: "games", mediaId: 1, mediaName: "Game", playtime: 120, imageCover: "cover.jpg" },
+            { mediaType: "books", mediaId: 2, mediaName: "Book", actualPage: 95, pages: 100, imageCover: "cover.jpg" },
+        ]);
+        const data = await getMobileLibraryDetail(10, { kind: "continue", page: 1, search: "" });
+        expect(data.items).toMatchObject([
+            { progress: { label: "2h 0m played", actionLabel: "+ 60 min", update: { payload: { type: "playtime", playtime: 180 } } } },
+            { progress: { label: "95 / 100 pages", actionLabel: "+ 5 pages", update: { payload: { type: "page", actualPage: 100 } } } },
+        ]);
+    });
+    it("scopes a quick update to the viewer and strips a supplied user ID", async () => {
+        mocks.saveContinue.mockReturnValue({ item: null, completed: true });
+        const input = continueMobileMediaSchema.parse({ mediaType: "books", mediaId: 2, userId: 20 });
+        expect(await continueMobileMedia(10, input)).toEqual({ available: false, completed: true });
+        expect(mocks.saveContinue).toHaveBeenCalledWith({ userId: 10, mediaType: "books", mediaId: 2 });
+        expect(continueMobileMediaSchema.safeParse({ mediaType: "movies", mediaId: 1 }).success).toBe(false);
     });
     it("requires positive IDs for saved lists while allowing continue without an ID", () => {
         expect(libraryDetailSchema.safeParse({ kind: "dynamic" }).success).toBe(false);

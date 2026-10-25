@@ -3,8 +3,11 @@ import {CollapsingTabs} from "../../components/collapsing-tabs";
 import {colors} from "../../theme";
 import type {MobileProfile} from "../../lib/api-client";
 import {PrivacyBadge} from "./PrivacyBadge";
+import {ProfileOverview} from "./ProfileOverview";
+import {ProfilePinnedLists} from "./ProfilePinnedLists";
 import {ProfileFeed} from "./ProfileFeed";
 import {ProfileContinue} from "./ProfileContinue";
+import {formatDate} from "@/lib/utils/formatting/date";
 import {formatCount} from "./profile-formatting";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {useQueryClient} from "@tanstack/react-query";
@@ -84,6 +87,7 @@ const ProfileContent = memo(function ProfileContent({
                 />
             }
         >
+            <ProfileOverview data={data}/>
             <View style={{ gap: 12 }}>
                 <AppText heading style={{ fontSize: 17 }}>
                     Media lists
@@ -91,6 +95,7 @@ const ProfileContent = memo(function ProfileContent({
                 <MediaListGrid lists={data.lists} userId={userId}/>
             </View>
             <ProfileContinue userId={userId}/>
+            <ProfilePinnedLists userId={userId}/>
             <ProfileFeed userId={userId} ratingSystem={data.user.ratingSystem}/>
         </Animated.ScrollView>
     );
@@ -153,7 +158,7 @@ export const ProfileHeader = memo(function ProfileHeader({
                                     {data.user.name}
                                 </AppText>
                                 <AppText muted style={{ fontSize: 11, lineHeight: 16 }}>
-                                    Joined in {new Date(data.user.createdAt).getUTCFullYear()}
+                                    Joined {formatDate(data.user.createdAt)}
                                 </AppText>
                             </View>
                             <View style={{ paddingTop: 12 }}>

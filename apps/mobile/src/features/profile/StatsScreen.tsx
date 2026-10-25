@@ -8,7 +8,7 @@ import {formatCount} from "./profile-formatting";
 import {colors, statusColors} from "../../theme";
 import {Animated, RefreshControl, View} from "react-native";
 import {ProgressBar} from "../../components/ProgressBar";
-import {mediaLabels, mediaColors} from "../../lib/media";
+import {mediaLabels, mediaColors, compareMediaTypes} from "../../lib/media";
 import {statsOptions} from "../../lib/react-query/query-options/profile.options";
 import {AppText, Section, uiStyles} from "../../components/ui";
 import {FilterButtons} from "../../components/filter-buttons";
@@ -97,7 +97,7 @@ export function StatsContent({ userId }: { userId?: number }) {
                             {data.kind === "overview" ? (
                                 <>
                                     <Section title="Across media">
-                                        {data.mediaBreakdown.map((item) => (
+                                        {[...data.mediaBreakdown].sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType)).map((item) => (
                                             <View key={item.mediaType} style={uiStyles.padded}>
                                                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                                                     <AppText

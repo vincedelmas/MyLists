@@ -52,6 +52,7 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
             </View>
 
             <Field
+                clearable
                 value={text}
                 autoCorrect={false}
                 onChangeText={setText}

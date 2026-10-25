@@ -90,9 +90,6 @@ export function CommunityScreen() {
     return (
         <Page title="Community" subtitle="Discover, connect and play">
             <Content>
-                <AppText muted style={{ fontSize: 12 }}>
-                    Play Moviedle here. Other sections open in your browser.
-                </AppText>
                 {sections.map((section) => (
                     <Section key={section.title} title={section.title}>
                         {section.items.map(({ title, description, path, Icon }) =>

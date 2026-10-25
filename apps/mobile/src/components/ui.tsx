@@ -9,7 +9,7 @@ import {useOnline} from "../hooks/use-online";
 import {colors, commonStyles} from "../theme";
 import {useRoute} from "expo-router/react-navigation";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {ArrowLeft, ChevronRight} from "lucide-react-native";
+import {ArrowLeft, ChevronRight, X} from "lucide-react-native";
 import {Profiler, useEffect, useRef, type ReactNode, type Ref} from "react";
 import {
     navigationTimingEnabled,
@@ -207,6 +207,7 @@ export function Button({
 
 export function Field({
                           label,
+                          clearable,
                           inputRef,
                           value,
                           onChangeText,
@@ -216,6 +217,7 @@ export function Field({
     label: string;
     value: string;
     inputRef?: Ref<TextInputRef>;
+    clearable?: boolean;
 }) {
     const text = useNativeState(value);
     const lastNativeValue = useRef(value);
@@ -231,28 +233,54 @@ export function Field({
     }, [text, value]);
 
     return (
-        <NativeHost style={styles.fullWidth}>
-            <Column spacing={8}>
-                <NativeText>{label}</NativeText>
-                <NativeTextInput
-                    {...props}
-                    value={text}
-                    ref={inputRef}
-                    placeholder={props.placeholder ?? label}
-                    onChangeText={(next) => {
-                        lastNativeValue.current = next;
-                        onChangeText?.(next);
+        <View style={styles.fullWidth}>
+            <NativeHost style={styles.fullWidth}>
+                <Column spacing={8}>
+                    <NativeText>{label}</NativeText>
+                    <NativeTextInput
+                        {...props}
+                        value={text}
+                        ref={inputRef}
+                        placeholder={props.placeholder ?? label}
+                        onChangeText={(next) => {
+                            lastNativeValue.current = next;
+                            onChangeText?.(next);
+                        }}
+                        style={{
+                            padding: 12,
+                            ...(clearable ? { paddingRight: 48 } : {}),
+                            borderWidth: 1,
+                            borderRadius: 8,
+                            borderColor: colors.border,
+                            ...style,
+                        }}
+                    />
+                </Column>
+            </NativeHost>
+            {clearable && value.length > 0 && (
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Clear ${label.toLowerCase()}`}
+                    onPress={() => {
+                        text.set("");
+                        lastNativeValue.current = "";
+                        onChangeText?.("");
                     }}
-                    style={{
-                        padding: 12,
-                        borderWidth: 1,
-                        borderRadius: 8,
-                        borderColor: colors.border,
-                        ...style,
-                    }}
-                />
-            </Column>
-        </NativeHost>
+                    style={({ pressed }) => ({
+                        position: "absolute",
+                        right: 0,
+                        bottom: 0,
+                        width: 44,
+                        height: 48,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        opacity: pressed ? 0.6 : 1
+                    })}
+                >
+                    <X size={18} color={colors.muted}/>
+                </Pressable>
+            )}
+        </View>
     );
 }
 

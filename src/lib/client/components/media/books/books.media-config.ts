@@ -12,7 +12,7 @@ import {defineMediaConfig} from "@/lib/client/components/media/media-config.type
 import {BooksUnderTitle} from "@/lib/client/components/media/books/BooksUnderTitle";
 import {BooksUserDetails} from "@/lib/client/components/media/books/BookUserDetails";
 import {getBooksColumns} from "@/lib/client/components/media/books/BooksListColumns";
-import {getBooksContinueProgress} from "@/lib/client/components/media/books/continue-progress";
+import {getBooksContinueProgress} from "@/lib/utils/media/continue";
 import {bookSearchFilterDefinition} from "@/lib/client/components/media/books/BookSearchFilters";
 
 

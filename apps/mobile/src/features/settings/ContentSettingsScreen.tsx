@@ -2,7 +2,7 @@ import {useState} from "react";
 import {View} from "react-native";
 import {colors} from "../../theme";
 import {useIsFocused} from "expo-router";
-import {mediaLabels} from "../../lib/media";
+import {mediaLabels, compareMediaTypes} from "../../lib/media";
 import {useQuery} from "@tanstack/react-query";
 import {NativeHost} from "../../components/native-host";
 import {AppText, Page, QueryPanel} from "../../components/ui";
@@ -59,7 +59,7 @@ function ContentForm({ data }: { data: MobileSettings }) {
             <NativeHost matchContents={false} style={{ flex: 1 }}>
                 <FieldGroup>
                     <FieldGroup.Section title="Active media lists">
-                        {lists.map((item) =>
+                        {[...lists].sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType)).map((item) =>
                             <Switch
                                 value={item.active}
                                 key={item.mediaType}
@@ -105,7 +105,8 @@ function ContentForm({ data }: { data: MobileSettings }) {
                         />
                     </FieldGroup.Section>
                     <FieldGroup.Section title="Release notifications">
-                        {lists
+                        {[...lists]
+                            .sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType))
                             .filter((item) => item.supportsNotifications)
                             .map((item) => (
                                 <Switch

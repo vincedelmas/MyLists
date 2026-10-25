@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {ContinueActions} from "../profile/ContinueActions";
 import {Page} from "../../components/ui";
 import {MediaList} from "../../components/media-list";
 import {useInfiniteQuery} from "@tanstack/react-query";
@@ -16,8 +17,11 @@ export function LibraryDetailScreen() {
         enabled: focused,
     });
 
+    const [selectedId, setSelectedId] = useState<string | null>(null);
     const first = query.data?.pages[0];
     const items = query.data?.pages.flatMap((page) => page.items) ?? [];
+
+    const selected = items.find(item => `${item.mediaType}:${item.mediaId}` === selectedId);
 
     return (
         <Page
@@ -27,11 +31,13 @@ export function LibraryDetailScreen() {
         >
             <MediaList
                 query={query}
+                onItemPress={kind === "continue" && !userId ? item => setSelectedId(`${item.mediaType}:${item.mediaId}`) : undefined}
                 items={items}
                 layout={layout}
                 ratingSystem={first?.ratingSystem ?? "score"}
                 emptyTitle="No titles here yet"
             />
+            {selected && <ContinueActions item={selected} dismiss={() => setSelectedId(null)}/>}
         </Page>
     );
 }

@@ -10,7 +10,7 @@ import {MangaFollowCard} from "@/lib/client/components/media/manga/MangaFollowCa
 import {MangaUnderTitle} from "@/lib/client/components/media/manga/MangaUnderTitle";
 import {getMangaColumns} from "@/lib/client/components/media/manga/MangaListColumns";
 import {MangaUserDetails} from "@/lib/client/components/media/manga/MangaUserDetails";
-import {getMangaContinueProgress} from "@/lib/client/components/media/manga/continue-progress";
+import {getMangaContinueProgress} from "@/lib/utils/media/continue";
 
 
 export const mangaMediaConfig = defineMediaConfig({

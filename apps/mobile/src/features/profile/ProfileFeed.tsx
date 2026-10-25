@@ -6,7 +6,8 @@ import type {api, MobileProfile, MobileProfileActivity} from "../../lib/api-clie
 import {colors} from "../../theme";
 import {mediaIcons, mediaColors} from "../../lib/media";
 import {useTabPush} from "../../hooks/use-tab-push";
-import {AppText, Cover, QueryPanel} from "../../components/ui";
+import {AppText, Cover, QueryPanel, Card} from "../../components/ui";
+import {useFeedDeletion} from "./use-feed-deletion";
 import {formatActivity} from "./profile-formatting";
 import {profileActivityOptions, profileFollowsFeedOptions} from "../../lib/react-query/query-options/profile.options";
 
@@ -15,6 +16,8 @@ type RatingSystem = MobileProfile["user"]["ratingSystem"];
 
 export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSystem; userId?: number }) {
     const focused = useIsFocused();
+    const push = useTabPush();
+    const deleteUpdate = useFeedDeletion();
     const mine = useQuery({ ...profileActivityOptions(userId), enabled: focused });
     const following = useQuery({ ...profileFollowsFeedOptions(userId), enabled: focused });
     return (
@@ -29,11 +32,11 @@ export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSyst
                     <AppText heading style={{ fontSize: 17 }}>
                         {title}
                     </AppText>
-                    <View style={styles.card}>
+                    <Card>
                         <QueryPanel<readonly FeedItem[]> query={query}>
                             {(items) =>
                                 items.length ? (
-                                    <FeedRows items={items} ratingSystem={ratingSystem}/>
+                                    <FeedRows items={items} ratingSystem={ratingSystem} onDelete={title === "Recent feed" && !userId ? deleteUpdate : undefined}/>
                                 ) : (
                                     <AppText muted style={styles.empty}>
                                         {empty}
@@ -41,19 +44,38 @@ export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSyst
                                 )
                             }
                         </QueryPanel>
-                    </View>
+                    </Card>
+                    {title === "Recent feed" && (
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={() => push({ pathname: "/profile/feed", params: { userId } })}
+                            style={({ pressed }) => ({
+                                paddingVertical: 10,
+                                alignItems: "center",
+                                borderWidth: 1,
+                                borderStyle: "dashed",
+                                borderColor: colors.border,
+                                borderRadius: 8,
+                                opacity: pressed ? 0.6 : 1
+                            })}
+                        >
+                            <AppText style={{ color: colors.accent, fontSize: 12 }}>View all Feed</AppText>
+                        </Pressable>
+                    )}
                 </View>
             ))}
         </>
     );
 }
 
-const FeedRows = memo(function FeedRows({
-                                            items,
-                                            ratingSystem,
-                                        }: {
+export const FeedRows = memo(function FeedRows({
+                                                   items,
+                                                   ratingSystem,
+                                                   onDelete,
+                                               }: {
     items: readonly FeedItem[];
     ratingSystem: RatingSystem;
+    onDelete?: (id: number) => void;
 }) {
     const push = useTabPush();
     return items.map((item) => {
@@ -85,6 +107,12 @@ const FeedRows = memo(function FeedRows({
                 <Pressable
                     accessibilityRole="button"
                     style={styles.details}
+                    onLongPress={onDelete ? () => onDelete(item.id) : undefined}
+                    accessibilityHint={onDelete ? "Long press to delete this update" : undefined}
+                    accessibilityActions={onDelete ? [{ name: "delete", label: "Delete update" }] : undefined}
+                    onAccessibilityAction={(event) => {
+                        if (event.nativeEvent.actionName === "delete") onDelete?.(item.id);
+                    }}
                     onPress={() =>
                         push({
                             pathname: "/media/[mediaType]/[mediaId]",
@@ -111,13 +139,6 @@ const FeedRows = memo(function FeedRows({
 });
 
 const styles = StyleSheet.create({
-    card: {
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: 12,
-        overflow: "hidden",
-    },
     author: { width: 68, alignItems: "center", gap: 4 },
     username: { fontSize: 10, fontWeight: "600", color: colors.accent, textAlign: "center" },
     row: {

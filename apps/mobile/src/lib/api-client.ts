@@ -155,6 +155,10 @@ export const api = {
     profile: (signal?: AbortSignal, userId?: number) => request<MobileProfile>(subjectPath("/profile", userId), signal),
     profileActivity: (signal?: AbortSignal, userId?: number) =>
         request<MobileProfileActivity>(subjectPath("/profile/activity", userId), signal),
+    deleteHistory: (updateId: number) =>
+        request<Result<typeof Profile.deleteMobileHistory>>("/profile/history", undefined, "DELETE", { updateIds: [updateId] }),
+    continueMedia: (input: Parameters<typeof Library.continueMobileMedia>[1]) =>
+        request<Result<typeof Library.continueMobileMedia>>("/library/detail", undefined, "POST", input),
     history: (page: number, signal?: AbortSignal, userId?: number) =>
         request<Result<typeof Profile.getMobileHistory>>(`/profile/history?${queryString({ page, userId })}`, signal),
     stats: (tab: Parameters<typeof Profile.getMobileStats>[1], signal?: AbortSignal, userId?: number) =>

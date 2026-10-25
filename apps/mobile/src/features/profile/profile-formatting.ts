@@ -1,4 +1,5 @@
 import type {MobileProfile, MobileProfileActivity} from "../../lib/api-client";
+import {zeroPad} from "@/lib/utils/formatting/number";
 import {ratingLabel} from "../../lib/ratings";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {toActivityDisplayValue} from "@/lib/utils/media/activity";
@@ -13,7 +14,7 @@ const activityValue = (value: unknown, update: Activity, ratingSystem: RatingSys
     switch (update.updateType) {
         case "tv": {
             const [season, episode] = value as [number, number];
-            return `S${season} · E${episode}`;
+            return `S${zeroPad(season)}.E${zeroPad(episode)}`;
         }
         case "rating":
             return ratingSystem === "score" ? `${value}/10` : ratingLabel(Number(value), ratingSystem);

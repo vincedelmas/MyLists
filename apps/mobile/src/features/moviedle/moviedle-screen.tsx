@@ -164,6 +164,7 @@ function DailyGame({ data, refreshing, refetch, active }: DailyGameProps) {
                             </AppText>
                         }
                         <Field
+                            clearable
                             value={search}
                             autoCorrect={false}
                             returnKeyType="search"

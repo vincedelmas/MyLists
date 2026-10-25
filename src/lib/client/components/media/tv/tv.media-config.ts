@@ -16,7 +16,7 @@ import {TvExtraSections} from "@/lib/client/components/media/tv/TvExtraSections"
 import {TvUpComingAlert} from "@/lib/client/components/media/tv/TvUpComingAlert";
 import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
 import {Clapperboard, RadioTower, SquareStack, UserRound, XLineTop} from "lucide-react";
-import {getTvContinueProgress} from "@/lib/client/components/media/tv/continue-progress";
+import {getTvContinueProgress} from "@/lib/utils/media/continue";
 import {defineMediaConfig, MediaClientConfig, MediaStatCardDefinition} from "@/lib/client/components/media/media-config.types";
 
 

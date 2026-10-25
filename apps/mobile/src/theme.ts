@@ -1,4 +1,5 @@
 import {StyleSheet} from "react-native";
+import type {AchievementDifficulty} from "@/lib/utils/enums";
 
 
 export const colors = {
@@ -24,6 +25,14 @@ export const spacing = {
     lg: 16,
     xl: 24,
     xxl: 32,
+};
+
+// sRGB equivalents of the web app's dark-theme tier tokens in src/styles.css.
+export const achievementColors: Record<AchievementDifficulty, string> = {
+    bronze: "#CC8553",
+    silver: "#A9B2BE",
+    gold: "#E7B643",
+    platinum: "#55BFB3",
 };
 
 

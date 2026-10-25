@@ -9,7 +9,8 @@ import { colors } from "../../theme";
 import { mediaLabels } from "../../lib/media";
 import { useTabPush } from "../../hooks/use-tab-push";
 import { calendarOptions } from "../../lib/react-query/query-options/profile.options";
-import { AppText, Cover, Select, StateView } from "../../components/ui";
+import { AppText, Cover, StateView } from "../../components/ui";
+import { FilterButtons } from "../../components/filter-buttons";
 import { shiftDateInputValue, toDateInputValue } from "@/lib/utils/formatting/date";
 
 export function CalendarContent({ userId }: { userId?: number }) {
@@ -170,7 +171,7 @@ export function CalendarContent({ userId }: { userId?: number }) {
                                         </Pressable>
                                     )}
                                 </View>
-                                <Select
+                                <FilterButtons
                                     label="Releases from tracked lists"
                                     value={mediaType}
                                     onChange={setMediaType}

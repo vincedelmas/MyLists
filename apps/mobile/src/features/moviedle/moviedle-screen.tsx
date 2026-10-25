@@ -1,12 +1,13 @@
 import { useCallback, useState } from "react";
 import { useIsFocused } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FlatList, Keyboard, Pressable, RefreshControl, StyleSheet, View } from "react-native";
+import { FlatList, Keyboard, Pressable, RefreshControl, StyleSheet, View, ScrollView } from "react-native";
 import { ChartNoAxesColumnIncreasing, Clapperboard, Clock3, Search, Trophy } from "lucide-react-native";
 import { AppText, Button, Cover, Field, Page, QueryPanel, StateView } from "../../components/ui";
 import { SectionTabs } from "../../components/section-tabs";
 import { useDebouncedValue } from "../../hooks/use-debounced-value";
 import { usePuzzleReset } from "../../hooks/use-puzzle-reset";
+import { useSwipeTabs } from "../../hooks/use-swipe-tabs";
 import { useTabPush } from "../../hooks/use-tab-push";
 import {
     moviedleOptions,
@@ -44,6 +45,8 @@ function DailyGame({ data, refreshing, refetch }: { data: Daily; refreshing: boo
     const focused = useIsFocused();
     const push = useTabPush();
     const [search, setSearch] = useState("");
+    const [posterArea, setPosterArea] = useState({ width: 0, height: 0 });
+    const posterWidth = Math.min(posterArea.width, posterArea.height * 2 / 3);
     const [suggestionsOpen, setSuggestionsOpen] = useState(true);
     const debounced = useDebouncedValue(search.trim());
     const mutation = useMoviedleGuess();
@@ -64,157 +67,156 @@ function DailyGame({ data, refreshing, refetch }: { data: Daily; refreshing: boo
         );
     };
     return (
-        <FlatList
-            data={items}
-            keyExtractor={(item) => String(item.id)}
+        <ScrollView
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.content}
+            contentContainerStyle={[styles.content, styles.gameContent]}
             refreshControl={
                 <RefreshControl tintColor={colors.accent} refreshing={refreshing} onRefresh={() => void refetch()} />
             }
-            ListHeaderComponent={
-                <View style={styles.stack}>
-                    <View style={styles.intro}>
-                        <AppText muted style={styles.caption}>
-                            DAILY POSTER · #{String(data.mediadleId).padStart(4, "0")}
-                        </AppText>
-                        <AppText muted>One movie. {data.maxAttempts} attempts.</AppText>
-                    </View>
-                    <View style={styles.posterWrap}>
-                        <Cover
-                            uri={data.result?.cover ?? `data:image/png;base64,${data.pixelatedCover}`}
-                            label={data.result?.name ?? "Today's pixelated movie poster"}
-                            style={styles.poster}
+        >
+            <View style={styles.intro}>
+                <AppText muted style={styles.caption}>
+                    DAILY POSTER · #{String(data.mediadleId).padStart(4, "0")}
+                </AppText>
+                <AppText muted>One movie. {data.maxAttempts} attempts.</AppText>
+            </View>
+            <View
+                style={styles.posterWrap}
+                onLayout={({ nativeEvent: { layout } }) => setPosterArea({ width: layout.width, height: layout.height })}
+            >
+                <View style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]}>
+                    <Cover
+                        uri={data.result?.cover ?? `data:image/png;base64,${data.pixelatedCover}`}
+                        label={data.result?.name ?? "Today's pixelated movie poster"}
+                        style={[styles.poster, { width: posterWidth, height: posterWidth * 3 / 2 }]}
+                    />
+                </View>
+            </View>
+            <View style={styles.controls}>
+                <View style={styles.attemptHeading}>
+                    <AppText style={styles.heading}>Attempts</AppText>
+                    <AppText muted>
+                        {data.userData?.attempts ?? 0} / {data.maxAttempts}
+                    </AppText>
+                </View>
+                <View style={styles.attempts}>
+                    {Array.from({ length: data.maxAttempts }, (_, index) => (
+                        <View
+                            key={index}
+                            style={[
+                                styles.attempt,
+                                index < (data.userData?.attempts ?? 0) &&
+                                    (data.userData?.succeeded && index === data.userData.attempts - 1
+                                        ? styles.correct
+                                        : styles.used),
+                            ]}
                         />
-                    </View>
-                    <View style={styles.attemptHeading}>
-                        <AppText style={styles.heading}>Attempts</AppText>
+                    ))}
+                </View>
+                {completed ? (
+                    <View style={styles.result}>
+                        <AppText heading>{data.userData?.succeeded ? "That's a wrap!" : "End credits"}</AppText>
+                        <AppText>{data.result?.name}</AppText>
                         <AppText muted>
-                            {data.userData?.attempts ?? 0} / {data.maxAttempts}
+                            {data.userData?.succeeded
+                                ? `Found in ${data.userData.attempts} ${data.userData.attempts === 1 ? "try" : "tries"}.`
+                                : "A new poster arrives tomorrow."}
                         </AppText>
-                    </View>
-                    <View style={styles.attempts}>
-                        {Array.from({ length: data.maxAttempts }, (_, index) => (
-                            <View
-                                key={index}
-                                style={[
-                                    styles.attempt,
-                                    index < (data.userData?.attempts ?? 0) &&
-                                        (data.userData?.succeeded && index === data.userData.attempts - 1
-                                            ? styles.correct
-                                            : styles.used),
-                                ]}
+                        {data.result && (
+                            <Button
+                                secondary
+                                label="View movie"
+                                onPress={() =>
+                                    push({
+                                        pathname: "/media/[mediaType]/[mediaId]",
+                                        params: { mediaType: "movies", mediaId: data.result!.mediaId },
+                                    })
+                                }
                             />
-                        ))}
+                        )}
                     </View>
-                    {completed ? (
-                        <View style={styles.result}>
-                            <AppText heading>{data.userData?.succeeded ? "That's a wrap!" : "End credits"}</AppText>
-                            <AppText>{data.result?.name}</AppText>
-                            <AppText muted>
-                                {data.userData?.succeeded
-                                    ? `Found in ${data.userData.attempts} ${data.userData.attempts === 1 ? "try" : "tries"}.`
-                                    : "A new poster arrives tomorrow."}
+                ) : (
+                    <>
+                        {mutation.data && !mutation.data.correct && (
+                            <AppText accessibilityRole="alert" muted>
+                                {mutation.variables?.action === "skip"
+                                    ? "Skipped. The poster is a little clearer."
+                                    : "Not quite. The poster is a little clearer."}
                             </AppText>
-                            {data.result && (
+                        )}
+                        <Field
+                            label="Which movie is it?"
+                            placeholder="Search for a movie title"
+                            value={search}
+                            onChangeText={(text) => {
+                                setSearch(text);
+                                setSuggestionsOpen(true);
+                            }}
+                            editable={!mutation.isPending}
+                            autoCorrect={false}
+                            returnKeyType="search"
+                        />
+                        {!completed && (
+                            <View style={styles.guessActions}>
+                                <Button
+                                    label="Guess movie"
+                                    pending={mutation.isPending}
+                                    disabled={!search.trim()}
+                                    onPress={() => guess("guess")}
+                                />
                                 <Button
                                     secondary
-                                    label="View movie"
-                                    onPress={() =>
-                                        push({
-                                            pathname: "/media/[mediaType]/[mediaId]",
-                                            params: { mediaType: "movies", mediaId: data.result!.mediaId },
-                                        })
-                                    }
+                                    label="Skip attempt"
+                                    disabled={mutation.isPending}
+                                    onPress={() => guess("skip")}
                                 />
+                            </View>
+                        )}
+                        {search.trim().length >= 2 && searching && <AppText muted>Searching movies…</AppText>}
+                        {suggestionsOpen &&
+                            search.trim().length >= 2 &&
+                            !searching &&
+                            !items.length &&
+                            !suggestions.error && (
+                                <AppText muted>No suggestions. You can still guess the title you entered.</AppText>
                             )}
-                        </View>
-                    ) : (
-                        <>
-                            {mutation.data && !mutation.data.correct && (
-                                <AppText accessibilityRole="alert" muted>
-                                    {mutation.variables?.action === "skip"
-                                        ? "Skipped. The poster is a little clearer."
-                                        : "Not quite. The poster is a little clearer."}
-                                </AppText>
-                            )}
-                            <Field
-                                label="Which movie is it?"
-                                placeholder="Search for a movie title"
-                                value={search}
-                                onChangeText={(text) => {
-                                    setSearch(text);
-                                    setSuggestionsOpen(true);
-                                }}
-                                editable={!mutation.isPending}
-                                autoCorrect={false}
-                                returnKeyType="search"
+                        {suggestions.error && (
+                            <StateView
+                                title="Couldn’t load suggestions"
+                                message={suggestions.error.message}
+                                retry={() => void suggestions.refetch()}
                             />
-                            {!completed && (
-                                <View style={styles.guessActions}>
-                                    <Button
-                                        label="Guess movie"
-                                        pending={mutation.isPending}
-                                        disabled={!search.trim()}
-                                        onPress={() => guess("guess")}
-                                    />
-                                    <Button
-                                        secondary
-                                        label="Skip attempt"
-                                        disabled={mutation.isPending}
-                                        onPress={() => guess("skip")}
-                                    />
-                                </View>
-                            )}
-                            {search.trim().length >= 2 && searching && <AppText muted>Searching movies…</AppText>}
-                            {suggestionsOpen &&
-                                search.trim().length >= 2 &&
-                                !searching &&
-                                !items.length &&
-                                !suggestions.error && (
-                                    <AppText muted>No suggestions. You can still guess the title you entered.</AppText>
-                                )}
-                            {suggestions.error && (
-                                <StateView
-                                    title="Couldn’t load suggestions"
-                                    message={suggestions.error.message}
-                                    retry={() => void suggestions.refetch()}
-                                />
-                            )}
-                        </>
-                    )}
-                    {mutation.error && (
-                        <View style={styles.error}>
-                            <AppText accessibilityRole="alert">{mutation.error.message}</AppText>
-                            <AppText muted>
-                                Your progress has been reloaded. Check the attempt count before trying again.
-                            </AppText>
-                        </View>
-                    )}
-                </View>
-            }
-            renderItem={({ item }) => (
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Select ${item.name}`}
-                    disabled={mutation.isPending}
-                    onPress={() => {
-                        setSearch(item.name);
-                        setSuggestionsOpen(false);
-                        Keyboard.dismiss();
-                    }}
-                    style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}
-                >
-                    <Search size={16} color={colors.muted} />
-                    <AppText style={styles.flex}>{item.name}</AppText>
-                </Pressable>
-            )}
-            ListFooterComponent={
-                <View style={styles.stack}>
-                    <ResetCountdown resetsAt={data.resetsAt} />
-                </View>
-            }
-        />
+                        )}
+                    </>
+                )}
+                {mutation.error && (
+                    <View style={styles.error}>
+                        <AppText accessibilityRole="alert">{mutation.error.message}</AppText>
+                        <AppText muted>
+                            Your progress has been reloaded. Check the attempt count before trying again.
+                        </AppText>
+                    </View>
+                )}
+                {items.map((item) => (
+                    <Pressable
+                        key={item.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Select ${item.name}`}
+                        disabled={mutation.isPending}
+                        onPress={() => {
+                            setSearch(item.name);
+                            setSuggestionsOpen(false);
+                            Keyboard.dismiss();
+                        }}
+                        style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}
+                    >
+                        <Search size={16} color={colors.muted} />
+                        <AppText style={styles.flex}>{item.name}</AppText>
+                    </Pressable>
+                ))}
+            </View>
+            <ResetCountdown resetsAt={data.resetsAt} />
+        </ScrollView>
     );
 }
 
@@ -336,27 +338,30 @@ export function MoviedleScreen() {
     const focused = useIsFocused();
     const [tab, setTab] = useState<"play" | "stats" | "leaderboard">("play");
     const query = useQuery({ ...moviedleOptions, enabled: focused });
+    const swipeHandlers = useSwipeTabs(tabs, tab, setTab);
     return (
         <Page title="Moviedle" brand back>
-            <SectionTabs tabs={tabs} value={tab} onChange={setTab} />
-            {tab === "leaderboard" ? (
-                <Leaderboard />
-            ) : (
-                <QueryPanel query={query}>
-                    {(data) =>
-                        tab === "play" ? (
-                            <DailyGame
-                                key={data.mediadleId}
-                                data={data}
-                                refreshing={query.isRefetching}
-                                refetch={query.refetch}
-                            />
-                        ) : (
-                            <GameStats data={data} />
-                        )
-                    }
-                </QueryPanel>
-            )}
+            <View style={styles.flex} {...swipeHandlers}>
+                <SectionTabs tabs={tabs} value={tab} onChange={setTab} />
+                {tab === "leaderboard" ? (
+                    <Leaderboard />
+                ) : (
+                    <QueryPanel query={query}>
+                        {(data) =>
+                            tab === "play" ? (
+                                <DailyGame
+                                    key={data.mediadleId}
+                                    data={data}
+                                    refreshing={query.isRefetching}
+                                    refetch={query.refetch}
+                                />
+                            ) : (
+                                <GameStats data={data} />
+                            )
+                        }
+                    </QueryPanel>
+                )}
+            </View>
         </Page>
     );
 }
@@ -365,8 +370,10 @@ const styles = StyleSheet.create({
     stack: { gap: spacing.lg },
     intro: { alignItems: "center", gap: spacing.xs },
     caption: { fontSize: 11, lineHeight: 17 },
-    posterWrap: { alignItems: "center" },
-    poster: { width: 180, height: undefined, aspectRatio: 2 / 3, borderRadius: 12 },
+    gameContent: { flexGrow: 1, paddingBottom: spacing.lg },
+    posterWrap: { flex: 1, minHeight: 160 },
+    poster: { borderRadius: 12 },
+    controls: { gap: spacing.md },
     attemptHeading: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     heading: { fontSize: 15, fontWeight: "600" },
     attempts: { flexDirection: "row", gap: spacing.sm },

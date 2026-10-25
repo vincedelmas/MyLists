@@ -2,7 +2,7 @@ import { mediaLabels } from "../../lib/media";
 import { useState } from "react";
 import { Collapsible, RNHostView } from "@expo/ui";
 import { NativeHost } from "../../components/native-host";
-import { colors } from "../../theme";
+import { achievementColors, colors } from "../../theme";
 import { useIsFocused } from "expo-router";
 import { Animated, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +39,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                                         key={`${item.id}:${item.difficulty}`}
                                                         name={item.name}
                                                         description={item.description}
+                                                        difficulty={item.difficulty}
                                                         detail={`${mediaLabels[item.mediaType]} · ${item.difficulty} · ${new Date(item.completedAt!).toLocaleDateString()}`}
                                                     />
                                                 ))
@@ -76,7 +77,9 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                             />
                         }
                         renderItem={({ item }) => {
-                            const unlocked = item.tiers.filter((tier) => tier.completed).length;
+                            const completedTiers = item.tiers.filter((tier) => tier.completed);
+                            const unlocked = completedTiers.length;
+                            const highestTier = completedTiers.at(-1);
                             return (
                                 <View
                                     style={{
@@ -89,9 +92,9 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                 >
                                     <AchievementRow
                                         name={item.name}
-                                        completed={unlocked > 0}
+                                        difficulty={highestTier?.difficulty}
                                         description={item.description}
-                                        detail={`${mediaLabels[item.mediaType]} · ${unlocked} of ${item.tiers.length} tiers unlocked`}
+                                        detail={`${mediaLabels[item.mediaType]} · ${highestTier ? `${highestTier.difficulty} · ` : ""}${unlocked} of ${item.tiers.length} tiers unlocked`}
                                     />
                                     <NativeHost style={{ width: "100%" }}>
                                         <Collapsible
@@ -114,9 +117,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                                                     style={{
                                                                         fontSize: 12,
                                                                         textTransform: "capitalize",
-                                                                        color: tier.completed
-                                                                            ? colors.rating
-                                                                            : colors.muted,
+                                                                        color: achievementColors[tier.difficulty],
                                                                     }}
                                                                 >
                                                                     {tier.difficulty}
@@ -131,7 +132,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                                             </View>
                                                             <ProgressBar
                                                                 value={tier.completed ? 100 : tier.progress}
-                                                                color={tier.completed ? colors.rating : colors.accent}
+                                                                color={achievementColors[tier.difficulty]}
                                                             />
                                                         </View>
                                                     ))}

@@ -22,6 +22,7 @@ export function PersonScreen() {
                         <>
                             {!data.header.isOwn && (
                                 <Button
+                                    width={176}
                                     pending={mutation.isPending}
                                     secondary={Boolean(data.following)}
                                     label={

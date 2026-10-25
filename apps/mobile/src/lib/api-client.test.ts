@@ -61,8 +61,9 @@ describe("native API transport", () => {
             api.list("movies", {}, undefined, 20),
             api.social({ kind: "followers", page: 1 }, undefined, 20),
             api.libraryDetail({ kind: "continue", page: 1, search: "" }, undefined, 20),
+            api.library({ page: 1, search: "" }, undefined, 20),
         ]);
-        expect(fetcher).toHaveBeenCalledTimes(11);
+        expect(fetcher).toHaveBeenCalledTimes(12);
         for (const [url, options] of fetcher.mock.calls) {
             expect(new URL(url).searchParams.get("userId")).toBe("20");
             expect(options.headers.cookie).toBe("mylists.session_token=viewer");

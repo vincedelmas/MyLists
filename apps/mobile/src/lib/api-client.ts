@@ -164,8 +164,8 @@ export const api = {
         request<Result<typeof Social.getMobileSocial>>(`/social?${queryString({ ...input, userId })}`, signal),
     socialAction: (input: Parameters<typeof Social.actOnMobileSocial>[1]) =>
         request<Result<typeof Social.actOnMobileSocial>>("/social", undefined, "POST", input),
-    library: (input: Parameters<typeof Library.getMobileLibrary>[1], signal?: AbortSignal) =>
-        request<Result<typeof Library.getMobileLibrary>>(`/library?${queryString(input)}`, signal),
+    library: (input: Parameters<typeof Library.getMobileLibrary>[1], signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof Library.getMobileLibrary>>(`/library?${queryString({ ...input, userId })}`, signal),
     libraryDetail: (
         input: Parameters<typeof Library.getMobileLibraryDetail>[1],
         signal?: AbortSignal,

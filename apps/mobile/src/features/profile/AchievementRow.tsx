@@ -1,5 +1,6 @@
 import {View} from "react-native";
-import {colors} from "../../theme";
+import {achievementColors, colors} from "../../theme";
+import type {AchievementDifficulty} from "@/lib/utils/enums";
 import {Award} from "lucide-react-native";
 import {AppText} from "../../components/ui";
 
@@ -7,12 +8,13 @@ import {AppText} from "../../components/ui";
 interface AchievementRowProps {
     name: string;
     detail: string;
-    completed?: boolean;
+    difficulty?: AchievementDifficulty;
     description: string;
 }
 
 
-export function AchievementRow({ name, description, detail, completed = true }: AchievementRowProps) {
+export function AchievementRow({ name, description, detail, difficulty }: AchievementRowProps) {
+    const color = difficulty ? achievementColors[difficulty] : colors.muted;
     return (
         <View style={{ padding: 16, flexDirection: "row", gap: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
             <View
@@ -27,7 +29,7 @@ export function AchievementRow({ name, description, detail, completed = true }: 
             >
                 <Award
                     size={23}
-                    color={completed ? colors.rating : colors.muted}
+                    color={color}
                 />
             </View>
             <View style={{ flex: 1, gap: 5 }}>
@@ -37,7 +39,7 @@ export function AchievementRow({ name, description, detail, completed = true }: 
                 <AppText muted style={{ fontSize: 12 }}>
                     {description}
                 </AppText>
-                <AppText style={{ color: completed ? colors.rating : colors.muted, fontSize: 11 }}>
+                <AppText style={{ color, fontSize: 11 }}>
                     {detail}
                 </AppText>
             </View>

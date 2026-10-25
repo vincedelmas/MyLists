@@ -33,6 +33,11 @@ beforeEach(() => {
 });
 
 describe("mobile release calendar", () => {
+    it("rejects visitors before loading another user's release calendar", async () => {
+        await expect(getMobileCalendar(20, range, 10)).rejects.toThrow("private");
+        expect(mocks.settings).not.toHaveBeenCalled();
+        expect(mocks.get).not.toHaveBeenCalled();
+    });
     it("reads releases for the session owner and only active supported media", async () => {
         const data = await getMobileCalendar(10, range);
         expect(mocks.settings).toHaveBeenCalledWith(10);

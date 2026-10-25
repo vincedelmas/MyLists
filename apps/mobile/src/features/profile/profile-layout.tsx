@@ -10,7 +10,7 @@ import { useTabPush } from "../../hooks/use-tab-push";
 import { useQueryClient } from "@tanstack/react-query";
 import { MediaListGrid } from "../../components/media-list-grid";
 import { Animated, RefreshControl, View } from "react-native";
-import { UserRound, Activity, CalendarDays, ChartNoAxesCombined, Trophy } from "lucide-react-native";
+import { UserRound, Activity, CalendarDays, ChartNoAxesCombined, Trophy, Library } from "lucide-react-native";
 import { Button as NativeButton } from "@expo/ui";
 import { NativeHost } from "../../components/native-host";
 import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
@@ -38,12 +38,15 @@ export function ProfileLayout({
     const push = useTabPush();
     return (
         <CollapsingTabs
-            tabs={profileTabs}
+            tabs={userId ? profileTabs.map((tab) => tab.value === "calendar"
+                ? { value: "lists", label: "Lists", icon: Library } as const
+                : tab) : profileTabs}
+            tabBarTopPadding={12}
             initialTab="profile"
             onTabPress={(tab) => {
                 if (tab === "profile") return;
                 push({
-                    pathname: `/profile/${tab === "calendar" ? "releases" : tab}`,
+                    pathname: tab === "lists" ? "/lists" : `/profile/${tab === "calendar" ? "releases" : tab}`,
                     params: { userId, username: data.user.name },
                 });
             }}
@@ -121,18 +124,28 @@ export const ProfileHeader = memo(function ProfileHeader({
                     pointerEvents="box-none"
                     style={{ flexDirection: "row", gap: 14, alignItems: "flex-start", marginTop: -44 }}
                 >
-                    <Cover
-                        pointerEvents="none"
-                        uri={data.user.image}
-                        label={data.user.name}
-                        style={{
-                            width: 112,
-                            height: 112,
-                            borderWidth: 4,
-                            borderRadius: 56,
-                            borderColor: colors.background,
-                        }}
-                    />
+                    <View pointerEvents="none" style={{ paddingBottom: 8 }}>
+                        <Cover
+                            uri={data.user.image}
+                            label={data.user.name}
+                            style={{
+                                width: 112,
+                                height: 112,
+                                borderWidth: 4,
+                                borderRadius: 56,
+                                borderColor: colors.background,
+                            }}
+                        />
+                        <View style={{
+                            position: "absolute", bottom: 0, right: -4,
+                            borderRadius: 20, borderWidth: 4, borderColor: colors.background,
+                            backgroundColor: colors.primary, paddingHorizontal: 12, paddingVertical: 3,
+                        }}>
+                            <AppText style={{ fontSize: 12, fontWeight: "700", color: colors.accentText }}>
+                                Lvl. {data.user.level}
+                            </AppText>
+                        </View>
+                    </View>
                     <View pointerEvents="box-none" style={{ flex: 1, gap: 5, paddingTop: 44, paddingBottom: 4 }}>
                         <View pointerEvents="box-none" style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                             <View pointerEvents="none" style={{ flex: 1, gap: 2 }}>
@@ -140,16 +153,16 @@ export const ProfileHeader = memo(function ProfileHeader({
                                     {data.user.name}
                                 </AppText>
                                 <AppText muted style={{ fontSize: 11, lineHeight: 16 }}>
-                                    Joined in {new Date(data.user.createdAt).getUTCFullYear()} · Level {data.user.level}
+                                    Joined in {new Date(data.user.createdAt).getUTCFullYear()}
                                 </AppText>
                             </View>
                             <View style={{ paddingTop: 12 }}>
                                 <PrivacyBadge value={data.user.privacy} />
                             </View>
                         </View>
-                        {action}
                     </View>
                 </View>
+                {action && <View style={{ gap: 8, alignSelf: "flex-end" }}>{action}</View>}
                 {data.social && (
                     <View
                         pointerEvents="box-none"

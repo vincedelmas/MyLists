@@ -1,6 +1,8 @@
 import { useTabPush } from "../../hooks/use-tab-push";
-import { useState } from "react";
-import { useIsFocused } from "expo-router";
+import { useCallback, useReducer, useState } from "react";
+import { useFocusEffect, useIsFocused, useNavigation } from "expo-router";
+import type { BottomTabNavigationProp } from "expo-router/js-tabs";
+import type { TabParamList } from "../../lib/navigation.types";
 import { FlatList, View, Pressable } from "react-native";
 import { colors } from "../../theme";
 import { UserRound, Monitor, Gamepad2, Library, BookImage } from "lucide-react-native";
@@ -23,6 +25,18 @@ const providers = [
 
 export function SearchScreen() {
     const push = useTabPush();
+    const navigation = useNavigation();
+    const [focusKey, focusSearch] = useReducer((key: number) => key + 1, 0);
+    useFocusEffect(useCallback(() => {
+        // Native autofocus also works in Expo Go, where the field's imperative focus handler is unavailable.
+        focusSearch();
+        const tabs = navigation.getParent<BottomTabNavigationProp<TabParamList>>()!;
+        const unsubscribe = tabs.addListener("tabPress", ({ target }) => {
+            const state = tabs.getState();
+            if (target === state.routes[state.index].key) focusSearch();
+        });
+        return unsubscribe;
+    }, [navigation]));
     const [text, setText] = useState("");
     const [provider, setProvider] = useState<SearchInput["apiProvider"]>("tmdb");
     const term = useDebouncedValue(text.trim());
@@ -51,6 +65,8 @@ export function SearchScreen() {
                 ListHeaderComponent={
                     <View style={{ padding: 16, gap: 12 }}>
                         <Field
+                            key={focusKey}
+                            autoFocus
                             label="Search"
                             value={text}
                             onChangeText={setText}

@@ -16,7 +16,7 @@ export function ProfileScreen() {
             title="MyLists"
             brand
             action={
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                     <NotificationButton />
                     <Pressable
                         style={{ padding: 12 }}

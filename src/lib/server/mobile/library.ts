@@ -1,5 +1,4 @@
 import * as z from "zod";
-import { UnauthorizedError } from "@/lib/utils/error-classes";
 import { toActor } from "@/lib/server/authorization";
 import { getContainer } from "@/lib/server/core/container";
 import { mobileImagePath } from "@/lib/server/mobile/images";
@@ -24,7 +23,7 @@ export const libraryDetailSchema = librarySearchSchema
     })
     .refine((input) => input.kind === "continue" || input.id !== undefined, "A list ID is required.");
 
-export const getMobileLibrary = async (userId: number, { page, search }: z.infer<typeof librarySearchSchema>) => {
+export const getMobileLibrary = async (userId: number, { page, search }: z.infer<typeof librarySearchSchema>, viewerId = userId) => {
     const { services } = await getContainer();
 
     const views = dynamicListsRepository
@@ -37,7 +36,7 @@ export const getMobileLibrary = async (userId: number, { page, search }: z.infer
     const collections = await services.collections.getPaginatedUserCollections(
         userId,
         { page, search },
-        toActor({ id: userId }),
+        toActor({ id: viewerId }),
     );
 
     return {
@@ -63,7 +62,6 @@ export const getMobileLibraryDetail = async (
     input: z.infer<typeof libraryDetailSchema>,
     viewerId = userId,
 ) => {
-    if (viewerId !== userId && input.kind !== "continue") throw new UnauthorizedError("private");
     const { services } = await getContainer();
     const user = (await services.account.getUserById(userId))!;
 
@@ -98,7 +96,7 @@ export const getMobileLibraryDetail = async (
 
     if (input.kind === "dynamic") {
         const view = dynamicListsRepository.get(userId, input.id!);
-        const result = getDynamicListResults(userId, view.spec, { page: input.page, viewerId: userId });
+        const result = getDynamicListResults(userId, view.spec, { page: input.page, viewerId });
 
         return {
             page: result.page,
@@ -117,7 +115,7 @@ export const getMobileLibraryDetail = async (
         };
     }
 
-    const result = await services.collections.getCollectionDetails(input.id!, "read", toActor({ id: userId }), {
+    const result = await services.collections.getCollectionDetails(input.id!, "read", toActor({ id: viewerId }), {
         page: input.page,
     });
 

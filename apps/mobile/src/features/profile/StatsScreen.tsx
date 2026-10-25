@@ -10,7 +10,8 @@ import { Animated, RefreshControl, View } from "react-native";
 import { ProgressBar } from "../../components/ProgressBar";
 import { mediaLabels, mediaColors } from "../../lib/media";
 import { statsOptions } from "../../lib/react-query/query-options/profile.options";
-import { AppText, Section, Select, uiStyles } from "../../components/ui";
+import { AppText, Section, uiStyles } from "../../components/ui";
+import { FilterButtons } from "../../components/filter-buttons";
 
 export function StatsContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
@@ -46,11 +47,11 @@ export function StatsContent({ userId }: { userId?: number }) {
                                 />
                             }
                         >
-                            <View style={{ padding: 16 }}>
-                                <Select
+                            <View>
+                                <FilterButtons
                                     value={tab}
                                     label="Statistics for"
-                                    onChange={(value) => setTab(value as typeof tab)}
+                                    onChange={setTab}
                                     options={[
                                         { value: "overview", label: "Overview" },
                                         ...(query.data?.activatedMediaTypes ?? (tab !== "overview" ? [tab] : [])).map(

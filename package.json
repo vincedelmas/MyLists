@@ -77,7 +77,6 @@
         "nprogress": "^0.2.0",
         "pino": "^10.4.0",
         "posthog-js": "^1.438.21",
-        "@libsql/client": "^0.18.0",
         "rate-limiter-flexible": "^11.2.3",
         "react": "19.3.0",
         "react-day-picker": "^10.0.2",

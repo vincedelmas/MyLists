@@ -78,16 +78,27 @@ describe("mobile library access", () => {
         await getMobileLibraryDetail(20, { kind: "continue", page: 1, search: "" }, 10);
         expect(mocks.continue).toHaveBeenCalledWith(20, []);
     });
-    it.each(["collection", "dynamic"] as const)(
-        "does not let a subject parameter bypass %s ownership",
-        async (kind) => {
-            await expect(getMobileLibraryDetail(20, { kind, id: 30, page: 1, search: "" }, 10)).rejects.toThrow(
-                "private",
-            );
-            expect(mocks.detail).not.toHaveBeenCalled();
-            expect(mocks.results).not.toHaveBeenCalled();
-        },
-    );
+    it("lists the visited user's library with the visitor's collection permissions", async () => {
+        await getMobileLibrary(20, { page: 1, search: "" }, 10);
+        expect(mocks.all).toHaveBeenCalledWith(20);
+        expect(mocks.collections).toHaveBeenCalledWith(
+            20, { page: 1, search: "" }, { kind: "user", id: 10, role: "user" },
+        );
+    });
+    it("keeps dynamic list ownership scoped to the visited profile and passes the real viewer", async () => {
+        const spec = { title: "Favorites" };
+        mocks.get.mockReturnValue({ spec });
+        mocks.results.mockReturnValue({ page: 1, pages: 0, items: [] });
+        await getMobileLibraryDetail(20, { kind: "dynamic", id: 30, page: 1, search: "" }, 10);
+        expect(mocks.get).toHaveBeenCalledWith(20, 30);
+        expect(mocks.results).toHaveBeenCalledWith(20, spec, { page: 1, viewerId: 10 });
+    });
+    it("does not impersonate the visited user when opening their private collection", async () => {
+        mocks.detail.mockRejectedValue(new Error("Unauthorized"));
+        await expect(getMobileLibraryDetail(20, { kind: "collection", id: 30, page: 1, search: "" }, 10))
+            .rejects.toThrow("Unauthorized");
+        expect(mocks.detail).toHaveBeenCalledWith(30, "read", { kind: "user", id: 10, role: "user" }, { page: 1 });
+    });
     it("requires positive IDs for saved lists while allowing continue without an ID", () => {
         expect(libraryDetailSchema.safeParse({ kind: "dynamic" }).success).toBe(false);
         expect(libraryDetailSchema.safeParse({ kind: "collection", id: -1 }).success).toBe(false);

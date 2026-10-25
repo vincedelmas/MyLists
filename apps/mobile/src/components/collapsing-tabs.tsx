@@ -9,6 +9,7 @@ import { CollapsingScrollContext } from "../hooks/use-collapsing-scroll";
 interface CollapsingTabsProps<T extends string> {
     initialTab: T;
     scrollable?: boolean;
+    tabBarTopPadding?: number;
     onTabPress?: (tab: T) => void;
     children: (tab: T) => ReactNode;
     action?: Parameters<typeof SectionTabs<T>>[0]["action"];
@@ -29,6 +30,7 @@ export function CollapsingTabs<T extends string>({
     onTabPress,
     action,
     scrollable,
+    tabBarTopPadding = 0,
 }: CollapsingTabsProps<T>) {
     const { tab, selectTab, context, translateY, setHeaderHeight, setTabBarHeight, setViewportHeight } =
         useCollapsingTabs(initialTab);
@@ -44,14 +46,18 @@ export function CollapsingTabs<T extends string>({
                     >
                         {typeof header === "function" ? header(selectTab) : header}
                     </View>
-                    <SectionTabs
-                        tabs={tabs}
-                        scrollable={scrollable}
-                        value={tab}
-                        action={action}
-                        onChange={onTabPress ?? selectTab}
+                    <View
+                        style={{ paddingTop: tabBarTopPadding }}
                         onLayout={(event) => setTabBarHeight(event.nativeEvent.layout.height)}
-                    />
+                    >
+                        <SectionTabs
+                            tabs={tabs}
+                            scrollable={scrollable}
+                            value={tab}
+                            action={action}
+                            onChange={onTabPress ?? selectTab}
+                        />
+                    </View>
                 </Animated.View>
             </View>
         </CollapsingScrollContext.Provider>

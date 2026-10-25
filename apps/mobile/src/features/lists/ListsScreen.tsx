@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {colors} from "../../theme";
-import {useIsFocused} from "expo-router";
+import {useIsFocused, useLocalSearchParams} from "expo-router";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {FolderOpen, ListFilter} from "lucide-react-native";
 import {MediaListGrid} from "../../components/media-list-grid";
@@ -9,15 +9,19 @@ import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {libraryOptions} from "../../lib/react-query/query-options/library.options";
 import {listsSummaryOptions} from "../../lib/react-query/query-options/media.options";
+import {profileOptions} from "../../lib/react-query/query-options/profile.options";
 import {AppText, Cover, Field, MenuRow, Page, QueryPanel, StateView} from "../../components/ui";
 
 export function ListsScreen() {
     const push = useTabPush();
     const focused = useIsFocused();
+    const params = useLocalSearchParams<{ userId?: string; username?: string }>();
+    const userId = params.userId ? Number(params.userId) : undefined;
     const [search, setSearch] = useState("");
     const debounced = useDebouncedValue(search.trim());
-    const tracking = useQuery({ ...listsSummaryOptions, enabled: focused });
-    const query = useInfiniteQuery({ ...libraryOptions(debounced), enabled: focused });
+    const tracking = useQuery({ ...listsSummaryOptions, enabled: focused && !userId });
+    const profile = useQuery({ ...profileOptions(userId), select: (data) => data.lists, enabled: focused && !!userId });
+    const query = useInfiniteQuery({ ...libraryOptions(debounced, userId), enabled: focused });
 
     const pages = query.data?.pages ?? [];
     const rows = pages.flatMap((page) => [
@@ -26,7 +30,7 @@ export function ListsScreen() {
     ]);
 
     return (
-        <Page title="Lists & collections" subtitle="Everything you watch, read, and play">
+        <Page title="Lists & collections" subtitle={userId ? params.username : "Everything you watch, read, and play"} back={!!userId}>
             <SectionList<(typeof rows)[number]>
                 windowSize={7}
                 initialNumToRender={10}
@@ -63,16 +67,17 @@ export function ListsScreen() {
                 refreshControl={
                     <RefreshControl
                         tintColor={colors.accent}
-                        refreshing={(query.isRefetching && !query.isFetchingNextPage) || tracking.isRefetching}
+                        refreshing={(query.isRefetching && !query.isFetchingNextPage) || (userId ? profile.isRefetching : tracking.isRefetching)}
                         onRefresh={() => {
                             void query.refetch();
-                            void tracking.refetch();
+                            if (userId) void profile.refetch();
+                            else void tracking.refetch();
                         }}
                     />
                 }
                 ListHeaderComponent={
                     <View style={{ gap: 24, marginBottom: 16 }}>
-                        <QueryPanel query={tracking}>
+                        <QueryPanel query={userId ? profile : tracking}>
                             {(lists) =>
                                 <View style={{ gap: 12 }}>
                                     <AppText heading style={{ fontSize: 18 }}>
@@ -80,7 +85,8 @@ export function ListsScreen() {
                                     </AppText>
                                     <MediaListGrid
                                         lists={lists}
-                                        includeContinue={true}
+                                        userId={userId}
+                                        includeContinue={!userId}
                                     />
                                 </View>
                             }
@@ -127,7 +133,7 @@ export function ListsScreen() {
                             onPress={() =>
                                 push({
                                     pathname: "/library/[kind]",
-                                    params: { kind: item.kind, id: String(item.id) },
+                                    params: { kind: item.kind, id: String(item.id), userId },
                                 })
                             }
                         />
@@ -152,7 +158,7 @@ export function ListsScreen() {
                         <StateView
                             loading={query.isPending}
                             retry={query.isError ? () => void query.refetch() : undefined}
-                            message={query.error?.message ?? "Your dynamic lists and collections appear here."}
+                            message={query.error?.message ?? (userId ? "This user’s dynamic lists and collections appear here." : "Your dynamic lists and collections appear here.")}
                             title={
                                 query.isError
                                     ? "Couldn’t load lists"

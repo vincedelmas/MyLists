@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
-import { Page } from "../../components/ui";
+import { Page, StateView } from "../../components/ui";
 import { AchievementsContent } from "./AchievementsScreen";
 import { ActivityContent } from "./ActivityScreen";
 import { StatsContent } from "./StatsScreen";
@@ -16,7 +16,9 @@ export function ProfileSectionScreen({ section }: { section: "activity" | "stats
             {section === "activity" && <ActivityContent userId={userId} />}
             {section === "stats" && <StatsContent userId={userId} />}
             {section === "achievements" && <AchievementsContent userId={userId} />}
-            {section === "releases" && <CalendarContent userId={userId} />}
+            {section === "releases" && (userId
+                ? <StateView title="Your calendar is private" message="Release calendars are only available to their owner." />
+                : <CalendarContent />)}
         </Page>
     );
 }

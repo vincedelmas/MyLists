@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, type MediaParams, type UpdateInput } from "../../api-client";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {api, type MediaParams, type UpdateInput} from "../../api-client";
 
 type TrackingChange =
     | { action: "add"; status?: string }
@@ -42,6 +42,7 @@ export function useMediaRefreshMutation(params: MediaParams) {
         },
     });
 }
+
 export function useMediaEditMutation() {
     const client = useQueryClient();
     return useMutation({

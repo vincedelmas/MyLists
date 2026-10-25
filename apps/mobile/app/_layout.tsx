@@ -22,23 +22,23 @@ const navigationTheme = {
 };
 
 export default function RootLayout() {
-    const {data: session} = authClient.useSession();
+    const { data: session } = authClient.useSession();
 
     const navigator = (
-        <Stack screenOptions={{headerShown: false, contentStyle: {backgroundColor: colors.background}}}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
             <Stack.Protected guard={!session}>
-                <Stack.Screen name="sign-in" />
+                <Stack.Screen name="sign-in"/>
             </Stack.Protected>
             <Stack.Protected guard={!!session}>
-                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(tabs)"/>
             </Stack.Protected>
         </Stack>
     );
 
     return (
         <ThemeProvider value={navigationTheme}>
-            <SafeAreaProvider style={{flex: 1, backgroundColor: colors.background}}>
-                <StatusBar style="light" />
+            <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.background }}>
+                <StatusBar style="light"/>
                 <SessionGate>
                     <QueryProvider key={session?.user.id ?? "anonymous"}>
                         {navigationTimingEnabled ? (

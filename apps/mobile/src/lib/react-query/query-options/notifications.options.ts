@@ -1,5 +1,6 @@
-import { queryOptions } from "@tanstack/react-query";
-import { api } from "../../api-client";
+import {queryOptions} from "@tanstack/react-query";
+import {api} from "../../api-client";
+
 export const notificationCountsOptions = queryOptions({
     queryKey: ["notification-counts"],
     queryFn: ({ signal }) => api.notificationCounts(signal),

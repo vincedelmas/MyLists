@@ -1,5 +1,5 @@
-import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
-import { api, type ListInput, type MediaParams, type MediaType } from "../../api-client";
+import {infiniteQueryOptions, queryOptions} from "@tanstack/react-query";
+import {api, type ListInput, type MediaParams, type MediaType} from "../../api-client";
 
 export const mediaOptions = (params: MediaParams) =>
     queryOptions({

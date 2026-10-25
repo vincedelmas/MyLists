@@ -1,20 +1,22 @@
-import { AppText } from "./ui";
-import { colors } from "../theme";
-import type { LucideIcon } from "lucide-react-native";
-import { Pressable, StyleSheet, ScrollView, View, type ViewProps } from "react-native";
+import {AppText} from "./ui";
+import {colors} from "../theme";
+import type {LucideIcon} from "lucide-react-native";
+import {Pressable, StyleSheet, ScrollView, View, type ViewProps} from "react-native";
 
-interface SectionTabsProps<T extends string> {
+export interface SectionTab<T extends string> {
+    value: T;
+    label: string;
+    icon: LucideIcon;
+    count?: number;
+}
+
+export interface SectionTabsProps<T extends string> {
     value: T;
     onChange: (value: T) => void;
     onLayout?: ViewProps["onLayout"];
     scrollable?: boolean;
     showIndicator?: boolean;
-    tabs: readonly {
-        value: T;
-        label: string;
-        icon: LucideIcon;
-        count?: number;
-    }[];
+    tabs: readonly SectionTab<T>[];
     action?: {
         label: string;
         busy?: boolean;
@@ -25,14 +27,14 @@ interface SectionTabsProps<T extends string> {
 }
 
 export function SectionTabs<T extends string>({
-    tabs,
-    value,
-    onChange,
-    onLayout,
-    action,
-    scrollable = false,
-    showIndicator = true,
-}: SectionTabsProps<T>) {
+                                                  tabs,
+                                                  value,
+                                                  onChange,
+                                                  onLayout,
+                                                  action,
+                                                  scrollable = false,
+                                                  showIndicator = true,
+                                              }: SectionTabsProps<T>) {
     const content = (
         <>
             {tabs.map(({ value: key, label, icon: Icon, count }) => (
@@ -50,7 +52,7 @@ export function SectionTabs<T extends string>({
                     ]}
                 >
                     <View style={styles.iconRow}>
-                        <Icon size={19} color={value === key ? colors.accent : colors.muted} />
+                        <Icon size={19} color={value === key ? colors.accent : colors.muted}/>
                         {count !== undefined && (
                             <AppText style={[styles.count, value === key && styles.selectedLabel]}>
                                 {count.toLocaleString()}
@@ -80,7 +82,7 @@ export function SectionTabs<T extends string>({
                         action.disabled ? styles.disabled : pressed && styles.pressed,
                     ]}
                 >
-                    <action.icon size={19} color={colors.muted} />
+                    <action.icon size={19} color={colors.muted}/>
                     <AppText style={styles.actionLabel}>{action.busy ? "Refreshing" : action.label}</AppText>
                 </Pressable>
             )}

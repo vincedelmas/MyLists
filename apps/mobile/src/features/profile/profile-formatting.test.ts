@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { formatActivity } from "./profile-formatting";
+import {describe, expect, it} from "vitest";
+import {formatActivity} from "./profile-formatting";
 
 describe("mobile activity payloads", () => {
     it.each([

@@ -1,16 +1,17 @@
-import { useIsFocused } from "expo-router";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { Animated, Pressable, RefreshControl, StyleSheet, View } from "react-native";
-import { AppText, Cover, StateView } from "../../components/ui";
-import { mediaCommunityOptions } from "../../lib/react-query/query-options/media.options";
-import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { useTabPush } from "../../hooks/use-tab-push";
-import type { api, MediaParams } from "../../lib/api-client";
-import { Rating } from "../../components/rating";
-import { formatMinutes } from "@/lib/utils/formatting/number";
-import { colors } from "../../theme";
+import {useIsFocused} from "expo-router";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import {Animated, Pressable, RefreshControl, StyleSheet, View} from "react-native";
+import {AppText, Cover, StateView} from "../../components/ui";
+import {mediaCommunityOptions} from "../../lib/react-query/query-options/media.options";
+import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
+import {useTabPush} from "../../hooks/use-tab-push";
+import type {api, MediaParams} from "../../lib/api-client";
+import {Rating} from "../../components/rating";
+import {formatMinutes} from "@/lib/utils/formatting/number";
+import {colors} from "../../theme";
 
 type Person = Awaited<ReturnType<typeof api.mediaCommunity>>["items"][number];
+
 function ActivityPerson({ item }: { item: Person }) {
     const push = useTabPush();
     const progress = [
@@ -30,7 +31,7 @@ function ActivityPerson({ item }: { item: Person }) {
             onPress={() => push({ pathname: "/people/[userId]", params: { userId: String(item.id) } })}
             style={styles.person}
         >
-            <Cover uri={item.image} label={item.name} style={styles.avatar} />
+            <Cover uri={item.image} label={item.name} style={styles.avatar}/>
             <View style={styles.personInfo}>
                 <AppText style={styles.personName}>{item.name}</AppText>
                 <AppText muted style={styles.smallText}>
@@ -48,15 +49,16 @@ function ActivityPerson({ item }: { item: Person }) {
                     </AppText>
                 )}
             </View>
-            <Rating value={item.rating} system={item.ratingSystem} />
+            <Rating value={item.rating} system={item.ratingSystem}/>
         </Pressable>
     );
 }
+
 export function MediaCommunityContent({
-    params,
-    ratingSystem,
-    mode,
-}: {
+                                          params,
+                                          ratingSystem,
+                                          mode,
+                                      }: {
     params: MediaParams;
     mode: "follows" | "community";
     ratingSystem: "score" | "feeling";
@@ -106,13 +108,13 @@ export function MediaCommunityContent({
                                 {first.stats.likedCount} favorites
                             </AppText>
                             {first.stats.averageRating != null && (
-                                <Rating value={first.stats.averageRating} system={ratingSystem} />
+                                <Rating value={first.stats.averageRating} system={ratingSystem}/>
                             )}
                         </>
                     )}
                 </View>
             )}
-            renderItem={({ item }) => <ActivityPerson item={item} />}
+            renderItem={({ item }) => <ActivityPerson item={item}/>}
             renderSectionFooter={({ section }) =>
                 !first ? (
                     <StateView
@@ -132,9 +134,9 @@ export function MediaCommunityContent({
             }
             ListFooterComponent={
                 mode === "community" && query.isFetchingNextPage ? (
-                    <StateView loading />
+                    <StateView loading/>
                 ) : mode === "community" && query.isError && items.length ? (
-                    <StateView title="Couldn’t load more activity" retry={() => void query.fetchNextPage()} />
+                    <StateView title="Couldn’t load more activity" retry={() => void query.fetchNextPage()}/>
                 ) : undefined
             }
         />

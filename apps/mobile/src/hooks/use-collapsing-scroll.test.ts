@@ -1,7 +1,7 @@
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
-import { CollapsingScrollContext, useCollapsingScroll } from "./use-collapsing-scroll";
+import {createElement} from "react";
+import {renderToStaticMarkup} from "react-dom/server";
+import {describe, expect, it, vi} from "vitest";
+import {CollapsingScrollContext, useCollapsingScroll} from "./use-collapsing-scroll";
 
 function renderScroll(viewportHeight = 640) {
     const getOffset = vi.fn(() => 150);
@@ -14,10 +14,12 @@ function renderScroll(viewportHeight = 640) {
         viewportHeight,
     };
     let result: ReturnType<typeof useCollapsingScroll>;
+
     function Harness() {
         result = useCollapsingScroll();
         return null;
     }
+
     renderToStaticMarkup(createElement(CollapsingScrollContext.Provider, { value }, createElement(Harness)));
     return { scroll: result!, getOffset };
 }
@@ -25,7 +27,12 @@ function renderScroll(viewportHeight = 640) {
 describe("collapsing profile scroll panes", () => {
     it("supports standalone pages without reserving space for a profile header", () => {
         let scroll: ReturnType<typeof useCollapsingScroll>;
-        function Standalone() { scroll = useCollapsingScroll(); return null; }
+
+        function Standalone() {
+            scroll = useCollapsingScroll();
+            return null;
+        }
+
         renderToStaticMarkup(createElement(Standalone));
         expect(scroll!.contentContainerStyle.paddingTop).toBe(16);
         expect(scroll!.contentContainerStyle.minHeight).toBe(0);

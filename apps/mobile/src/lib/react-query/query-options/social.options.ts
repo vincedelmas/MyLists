@@ -1,5 +1,5 @@
-import { api } from "../../api-client";
-import { infiniteQueryOptions } from "@tanstack/react-query";
+import {api} from "../../api-client";
+import {infiniteQueryOptions} from "@tanstack/react-query";
 
 export const socialOptions = (kind: Parameters<typeof api.social>[0]["kind"], userId?: number) =>
     infiniteQueryOptions({

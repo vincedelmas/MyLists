@@ -1,27 +1,27 @@
-import { View, StyleSheet } from "react-native";
-import { Star } from "lucide-react-native";
-import { AppText, Cover } from "../../components/ui";
-import type { MobileMedia } from "../../lib/api-client";
-import { colors, spacing } from "../../theme";
-import { formatMinutes } from "@/lib/utils/formatting/number";
+import {View, StyleSheet} from "react-native";
+import {Star} from "lucide-react-native";
+import {AppText, Cover} from "../../components/ui";
+import type {MobileMedia} from "../../lib/api-client";
+import {colors, spacing} from "../../theme";
+import {formatMinutes} from "@/lib/utils/formatting/number";
 
 export function MediaHero({ data }: { data: MobileMedia }) {
     const media = data.media;
     const time = media.completionHours
         ? `${formatMinutes(media.completionHours * 60, { compact: true })} · main story`
         : media.duration
-          ? formatMinutes(media.duration, { compact: true })
-          : null;
+            ? formatMinutes(media.duration, { compact: true })
+            : null;
     return (
         <View pointerEvents="box-none" style={styles.hero}>
             {media.backdrop && (
                 <View pointerEvents="none" style={styles.backdrop}>
-                    <Cover uri={media.backdrop} style={styles.backdropImage} />
-                    <View style={styles.fade} />
+                    <Cover uri={media.backdrop} style={styles.backdropImage}/>
+                    <View style={styles.fade}/>
                 </View>
             )}
             <View pointerEvents="box-none" style={[styles.identity, media.backdrop && styles.overlap]}>
-                <Cover pointerEvents="none" uri={media.cover} label={media.name} style={styles.poster} />
+                <Cover pointerEvents="none" uri={media.cover} label={media.name} style={styles.poster}/>
                 <View pointerEvents="none" style={[styles.info, media.backdrop && styles.overlapInfo]}>
                     <AppText heading style={styles.title}>
                         {media.name}
@@ -36,7 +36,7 @@ export function MediaHero({ data }: { data: MobileMedia }) {
                     )}
                     {media.score != null && (
                         <View style={styles.scoreRow}>
-                            <Star size={15} color={colors.rating} fill={colors.rating} />
+                            <Star size={15} color={colors.rating} fill={colors.rating}/>
                             <AppText style={styles.score}>{(media.score / media.scoreDivisor).toFixed(1)}</AppText>
                             <AppText muted style={styles.provider}>
                                 {media.provider.name}
@@ -49,6 +49,7 @@ export function MediaHero({ data }: { data: MobileMedia }) {
         </View>
     );
 }
+
 const styles = StyleSheet.create({
     hero: { paddingBottom: spacing.xl },
     backdrop: { height: 156 },

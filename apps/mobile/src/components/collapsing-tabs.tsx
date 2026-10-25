@@ -1,10 +1,9 @@
-import { colors } from "../theme";
-import type { ReactNode } from "react";
-import { SectionTabs } from "./section-tabs";
-import { Animated, StyleSheet, View } from "react-native";
-import type { LucideIcon } from "lucide-react-native";
-import { useCollapsingTabs } from "../hooks/use-collapsing-tabs";
-import { CollapsingScrollContext } from "../hooks/use-collapsing-scroll";
+import {colors} from "../theme";
+import type {ReactNode} from "react";
+import {SectionTabs, type SectionTab, type SectionTabsProps} from "./section-tabs";
+import {Animated, StyleSheet, View} from "react-native";
+import {useCollapsingTabs} from "../hooks/use-collapsing-tabs";
+import {CollapsingScrollContext} from "../hooks/use-collapsing-scroll";
 
 interface CollapsingTabsProps<T extends string> {
     initialTab: T;
@@ -12,26 +11,21 @@ interface CollapsingTabsProps<T extends string> {
     tabBarTopPadding?: number;
     onTabPress?: (tab: T) => void;
     children: (tab: T) => ReactNode;
-    action?: Parameters<typeof SectionTabs<T>>[0]["action"];
+    action?: SectionTabsProps<T>["action"];
     header: ReactNode | ((selectTab: (tab: T) => void) => ReactNode);
-    tabs: readonly {
-        value: T;
-        label: string;
-        icon: LucideIcon;
-        count?: number;
-    }[];
+    tabs: readonly SectionTab<T>[];
 }
 
 export function CollapsingTabs<T extends string>({
-    tabs,
-    initialTab,
-    header,
-    children,
-    onTabPress,
-    action,
-    scrollable,
-    tabBarTopPadding = 0,
-}: CollapsingTabsProps<T>) {
+                                                     tabs,
+                                                     initialTab,
+                                                     header,
+                                                     children,
+                                                     onTabPress,
+                                                     action,
+                                                     scrollable,
+                                                     tabBarTopPadding = 0,
+                                                 }: CollapsingTabsProps<T>) {
     const { tab, selectTab, context, translateY, setHeaderHeight, setTabBarHeight, setViewportHeight } =
         useCollapsingTabs(initialTab);
 

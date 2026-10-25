@@ -64,12 +64,10 @@ export const statusColors: Record<string, string> = {
 
 
 export const commonStyles = StyleSheet.create({
-    disabled: { opacity: 0.5 }, pressed: { opacity: 0.7 },
+    pressed: { opacity: 0.7 },
     screen: { flex: 1, backgroundColor: colors.background },
     body: { color: colors.muted, fontSize: 14, lineHeight: 22 },
-    error: { color: colors.error, fontSize: 14, lineHeight: 21 },
     brand: { color: colors.text, fontSize: 20, fontWeight: "700" },
-    eyebrow: { color: colors.accent, fontSize: 12, fontWeight: "600" },
     centered: { flex: 1, justifyContent: "center", padding: 24, gap: 16 },
     content: { width: "100%", maxWidth: 560, alignSelf: "center", gap: 20 },
     buttonText: { color: colors.accentText, fontSize: 14, fontWeight: "600" },

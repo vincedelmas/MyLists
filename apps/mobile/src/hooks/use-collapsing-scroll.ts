@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useRef, type ComponentRef } from "react";
-import type { ScrollViewProps, ScrollView } from "react-native";
+import {createContext, useCallback, useContext, useRef, type ComponentRef} from "react";
+import type {ScrollViewProps, ScrollView} from "react-native";
 
 type ScrollResponder = Pick<ComponentRef<typeof ScrollView>, "scrollTo">;
 
@@ -14,7 +14,8 @@ export const CollapsingScrollContext = createContext<{
 
 // Standalone pages have no collapsing header, but share the same scroll insets.
 const standaloneScroll = {
-    onScroll: () => {},
+    onScroll: () => {
+    },
     initialOffset: 0,
     getOffset: () => 0,
     headerHeight: 0,

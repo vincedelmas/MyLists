@@ -3,8 +3,8 @@ import {router, useIsFocused, useLocalSearchParams} from "expo-router";
 import type {TabParamList} from "../../lib/navigation.types";
 import {useNavigation, type NavigationProp} from "expo-router/react-navigation";
 import {useQuery} from "@tanstack/react-query";
-import {BottomSheet, RNHostView, Row, Switch, Text as NativeText} from "@expo/ui";
-import {ScrollView, View, useWindowDimensions} from "react-native";
+import {Row, Switch, Text as NativeText} from "@expo/ui";
+import {ScrollView, View} from "react-native";
 import {AppText, Button, MenuRow, Page, QueryPanel, Section} from "../../components/ui";
 import {NativeHost} from "../../components/native-host";
 import {colors} from "../../theme";
@@ -13,13 +13,13 @@ import {listFiltersOptions} from "../../lib/react-query/query-options/media.opti
 import {countListFilters, parseListFilters} from "./list-filters";
 
 
-import {FilterValues, type FilterGroup} from "./filter-values";
+import type {FilterGroup} from "./filter-values";
+import {FilterValuesSheet} from "./filter-values-sheet";
 
 
 export function ListFiltersScreen() {
     const focused = useIsFocused();
     const navigation = useNavigation();
-    const { width, height } = useWindowDimensions();
     const [group, setGroup] = useState<FilterGroup | null>(null);
     const params = useLocalSearchParams<{ mediaType: MediaType; userId?: string; filters?: string }>();
 
@@ -106,25 +106,18 @@ export function ListFiltersScreen() {
             </View>
 
             {group &&
-                <NativeHost>
-                    <BottomSheet isPresented onDismiss={() => setGroup(null)} snapPoints={["full"]} contentPadding={0}>
-                        <RNHostView matchContents={{ vertical: true }}>
-                            <View style={{ width: Math.max(0, width - 32), height: height * 0.72 }}>
-                                <FilterValues
-                                    group={group}
-                                    key={group.key}
-                                    userId={userId}
-                                    mediaType={mediaType}
-                                    selected={draft[group.key] ?? []}
-                                    close={() => setGroup(null)}
-                                    onChange={(values) =>
-                                        setDraft({ ...draft, [group.key]: values.length ? values : undefined })
-                                    }
-                                />
-                            </View>
-                        </RNHostView>
-                    </BottomSheet>
-                </NativeHost>
+                <FilterValuesSheet
+                    group={group}
+                    key={group.key}
+                    userId={userId}
+                    mediaType={mediaType}
+                    selected={draft[group.key] ?? []}
+                    close={() => setGroup(null)}
+                    onChange={(values) =>
+                        setDraft({ ...draft, [group.key]: values.length ? values : undefined })
+                    }
+                />
+
             }
         </Page>
     );

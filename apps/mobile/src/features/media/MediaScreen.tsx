@@ -1,20 +1,20 @@
-import { useState } from "react";
-import { Alert } from "react-native";
-import { useIsFocused } from "expo-router";
-import { Info, UserRoundCheck, UsersRound, BookmarkCheck, Pencil, RefreshCw } from "lucide-react-native";
-import { mediaLabels } from "../../lib/media";
-import { CollapsingTabs } from "../../components/collapsing-tabs";
-import { MediaHero } from "./MediaHero";
-import { MediaDetailsContent } from "./MediaDetailsContent";
-import { MediaCommunityContent } from "./MediaCommunityContent";
-import { MediaTrackingContent } from "./MediaTrackingContent";
-import { MediaEditContent } from "./MediaEditContent";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
-import { mediaOptions, mediaCommunityOptions } from "../../lib/react-query/query-options/media.options";
-import type { MediaParams, UpdateInput } from "../../lib/api-client";
-import { useTrackingMutation, useMediaRefreshMutation } from "../../lib/react-query/query-mutations/media.mutations";
-import { AppText, Page, QueryPanel } from "../../components/ui";
+import {useState} from "react";
+import {Alert} from "react-native";
+import {useIsFocused} from "expo-router";
+import {Info, UserRoundCheck, UsersRound, BookmarkCheck, Pencil, RefreshCw} from "lucide-react-native";
+import {mediaLabels} from "../../lib/media";
+import {CollapsingTabs} from "../../components/collapsing-tabs";
+import {MediaHero} from "./MediaHero";
+import {MediaDetailsContent} from "./MediaDetailsContent";
+import {MediaCommunityContent} from "./MediaCommunityContent";
+import {MediaTrackingContent} from "./MediaTrackingContent";
+import {MediaEditContent} from "./MediaEditContent";
+import {useQuery, useInfiniteQuery} from "@tanstack/react-query";
+import {useLocalSearchParams} from "expo-router";
+import {mediaOptions, mediaCommunityOptions} from "../../lib/react-query/query-options/media.options";
+import type {MediaParams, UpdateInput} from "../../lib/api-client";
+import {useTrackingMutation, useMediaRefreshMutation} from "../../lib/react-query/query-mutations/media.mutations";
+import {AppText, Page, QueryPanel} from "../../components/ui";
 
 export function MediaScreen() {
     const focused = useIsFocused();
@@ -99,7 +99,7 @@ export function MediaScreen() {
                             { value: "tracking", label: "Tracking", icon: BookmarkCheck },
                             ...(data.canEdit ? [{ value: "edit", label: "Edit", icon: Pencil }] : []),
                         ]}
-                        header={<MediaHero data={data} />}
+                        header={<MediaHero data={data}/>}
                         action={{
                             label: "Refresh",
                             icon: RefreshCw,
@@ -146,7 +146,7 @@ export function MediaScreen() {
                                         refreshing={query.isRefetching}
                                     />
                                 )}
-                                {tab === "edit" && data.canEdit && <MediaEditContent params={media} />}
+                                {tab === "edit" && data.canEdit && <MediaEditContent params={media}/>}
                             </>
                         )}
                     </CollapsingTabs>

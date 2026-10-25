@@ -1,5 +1,5 @@
-import { api } from "../../api-client";
-import { infiniteQueryOptions } from "@tanstack/react-query";
+import {api} from "../../api-client";
+import {infiniteQueryOptions} from "@tanstack/react-query";
 
 export const historyOptions = (userId?: number) =>
     infiniteQueryOptions({

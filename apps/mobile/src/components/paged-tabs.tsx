@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from "react";
-import { Animated, Keyboard, ScrollView, View } from "react-native";
-import { SectionTabs } from "./section-tabs";
-import { colors } from "../theme";
+import {useEffect, useRef, useState, type ComponentRef, type ReactNode} from "react";
+import {Animated, Keyboard, ScrollView, View} from "react-native";
+import {SectionTabs, type SectionTab} from "./section-tabs";
+import {colors} from "../theme";
 
-export function PagedTabs<T extends string>({ tabs, value, onChange, children }: {
-    tabs: Parameters<typeof SectionTabs<T>>[0]["tabs"];
+interface PagedTabsProps<T extends string> {
+    tabs: readonly SectionTab<T>[];
     value: T;
     onChange: (value: T) => void;
     children: (tab: T) => ReactNode;
-}) {
+}
+
+export function PagedTabs<T extends string>({ tabs, value, onChange, children }: PagedTabsProps<T>) {
     const pageIndex = useRef(tabs.findIndex((tab) => tab.value === value));
     const [width, setWidth] = useState(0);
     const pager = useRef<ComponentRef<typeof ScrollView>>(null);

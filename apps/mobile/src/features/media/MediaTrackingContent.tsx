@@ -1,26 +1,26 @@
-import { useIsFocused } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { Alert, Animated, RefreshControl, StyleSheet, View } from "react-native";
-import { AppText, Button, MenuRow, QueryPanel, Section } from "../../components/ui";
-import { TrackingEditor } from "./TrackingEditor";
-import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { mediaCollectionsOptions } from "../../lib/react-query/query-options/media.options";
-import type { MediaParams, MobileMedia, UpdateInput } from "../../lib/api-client";
-import { colors } from "../../theme";
+import {useIsFocused} from "expo-router";
+import {useQuery} from "@tanstack/react-query";
+import {Alert, Animated, RefreshControl, StyleSheet, View} from "react-native";
+import {AppText, Button, MenuRow, QueryPanel, Section} from "../../components/ui";
+import {TrackingEditor} from "./TrackingEditor";
+import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {mediaCollectionsOptions} from "../../lib/react-query/query-options/media.options";
+import type {MediaParams, MobileMedia, UpdateInput} from "../../lib/api-client";
+import {colors} from "../../theme";
 
 export function MediaTrackingContent({
-    params,
-    data,
-    pending,
-    saved,
-    error,
-    update,
-    add,
-    remove,
-    refetch,
-    refreshing,
-}: {
+                                         params,
+                                         data,
+                                         pending,
+                                         saved,
+                                         error,
+                                         update,
+                                         add,
+                                         remove,
+                                         refetch,
+                                         refreshing,
+                                     }: {
     params: MediaParams;
     data: MobileMedia;
     pending: boolean;
@@ -76,12 +76,12 @@ export function MediaTrackingContent({
                         </AppText>
                     )}
                     {data.tracking ? (
-                        <TrackingEditor data={data} update={update} pending={pending} error={error} />
+                        <TrackingEditor data={data} update={update} pending={pending} error={error}/>
                     ) : data.active ? (
                         <Section title="Start tracking">
                             <View style={styles.startTracking}>
                                 <AppText muted>Keep your progress, rating and comments here.</AppText>
-                                <Button label="Add to your list" pending={pending} onPress={add} />
+                                <Button label="Add to your list" pending={pending} onPress={add}/>
                             </View>
                         </Section>
                     ) : (

@@ -6,13 +6,13 @@ const captureMs = 3_000;
 let sequence = 0;
 let current:
     | {
-          id: number;
-          route: string;
-          startedAt: number;
-          events: {phase: string; atMs: number; renderMs?: number}[];
-          requests: {path: string; startMs: number; durationMs?: number; outcome?: string}[];
-          timer: ReturnType<typeof setTimeout>;
-      }
+    id: number;
+    route: string;
+    startedAt: number;
+    events: { phase: string; atMs: number; renderMs?: number }[];
+    requests: { path: string; startMs: number; durationMs?: number; outcome?: string }[];
+    timer: ReturnType<typeof setTimeout>;
+}
     | undefined;
 
 const rounded = (value: number) => Math.round(value * 10) / 10;
@@ -20,9 +20,9 @@ const rounded = (value: number) => Math.round(value * 10) / 10;
 function report(reason: "capture-ended" | "next-navigation") {
     if (!current) return;
     clearTimeout(current.timer);
-    const {timer: _timer, startedAt: _startedAt, ...trace} = current;
+    const { timer: _timer, startedAt: _startedAt, ...trace } = current;
     current = undefined;
-    console.info(`[nav-timing] ${JSON.stringify({...trace, reason})}`);
+    console.info(`[nav-timing] ${JSON.stringify({ ...trace, reason })}`);
 }
 
 export function beginNavigationTiming(route: string, phase: "press-in" | "navigation-requested") {
@@ -50,7 +50,7 @@ export function recordNavigationTiming(phase: string, route?: string, renderMs?:
     current.events.push({
         phase,
         atMs: rounded(performance.now() - current.startedAt),
-        ...(renderMs === undefined ? {} : {renderMs: rounded(renderMs)}),
+        ...(renderMs === undefined ? {} : { renderMs: rounded(renderMs) }),
     });
 }
 

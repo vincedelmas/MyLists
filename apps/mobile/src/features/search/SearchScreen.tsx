@@ -1,19 +1,19 @@
-import { useTabPush } from "../../hooks/use-tab-push";
-import { useCallback, useReducer, useState } from "react";
-import { useFocusEffect, useIsFocused, useNavigation } from "expo-router";
-import type { BottomTabNavigationProp } from "expo-router/js-tabs";
-import type { TabParamList } from "../../lib/navigation.types";
-import { FlatList, View, Pressable } from "react-native";
-import { colors } from "../../theme";
-import { UserRound, Monitor, Gamepad2, Library, BookImage } from "lucide-react-native";
-import { mediaLabels } from "../../lib/media";
-import { MediaRow } from "../../components/MediaRow";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useDebouncedValue } from "../../hooks/use-debounced-value";
-import type { SearchInput, SearchResult } from "../../lib/api-client";
-import { AppText, Cover, Field, Page, StateView } from "../../components/ui";
-import { searchOptions } from "../../lib/react-query/query-options/search.options";
-import { useResolveMutation } from "../../lib/react-query/query-mutations/media.mutations";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {useCallback, useReducer, useState} from "react";
+import {useFocusEffect, useIsFocused, useNavigation} from "expo-router";
+import type {BottomTabNavigationProp} from "expo-router/js-tabs";
+import type {TabParamList} from "../../lib/navigation.types";
+import {FlatList, View, Pressable} from "react-native";
+import {colors} from "../../theme";
+import {UserRound, Monitor, Gamepad2, Library, BookImage} from "lucide-react-native";
+import {mediaLabels} from "../../lib/media";
+import {MediaRow} from "../../components/MediaRow";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import {useDebouncedValue} from "../../hooks/use-debounced-value";
+import type {SearchInput, SearchResult} from "../../lib/api-client";
+import {AppText, Cover, Field, Page, StateView} from "../../components/ui";
+import {searchOptions} from "../../lib/react-query/query-options/search.options";
+import {useResolveMutation} from "../../lib/react-query/query-mutations/media.mutations";
 
 const providers = [
     { value: "tmdb", label: "Movies & TV", icon: Monitor },
@@ -108,7 +108,7 @@ export function SearchScreen() {
                                         opacity: pressed ? 0.6 : 1,
                                     })}
                                 >
-                                    <Icon size={22} color={provider === value ? colors.accent : colors.muted} />
+                                    <Icon size={22} color={provider === value ? colors.accent : colors.muted}/>
                                     <AppText style={{ fontSize: 12 }}>{label}</AppText>
                                 </Pressable>
                             ))}
@@ -148,8 +148,8 @@ export function SearchScreen() {
                                 term.length < 2
                                     ? "Find something to track"
                                     : query.isError
-                                      ? "Search unavailable"
-                                      : "No results"
+                                        ? "Search unavailable"
+                                        : "No results"
                             }
                             message={
                                 query.error?.message ??
@@ -160,7 +160,7 @@ export function SearchScreen() {
                             retry={query.isError ? () => void query.refetch() : undefined}
                         />
                     ) : query.isFetchingNextPage ? (
-                        <StateView loading />
+                        <StateView loading/>
                     ) : query.isError && results.length ? (
                         <StateView
                             title="Couldn’t load more results"

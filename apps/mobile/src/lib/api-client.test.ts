@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { api, ApiError, assetUrl } from "./api-client";
+import {afterEach, describe, expect, it, vi} from "vitest";
+import {api, ApiError, assetUrl} from "./api-client";
 
 const mocks = vi.hoisted(() => ({ getCookie: vi.fn(), notify: vi.fn() }));
 vi.mock("./config", () => ({ backendUrl: "http://192.168.1.61:3000" }));

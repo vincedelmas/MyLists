@@ -1,16 +1,16 @@
-import { Image } from "expo-image";
+import {Image} from "expo-image";
 import brandLogo from "../../../../public/logo192.png";
-import { router } from "expo-router";
-import { NativeHost } from "./native-host";
-import { SelectControl } from "./select-control";
-import type { SelectControlProps } from "./select-control.types";
-import { assetUrl } from "../lib/api-client";
-import { useOnline } from "../hooks/use-online";
-import { colors, commonStyles } from "../theme";
-import { useRoute } from "expo-router/react-navigation";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, ChevronRight } from "lucide-react-native";
-import { Profiler, useEffect, useRef, type ReactNode, type Ref } from "react";
+import {router} from "expo-router";
+import {NativeHost} from "./native-host";
+import {SelectControl} from "./select-control";
+import type {SelectControlProps} from "./select-control.types";
+import {assetUrl} from "../lib/api-client";
+import {useOnline} from "../hooks/use-online";
+import {colors, commonStyles} from "../theme";
+import {useRoute} from "expo-router/react-navigation";
+import {SafeAreaView} from "react-native-safe-area-context";
+import {ArrowLeft, ChevronRight} from "lucide-react-native";
+import {Profiler, useEffect, useRef, type ReactNode, type Ref} from "react";
 import {
     navigationTimingEnabled,
     recordNavigationTiming,
@@ -51,14 +51,14 @@ export function AppText({ muted, heading, style, ...props }: TextProps & { muted
 }
 
 export function Page({
-    title,
-    subtitle,
-    back,
-    action,
-    children,
-    brand = false,
-    hideHeader = false,
-}: {
+                         title,
+                         subtitle,
+                         back,
+                         action,
+                         children,
+                         brand = false,
+                         hideHeader = false,
+                     }: {
     title: string;
     brand?: boolean;
     hideHeader?: boolean;
@@ -89,10 +89,10 @@ export function Page({
                             onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/(profile)"))}
                             style={styles.back}
                         >
-                            <ArrowLeft size={22} color={colors.text} />
+                            <ArrowLeft size={22} color={colors.text}/>
                         </Pressable>
                     )}
-                    {brand && <Image source={brandLogo} style={styles.logo} />}
+                    {brand && <Image source={brandLogo} style={styles.logo}/>}
                     <View style={styles.fill}>
                         <AppText heading style={brand ? styles.brandTitle : undefined}>
                             {title}
@@ -114,7 +114,7 @@ export function Page({
                     You’re offline. Reconnect to save changes or load more.
                 </AppText>
             )}
-            <KeyboardAvoidingView style={styles.fill} behavior={Platform.select({ios: "padding" as const, android: "height" as const})}>
+            <KeyboardAvoidingView style={styles.fill} behavior={Platform.select({ ios: "padding" as const, android: "height" as const })}>
                 {children}
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -159,20 +159,24 @@ export function Section({ title, children, action }: { title?: string; children:
                 </View>
             )}
 
-            <View style={styles.card}>{children}</View>
+            <Card>{children}</Card>
         </View>
     );
 }
 
+export function Card({ style, ...props }: ViewProps) {
+    return <View {...props} style={[styles.card, style]}/>;
+}
+
 export function Button({
-    label,
-    onPress,
-    pending,
-    disabled,
-    secondary,
-    danger,
-    width,
-}: {
+                           label,
+                           onPress,
+                           pending,
+                           disabled,
+                           secondary,
+                           danger,
+                           width,
+                       }: {
     label: string;
     danger?: boolean;
     width?: number;
@@ -202,13 +206,13 @@ export function Button({
 }
 
 export function Field({
-    label,
-    inputRef,
-    value,
-    onChangeText,
-    style,
-    ...props
-}: Omit<TextInputProps, "value" | "ref"> & {
+                          label,
+                          inputRef,
+                          value,
+                          onChangeText,
+                          style,
+                          ...props
+                      }: Omit<TextInputProps, "value" | "ref"> & {
     label: string;
     value: string;
     inputRef?: Ref<TextInputRef>;
@@ -264,11 +268,11 @@ export function Select<T extends string>({ label, ...props }: SelectControlProps
 }
 
 export function MenuRow({
-    title,
-    detail,
-    icon,
-    onPress,
-}: {
+                            title,
+                            detail,
+                            icon,
+                            onPress,
+                        }: {
     title: string;
     detail?: string;
     icon?: ReactNode;
@@ -290,17 +294,17 @@ export function MenuRow({
                 )}
             </View>
 
-            <ChevronRight size={18} color={colors.muted} />
+            <ChevronRight size={18} color={colors.muted}/>
         </Pressable>
     );
 }
 
 export function StateView({
-    loading,
-    title,
-    message,
-    retry,
-}: {
+                              loading,
+                              title,
+                              message,
+                              retry,
+                          }: {
     title?: string;
     message?: string;
     loading?: boolean;
@@ -309,7 +313,7 @@ export function StateView({
     return (
         <View style={styles.state}>
             {loading ? (
-                <ActivityIndicator size="large" color={colors.accent} />
+                <ActivityIndicator size="large" color={colors.accent}/>
             ) : (
                 <>
                     {title && (
@@ -324,7 +328,7 @@ export function StateView({
                         </AppText>
                     )}
 
-                    {retry && <Button label="Try again" onPress={retry} secondary />}
+                    {retry && <Button label="Try again" onPress={retry} secondary/>}
                 </>
             )}
         </View>
@@ -332,11 +336,11 @@ export function StateView({
 }
 
 export function Cover({
-    uri,
-    style,
-    label,
-    pointerEvents,
-}: {
+                          uri,
+                          style,
+                          label,
+                          pointerEvents,
+                      }: {
     uri: string | null;
     style?: StyleProp<ViewStyle>;
     label?: string;
@@ -360,9 +364,7 @@ export function Cover({
 }
 
 export const uiStyles = StyleSheet.create({
-    row: { flexDirection: "row", alignItems: "center", gap: 12 },
     padded: { padding: 16, gap: 16 },
-    divider: { height: 1, backgroundColor: colors.border },
 });
 
 const styles = StyleSheet.create({
@@ -422,9 +424,9 @@ const styles = StyleSheet.create({
 });
 
 export function QueryPanel<T>({
-    query,
-    children,
-}: {
+                                  query,
+                                  children,
+                              }: {
     query: { data: T | undefined; isPending: boolean; error: Error | null; refetch: () => unknown };
     children: (data: T) => ReactNode;
 }) {

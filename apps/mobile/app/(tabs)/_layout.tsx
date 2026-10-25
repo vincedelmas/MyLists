@@ -1,8 +1,8 @@
-import { Platform, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Tabs } from "expo-router";
-import { colors } from "../../src/theme";
-import { Library, Search, UsersRound, UserRound } from "lucide-react-native";
+import {Platform, StyleSheet} from "react-native";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {Tabs} from "expo-router";
+import {colors} from "../../src/theme";
+import {Library, Search, UsersRound, UserRound} from "lucide-react-native";
 
 export const unstable_settings = { anchor: "(profile)" };
 
@@ -30,7 +30,7 @@ export default function TabLayout() {
                 options={{
                     title: "Profile",
                     href: "/(tabs)/(profile)",
-                    tabBarIcon: ({ color, size }) => <UserRound color={color} size={size} />,
+                    tabBarIcon: ({ color, size }) => <UserRound color={color} size={size}/>,
                 }}
             />
             <Tabs.Screen
@@ -38,7 +38,7 @@ export default function TabLayout() {
                 options={{
                     title: "Lists",
                     href: "/(tabs)/(library)/lists",
-                    tabBarIcon: ({ color, size }) => <Library color={color} size={size} />,
+                    tabBarIcon: ({ color, size }) => <Library color={color} size={size}/>,
                 }}
             />
             <Tabs.Screen
@@ -46,7 +46,7 @@ export default function TabLayout() {
                 options={{
                     title: "Search",
                     href: "/(tabs)/(search)/search",
-                    tabBarIcon: ({ color, size }) => <Search color={color} size={size} />,
+                    tabBarIcon: ({ color, size }) => <Search color={color} size={size}/>,
                 }}
             />
             <Tabs.Screen
@@ -54,7 +54,7 @@ export default function TabLayout() {
                 options={{
                     title: "Community",
                     href: "/(tabs)/(community)/community",
-                    tabBarIcon: ({ color, size }) => <UsersRound color={color} size={size} />,
+                    tabBarIcon: ({ color, size }) => <UsersRound color={color} size={size}/>,
                 }}
             />
         </Tabs>

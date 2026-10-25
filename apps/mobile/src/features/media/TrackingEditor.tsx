@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { ChevronRight, Heart, MessageSquare, Pencil, RotateCcw, Star } from "lucide-react-native";
-import { AppText, Button, Field, Select } from "../../components/ui";
-import { Rating } from "../../components/rating";
-import { RatingInput } from "./RatingInput";
-import { TrackingSheet } from "./tracking-sheet";
-import { TrackingField } from "./TrackingField";
-import type { MobileMedia, UpdateInput } from "../../lib/api-client";
-import { colors, spacing, statusColors } from "../../theme";
-import { formatMinutes } from "@/lib/utils/formatting/number";
+import {useState} from "react";
+import {Pressable, StyleSheet, View} from "react-native";
+import {ChevronRight, Heart, MessageSquare, Pencil, RotateCcw, Star} from "lucide-react-native";
+import {AppText, Button, Field, Select} from "../../components/ui";
+import {Rating} from "../../components/rating";
+import {RatingInput} from "./RatingInput";
+import {TrackingSheet} from "./tracking-sheet";
+import {TrackingField} from "./TrackingField";
+import type {MobileMedia, UpdateInput} from "../../lib/api-client";
+import {colors, spacing, statusColors} from "../../theme";
+import {formatMinutes} from "@/lib/utils/formatting/number";
 
 type Update = (payload: UpdateInput["payload"], onSaved?: () => void) => void;
 
@@ -20,14 +20,14 @@ function ProgressEditor({ data, pending, update }: { data: MobileMedia; pending:
         "currentSeason" in tracking
             ? tracking.currentSeason
             : "actualPage" in tracking
-              ? (tracking.actualPage ?? 0)
-              : "currentChapter" in tracking
-                ? tracking.currentChapter
-                : "playtime" in tracking
-                  ? (tracking.playtime ?? 0) / minutesPerUnit
-                  : "redo" in tracking
-                    ? tracking.redo
-                    : 0,
+                ? (tracking.actualPage ?? 0)
+                : "currentChapter" in tracking
+                    ? tracking.currentChapter
+                    : "playtime" in tracking
+                        ? (tracking.playtime ?? 0) / minutesPerUnit
+                        : "redo" in tracking
+                            ? tracking.redo
+                            : 0,
     );
     const [first, setFirst] = useState(initialFirst);
     const [second, setSecond] = useState(String("currentEpisode" in tracking ? tracking.currentEpisode : 0));
@@ -35,12 +35,12 @@ function ProgressEditor({ data, pending, update }: { data: MobileMedia; pending:
     const label = tv
         ? "Season"
         : "actualPage" in tracking
-          ? "Page"
-          : "currentChapter" in tracking
-            ? "Chapter"
-            : "playtime" in tracking
-              ? "Hours played"
-              : "Rewatches";
+            ? "Page"
+            : "currentChapter" in tracking
+                ? "Chapter"
+                : "playtime" in tracking
+                    ? "Hours played"
+                    : "Rewatches";
     const valid =
         first.trim() &&
         Number.isFinite(Number(first)) &&
@@ -79,12 +79,12 @@ function ProgressEditor({ data, pending, update }: { data: MobileMedia; pending:
                         tv
                             ? { type: "tv", currentSeason: value, currentEpisode: Number(second) }
                             : "actualPage" in tracking
-                              ? { type: "page", actualPage: value }
-                              : "currentChapter" in tracking
-                                ? { type: "chapter", currentChapter: value }
-                                : "playtime" in tracking
-                                  ? { type: "playtime", playtime: Math.round(value * minutesPerUnit) }
-                                  : { type: "redo", redo: value },
+                                ? { type: "page", actualPage: value }
+                                : "currentChapter" in tracking
+                                    ? { type: "chapter", currentChapter: value }
+                                    : "playtime" in tracking
+                                        ? { type: "playtime", playtime: Math.round(value * minutesPerUnit) }
+                                        : { type: "redo", redo: value },
                     );
                 }}
             />
@@ -93,11 +93,11 @@ function ProgressEditor({ data, pending, update }: { data: MobileMedia; pending:
 }
 
 export function TrackingEditor({
-    data,
-    update,
-    pending,
-    error,
-}: {
+                                   data,
+                                   update,
+                                   pending,
+                                   error,
+                               }: {
     data: MobileMedia;
     update: Update;
     pending: boolean;
@@ -118,32 +118,32 @@ export function TrackingEditor({
             ? "Watched"
             : "Not watched"
         : tv
-          ? `S${tracking.currentSeason} · E${tracking.currentEpisode}`
-          : "actualPage" in tracking
-            ? `${tracking.actualPage ?? 0}`
-            : "currentChapter" in tracking
-              ? `${tracking.currentChapter}`
-              : "playtime" in tracking
-                ? tracking.playtime
-                    ? formatMinutes(tracking.playtime, { compact: true })
-                    : "0m"
-                : "redo" in tracking
-                  ? `${tracking.redo}`
-                  : "—";
+            ? `S${tracking.currentSeason} · E${tracking.currentEpisode}`
+            : "actualPage" in tracking
+                ? `${tracking.actualPage ?? 0}`
+                : "currentChapter" in tracking
+                    ? `${tracking.currentChapter}`
+                    : "playtime" in tracking
+                        ? tracking.playtime
+                            ? formatMinutes(tracking.playtime, { compact: true })
+                            : "0m"
+                        : "redo" in tracking
+                            ? `${tracking.redo}`
+                            : "—";
     const unit = tv
         ? "Season · Episode"
         : "actualPage" in tracking
-          ? "Pages read"
-          : "currentChapter" in tracking
-            ? "Chapters read"
-            : "playtime" in tracking
-              ? "Time played"
-              : "Watch history";
+            ? "Pages read"
+            : "currentChapter" in tracking
+                ? "Chapters read"
+                : "playtime" in tracking
+                    ? "Time played"
+                    : "Watch history";
     const quick =
         movie && tracking.status !== "Completed"
             ? { label: "Mark watched", payload: { type: "status", status: "Completed" } as const }
             : tv
-              ? {
+                ? {
                     label: "+1 episode",
                     payload: {
                         type: "tv",
@@ -151,25 +151,25 @@ export function TrackingEditor({
                         currentEpisode: tracking.currentEpisode + 1,
                     } as const,
                 }
-              : "actualPage" in tracking
-                ? {
-                      label: "+10 pages",
-                      payload: { type: "page", actualPage: (tracking.actualPage ?? 0) + 10 } as const,
-                  }
-                : "currentChapter" in tracking
-                  ? {
-                        label: "+1 chapter",
-                        payload: { type: "chapter", currentChapter: tracking.currentChapter + 1 } as const,
-                    }
-                  : "playtime" in tracking
+                : "actualPage" in tracking
                     ? {
-                          label: "+30 minutes",
-                          payload: { type: "playtime", playtime: (tracking.playtime ?? 0) + 30 } as const,
-                      }
-                    : {
-                          label: "Log a rewatch",
-                          payload: { type: "redo", redo: "redo" in tracking ? tracking.redo + 1 : 1 } as const,
-                      };
+                        label: "+10 pages",
+                        payload: { type: "page", actualPage: (tracking.actualPage ?? 0) + 10 } as const,
+                    }
+                    : "currentChapter" in tracking
+                        ? {
+                            label: "+1 chapter",
+                            payload: { type: "chapter", currentChapter: tracking.currentChapter + 1 } as const,
+                        }
+                        : "playtime" in tracking
+                            ? {
+                                label: "+30 minutes",
+                                payload: { type: "playtime", playtime: (tracking.playtime ?? 0) + 30 } as const,
+                            }
+                            : {
+                                label: "Log a rewatch",
+                                payload: { type: "redo", redo: "redo" in tracking ? tracking.redo + 1 : 1 } as const,
+                            };
     return (
         <View style={styles.content}>
             <View style={styles.progress}>
@@ -183,7 +183,7 @@ export function TrackingEditor({
                     </AppText>
                 )}
                 <View style={styles.progressActions}>
-                    <Button label={quick.label} disabled={pending} onPress={() => update(quick.payload)} />
+                    <Button label={quick.label} disabled={pending} onPress={() => update(quick.payload)}/>
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Edit progress"
@@ -191,7 +191,7 @@ export function TrackingEditor({
                         onPress={() => setEditor("progress")}
                         style={({ pressed }) => [styles.edit, pressed && styles.pressed]}
                     >
-                        <Pencil size={16} color={colors.text} />
+                        <Pencil size={16} color={colors.text}/>
                         <AppText>Edit</AppText>
                     </Pressable>
                 </View>
@@ -214,7 +214,7 @@ export function TrackingEditor({
                                 pressed && styles.pressed,
                             ]}
                         >
-                            <View style={[styles.dot, { backgroundColor: statusColors[status] ?? colors.muted }]} />
+                            <View style={[styles.dot, { backgroundColor: statusColors[status] ?? colors.muted }]}/>
                             <AppText style={[styles.statusText, status === tracking.status && styles.activeText]}>
                                 {status}
                             </AppText>
@@ -230,14 +230,14 @@ export function TrackingEditor({
                     onPress={() => setEditor("rating")}
                     style={({ pressed }) => [styles.action, pressed && styles.pressed]}
                 >
-                    <Star size={19} color={colors.rating} />
+                    <Star size={19} color={colors.rating}/>
                     <AppText muted style={styles.caption}>
                         Your rating
                     </AppText>
                     {tracking.rating === null ? (
                         <AppText>Rate this title</AppText>
                     ) : (
-                        <Rating value={tracking.rating} system={data.ratingSystem} />
+                        <Rating value={tracking.rating} system={data.ratingSystem}/>
                     )}
                 </Pressable>
                 <Pressable
@@ -265,14 +265,14 @@ export function TrackingEditor({
                 onPress={() => setEditor("notes")}
                 style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             >
-                <MessageSquare size={19} color={colors.muted} />
+                <MessageSquare size={19} color={colors.muted}/>
                 <View style={styles.rowText}>
                     <AppText style={styles.heading}>Your comments</AppText>
                     <AppText muted numberOfLines={3}>
                         {tracking.comment || "Add a thought about this title"}
                     </AppText>
                 </View>
-                <ChevronRight size={18} color={colors.muted} />
+                <ChevronRight size={18} color={colors.muted}/>
             </Pressable>
             {"platform" in tracking && (
                 <Pressable accessibilityRole="button" onPress={() => setEditor("platform")} style={styles.row}>
@@ -280,23 +280,23 @@ export function TrackingEditor({
                         <AppText>Platform</AppText>
                         <AppText muted>{tracking.platform || "Choose a platform"}</AppText>
                     </View>
-                    <ChevronRight size={18} color={colors.muted} />
+                    <ChevronRight size={18} color={colors.muted}/>
                 </Pressable>
             )}
             {data.seasons?.length ? (
                 <Pressable accessibilityRole="button" onPress={() => setEditor("season")} style={styles.row}>
-                    <RotateCcw size={19} color={colors.muted} />
+                    <RotateCcw size={19} color={colors.muted}/>
                     <View style={styles.rowText}>
                         <AppText>Season ratings & rewatches</AppText>
                         <AppText muted>Manage each season</AppText>
                     </View>
-                    <ChevronRight size={18} color={colors.muted} />
+                    <ChevronRight size={18} color={colors.muted}/>
                 </Pressable>
             ) : "redo" in tracking && data.progress.unit.short !== "views" ? (
                 <Pressable accessibilityRole="button" onPress={() => setEditor("repeats")} style={styles.row}>
-                    <RotateCcw size={19} color={colors.muted} />
+                    <RotateCcw size={19} color={colors.muted}/>
                     <AppText style={styles.rowText}>Repeats · {tracking.redo}</AppText>
-                    <ChevronRight size={18} color={colors.muted} />
+                    <ChevronRight size={18} color={colors.muted}/>
                 </Pressable>
             ) : null}
             {editor && (
@@ -314,7 +314,7 @@ export function TrackingEditor({
                     error={error}
                     dismiss={close}
                 >
-                    {editor === "progress" && <ProgressEditor data={data} pending={pending} update={save} />}
+                    {editor === "progress" && <ProgressEditor data={data} pending={pending} update={save}/>}
                     {editor === "rating" && (
                         <RatingInput
                             key={String(tracking.rating)}
@@ -404,6 +404,7 @@ export function TrackingEditor({
         </View>
     );
 }
+
 const styles = StyleSheet.create({
     content: { gap: spacing.xl },
     stack: { gap: spacing.md },

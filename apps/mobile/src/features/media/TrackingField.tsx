@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { View } from "react-native";
-import { Button, Field } from "../../components/ui";
+import {useState} from "react";
+import {View} from "react-native";
+import {Button, Field} from "../../components/ui";
 
 interface TrackingFieldProps {
     label: string;
@@ -15,14 +15,14 @@ interface TrackingFieldProps {
 // Key this editor by the saved field value: unrelated saves preserve its draft,
 // while a server change to this field replaces the old initial value.
 export function TrackingField({
-    label,
-    initial,
-    pending,
-    numeric,
-    allowDecimals = false,
-    multiline,
-    onSave,
-}: TrackingFieldProps) {
+                                  label,
+                                  initial,
+                                  pending,
+                                  numeric,
+                                  allowDecimals = false,
+                                  multiline,
+                                  onSave,
+                              }: TrackingFieldProps) {
     const [value, setValue] = useState(initial);
 
     return (

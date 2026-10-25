@@ -1,19 +1,19 @@
-import { formatDate } from "@/lib/utils/formatting/date";
-import { zeroPad } from "@/lib/utils/formatting/number";
-import { useEffect, useState } from "react";
-import { Linking, FlatList, Pressable, RefreshControl, View } from "react-native";
-import { useIsFocused } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { Bell, UsersRound, ExternalLink, X } from "lucide-react-native";
-import { AppText, Button, Cover, Page, StateView } from "../../components/ui";
-import { PagedTabs } from "../../components/paged-tabs";
-import { notificationsOptions } from "../../lib/react-query/query-options/notifications.options";
-import { useNotificationAction } from "../../lib/react-query/query-mutations/notifications.mutations";
-import { useSocialAction } from "../../lib/react-query/query-mutations/social.mutations";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { mediaIcons, mediaLabels, mediaColors } from "../../lib/media";
-import { backendUrl } from "../../lib/config";
-import { colors } from "../../theme";
+import {formatDate} from "@/lib/utils/formatting/date";
+import {zeroPad} from "@/lib/utils/formatting/number";
+import {useEffect, useState} from "react";
+import {Linking, FlatList, Pressable, RefreshControl, View} from "react-native";
+import {useIsFocused} from "expo-router";
+import {useQuery} from "@tanstack/react-query";
+import {Bell, UsersRound, ExternalLink, X} from "lucide-react-native";
+import {AppText, Button, Card, Cover, Page, StateView} from "../../components/ui";
+import {PagedTabs} from "../../components/paged-tabs";
+import {notificationsOptions} from "../../lib/react-query/query-options/notifications.options";
+import {useNotificationAction} from "../../lib/react-query/query-mutations/notifications.mutations";
+import {useSocialAction} from "../../lib/react-query/query-mutations/social.mutations";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {mediaIcons, mediaLabels, mediaColors} from "../../lib/media";
+import {backendUrl} from "../../lib/config";
+import {colors} from "../../theme";
 
 const messages = {
     follow: "started following you",
@@ -33,12 +33,12 @@ export function NotificationsScreen() {
     const mutation = useNotificationAction();
     return (
         <Page title="Notifications" brand back action={
-            <Button secondary label="Mark read" disabled={mutation.isPending}
-                onPress={() => mutation.mutate({ action: "read", type })} />
-        }>
+                                                   <Button secondary label="Mark read" disabled={mutation.isPending}
+                                                           onPress={() => mutation.mutate({ action: "read", type })}/>
+                                               }>
             {mutation.error && <AppText accessibilityRole="alert" style={{ padding: 16, color: colors.error }}>{mutation.error.message}</AppText>}
             <PagedTabs tabs={notificationTabs} value={type} onChange={setType}>
-                {(value) => <NotificationContent type={value} active={type === value} />}
+                {(value) => <NotificationContent type={value} active={type === value}/>}
             </PagedTabs>
         </Page>
     );
@@ -84,14 +84,12 @@ function NotificationContent({ type, active }: { type: "media" | "social"; activ
                 renderItem={({ item }) => {
                     const Icon = item.kind === "media" ? mediaIcons[item.mediaType] : UsersRound;
                     return (
-                        <View
+                        <Card
                             style={{
                                 padding: 14,
                                 gap: 12,
-                                borderWidth: 1,
                                 borderColor: item.read ? colors.border : colors.primary,
                                 borderRadius: 14,
-                                backgroundColor: colors.surface,
                             }}
                         >
                             <Pressable
@@ -99,13 +97,13 @@ function NotificationContent({ type, active }: { type: "media" | "social"; activ
                                 onPress={() =>
                                     item.kind === "media"
                                         ? push({
-                                              pathname: "/media/[mediaType]/[mediaId]",
-                                              params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
-                                          })
+                                            pathname: "/media/[mediaType]/[mediaId]",
+                                            params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
+                                        })
                                         : push({
-                                              pathname: "/people/[userId]",
-                                              params: { userId: String(item.actor.id) },
-                                          })
+                                            pathname: "/people/[userId]",
+                                            params: { userId: String(item.actor.id) },
+                                        })
                                 }
                                 style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
                             >
@@ -116,7 +114,7 @@ function NotificationContent({ type, active }: { type: "media" | "social"; activ
                                         style={{ width: 40, height: 40, borderRadius: 20 }}
                                     />
                                 ) : (
-                                    <Icon size={24} color={mediaColors[item.mediaType]} />
+                                    <Icon size={24} color={mediaColors[item.mediaType]}/>
                                 )}
                                 <View style={{ flex: 1, gap: 5 }}>
                                     <AppText style={{ fontWeight: "600" }}>
@@ -171,7 +169,7 @@ function NotificationContent({ type, active }: { type: "media" | "social"; activ
                                                 <AppText style={{ color: colors.accent, fontSize: 12 }}>
                                                     {item.featureRequest.title}
                                                 </AppText>
-                                                <ExternalLink size={13} color={colors.accent} />
+                                                <ExternalLink size={13} color={colors.accent}/>
                                             </Pressable>
                                         )}
                                         <Pressable
@@ -183,11 +181,11 @@ function NotificationContent({ type, active }: { type: "media" | "social"; activ
                                             }
                                             style={{ padding: 8 }}
                                         >
-                                            <X size={16} color={colors.muted} />
+                                            <X size={16} color={colors.muted}/>
                                         </Pressable>
                                     </View>
                                 ))}
-                        </View>
+                        </Card>
                     );
                 }}
             />

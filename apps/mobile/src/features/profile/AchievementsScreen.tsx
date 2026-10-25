@@ -1,18 +1,18 @@
-import { mediaLabels } from "../../lib/media";
-import { useState } from "react";
-import { Collapsible, RNHostView } from "@expo/ui";
-import { NativeHost } from "../../components/native-host";
-import { achievementColors, colors } from "../../theme";
-import { useIsFocused } from "expo-router";
-import { Animated, View } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { AchievementRow } from "./AchievementRow";
-import { ProgressBar } from "../../components/ProgressBar";
-import { ProfileQueryPanel } from "./ProfileQueryPanel";
-import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { AppText, QueryPanel, StateView, Section } from "../../components/ui";
-import { FilterButtons } from "../../components/filter-buttons";
-import { achievementsOptions, recentAchievementsOptions } from "../../lib/react-query/query-options/profile.options";
+import {mediaLabels} from "../../lib/media";
+import {useState} from "react";
+import {Collapsible, RNHostView} from "@expo/ui";
+import {NativeHost} from "../../components/native-host";
+import {achievementColors} from "../../theme";
+import {useIsFocused} from "expo-router";
+import {Animated, View} from "react-native";
+import {useQuery} from "@tanstack/react-query";
+import {AchievementRow} from "./AchievementRow";
+import {ProgressBar} from "../../components/ProgressBar";
+import {ProfileQueryPanel} from "./ProfileQueryPanel";
+import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
+import {AppText, Card, QueryPanel, StateView, Section} from "../../components/ui";
+import {FilterButtons} from "../../components/filter-buttons";
+import {achievementsOptions, recentAchievementsOptions} from "../../lib/react-query/query-options/profile.options";
 
 export function AchievementsContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
@@ -83,15 +83,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                             const unlocked = completedTiers.length;
                             const highestTier = completedTiers.at(-1);
                             return (
-                                <View
-                                    style={{
-                                        borderWidth: 1,
-                                        borderRadius: 14,
-                                        overflow: "hidden",
-                                        borderColor: colors.border,
-                                        backgroundColor: colors.surface,
-                                    }}
-                                >
+                                <Card style={{ borderRadius: 14 }}>
                                     <AchievementRow
                                         name={item.name}
                                         difficulty={highestTier?.difficulty}
@@ -127,8 +119,8 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                                                 <AppText muted style={{ fontSize: 11 }}>
                                                                     {tier.completedAt
                                                                         ? new Date(
-                                                                              tier.completedAt,
-                                                                          ).toLocaleDateString()
+                                                                            tier.completedAt,
+                                                                        ).toLocaleDateString()
                                                                         : `${Math.round(tier.progress)}%`}
                                                                 </AppText>
                                                             </View>
@@ -142,7 +134,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                             </RNHostView>
                                         </Collapsible>
                                     </NativeHost>
-                                </View>
+                                </Card>
                             );
                         }}
                     />

@@ -1,16 +1,16 @@
-import { useState } from "react";
-import { useIsFocused } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { Animated, RefreshControl, View } from "react-native";
-import { Row, Switch, Text as NativeText } from "@expo/ui";
-import { NativeHost } from "../../components/native-host";
-import { AppText, Button, Field, QueryPanel, Section } from "../../components/ui";
-import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { mediaEditOptions } from "../../lib/react-query/query-options/media.options";
-import { useMediaEditMutation } from "../../lib/react-query/query-mutations/media.mutations";
-import { editMediaDetailsSchema } from "@/lib/schemas/media-details.schema";
-import type { api, MediaParams } from "../../lib/api-client";
-import { colors } from "../../theme";
+import {useState} from "react";
+import {useIsFocused} from "expo-router";
+import {useQuery} from "@tanstack/react-query";
+import {Animated, RefreshControl, View} from "react-native";
+import {Row, Switch, Text as NativeText} from "@expo/ui";
+import {NativeHost} from "../../components/native-host";
+import {AppText, Button, Field, QueryPanel, Section} from "../../components/ui";
+import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
+import {mediaEditOptions} from "../../lib/react-query/query-options/media.options";
+import {useMediaEditMutation} from "../../lib/react-query/query-mutations/media.mutations";
+import {editMediaDetailsSchema} from "@/lib/schemas/media-details.schema";
+import type {api, MediaParams} from "../../lib/api-client";
+import {colors} from "../../theme";
 
 export function MediaEditContent({ params }: { params: MediaParams }) {
     const focused = useIsFocused();
@@ -29,10 +29,11 @@ export function MediaEditContent({ params }: { params: MediaParams }) {
                 />
             }
         >
-            <QueryPanel query={query}>{(fields) => <MediaEditForm params={params} fields={fields} />}</QueryPanel>
+            <QueryPanel query={query}>{(fields) => <MediaEditForm params={params} fields={fields}/>}</QueryPanel>
         </Animated.ScrollView>
     );
 }
+
 function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaited<ReturnType<typeof api.mediaEdit>> }) {
     const [initialValues, setInitialValues] = useState(() =>
         Object.fromEntries(
@@ -73,10 +74,10 @@ function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaite
                                     key === "genres" || key === "authors"
                                         ? "Comma-separated names"
                                         : key.toLowerCase().includes("date")
-                                          ? "YYYY-MM-DD"
-                                          : key === "imageCover"
-                                            ? "https://…"
-                                            : undefined
+                                            ? "YYYY-MM-DD"
+                                            : key === "imageCover"
+                                                ? "https://…"
+                                                : undefined
                                 }
                             />
                         ),
@@ -98,9 +99,9 @@ function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaite
                             key,
                             key === "genres"
                                 ? String(values[key])
-                                      .split(",")
-                                      .map((value) => value.trim())
-                                      .filter(Boolean)
+                                    .split(",")
+                                    .map((value) => value.trim())
+                                    .filter(Boolean)
                                 : values[key],
                         ]),
                     );

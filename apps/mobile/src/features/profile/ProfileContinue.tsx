@@ -1,12 +1,12 @@
-import { memo } from "react";
-import { useIsFocused } from "expo-router";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import type { api } from "../../lib/api-client";
-import { colors } from "../../theme";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { AppText, Cover, QueryPanel } from "../../components/ui";
-import { profileContinueOptions } from "../../lib/react-query/query-options/profile.options";
+import {memo} from "react";
+import {useIsFocused} from "expo-router";
+import {FlatList, Pressable, StyleSheet, View} from "react-native";
+import {useQuery} from "@tanstack/react-query";
+import type {api} from "../../lib/api-client";
+import {colors} from "../../theme";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {AppText, Cover, QueryPanel} from "../../components/ui";
+import {profileContinueOptions} from "../../lib/react-query/query-options/profile.options";
 
 export function ProfileContinue({ userId }: { userId?: number }) {
     const focused = useIsFocused();
@@ -35,7 +35,7 @@ export function ProfileContinue({ userId }: { userId?: number }) {
             <QueryPanel query={query}>
                 {(data) =>
                     data.items.length ? (
-                        <ContinueCards items={data.items} />
+                        <ContinueCards items={data.items}/>
                     ) : (
                         <AppText muted style={{ fontSize: 12 }}>
                             Titles in progress will appear here.
@@ -48,8 +48,8 @@ export function ProfileContinue({ userId }: { userId?: number }) {
 }
 
 const ContinueCards = memo(function ContinueCards({
-    items,
-}: {
+                                                      items,
+                                                  }: {
     items: Awaited<ReturnType<typeof api.libraryDetail>>["items"];
 }) {
     const push = useTabPush();
@@ -72,7 +72,7 @@ const ContinueCards = memo(function ContinueCards({
                     }
                     style={({ pressed }) => [styles.card, pressed && { opacity: 0.6 }]}
                 >
-                    <Cover uri={item.cover} label={item.name} style={styles.cover} />
+                    <Cover uri={item.cover} label={item.name} style={styles.cover}/>
                     <AppText numberOfLines={2} style={{ fontSize: 12, fontWeight: "600" }}>
                         {item.name}
                     </AppText>

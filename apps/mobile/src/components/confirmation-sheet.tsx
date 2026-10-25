@@ -1,15 +1,15 @@
-import { BottomSheet, RNHostView } from "@expo/ui";
-import { View, useWindowDimensions } from "react-native";
-import { UserRoundMinus } from "lucide-react-native";
-import { NativeHost } from "./native-host";
-import { AppText, Button } from "./ui";
-import type { Confirmation } from "../hooks/use-confirmation";
-import { colors } from "../theme";
+import {BottomSheet, RNHostView} from "@expo/ui";
+import {View, useWindowDimensions} from "react-native";
+import {UserRoundMinus} from "lucide-react-native";
+import {NativeHost} from "./native-host";
+import {AppText, Button} from "./ui";
+import type {Confirmation} from "../hooks/use-confirmation";
+import {colors} from "../theme";
 
 export function ConfirmationSheet({
-    confirmation,
-    dismiss,
-}: {
+                                      confirmation,
+                                      dismiss,
+                                  }: {
     confirmation: Confirmation | null;
     dismiss: () => void;
 }) {
@@ -30,14 +30,14 @@ export function ConfirmationSheet({
                                 justifyContent: "center",
                             }}
                         >
-                            <UserRoundMinus size={24} color={colors.error} />
+                            <UserRoundMinus size={24} color={colors.error}/>
                         </View>
                         <AppText heading style={{ fontSize: 21 }}>
                             {confirmation.title}
                         </AppText>
                         <AppText muted>{confirmation.message}</AppText>
                         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "flex-end" }}>
-                            <Button secondary label="Keep connection" onPress={dismiss} />
+                            <Button secondary label="Keep connection" onPress={dismiss}/>
                             <Button
                                 danger
                                 label={confirmation.label}

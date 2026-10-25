@@ -1,20 +1,20 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { Slider } from "@expo/ui";
-import { AppText, Button } from "../../components/ui";
-import { NativeHost } from "../../components/native-host";
-import { Rating } from "../../components/rating";
-import { FeelingIcon } from "../../components/feeling-icon";
-import { feelingOptions, ratingLabel } from "../../lib/ratings";
-import { colors, spacing } from "../../theme";
+import {useState} from "react";
+import {Pressable, StyleSheet, View} from "react-native";
+import {Slider} from "@expo/ui";
+import {AppText, Button} from "../../components/ui";
+import {NativeHost} from "../../components/native-host";
+import {Rating} from "../../components/rating";
+import {FeelingIcon} from "../../components/feeling-icon";
+import {feelingOptions, ratingLabel} from "../../lib/ratings";
+import {colors, spacing} from "../../theme";
 
 export function RatingInput({
-    value,
-    system,
-    pending,
-    onChange,
-    label = "",
-}: {
+                                value,
+                                system,
+                                pending,
+                                onChange,
+                                label = "",
+                            }: {
     value: number | null;
     system: "score" | "feeling";
     pending: boolean;
@@ -27,7 +27,7 @@ export function RatingInput({
             {label && (
                 <View style={styles.heading}>
                     <AppText>{label}</AppText>
-                    <Rating value={system === "score" ? draft : value} system={system} />
+                    <Rating value={system === "score" ? draft : value} system={system}/>
                 </View>
             )}
             {system === "score" ? (
@@ -50,7 +50,7 @@ export function RatingInput({
                         <AppText muted>0 · Not for me</AppText>
                         <AppText muted>10 · A favorite</AppText>
                     </View>
-                    <Button label="Save rating" pending={pending} onPress={() => onChange(draft)} />
+                    <Button label="Save rating" pending={pending} onPress={() => onChange(draft)}/>
                 </>
             ) : (
                 <>
@@ -72,7 +72,7 @@ export function RatingInput({
                                     pressed && styles.pressed,
                                 ]}
                             >
-                                <FeelingIcon value={Number(item.value)} size={30} />
+                                <FeelingIcon value={Number(item.value)} size={30}/>
                             </Pressable>
                         ))}
                     </View>
@@ -82,11 +82,12 @@ export function RatingInput({
                 </>
             )}
             {value !== null && (
-                <Button secondary label="Remove rating" disabled={pending} onPress={() => onChange(null)} />
+                <Button secondary label="Remove rating" disabled={pending} onPress={() => onChange(null)}/>
             )}
         </View>
     );
 }
+
 const styles = StyleSheet.create({
     content: { gap: spacing.lg },
     heading: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

@@ -1,1 +1,1 @@
-export { NotificationsScreen as default } from "../../../../src/features/profile/NotificationsScreen";
+export {NotificationsScreen as default} from "../../../../src/features/profile/NotificationsScreen";

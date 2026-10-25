@@ -121,7 +121,7 @@ export function CommunityScreen() {
                                     </AppText>
                                 </View>
 
-                                {path !== "/moviedle" && <ExternalLink size={17} color={colors.muted} />}
+                                {path !== "/moviedle" && <ExternalLink size={17} color={colors.muted}/>}
                             </Pressable>
                         )}
                     </Section>

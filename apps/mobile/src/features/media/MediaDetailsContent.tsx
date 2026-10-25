@@ -1,21 +1,21 @@
-import { useState } from "react";
-import { useIsFocused } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { Animated, FlatList, Linking, Pressable, RefreshControl, View } from "react-native";
-import { AppText, Cover, MenuRow, QueryPanel, Section } from "../../components/ui";
-import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { mediaDetailsOptions } from "../../lib/react-query/query-options/media.options";
-import { ExternalLink } from "lucide-react-native";
-import type { MediaParams, MobileMedia } from "../../lib/api-client";
-import { colors } from "../../theme";
+import {useState} from "react";
+import {useIsFocused} from "expo-router";
+import {useQuery} from "@tanstack/react-query";
+import {Animated, FlatList, Linking, Pressable, RefreshControl, View} from "react-native";
+import {AppText, Cover, MenuRow, QueryPanel, Section} from "../../components/ui";
+import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {mediaDetailsOptions} from "../../lib/react-query/query-options/media.options";
+import {ExternalLink} from "lucide-react-native";
+import type {MediaParams, MobileMedia} from "../../lib/api-client";
+import {colors} from "../../theme";
 
 export function MediaDetailsContent({
-    params,
-    data,
-    refetch,
-    refreshing,
-}: {
+                                        params,
+                                        data,
+                                        refetch,
+                                        refreshing,
+                                    }: {
     params: MediaParams;
     data: MobileMedia;
     refetch: () => unknown;
@@ -99,7 +99,7 @@ export function MediaDetailsContent({
                         style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44 }}
                     >
                         <AppText style={{ color: colors.accent, fontSize: 13 }}>{data.media.provider.name}</AppText>
-                        <ExternalLink size={15} color={colors.accent} />
+                        <ExternalLink size={15} color={colors.accent}/>
                     </Pressable>
                 )}
             </View>

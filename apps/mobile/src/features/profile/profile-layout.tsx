@@ -1,20 +1,20 @@
-import { memo, type ReactNode } from "react";
-import { CollapsingTabs } from "../../components/collapsing-tabs";
-import { colors } from "../../theme";
-import type { MobileProfile } from "../../lib/api-client";
-import { PrivacyBadge } from "./PrivacyBadge";
-import { ProfileFeed } from "./ProfileFeed";
-import { ProfileContinue } from "./ProfileContinue";
-import { formatCount } from "./profile-formatting";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { useQueryClient } from "@tanstack/react-query";
-import { MediaListGrid } from "../../components/media-list-grid";
-import { Animated, RefreshControl, View } from "react-native";
-import { UserRound, Activity, CalendarDays, ChartNoAxesCombined, Trophy, Library } from "lucide-react-native";
-import { Button as NativeButton } from "@expo/ui";
-import { NativeHost } from "../../components/native-host";
-import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { AppText, Cover } from "../../components/ui";
+import {memo, type ReactNode} from "react";
+import {CollapsingTabs} from "../../components/collapsing-tabs";
+import {colors} from "../../theme";
+import type {MobileProfile} from "../../lib/api-client";
+import {PrivacyBadge} from "./PrivacyBadge";
+import {ProfileFeed} from "./ProfileFeed";
+import {ProfileContinue} from "./ProfileContinue";
+import {formatCount} from "./profile-formatting";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {useQueryClient} from "@tanstack/react-query";
+import {MediaListGrid} from "../../components/media-list-grid";
+import {Animated, RefreshControl, View} from "react-native";
+import {UserRound, Activity, CalendarDays, ChartNoAxesCombined, Trophy, Library} from "lucide-react-native";
+import {Button as NativeButton} from "@expo/ui";
+import {NativeHost} from "../../components/native-host";
+import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
+import {AppText, Cover} from "../../components/ui";
 
 const profileTabs = [
     { value: "profile", label: "Profile", icon: UserRound },
@@ -25,11 +25,11 @@ const profileTabs = [
 ] as const;
 
 export function ProfileLayout({
-    data,
-    refreshing,
-    userId,
-    headerAction,
-}: {
+                                  data,
+                                  refreshing,
+                                  userId,
+                                  headerAction,
+                              }: {
     data: MobileProfile;
     refreshing: boolean;
     userId?: number;
@@ -50,19 +50,19 @@ export function ProfileLayout({
                     params: { userId, username: data.user.name },
                 });
             }}
-            header={<ProfileHeader data={data} userId={userId} action={headerAction} />}
+            header={<ProfileHeader data={data} userId={userId} action={headerAction}/>}
         >
-            {() => <ProfileContent data={data} refreshing={refreshing} userId={userId} />}
+            {() => <ProfileContent data={data} refreshing={refreshing} userId={userId}/>}
         </CollapsingTabs>
     );
 }
 
 // Focus changes update the query controller without rebuilding the profile.
 const ProfileContent = memo(function ProfileContent({
-    data,
-    refreshing,
-    userId,
-}: {
+                                                        data,
+                                                        refreshing,
+                                                        userId,
+                                                    }: {
     data: MobileProfile;
     refreshing: boolean;
     userId?: number;
@@ -88,19 +88,19 @@ const ProfileContent = memo(function ProfileContent({
                 <AppText heading style={{ fontSize: 17 }}>
                     Media lists
                 </AppText>
-                <MediaListGrid lists={data.lists} userId={userId} />
+                <MediaListGrid lists={data.lists} userId={userId}/>
             </View>
-            <ProfileContinue userId={userId} />
-            <ProfileFeed userId={userId} ratingSystem={data.user.ratingSystem} />
+            <ProfileContinue userId={userId}/>
+            <ProfileFeed userId={userId} ratingSystem={data.user.ratingSystem}/>
         </Animated.ScrollView>
     );
 });
 
 export const ProfileHeader = memo(function ProfileHeader({
-    data,
-    userId,
-    action,
-}: {
+                                                             data,
+                                                             userId,
+                                                             action,
+                                                         }: {
     data: {
         user: Pick<
             MobileProfile["user"],
@@ -157,7 +157,7 @@ export const ProfileHeader = memo(function ProfileHeader({
                                 </AppText>
                             </View>
                             <View style={{ paddingTop: 12 }}>
-                                <PrivacyBadge value={data.user.privacy} />
+                                <PrivacyBadge value={data.user.privacy}/>
                             </View>
                         </View>
                     </View>

@@ -1,7 +1,7 @@
-import type { MobileProfile, MobileProfileActivity } from "../../lib/api-client";
-import { ratingLabel } from "../../lib/ratings";
-import { getMediaDefinition } from "@/lib/media-definitions/definition.registry";
-import { toActivityDisplayValue } from "@/lib/utils/media/activity";
+import type {MobileProfile, MobileProfileActivity} from "../../lib/api-client";
+import {ratingLabel} from "../../lib/ratings";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {toActivityDisplayValue} from "@/lib/utils/media/activity";
 
 export const formatCount = (value: number) => new Intl.NumberFormat("en", { maximumFractionDigits: 0 }).format(value);
 

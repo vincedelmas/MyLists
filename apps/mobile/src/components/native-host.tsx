@@ -1,6 +1,6 @@
-import { Host } from "@expo/ui";
-import { colors } from "../theme";
-import type { ComponentProps } from "react";
+import {Host} from "@expo/ui";
+import {colors} from "../theme";
+import type {ComponentProps} from "react";
 
 export function NativeHost({ matchContents = { vertical: true }, ...props }: ComponentProps<typeof Host>) {
     return (

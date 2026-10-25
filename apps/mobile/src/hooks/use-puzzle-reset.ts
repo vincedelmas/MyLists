@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { useIsFocused } from "expo-router";
-import { AppState } from "react-native";
+import {useEffect, useState} from "react";
+import {useIsFocused} from "expo-router";
+import {AppState} from "react-native";
 
 export function usePuzzleReset(resetsAt: string, onReset: () => void) {
     const focused = useIsFocused();

@@ -4,10 +4,11 @@ let timing: typeof import("./navigation-timing");
 let output: ReturnType<typeof vi.spyOn>;
 beforeEach(async () => {
     vi.resetModules();
-    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "performance"]});
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
     vi.stubGlobal("__DEV__", true);
     vi.stubEnv("EXPO_PUBLIC_NAV_TIMING", "1");
-    output = vi.spyOn(console, "info").mockImplementation(() => {});
+    output = vi.spyOn(console, "info").mockImplementation(() => {
+    });
     timing = await import("./navigation-timing");
 });
 afterEach(() => {
@@ -31,9 +32,9 @@ describe("development navigation timing", () => {
         vi.advanceTimersByTime(2820);
         expect(output).toHaveBeenCalledTimes(1);
         expect(readReport().events).toEqual([
-            {phase: "press-in", atMs: 0},
-            {phase: "navigation-requested", atMs: 80},
-            {phase: "transition-start", atMs: 180},
+            { phase: "press-in", atMs: 0 },
+            { phase: "navigation-requested", atMs: 80 },
+            { phase: "transition-start", atMs: 180 },
         ]);
     });
     it("keeps late requests attached to their original navigation and strips query strings", () => {
@@ -43,7 +44,7 @@ describe("development navigation timing", () => {
         vi.advanceTimersByTime(100);
         finish!("http-200");
         vi.advanceTimersByTime(3000);
-        expect(readReport(0).requests).toEqual([{path: "/social", startMs: 0}]);
+        expect(readReport(0).requests).toEqual([{ path: "/social", startMs: 0 }]);
         expect(readReport(1).requests).toEqual([]);
         expect(output.mock.calls.join()).not.toContain("secret");
     });
@@ -52,7 +53,7 @@ describe("development navigation timing", () => {
         timing.beginNavigationTiming("/profile/social", "navigation-requested");
         timing.recordNavigationTiming("navigation-tree-update", undefined, 220);
         vi.advanceTimersByTime(3000);
-        expect(readReport().events).toContainEqual({phase: "navigation-tree-update", atMs: 0, renderMs: 220});
+        expect(readReport().events).toContainEqual({ phase: "navigation-tree-update", atMs: 0, renderMs: 220 });
     });
 
     it("does not profile or schedule captures unless explicitly enabled", async () => {

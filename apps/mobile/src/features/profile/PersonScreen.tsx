@@ -1,12 +1,12 @@
-import { useIsFocused, useLocalSearchParams } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { ScrollView } from "react-native";
-import { useSocialAction } from "../../lib/react-query/query-mutations/social.mutations";
-import { personOptions } from "../../lib/react-query/query-options/profile.options";
-import { AppText, Button, Page, QueryPanel } from "../../components/ui";
-import { ConfirmationSheet } from "../../components/confirmation-sheet";
-import { useConfirmation } from "../../hooks/use-confirmation";
-import { ProfileHeader, ProfileLayout } from "./profile-layout";
+import {useIsFocused, useLocalSearchParams} from "expo-router";
+import {useQuery} from "@tanstack/react-query";
+import {ScrollView} from "react-native";
+import {useSocialAction} from "../../lib/react-query/query-mutations/social.mutations";
+import {personOptions} from "../../lib/react-query/query-options/profile.options";
+import {AppText, Button, Page, QueryPanel} from "../../components/ui";
+import {ConfirmationSheet} from "../../components/confirmation-sheet";
+import {useConfirmation} from "../../hooks/use-confirmation";
+import {ProfileHeader, ProfileLayout} from "./profile-layout";
 
 export function PersonScreen() {
     const { userId } = useLocalSearchParams<{ userId: string }>();
@@ -29,10 +29,10 @@ export function PersonScreen() {
                                         data.following === "accepted"
                                             ? "Following"
                                             : data.following === "requested"
-                                              ? "Requested"
-                                              : data.header.privacy === "private"
-                                                ? "Request to follow"
-                                                : "Follow"
+                                                ? "Requested"
+                                                : data.header.privacy === "private"
+                                                    ? "Request to follow"
+                                                    : "Follow"
                                     }
                                     onPress={() => {
                                         const perform = () =>
@@ -56,7 +56,7 @@ export function PersonScreen() {
                     );
                     return data.access === "private" ? (
                         <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 24 }}>
-                            <ProfileHeader data={{ user: data.header }} action={action} />
+                            <ProfileHeader data={{ user: data.header }} action={action}/>
                             <AppText muted style={{ paddingHorizontal: 16 }}>
                                 This profile is private. Follow this person to request access.
                             </AppText>
@@ -72,7 +72,7 @@ export function PersonScreen() {
                     );
                 }}
             </QueryPanel>
-            <ConfirmationSheet confirmation={confirmation} dismiss={dismiss} />
+            <ConfirmationSheet confirmation={confirmation} dismiss={dismiss}/>
         </Page>
     );
 }

@@ -1,10 +1,10 @@
-import { AppText } from "./ui";
-import { colors } from "../theme";
-import { Play } from "lucide-react-native";
-import { Pressable, View } from "react-native";
-import { useTabPush } from "../hooks/use-tab-push";
-import type { MobileProfile } from "../lib/api-client";
-import { mediaIcons, mediaColors, mediaLabels } from "../lib/media";
+import {AppText} from "./ui";
+import {colors} from "../theme";
+import {Play} from "lucide-react-native";
+import {Pressable, View} from "react-native";
+import {useTabPush} from "../hooks/use-tab-push";
+import type {MobileProfile} from "../lib/api-client";
+import {mediaIcons, mediaColors, mediaLabels} from "../lib/media";
 
 interface MediaListGridProps {
     userId?: number;
@@ -26,15 +26,15 @@ export function MediaListGrid({ lists, userId, includeContinue = false }: MediaL
         })),
         ...(includeContinue
             ? [
-                  {
-                      icon: Play,
-                      level: null,
-                      key: "continue",
-                      label: "Continue",
-                      color: colors.accent,
-                      open: () => push({ pathname: "/library/[kind]", params: { kind: "continue", userId } }),
-                  },
-              ]
+                {
+                    icon: Play,
+                    level: null,
+                    key: "continue",
+                    label: "Continue",
+                    color: colors.accent,
+                    open: () => push({ pathname: "/library/[kind]", params: { kind: "continue", userId } }),
+                },
+            ]
             : []),
     ];
 
@@ -58,7 +58,7 @@ export function MediaListGrid({ lists, userId, includeContinue = false }: MediaL
                     })}
                 >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                        <Icon size={18} color={color} />
+                        <Icon size={18} color={color}/>
                         <AppText style={{ fontWeight: "600", flex: 1, fontSize: 13 }}>{label}</AppText>
                     </View>
                     {level === null ? (

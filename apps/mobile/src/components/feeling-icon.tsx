@@ -1,4 +1,4 @@
-import Svg, { Path } from "react-native-svg";
+import Svg, {Path} from "react-native-svg";
 // Font Awesome Free (CC BY 4.0), matching the icons already used by the web app.
 const icons = [
     {
@@ -39,13 +39,14 @@ const icons = [
     },
 ];
 const colors = ["saddlebrown", "indianred", "#d0a141", "darkseagreen", "#59a643", "#019101"];
+
 export function FeelingIcon({ value, size = 20 }: { value: number; size?: number }) {
     const feelingIndex = Math.max(0, Math.min(5, Math.ceil(value / 2 - 0.5)));
     const icon = icons[feelingIndex];
     return (
         <Svg width={size} height={size} viewBox={icon.viewBox}>
             {icon.paths.map((d, index) => (
-                <Path key={index} d={d} fill={colors[feelingIndex]} />
+                <Path key={index} d={d} fill={colors[feelingIndex]}/>
             ))}
         </Svg>
     );

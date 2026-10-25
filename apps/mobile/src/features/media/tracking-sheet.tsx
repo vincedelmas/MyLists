@@ -1,17 +1,17 @@
-import { trackingSheetModifiers } from "./tracking-sheet-insets";
-import type { ReactNode } from "react";
-import { BottomSheet, RNHostView } from "@expo/ui";
-import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { NativeHost } from "../../components/native-host";
-import { AppText } from "../../components/ui";
-import { colors, spacing } from "../../theme";
+import {trackingSheetModifiers} from "./tracking-sheet-insets";
+import type {ReactNode} from "react";
+import {BottomSheet, RNHostView} from "@expo/ui";
+import {ScrollView, StyleSheet, View, useWindowDimensions} from "react-native";
+import {NativeHost} from "../../components/native-host";
+import {AppText} from "../../components/ui";
+import {colors, spacing} from "../../theme";
 
 export function TrackingSheet({
-    title,
-    error,
-    dismiss,
-    children,
-}: {
+                                  title,
+                                  error,
+                                  dismiss,
+                                  children,
+                              }: {
     title: string;
     error?: string;
     dismiss: () => void;
@@ -47,6 +47,7 @@ export function TrackingSheet({
         </NativeHost>
     );
 }
+
 const styles = StyleSheet.create({
     content: { padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
     error: { color: colors.error },

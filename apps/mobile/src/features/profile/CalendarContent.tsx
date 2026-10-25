@@ -1,17 +1,17 @@
-import { ProfileQueryPanel } from "./ProfileQueryPanel";
-import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { useMemo, useState } from "react";
-import { useIsFocused } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { Animated, Pressable, RefreshControl, View } from "react-native";
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import { colors } from "../../theme";
-import { mediaLabels } from "../../lib/media";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { calendarOptions } from "../../lib/react-query/query-options/profile.options";
-import { AppText, Cover, StateView } from "../../components/ui";
-import { FilterButtons } from "../../components/filter-buttons";
-import { shiftDateInputValue, toDateInputValue } from "@/lib/utils/formatting/date";
+import {ProfileQueryPanel} from "./ProfileQueryPanel";
+import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
+import {useMemo, useState} from "react";
+import {useIsFocused} from "expo-router";
+import {useQuery} from "@tanstack/react-query";
+import {Animated, Pressable, RefreshControl, View} from "react-native";
+import {ChevronLeft, ChevronRight} from "lucide-react-native";
+import {colors} from "../../theme";
+import {mediaLabels} from "../../lib/media";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {calendarOptions} from "../../lib/react-query/query-options/profile.options";
+import {AppText, Cover, StateView} from "../../components/ui";
+import {FilterButtons} from "../../components/filter-buttons";
+import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/formatting/date";
 
 export function CalendarContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
@@ -61,7 +61,7 @@ export function CalendarContent({ userId }: { userId?: number }) {
                                             setDay(null);
                                         }}
                                     >
-                                        <ChevronLeft size={22} color={colors.text} />
+                                        <ChevronLeft size={22} color={colors.text}/>
                                     </Pressable>
                                     <Pressable
                                         accessibilityRole="button"
@@ -89,7 +89,7 @@ export function CalendarContent({ userId }: { userId?: number }) {
                                             setDay(null);
                                         }}
                                     >
-                                        <ChevronRight size={22} color={colors.text} />
+                                        <ChevronRight size={22} color={colors.text}/>
                                     </Pressable>
                                 </View>
                                 <View style={{ gap: 6 }}>
@@ -235,7 +235,7 @@ export function CalendarContent({ userId }: { userId?: number }) {
                                     opacity: pressed ? 0.6 : 1,
                                 })}
                             >
-                                <Cover uri={item.cover} label={item.mediaName} style={{ width: 72, height: 108 }} />
+                                <Cover uri={item.cover} label={item.mediaName} style={{ width: 72, height: 108 }}/>
                                 <View style={{ flex: 1, gap: 6 }}>
                                     <AppText style={{ fontWeight: "600" }}>{item.mediaName}</AppText>
                                     <AppText muted>

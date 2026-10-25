@@ -1,5 +1,5 @@
-import { api } from "../../api-client";
-import { infiniteQueryOptions } from "@tanstack/react-query";
+import {api} from "../../api-client";
+import {infiniteQueryOptions} from "@tanstack/react-query";
 
 export const libraryOptions = (search: string, userId?: number) =>
     infiniteQueryOptions({

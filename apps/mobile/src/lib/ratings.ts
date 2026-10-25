@@ -8,12 +8,6 @@ export const feelingOptions = [
 ];
 
 
-export const scoreOptions = Array.from({ length: 21 }, (_, idx) => ({
-    value: String(idx / 2),
-    label: `${idx / 2} / 10`,
-}));
-
-
 export const ratingLabel = (value: number, system: "score" | "feeling") =>
     system === "score"
         ? String(value)

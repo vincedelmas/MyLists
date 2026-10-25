@@ -1,11 +1,12 @@
-import { useIsFocused } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { Bell } from "lucide-react-native";
-import { Pressable, View } from "react-native";
-import { AppText } from "../../components/ui";
-import { notificationCountsOptions } from "../../lib/react-query/query-options/notifications.options";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { colors } from "../../theme";
+import {useIsFocused} from "expo-router";
+import {useQuery} from "@tanstack/react-query";
+import {Bell} from "lucide-react-native";
+import {Pressable, View} from "react-native";
+import {AppText} from "../../components/ui";
+import {notificationCountsOptions} from "../../lib/react-query/query-options/notifications.options";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {colors} from "../../theme";
+
 export function NotificationButton() {
     const focused = useIsFocused();
     const query = useQuery({ ...notificationCountsOptions, enabled: focused });
@@ -18,7 +19,7 @@ export function NotificationButton() {
             onPress={() => push("/profile/notifications")}
             style={{ padding: 12 }}
         >
-            <Bell size={21} color={colors.muted} />
+            <Bell size={21} color={colors.muted}/>
             {count > 0 && (
                 <View
                     style={{

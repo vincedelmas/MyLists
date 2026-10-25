@@ -1,17 +1,17 @@
-import { ProfileQueryPanel } from "./ProfileQueryPanel";
-import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { useState } from "react";
-import { useIsFocused } from "expo-router";
-import type { api } from "../../lib/api-client";
-import { useQuery } from "@tanstack/react-query";
-import { formatCount } from "./profile-formatting";
-import { colors, statusColors } from "../../theme";
-import { Animated, RefreshControl, View } from "react-native";
-import { ProgressBar } from "../../components/ProgressBar";
-import { mediaLabels, mediaColors } from "../../lib/media";
-import { statsOptions } from "../../lib/react-query/query-options/profile.options";
-import { AppText, Section, uiStyles } from "../../components/ui";
-import { FilterButtons } from "../../components/filter-buttons";
+import {ProfileQueryPanel} from "./ProfileQueryPanel";
+import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
+import {useState} from "react";
+import {useIsFocused} from "expo-router";
+import type {api} from "../../lib/api-client";
+import {useQuery} from "@tanstack/react-query";
+import {formatCount} from "./profile-formatting";
+import {colors, statusColors} from "../../theme";
+import {Animated, RefreshControl, View} from "react-native";
+import {ProgressBar} from "../../components/ProgressBar";
+import {mediaLabels, mediaColors} from "../../lib/media";
+import {statsOptions} from "../../lib/react-query/query-options/profile.options";
+import {AppText, Section, uiStyles} from "../../components/ui";
+import {FilterButtons} from "../../components/filter-buttons";
 
 export function StatsContent({ userId }: { userId?: number }) {
     const focused = useIsFocused();
@@ -200,7 +200,7 @@ export function StatsContent({ userId }: { userId?: number }) {
                                                 </AppText>
                                                 <AppText muted>{formatCount(month.total)} hours</AppText>
                                             </View>
-                                            <ProgressBar value={(month.total / monthlyMax) * 100} />
+                                            <ProgressBar value={(month.total / monthlyMax) * 100}/>
                                         </View>
                                     ))}
                                 </View>

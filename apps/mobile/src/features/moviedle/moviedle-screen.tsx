@@ -401,7 +401,7 @@ export function MoviedleScreen() {
     return (
         <Page title="Moviedle" brand back>
             <PagedTabs tabs={tabs} value={tab} onChange={setTab}>
-                {(value) => value === "leaderboard" ? <Leaderboard /> : (
+                {(value) => value === "leaderboard" ? <Leaderboard/> : (
                     <QueryPanel query={query}>
                         {(data) => value === "play" ? (
                             <DailyGame
@@ -411,7 +411,7 @@ export function MoviedleScreen() {
                                 refreshing={query.isRefetching}
                                 refetch={query.refetch}
                             />
-                        ) : <GameStats data={data} />}
+                        ) : <GameStats data={data}/>}
                     </QueryPanel>
                 )}
             </PagedTabs>

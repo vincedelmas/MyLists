@@ -74,7 +74,7 @@ function GeneralForm({ data }: { data: MobileSettings }) {
 export function GeneralSettingsScreen() {
     const focused = useIsFocused();
     const query = useQuery({ ...settingsOptions, enabled: focused });
-    
+
     return (
         <Page title="General settings" back>
             <QueryPanel query={query}>

@@ -1,17 +1,18 @@
-import { memo } from "react";
-import { useIsFocused } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import type { api, MobileProfile, MobileProfileActivity } from "../../lib/api-client";
-import { colors } from "../../theme";
-import { mediaIcons, mediaColors } from "../../lib/media";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { AppText, Cover, QueryPanel } from "../../components/ui";
-import { formatActivity } from "./profile-formatting";
-import { profileActivityOptions, profileFollowsFeedOptions } from "../../lib/react-query/query-options/profile.options";
+import {memo} from "react";
+import {useIsFocused} from "expo-router";
+import {Pressable, StyleSheet, View} from "react-native";
+import {useQuery} from "@tanstack/react-query";
+import type {api, MobileProfile, MobileProfileActivity} from "../../lib/api-client";
+import {colors} from "../../theme";
+import {mediaIcons, mediaColors} from "../../lib/media";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {AppText, Cover, QueryPanel} from "../../components/ui";
+import {formatActivity} from "./profile-formatting";
+import {profileActivityOptions, profileFollowsFeedOptions} from "../../lib/react-query/query-options/profile.options";
 
 type FeedItem = MobileProfileActivity[number] | Awaited<ReturnType<typeof api.profileExtras>>["followsFeed"][number];
 type RatingSystem = MobileProfile["user"]["ratingSystem"];
+
 export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSystem; userId?: number }) {
     const focused = useIsFocused();
     const mine = useQuery({ ...profileActivityOptions(userId), enabled: focused });
@@ -32,7 +33,7 @@ export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSyst
                         <QueryPanel<readonly FeedItem[]> query={query}>
                             {(items) =>
                                 items.length ? (
-                                    <FeedRows items={items} ratingSystem={ratingSystem} />
+                                    <FeedRows items={items} ratingSystem={ratingSystem}/>
                                 ) : (
                                     <AppText muted style={styles.empty}>
                                         {empty}
@@ -48,9 +49,9 @@ export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSyst
 }
 
 const FeedRows = memo(function FeedRows({
-    items,
-    ratingSystem,
-}: {
+                                            items,
+                                            ratingSystem,
+                                        }: {
     items: readonly FeedItem[];
     ratingSystem: RatingSystem;
 }) {
@@ -79,7 +80,7 @@ const FeedRows = memo(function FeedRows({
                         </AppText>
                     </Pressable>
                 ) : (
-                    <Icon size={16} color={mediaColors[item.mediaType]} />
+                    <Icon size={16} color={mediaColors[item.mediaType]}/>
                 )}
                 <Pressable
                     accessibilityRole="button"
@@ -92,7 +93,7 @@ const FeedRows = memo(function FeedRows({
                     }
                 >
                     <View style={styles.heading}>
-                        {author && <Icon size={13} color={mediaColors[item.mediaType]} />}
+                        {author && <Icon size={13} color={mediaColors[item.mediaType]}/>}
                         <AppText numberOfLines={1} style={styles.title}>
                             {item.mediaName}
                         </AppText>

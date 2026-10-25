@@ -1,18 +1,18 @@
-import { useTabPush } from "../../hooks/use-tab-push";
-import { colors } from "../../theme";
-import { ConfirmationSheet } from "../../components/confirmation-sheet";
-import { useConfirmation } from "../../hooks/use-confirmation";
-import { PagedTabs } from "../../components/paged-tabs";
-import { UsersRound, UserRoundCheck, UserRoundPlus, Send, MoreHorizontal, type LucideIcon } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
-import type { api } from "../../lib/api-client";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useIsFocused, useLocalSearchParams } from "expo-router";
-import { FlatList, View, RefreshControl, Pressable } from "react-native";
-import { recordNavigationTiming } from "../../lib/diagnostics/navigation-timing";
-import { socialOptions } from "../../lib/react-query/query-options/social.options";
-import { AppText, Button, Cover, Page, StateView } from "../../components/ui";
-import { useSocialAction } from "../../lib/react-query/query-mutations/social.mutations";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {colors} from "../../theme";
+import {ConfirmationSheet} from "../../components/confirmation-sheet";
+import {useConfirmation} from "../../hooks/use-confirmation";
+import {PagedTabs} from "../../components/paged-tabs";
+import {UsersRound, UserRoundCheck, UserRoundPlus, Send, MoreHorizontal, type LucideIcon} from "lucide-react-native";
+import {useEffect, useMemo, useState} from "react";
+import type {api} from "../../lib/api-client";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import {useIsFocused, useLocalSearchParams} from "expo-router";
+import {FlatList, View, RefreshControl, Pressable} from "react-native";
+import {recordNavigationTiming} from "../../lib/diagnostics/navigation-timing";
+import {socialOptions} from "../../lib/react-query/query-options/social.options";
+import {AppText, Button, Card, Cover, Page, StateView} from "../../components/ui";
+import {useSocialAction} from "../../lib/react-query/query-mutations/social.mutations";
 
 type Kind = Parameters<typeof api.social>[0]["kind"];
 
@@ -44,7 +44,7 @@ export function SocialScreen() {
                 onChange={setKind}
                 tabs={tabs.map((tab) => ({ ...tab, count: counts.data?.pages[0]?.counts[tab.value] }))}
             >
-                {(value) => <ConnectionsContent kind={value} userId={userId} active={kind === value} />}
+                {(value) => <ConnectionsContent kind={value} userId={userId} active={kind === value}/>}
             </PagedTabs>
         </Page>
     );
@@ -59,7 +59,6 @@ function ConnectionsContent({ kind, userId, active }: { kind: Kind; userId?: num
         ...socialOptions(kind, userId),
         enabled: focused,
     });
-
 
 
     const act = (targetId: number, action: Parameters<typeof api.socialAction>[0]["action"]) => {
@@ -105,29 +104,26 @@ function ConnectionsContent({ kind, userId, active }: { kind: Kind; userId?: num
                                 query.isError
                                     ? "Couldn’t load connections"
                                     : kind === "requests"
-                                      ? "No follow requests"
-                                      : kind === "pending"
-                                        ? "No pending requests"
-                                        : `No ${kind} yet`
+                                        ? "No follow requests"
+                                        : kind === "pending"
+                                            ? "No pending requests"
+                                            : `No ${kind} yet`
                             }
                         />
                     }
                     ListFooterComponent={
                         query.isFetchingNextPage ? (
-                            <StateView loading={true} />
+                            <StateView loading={true}/>
                         ) : query.isError && items.length ? (
-                            <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()} />
+                            <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()}/>
                         ) : undefined
                     }
                     renderItem={({ item }) => (
-                        <View
+                        <Card
                             style={{
                                 gap: 12,
                                 padding: 14,
                                 borderRadius: 16,
-                                borderWidth: 1,
-                                borderColor: colors.border,
-                                backgroundColor: colors.surface,
                             }}
                         >
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -152,12 +148,12 @@ function ConnectionsContent({ kind, userId, active }: { kind: Kind; userId?: num
                                             {item.isOwn
                                                 ? "You"
                                                 : item.myFollowStatus === "requested"
-                                                  ? "Request pending"
-                                                  : item.myFollowStatus === "accepted"
-                                                    ? "Following"
-                                                    : item.privacy === "private"
-                                                      ? "Private profile"
-                                                      : "View profile"}
+                                                    ? "Request pending"
+                                                    : item.myFollowStatus === "accepted"
+                                                        ? "Following"
+                                                        : item.privacy === "private"
+                                                            ? "Private profile"
+                                                            : "View profile"}
                                         </AppText>
                                     </View>
                                 </Pressable>
@@ -172,17 +168,17 @@ function ConnectionsContent({ kind, userId, active }: { kind: Kind; userId?: num
                                                 item.myFollowStatus === "accepted"
                                                     ? "Following"
                                                     : item.myFollowStatus === "requested"
-                                                      ? "Cancel"
-                                                      : "Follow"
+                                                        ? "Cancel"
+                                                        : "Follow"
                                             }
                                             onPress={() =>
                                                 item.myFollowStatus === "accepted"
                                                     ? confirm({
-                                                          title: "Unfollow this person?",
-                                                          message: `Stop seeing ${item.username} in your follows feed?`,
-                                                          label: "Unfollow",
-                                                          onConfirm: () => act(item.id, "unfollow"),
-                                                      })
+                                                        title: "Unfollow this person?",
+                                                        message: `Stop seeing ${item.username} in your follows feed?`,
+                                                        label: "Unfollow",
+                                                        onConfirm: () => act(item.id, "unfollow"),
+                                                    })
                                                     : act(item.id, item.myFollowStatus ? "unfollow" : "follow")
                                             }
                                         />
@@ -204,7 +200,7 @@ function ConnectionsContent({ kind, userId, active }: { kind: Kind; userId?: num
                                             })
                                         }
                                     >
-                                        <MoreHorizontal size={20} color={colors.muted} />
+                                        <MoreHorizontal size={20} color={colors.muted}/>
                                     </Pressable>
                                 )}
                             </View>
@@ -223,11 +219,11 @@ function ConnectionsContent({ kind, userId, active }: { kind: Kind; userId?: num
                                     />
                                 </View>
                             )}
-                        </View>
+                        </Card>
                     )}
                 />
             </View>
-            <ConfirmationSheet confirmation={confirmation} dismiss={dismiss} />
+            <ConfirmationSheet confirmation={confirmation} dismiss={dismiss}/>
         </>
     );
 }

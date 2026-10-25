@@ -1,16 +1,16 @@
-import { useCollapsingScroll } from "../../hooks/use-collapsing-scroll";
-import { useState } from "react";
-import { View } from "react-native";
-import { LayoutToggle, type MediaLayout } from "../../components/layout-toggle";
-import { useIsFocused } from "expo-router";
-import { colors } from "../../theme";
-import { useTabPush } from "../../hooks/use-tab-push";
-import { formatActivity } from "./profile-formatting";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { AppText, StateView } from "../../components/ui";
-import { Animated, RefreshControl } from "react-native";
-import { MediaCard } from "../../components/media-card";
-import { historyOptions } from "../../lib/react-query/query-options/history.options";
+import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
+import {useState} from "react";
+import {View} from "react-native";
+import {LayoutToggle, type MediaLayout} from "../../components/layout-toggle";
+import {useIsFocused} from "expo-router";
+import {colors} from "../../theme";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {formatActivity} from "./profile-formatting";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import {AppText, StateView} from "../../components/ui";
+import {Animated, RefreshControl} from "react-native";
+import {MediaCard} from "../../components/media-card";
+import {historyOptions} from "../../lib/react-query/query-options/history.options";
 
 export function ActivityContent({ userId }: { userId?: number }) {
     const push = useTabPush();
@@ -38,7 +38,7 @@ export function ActivityContent({ userId }: { userId?: number }) {
                         <AppText muted style={{ fontSize: 12 }}>
                             Tracking history
                         </AppText>
-                        <LayoutToggle value={layout} onChange={setLayout} />
+                        <LayoutToggle value={layout} onChange={setLayout}/>
                     </View>
                 }
                 data={items}
@@ -88,9 +88,9 @@ export function ActivityContent({ userId }: { userId?: number }) {
                 )}
                 ListFooterComponent={
                     query.isFetchingNextPage ? (
-                        <StateView loading={true} />
+                        <StateView loading={true}/>
                     ) : query.isError && items.length ? (
-                        <StateView title="Couldn’t load more activity" retry={() => void query.fetchNextPage()} />
+                        <StateView title="Couldn’t load more activity" retry={() => void query.fetchNextPage()}/>
                     ) : undefined
                 }
             />

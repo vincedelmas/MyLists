@@ -12,19 +12,19 @@ import {colors} from "../../theme";
 export function SettingsScreen() {
     const push = useTabPush();
     const focused = useIsFocused();
-    const query = useQuery({...settingsOptions, enabled: focused});
+    const query = useQuery({ ...settingsOptions, enabled: focused });
     const signOut = useSignOutMutation();
     return (
         <Page title="Settings">
             <QueryPanel query={query}>
                 {(data) => (
-                    <View style={{flex: 1}}>
+                    <View style={{ flex: 1 }}>
                         {signOut.error && (
-                            <AppText accessibilityRole="alert" style={{color: colors.error, padding: 16}}>
+                            <AppText accessibilityRole="alert" style={{ color: colors.error, padding: 16 }}>
                                 {signOut.error.message}
                             </AppText>
                         )}
-                        <NativeHost matchContents={false} style={{flex: 1}}>
+                        <NativeHost matchContents={false} style={{ flex: 1 }}>
                             <FieldGroup>
                                 <FieldGroup.Section title={data.username}>
                                     <ListItem
@@ -56,7 +56,7 @@ export function SettingsScreen() {
                                                 "Sign out?",
                                                 "You’ll need to sign in again to access your lists.",
                                                 [
-                                                    {text: "Cancel", style: "cancel"},
+                                                    { text: "Cancel", style: "cancel" },
                                                     {
                                                         text: "Sign out",
                                                         style: "destructive",

@@ -43,7 +43,7 @@ export function PrivacyBadge({ value }: { value: MobileProfile["user"]["privacy"
             >
                 <Icon size={21} color={color}/>
             </Pressable>
-            
+
             <NativeHost matchContents>
                 <BottomSheet isPresented={open} onDismiss={() => setOpen(false)}>
                     <Column spacing={18} style={{ padding: 16 }}>

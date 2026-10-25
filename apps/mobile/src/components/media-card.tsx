@@ -1,8 +1,8 @@
-import { colors } from "../theme";
-import { AppText, Cover } from "./ui";
-import { memo, type ReactNode } from "react";
-import type { MediaLayout } from "./layout-toggle";
-import { Pressable, StyleSheet, View } from "react-native";
+import {colors} from "../theme";
+import {AppText, Cover} from "./ui";
+import {memo, type ReactNode} from "react";
+import type {MediaLayout} from "./layout-toggle";
+import {Pressable, StyleSheet, View} from "react-native";
 
 interface MediaCardProps {
     name: string;
@@ -14,13 +14,13 @@ interface MediaCardProps {
 }
 
 export const MediaCard = memo(function MediaCard({
-    name,
-    cover,
-    detail,
-    children,
-    onPress,
-    layout = "grid",
-}: MediaCardProps) {
+                                                     name,
+                                                     cover,
+                                                     detail,
+                                                     children,
+                                                     onPress,
+                                                     layout = "grid",
+                                                 }: MediaCardProps) {
     return (
         <Pressable
             onPress={onPress}
@@ -32,7 +32,7 @@ export const MediaCard = memo(function MediaCard({
                 pressed && { opacity: 0.6 },
             ]}
         >
-            <Cover uri={cover} label={name} style={layout === "grid" ? styles.cover : styles.listCover} />
+            <Cover uri={cover} label={name} style={layout === "grid" ? styles.cover : styles.listCover}/>
             <View style={[styles.caption, layout === "list" && { flex: 1 }]}>
                 <AppText numberOfLines={2} style={styles.title}>
                     {name}

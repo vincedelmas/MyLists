@@ -1,18 +1,18 @@
 import type * as Moviedle from "../../../../src/lib/server/mobile/moviedle";
-import { backendUrl } from "./config";
-import { authClient } from "./auth-client";
+import {backendUrl} from "./config";
+import {authClient} from "./auth-client";
 import type * as ListFilters from "../../../../src/lib/server/mobile/list-filters";
 import type * as Notifications from "../../../../src/lib/server/mobile/notifications";
 import type * as MediaSections from "../../../../src/lib/server/mobile/media-sections";
 import type * as Media from "../../../../src/lib/server/mobile/media";
-import { timeNavigationRequest } from "./diagnostics/navigation-timing";
+import {timeNavigationRequest} from "./diagnostics/navigation-timing";
 import type * as Social from "../../../../src/lib/server/mobile/social";
 import type * as Library from "../../../../src/lib/server/mobile/library";
 import type * as Calendar from "../../../../src/lib/server/mobile/calendar";
 import type * as People from "../../../../src/lib/server/mobile/people";
 import type * as Profile from "../../../../src/lib/server/mobile/profile";
 import type * as Settings from "../../../../src/lib/server/mobile/settings";
-import type { searchCatalog } from "../../../../src/lib/server/domain/search/catalog-search";
+import type {searchCatalog} from "../../../../src/lib/server/domain/search/catalog-search";
 
 // These references are erased by Metro. Payloads and mutation inputs are inferred
 // from the backend implementation rather than maintained as parallel interfaces.
@@ -78,7 +78,8 @@ const request = async <T>(
         }
 
         return await response.json();
-    } finally {
+    }
+    finally {
         finishTiming?.(outcome);
     }
 };
@@ -96,7 +97,7 @@ const subjectPath = (path: string, userId?: number) =>
 
 export const api = {
     moviedle: (signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedle>>("/moviedle", signal),
-    moviedleSuggestions: (query: string, signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedleSuggestions>>(`/moviedle/suggestions?${queryString({query})}`, signal),
+    moviedleSuggestions: (query: string, signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedleSuggestions>>(`/moviedle/suggestions?${queryString({ query })}`, signal),
     moviedleLeaderboard: (signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedleLeaderboard>>("/moviedle/leaderboard", signal),
     moviedleGuess: (input: Parameters<typeof Moviedle.guessMobileMoviedle>[1]) => request<Result<typeof Moviedle.guessMobileMoviedle>>("/moviedle", undefined, "POST", input),
     notificationCounts: (signal?: AbortSignal) =>

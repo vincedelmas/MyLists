@@ -1,179 +1,208 @@
-import {useTabPush} from "../../hooks/use-tab-push";
-import {useCallback, useReducer, useState} from "react";
+import {memo, useCallback, useMemo, useReducer, useRef, useState} from "react";
 import {useFocusEffect, useIsFocused, useNavigation} from "expo-router";
 import type {BottomTabNavigationProp} from "expo-router/js-tabs";
-import type {TabParamList} from "../../lib/navigation.types";
-import {FlatList, View, Pressable} from "react-native";
-import {colors} from "../../theme";
-import {UserRound, Monitor, Gamepad2, Library, BookImage} from "lucide-react-native";
-import {mediaLabels} from "../../lib/media";
-import {MediaRow} from "../../components/MediaRow";
-import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
+import {ActivityIndicator, FlatList, Keyboard, Pressable, StyleSheet, View} from "react-native";
 import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
+import {BookImage, Check, ChevronRight, Gamepad2, Globe, Library, Lock, Monitor, Search, SearchX, Shield, UserRound} from "lucide-react-native";
+import {formatDate} from "@/lib/utils/formatting/date";
+import {capitalize} from "@/lib/utils/formatting/text";
+import {useTabPush} from "../../hooks/use-tab-push";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
+import type {TabParamList} from "../../lib/navigation.types";
 import type {SearchInput, SearchResult} from "../../lib/api-client";
-import {AppText, Cover, Field, Page, StateView} from "../../components/ui";
+import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
 import {searchOptions} from "../../lib/react-query/query-options/search.options";
 import {useResolveMutation} from "../../lib/react-query/query-mutations/media.mutations";
+import {AppText, Cover, Field, Page, StateView} from "../../components/ui";
+import {ChoiceChips} from "../../components/choice-chips";
+import {colors} from "../../theme";
+import {mediaColors, mediaIcons, mediaLabels} from "../../lib/media";
 
 const providers = [
-    { value: "tmdb", label: "Movies & TV", icon: Monitor },
-    { value: "books", label: "Books", icon: Library },
-    { value: "igdb", label: "Games", icon: Gamepad2 },
-    { value: "manga", label: "Manga", icon: BookImage },
-    { value: "users", label: "People", icon: UserRound },
+    { value: "tmdb", label: "Movies & TV", icon: Monitor, hint: "Series, anime and movies, all in one search." },
+    { value: "books", label: "Books", icon: Library, color: mediaColors.books, hint: "Find your next read by title or author." },
+    { value: "igdb", label: "Games", icon: Gamepad2, color: mediaColors.games, hint: "Find the games you play, or plan to play." },
+    { value: "manga", label: "Manga", icon: BookImage, color: mediaColors.manga, hint: "Find manga to start your next chapter." },
+    { value: "users", label: "People", icon: UserRound, hint: "Find people by name and explore their lists." },
 ] as const;
+
+type SearchItem = SearchResult["data"][number];
+const privacyIcons = { public: Globe, restricted: Shield, private: Lock };
 
 export function SearchScreen() {
     const push = useTabPush();
     const navigation = useNavigation();
+    const list = useRef<FlatList<SearchItem>>(null);
     const [focusKey, focusSearch] = useReducer((key: number) => key + 1, 0);
     useFocusEffect(useCallback(() => {
-        // Native autofocus also works in Expo Go, where the field's imperative focus handler is unavailable.
+        // Remounting also focuses the native field in Expo Go, where imperative focus is unavailable.
         focusSearch();
         const tabs = navigation.getParent<BottomTabNavigationProp<TabParamList>>()!;
-        const unsubscribe = tabs.addListener("tabPress", ({ target }) => {
+        return tabs.addListener("tabPress", ({ target }) => {
             const state = tabs.getState();
             if (target === state.routes[state.index].key) focusSearch();
         });
-        return unsubscribe;
     }, [navigation]));
     const [text, setText] = useState("");
     const [selectedProvider, setProvider] = useState<SearchInput["apiProvider"] | null>(null);
     const settings = useQuery(settingsOptions);
     const provider = selectedProvider ?? settings.data?.searchSelector ?? "tmdb";
-    const term = useDebouncedValue(text.trim());
+    const selected = providers.find(item => item.value === provider)!;
+    const trimmed = text.trim();
+    const term = useDebouncedValue(trimmed);
     const focused = useIsFocused();
-    const query = useInfiniteQuery({ ...searchOptions(term, provider), enabled: focused && term.length >= 2 });
+    const ready = trimmed.length >= 2 && trimmed === term;
+    const query = useInfiniteQuery({ ...searchOptions(term, provider), enabled: focused && ready });
     const resolve = useResolveMutation();
-    const results = query.data?.pages.flatMap((page) => page.data) ?? [];
-    const open = (item: SearchResult["data"][number]) => {
+    const { mutate: resolveMedia, isPending: openingMedia } = resolve;
+    const results = useMemo(() => ready ? query.data?.pages.flatMap(page => page.data) ?? [] : [], [query.data, ready]);
+    const loading = trimmed.length >= 2 && (!ready || query.isPending);
+    const open = useCallback((item: SearchItem) => {
+        if (openingMedia) return;
+        Keyboard.dismiss();
         if (item.itemType === "users") {
             push({ pathname: "/people/[userId]", params: { userId: String(item.id) } });
             return;
         }
-        if (resolve.isPending) return;
         const mediaType = item.itemType;
-        const navigate = (mediaId: number) =>
-            push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType, mediaId: String(mediaId) } });
-        if ("mediaId" in item && item.mediaId) navigate(item.mediaId);
-        else resolve.mutate({ mediaType, apiId: item.id }, { onSuccess: (data) => navigate(data.mediaId) });
-    };
-    return (
-        <Page title="Search" hideHeader>
-            <FlatList
-                data={[{ itemType: "providers" as const, id: "providers" }, ...results]}
-                stickyHeaderIndices={[0]}
-                ListHeaderComponentStyle={{ backgroundColor: colors.background, zIndex: 1 }}
-                ListHeaderComponent={
-                    <View style={{ padding: 16, gap: 12 }}>
-                        <Field
-                            clearable
-                            key={focusKey}
-                            autoFocus
-                            label="Search"
-                            value={text}
-                            onChangeText={setText}
-                            placeholder="Search titles…"
-                            autoCorrect={false}
-                            returnKeyType="search"
-                        />
-                        {resolve.isPending && <AppText muted>Opening media details…</AppText>}
-                        {resolve.error && <AppText accessibilityRole="alert">{resolve.error.message}</AppText>}
-                    </View>
-                }
-                keyExtractor={(item) => `${item.itemType}:${item.id}`}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-                initialNumToRender={10}
-                windowSize={7}
-                renderItem={({ item }) =>
-                    item.itemType === "providers" ? (
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 16, paddingTop: 0 }}>
-                            {providers.map(({ value, label, icon: Icon }) => (
-                                <Pressable
-                                    key={value}
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ checked: provider === value }}
-                                    onPress={() => {
-                                        setProvider(value);
-                                        resolve.reset();
-                                    }}
-                                    style={({ pressed }) => ({
-                                        flexBasis: "30%",
-                                        flexGrow: 1,
-                                        alignItems: "center",
-                                        gap: 8,
-                                        padding: 12,
-                                        backgroundColor: provider === value ? colors.secondary : colors.surface,
-                                        borderWidth: 1,
-                                        borderColor: provider === value ? colors.accent : colors.border,
-                                        borderRadius: 12,
-                                        opacity: pressed ? 0.6 : 1,
-                                    })}
-                                >
-                                    <Icon size={22} color={provider === value ? colors.accent : colors.muted}/>
-                                    <AppText style={{ fontSize: 12 }}>{label}</AppText>
-                                </Pressable>
-                            ))}
-                        </View>
-                    ) : item.itemType === "users" ? (
-                        <Pressable
-                            accessibilityRole="button"
-                            onPress={() => open(item)}
-                            style={{ padding: 16, flexDirection: "row", alignItems: "center", gap: 12 }}
-                        >
-                            <Cover
-                                uri={item.image}
-                                label={item.name}
-                                style={{ width: 48, height: 48, borderRadius: 24 }}
-                            />
-                            <AppText>{item.name}</AppText>
-                        </Pressable>
-                    ) : (
-                        <MediaRow
-                            mediaType={item.itemType}
-                            name={item.name}
-                            cover={item.image}
-                            detail={`${mediaLabels[item.itemType]}${item.date ? ` · ${typeof item.date === "number" && item.date > 9999 ? new Date(item.date * 1000).getUTCFullYear() : String(item.date).slice(0, 4)}` : ""}${"inCurrentUserList" in item && item.inCurrentUserList ? " · In your list" : ""}`}
-                            onPress={() => open(item)}
-                        />
-                    )
-                }
-                onEndReachedThreshold={0.5}
-                onEndReached={() => {
-                    if (focused && query.hasNextPage && !query.isFetching) void query.fetchNextPage();
-                }}
-                ListFooterComponent={
-                    results.length === 0 ? (
-                        <StateView
-                            loading={term.length >= 2 && query.isPending}
-                            title={
-                                term.length < 2
-                                    ? "Find something to track"
-                                    : query.isError
-                                        ? "Search unavailable"
-                                        : "No results"
-                            }
-                            message={
-                                query.error?.message ??
-                                (term.length < 2
-                                    ? "Enter at least two characters to search."
-                                    : "Try a different title or search provider.")
-                            }
-                            retry={query.isError ? () => void query.refetch() : undefined}
-                        />
-                    ) : query.isFetchingNextPage ? (
-                        <StateView loading/>
-                    ) : query.isError && results.length ? (
-                        <StateView
-                            title="Couldn’t load more results"
-                            message={query.error.message}
-                            retry={() => void query.fetchNextPage()}
-                        />
-                    ) : undefined
-                }
-            />
-        </Page>
-    );
+        const navigate = (mediaId: number) => push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType, mediaId: String(mediaId) } });
+        if (item.mediaId) navigate(item.mediaId);
+        else resolveMedia({ mediaType, apiId: item.id }, { onSuccess: data => navigate(data.mediaId) });
+    }, [push, openingMedia, resolveMedia]);
+    const renderItem = useCallback(({ item }: { item: SearchItem }) => <SearchResultRow item={item} onOpen={open} disabled={resolve.isPending}
+                                                                                        opening={resolve.isPending && resolve.variables?.mediaType === item.itemType && resolve.variables.apiId === item.id}/>,
+        [open, resolve.isPending, resolve.variables]);
+    const Icon = selected.icon;
+
+    return <Page title="Search" hideHeader>
+        <View style={styles.header}>
+            <AppText heading style={styles.title}>Search</AppText>
+            <Field key={focusKey} label={provider === "users" ? "Search people" : "Search titles"} hideLabel clearable autoFocus
+                   leadingIcon={<Search size={20} color={colors.muted}/>} value={text} placeholder={provider === "users" ? "Search by name…" : "Search titles…"}
+                   onChangeText={value => {
+                       setText(value);
+                       resolve.reset();
+                       list.current?.scrollToOffset({ offset: 0, animated: false });
+                   }} autoCorrect={false} autoCapitalize="none" returnKeyType="search" onSubmitEditing={() => Keyboard.dismiss()}
+                   textStyle={{ fontSize: 16 }} style={styles.searchField}/>
+        </View>
+        <View style={styles.providerBar}>
+            <ChoiceChips options={providers} value={provider} label="Search in" onChange={value => {
+                setProvider(value);
+                resolve.reset();
+                list.current?.scrollToOffset({ offset: 0, animated: false });
+            }}/>
+        </View>
+        <FlatList ref={list} data={results} keyExtractor={item => `${item.itemType}:${item.id}`} renderItem={renderItem}
+                  contentContainerStyle={styles.results} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
+                  initialNumToRender={7} maxToRenderPerBatch={7} windowSize={7}
+                  ListHeaderComponent={<>
+                      {resolve.error && <View style={styles.openError}><AppText accessibilityRole="alert" style={styles.error}>
+                          Couldn’t open this title. {resolve.error.message} Tap the result to try again.
+                      </AppText></View>}
+                      {results.length > 0 && <View style={styles.resultsHeading}>
+                          <AppText heading style={styles.sectionTitle}>{selected.label} results</AppText>
+                          {query.isFetching && !query.isFetchingNextPage ? <ActivityIndicator size="small" color={colors.accent}/> :
+                              <AppText muted style={styles.caption}>{results.length}{query.hasNextPage ? "+" : ""} found</AppText>}
+                      </View>}
+                  </>}
+                  ListEmptyComponent={loading ? <StateView loading/> : ready && query.isError ?
+                      <StateView title="Search unavailable" message={query.error.message} retry={() => void query.refetch()}/> :
+                      <View style={styles.empty}>
+                          <View style={styles.emptyIcon}>{ready ? <SearchX size={30} color={colors.muted}/> :
+                              <Icon size={30} color={"color" in selected ? selected.color : colors.accent}/>}</View>
+                          <AppText heading
+                                   style={styles.emptyTitle}>{ready ? "No results found" : trimmed ? "Keep typing…" : provider === "users" ? "Find your people" : provider === "tmdb" ? "Find movies & TV" : `Find ${selected.label.toLowerCase()}`}</AppText>
+                          <AppText muted
+                                   style={styles.emptyDescription}>{ready ? provider === "users" ? "Try another name or choose another category." : "Try a broader title or choose another category." : trimmed ? "Enter at least two characters to search." : selected.hint}</AppText>
+                      </View>}
+                  onEndReachedThreshold={0.5} onEndReached={() => {
+            if (focused && ready && query.hasNextPage && !query.isFetching && !query.isError) void query.fetchNextPage();
+        }}
+                  ListFooterComponent={query.isFetchingNextPage ? <StateView loading/> : results.length > 0 && query.isError ?
+                      <StateView title="Couldn’t load more results" message={query.error.message}
+                                 retry={() => void (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch())}/> : undefined}/>
+    </Page>;
 }
+
+const SearchResultRow = memo(function SearchResultRow({ item, onOpen, opening, disabled }: {
+    item: SearchItem;
+    onOpen: (item: SearchItem) => void;
+    opening: boolean;
+    disabled: boolean;
+}) {
+    const { itemType } = item;
+    const person = itemType === "users";
+    const color = person ? colors.accent : mediaColors[itemType];
+    const Icon = person ? item.privacy ? privacyIcons[item.privacy] : UserRound : mediaIcons[itemType];
+
+    return <Pressable accessibilityRole="button"
+                      accessibilityLabel={`${item.name}${person ? ", view profile" : `, ${mediaLabels[itemType]}`}${item.inCurrentUserList ? ", in your list" : ""}`}
+                      accessibilityState={{ busy: opening, disabled }} disabled={disabled} onPress={() => onOpen(item)}
+                      style={({ pressed }) => [styles.result, person && styles.personResult, pressed && styles.pressed]}>
+        <View>
+            <Cover uri={item.image} label={item.name} style={person ? styles.avatar : styles.cover}/>
+            {!item.image && <View pointerEvents="none" style={styles.coverFallback}>
+                {person ? <AppText style={styles.initial}>{Array.from(item.name)[0].toLocaleUpperCase()}</AppText> : <Icon size={24} color={color}/>}
+            </View>}
+        </View>
+        <View style={styles.identity}>
+            <AppText numberOfLines={2} style={styles.resultTitle}>{item.name}</AppText>
+            <View style={[styles.typeBadge, { backgroundColor: `${color}15` }]}><Icon size={12} color={color}/>
+                <AppText style={[styles.typeLabel, { color }]}>{person ? item.privacy ? `${capitalize(item.privacy)} profile` : "Profile" : mediaLabels[itemType]}</AppText>
+            </View>
+            {item.date && <AppText muted style={styles.caption}>{person ? "Joined " : ""}{formatDate(item.date)}</AppText>}
+            {!person && item.inCurrentUserList &&
+                <View style={styles.membership}><Check size={12} color={colors.accent}/><AppText style={styles.membershipLabel}>In your list</AppText></View>}
+        </View>
+        {opening ? <ActivityIndicator size="small" color={colors.accent}/> : <ChevronRight size={17} color={colors.muted}/>}
+    </Pressable>;
+});
+
+const styles = StyleSheet.create({
+    header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, gap: 16 },
+    title: { fontSize: 26, lineHeight: 34 },
+    searchField: { borderRadius: 18, backgroundColor: colors.surface, minHeight: 52 },
+    providerBar: { paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+    results: { paddingHorizontal: 16, paddingBottom: 24 },
+    resultsHeading: { minHeight: 54, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+    sectionTitle: { fontSize: 16, lineHeight: 22 },
+    caption: { fontSize: 12, lineHeight: 18, fontVariant: ["tabular-nums"] },
+    result: {
+        minHeight: 112,
+        paddingVertical: 14,
+        gap: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border
+    },
+    personResult: { minHeight: 88 },
+    cover: { width: 62, height: 93, borderRadius: 9 },
+    avatar: { width: 50, height: 50, borderRadius: 25 },
+    coverFallback: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" },
+    initial: { fontSize: 20, fontWeight: "700", color: colors.muted },
+    identity: { flex: 1, minWidth: 0, gap: 6 },
+    resultTitle: { fontSize: 15, lineHeight: 21, fontWeight: "600" },
+    typeBadge: { alignSelf: "flex-start", maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
+    typeLabel: { fontSize: 11, lineHeight: 16, fontWeight: "500", flexShrink: 1 },
+    membership: { flexDirection: "row", alignItems: "center", gap: 4 },
+    membershipLabel: { fontSize: 11, lineHeight: 16, color: colors.accent },
+    empty: { alignItems: "center", paddingHorizontal: 20, paddingTop: 40, paddingBottom: 32, gap: 12 },
+    emptyIcon: {
+        width: 68,
+        height: 68,
+        borderRadius: 22,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 4
+    },
+    emptyTitle: { fontSize: 20, lineHeight: 28, textAlign: "center" },
+    emptyDescription: { fontSize: 14, lineHeight: 22, textAlign: "center", maxWidth: 280 },
+    openError: { paddingVertical: 12 },
+    error: { fontSize: 12, lineHeight: 18, color: colors.error },
+    pressed: { opacity: 0.6 },
+});

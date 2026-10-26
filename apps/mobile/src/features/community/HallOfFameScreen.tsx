@@ -1,7 +1,7 @@
-import {memo, useCallback, useMemo, useRef, useState, type ComponentRef} from "react";
+import {memo, useCallback, useMemo, useRef, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import {FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View} from "react-native";
+import {FlatList, Pressable, RefreshControl, StyleSheet, View} from "react-native";
 import {ArrowUpRight, ChevronRight, Clock3, Crown, Search, Trophy, X} from "lucide-react-native";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
@@ -11,21 +11,20 @@ import {useTabPush} from "../../hooks/use-tab-push";
 import {AppText, Cover, Field, Page, StateView} from "../../components/ui";
 import {PrivacyBadge} from "../profile/PrivacyBadge";
 import {ActionSheet} from "../../components/action-sheet";
+import {ChoiceChips, type ChoiceChip} from "../../components/choice-chips";
 import {colors, achievementColors} from "../../theme";
 import {mediaColors, mediaIcons, mediaLabels} from "../../lib/media";
 import {getPersonalRanking, getRankingLevel, type PersonalRanks, type RankedUser, type RankingCategory} from "./hall-of-fame";
 
 const rankingCategories = [
-    { value: "normalized", label: "Overall" },
+    { value: "normalized", label: "Overall", icon: Trophy },
     { value: "profile", label: "Profile level" },
-    ...ALL_MEDIA_TYPES.map(value => ({ value, label: mediaLabels[value] })),
-] satisfies { value: RankingCategory; label: string }[];
+    ...ALL_MEDIA_TYPES.map(value => ({ value, label: mediaLabels[value], color: mediaColors[value] })),
+] satisfies ChoiceChip<RankingCategory>[];
 
 export function HallOfFameScreen() {
     const focused = useIsFocused();
     const list = useRef<FlatList<RankedUser>>(null);
-    const categories = useRef<ComponentRef<typeof ScrollView>>(null);
-    const categoryOffsets = useRef(new Map<RankingCategory, number>());
     const [searchOpen, setSearchOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState<RankingCategory>("normalized");
@@ -46,7 +45,6 @@ export function HallOfFameScreen() {
     const changeCategory = (value: RankingCategory) => {
         if (value === category) return;
         setCategory(value);
-        categories.current?.scrollTo({ x: Math.max(0, (categoryOffsets.current.get(value) ?? 0) - 16), animated: false });
         list.current?.scrollToOffset({ offset: 0, animated: false });
     };
     const searching = search.trim() !== term;
@@ -64,22 +62,7 @@ export function HallOfFameScreen() {
                                         }>
             <View style={styles.screen}>
                 <View style={styles.controls}>
-                    <ScrollView ref={categories} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.categories}>
-                        {rankingCategories.map(item => {
-                            const color = item.value === "normalized" || item.value === "profile" ? colors.accent : mediaColors[item.value];
-                            const chosen = category === item.value;
-                            return <Pressable key={item.value} onLayout={event => {
-                                categoryOffsets.current.set(item.value, event.nativeEvent.layout.x);
-                            }} accessibilityRole="button" accessibilityLabel={`Rank by ${item.label}`} accessibilityState={{ selected: chosen }}
-                                              onPress={() => changeCategory(item.value)} style={({ pressed }) => [styles.chipTarget, pressed && styles.pressed]}>
-                                <View style={[styles.chip, chosen && { borderColor: color, backgroundColor: `${color}18` }]}>
-                                    {item.value === "normalized" ? <Trophy size={14} color={chosen ? color : colors.muted}/> : item.value !== "profile" &&
-                                        <View style={[styles.dot, { backgroundColor: color }]}/>}
-                                    <AppText style={[styles.chipLabel, chosen && { color }]}>{item.label}</AppText>
-                                </View>
-                            </Pressable>;
-                        })}
-                    </ScrollView>
+                    <ChoiceChips options={rankingCategories} value={category} onChange={changeCategory} label="Rank by"/>
                     <View style={styles.context}>
                         <AppText muted
                                  style={styles.contextLabel}>{category === "normalized" ? "Balanced across all media" : category === "profile" ? "Ranked by total time" : `${categoryLabel} rankings`}</AppText>
@@ -234,21 +217,6 @@ function RankingSheet({ user, ranks, dismiss, onCategory }: { user?: RankedUser;
 const styles = StyleSheet.create({
     screen: { flex: 1 },
     controls: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-    categories: { paddingHorizontal: 16, gap: 8 },
-    chipTarget: { minHeight: 48, justifyContent: "center" },
-    chip: {
-        minHeight: 34,
-        paddingHorizontal: 13,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.surface,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 7
-    },
-    chipLabel: { fontSize: 12, fontWeight: "600", color: colors.muted },
-    dot: { width: 6, height: 6, borderRadius: 3 },
     context: { paddingHorizontal: 20, paddingTop: 3, paddingBottom: 14, flexDirection: "row", justifyContent: "space-between", gap: 8 },
     contextLabel: { fontSize: 12, lineHeight: 18 },
     allTime: { flexDirection: "row", alignItems: "center", gap: 5 },

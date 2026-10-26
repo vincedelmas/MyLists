@@ -207,6 +207,8 @@ export function Button({
 
 export function Field({
                           label,
+                          hideLabel,
+                          leadingIcon,
                           clearable,
                           inputRef,
                           value,
@@ -215,6 +217,8 @@ export function Field({
                           ...props
                       }: Omit<TextInputProps, "value" | "ref"> & {
     label: string;
+    hideLabel?: boolean;
+    leadingIcon?: ReactNode;
     value: string;
     inputRef?: Ref<TextInputRef>;
     clearable?: boolean;
@@ -236,7 +240,7 @@ export function Field({
         <View style={styles.fullWidth}>
             <NativeHost style={styles.fullWidth}>
                 <Column spacing={8}>
-                    <NativeText>{label}</NativeText>
+                    {!hideLabel && <NativeText>{label}</NativeText>}
                     <NativeTextInput
                         {...props}
                         value={text}
@@ -248,6 +252,7 @@ export function Field({
                         }}
                         style={{
                             padding: 12,
+                            ...(leadingIcon ? { paddingLeft: 48 } : {}),
                             ...(clearable ? { paddingRight: 48 } : {}),
                             borderWidth: 1,
                             borderRadius: 8,
@@ -257,6 +262,8 @@ export function Field({
                     />
                 </Column>
             </NativeHost>
+            {leadingIcon && <View pointerEvents="none"
+                                  style={{ position: "absolute", left: 0, bottom: 0, width: 48, height: 48, alignItems: "center", justifyContent: "center" }}>{leadingIcon}</View>}
             {clearable && value.length > 0 && (
                 <Pressable
                     accessibilityRole="button"

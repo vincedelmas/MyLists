@@ -3,6 +3,7 @@ import brandLogo from "../../../../public/logo192.png";
 import {router} from "expo-router";
 import {NativeHost} from "./native-host";
 import {SelectControl} from "./select-control";
+import {fullWidthButtonModifiers} from "./button-layout";
 import type {SelectControlProps} from "./select-control.types";
 import {assetUrl} from "../lib/api-client";
 import {useOnline} from "../hooks/use-online";
@@ -176,10 +177,12 @@ export function Button({
                            secondary,
                            danger,
                            width,
+                           fullWidth,
                        }: {
     label: string;
     danger?: boolean;
     width?: number;
+    fullWidth?: boolean;
     pending?: boolean;
     disabled?: boolean;
     secondary?: boolean;
@@ -189,9 +192,9 @@ export function Button({
 
     return (
         <NativeHost
-            matchContents
+            matchContents={fullWidth ? { vertical: true } : true}
             seedColor={danger ? colors.error : colors.accent}
-            style={styles.buttonHost}
+            style={[styles.buttonHost, fullWidth && styles.fullWidth]}
             accessibilityState={{ disabled: disabled || pending || !online, busy: pending }}
         >
             <NativeButton
@@ -199,7 +202,8 @@ export function Button({
                 label={pending ? `${label}…` : label}
                 disabled={disabled || pending || !online}
                 variant={secondary ? "outlined" : "filled"}
-                style={width ? { width } : undefined}
+                style={width ? { width } : fullWidth && Platform.OS === "web" ? { width: "100%" } : undefined}
+                modifiers={fullWidth ? fullWidthButtonModifiers : undefined}
             />
         </NativeHost>
     );

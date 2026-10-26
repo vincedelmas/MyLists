@@ -1,3 +1,4 @@
+import {KeyRound, Mail} from "lucide-react-native";
 import {useIsFocused} from "expo-router";
 import {useQuery, useMutation} from "@tanstack/react-query";
 import {authClient} from "../../lib/auth-client";
@@ -41,7 +42,7 @@ function PasswordForm() {
 
     return (
         <>
-            <Section title="Change password">
+            <Section title="Change password" icon={<KeyRound size={18} color={colors.accent}/>}>
                 <View style={uiStyles.padded}>
                     <Field
                         autoCapitalize="none"
@@ -88,6 +89,7 @@ function PasswordForm() {
             }
 
             <Button
+                fullWidth
                 onPress={submit}
                 label="Change password"
                 pending={mutation.isPending}
@@ -106,14 +108,14 @@ function EmailForm() {
         },
         onSuccess: () => setEmail(""),
     });
-    return <Section title="Email address"><View style={uiStyles.padded}>
+    return <Section title="Email address" icon={<Mail size={18} color={colors.accent}/>}><View style={uiStyles.padded}>
         <AppText muted style={{ fontSize: 12 }}>Current email: {session.data?.user.email}</AppText>
         <AppText muted style={{ fontSize: 12 }}>Approve the change from your current email address, then verify the new address.</AppText>
         <Field label="New email address" placeholder="new-email@example.com" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false}
                keyboardType="email-address" editable={!mutation.isPending}/>
         <SettingsFeedback error={mutation.error?.message}
                           success={mutation.isSuccess && "Check your current inbox to approve the change. After approval, check your new inbox to verify the new address."}/>
-        <Button label="Change Email" pending={mutation.isPending} disabled={!email.trim()} onPress={() => mutation.mutate()}/>
+        <Button fullWidth label="Change Email" pending={mutation.isPending} disabled={!email.trim()} onPress={() => mutation.mutate()}/>
     </View></Section>;
 }
 
@@ -122,8 +124,10 @@ export function SecurityScreen() {
     const query = useQuery({ ...accountSecurityOptions, enabled: focused });
     return <Page title="Email & password" back><QueryPanel query={query}>{data => <Content>
         <EmailForm/>
-        {data.hasPassword ? <PasswordForm/> : <Section title="Password"><View style={uiStyles.padded}><AppText muted>Your account has no password because you sign in
-            with {data.providers.map(provider => provider === "google" ? "Google" : "GitHub").join(" or ")}. Manage your password with your sign-in
-            provider.</AppText></View></Section>}
+        {data.hasPassword ? <PasswordForm/> :
+            <Section title="Password" icon={<KeyRound size={18} color={colors.accent}/>}><View style={uiStyles.padded}><AppText muted>Your account has no password because you sign
+                in
+                with {data.providers.map(provider => provider === "google" ? "Google" : "GitHub").join(" or ")}. Manage your password with your sign-in
+                provider.</AppText></View></Section>}
     </Content>}</QueryPanel></Page>;
 }

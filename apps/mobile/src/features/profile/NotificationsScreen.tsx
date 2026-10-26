@@ -1,20 +1,25 @@
-import {formatDate} from "@/lib/utils/formatting/date";
-import {zeroPad} from "@/lib/utils/formatting/number";
-import {useEffect, useState} from "react";
-import {Linking, FlatList, Pressable, RefreshControl, View} from "react-native";
+import {memo, useCallback, useEffect, useRef, useState} from "react";
+import {FlatList, Linking, Pressable, RefreshControl, StyleSheet, View} from "react-native";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {Bell, UsersRound, ExternalLink, X} from "lucide-react-native";
-import {AppText, Button, Card, Cover, Page, StateView} from "../../components/ui";
+import {Bell, CalendarDays, CheckCheck, ExternalLink, UsersRound, X} from "lucide-react-native";
+import {formatDate} from "@/lib/utils/formatting/date";
+import {zeroPad} from "@/lib/utils/formatting/number";
+import type {api} from "../../lib/api-client";
+import {AppText, Page, StateView} from "../../components/ui";
+import {Avatar} from "../../components/avatar";
 import {PagedTabs} from "../../components/paged-tabs";
-import {notificationsOptions} from "../../lib/react-query/query-options/notifications.options";
+import {notificationsOptions, notificationCountsOptions} from "../../lib/react-query/query-options/notifications.options";
 import {useNotificationAction} from "../../lib/react-query/query-mutations/notifications.mutations";
 import {useSocialAction} from "../../lib/react-query/query-mutations/social.mutations";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {mediaIcons, mediaLabels, mediaColors} from "../../lib/media";
 import {backendUrl} from "../../lib/config";
+import {FollowRequestActions} from "./follow-request-actions";
 import {colors} from "../../theme";
 
+type Notification = Awaited<ReturnType<typeof api.notifications>>[number];
+type SocialAction = Parameters<typeof api.socialAction>[0]["action"];
 const messages = {
     follow: "started following you",
     followRequested: "requested to follow you",
@@ -29,166 +34,139 @@ const notificationTabs = [
 ] as const;
 
 export function NotificationsScreen() {
+    const focused = useIsFocused();
     const [type, setType] = useState<"media" | "social">("media");
     const mutation = useNotificationAction();
-    return (
-        <Page title="Notifications" brand back action={
-                                                   <Button secondary label="Mark read" disabled={mutation.isPending}
-                                                           onPress={() => mutation.mutate({ action: "read", type })}/>
-                                               }>
-            {mutation.error && <AppText accessibilityRole="alert" style={{ padding: 16, color: colors.error }}>{mutation.error.message}</AppText>}
-            <PagedTabs tabs={notificationTabs} value={type} onChange={setType}>
-                {(value) => <NotificationContent type={value} active={type === value}/>}
-            </PagedTabs>
-        </Page>
-    );
+    const counts = useQuery({ ...notificationCountsOptions, enabled: focused });
+    const unread = counts.data?.[type] ?? 0;
+    return <Page title="Notifications" brand back action={<Pressable accessibilityRole="button" accessibilityLabel="Mark all notifications in this tab as read"
+                                                                     accessibilityState={{ disabled: mutation.isPending || !unread }} disabled={mutation.isPending || !unread}
+                                                                     onPress={() => mutation.mutate({ action: "read", type })}
+                                                                     style={({ pressed }) => [styles.iconButton, !unread && styles.disabled, pressed && styles.pressed]}><CheckCheck
+        size={23} color={colors.accent}/></Pressable>}>
+        {mutation.error && <AppText accessibilityRole="alert" style={styles.error}>{mutation.error.message}</AppText>}
+        <PagedTabs tabs={notificationTabs.map(tab => ({ ...tab, count: counts.data?.[tab.value] }))} value={type} onChange={setType}>
+            {value => <NotificationContent type={value} active={type === value}/>}
+        </PagedTabs>
+    </Page>;
 }
 
 function NotificationContent({ type, active }: { type: "media" | "social"; active: boolean }) {
     const focused = useIsFocused();
-    const query = useQuery({ ...notificationsOptions(type), enabled: focused });
+    const query = useQuery({ ...notificationsOptions(type), enabled: focused && active });
     const mutation = useNotificationAction();
     const { mutate: markRead } = mutation;
     const social = useSocialAction();
+    const { mutate: respond } = social;
     const push = useTabPush();
+    const unread = useRef(false);
+    useEffect(() => {
+        unread.current = query.data?.some(item => !item.read) ?? false;
+    }, [query.data]);
     useEffect(() => {
         if (!focused || !active || !query.isSuccess) return;
-        return () => markRead({ action: "read", type });
+        return () => {
+            if (unread.current) markRead({ action: "read", type });
+        };
     }, [focused, active, type, query.isSuccess, markRead]);
-    return (
-        <>
-            {(mutation.error || social.error) && (
-                <AppText accessibilityRole="alert" style={{ padding: 16, color: colors.error }}>
-                    {mutation.error?.message ?? social.error?.message}
-                </AppText>
-            )}
-            <FlatList
-                data={query.data ?? []}
-                contentContainerStyle={{ padding: 16, gap: 12 }}
-                keyExtractor={(item) => `${item.kind}:${item.id}`}
-                refreshControl={
-                    <RefreshControl
-                        tintColor={colors.accent}
-                        refreshing={query.isRefetching}
-                        onRefresh={() => void query.refetch()}
-                    />
-                }
-                ListEmptyComponent={
-                    <StateView
-                        loading={query.isPending}
-                        title={query.isError ? "Couldn’t load notifications" : `No ${type} notifications`}
-                        message={query.error?.message}
-                        retry={query.isError ? () => void query.refetch() : undefined}
-                    />
-                }
-                renderItem={({ item }) => {
-                    const Icon = item.kind === "media" ? mediaIcons[item.mediaType] : UsersRound;
-                    return (
-                        <Card
-                            style={{
-                                padding: 14,
-                                gap: 12,
-                                borderColor: item.read ? colors.border : colors.primary,
-                                borderRadius: 14,
-                            }}
-                        >
-                            <Pressable
-                                accessibilityRole="button"
-                                onPress={() =>
-                                    item.kind === "media"
-                                        ? push({
-                                            pathname: "/media/[mediaType]/[mediaId]",
-                                            params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
-                                        })
-                                        : push({
-                                            pathname: "/people/[userId]",
-                                            params: { userId: String(item.actor.id) },
-                                        })
-                                }
-                                style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
-                            >
-                                {item.kind === "social" ? (
-                                    <Cover
-                                        uri={item.actor.image}
-                                        label={item.actor.name}
-                                        style={{ width: 40, height: 40, borderRadius: 20 }}
-                                    />
-                                ) : (
-                                    <Icon size={24} color={mediaColors[item.mediaType]}/>
-                                )}
-                                <View style={{ flex: 1, gap: 5 }}>
-                                    <AppText style={{ fontWeight: "600" }}>
-                                        {item.kind === "media" ? item.name : item.actor.name}
-                                    </AppText>
-                                    <AppText muted style={{ fontSize: 12 }}>
-                                        {item.kind === "media"
-                                            ? `${mediaLabels[item.mediaType]}${item.season != null ? ` · S${zeroPad(item.season)}.E${zeroPad(item.episode)}${item.isSeasonFinale ? " · Season finale" : ""}` : ""} · ${item.releaseDate ? formatDate(item.releaseDate) : "Upcoming"}`
-                                            : messages[item.type]}
-                                    </AppText>
-                                </View>
-                                {!item.read && (
-                                    <View
-                                        style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent }}
-                                    />
-                                )}
-                            </Pressable>
-                            {item.kind === "social" &&
-                                (item.type === "followRequested" ? (
-                                    <View style={{ flexDirection: "row", gap: 12, justifyContent: "flex-end" }}>
-                                        <Button
-                                            secondary
-                                            label="Decline"
-                                            disabled={social.isPending}
-                                            onPress={() =>
-                                                social.mutate({ targetId: item.actor.id, action: "decline" })
-                                            }
-                                        />
-                                        <Button
-                                            label="Accept"
-                                            disabled={social.isPending}
-                                            onPress={() => social.mutate({ targetId: item.actor.id, action: "accept" })}
-                                        />
-                                    </View>
-                                ) : (
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            gap: 12,
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                        }}
-                                    >
-                                        {item.featureRequest && (
-                                            <Pressable
-                                                accessibilityRole="link"
-                                                onPress={() =>
-                                                    void Linking.openURL(new URL("/features-vote", backendUrl).href)
-                                                }
-                                                style={{ flex: 1, flexDirection: "row", gap: 6, alignItems: "center" }}
-                                            >
-                                                <AppText style={{ color: colors.accent, fontSize: 12 }}>
-                                                    {item.featureRequest.title}
-                                                </AppText>
-                                                <ExternalLink size={13} color={colors.accent}/>
-                                            </Pressable>
-                                        )}
-                                        <Pressable
-                                            accessibilityRole="button"
-                                            accessibilityLabel="Dismiss notification"
-                                            disabled={mutation.isPending}
-                                            onPress={() =>
-                                                mutation.mutate({ action: "delete", notificationId: item.id })
-                                            }
-                                            style={{ padding: 8 }}
-                                        >
-                                            <X size={16} color={colors.muted}/>
-                                        </Pressable>
-                                    </View>
-                                ))}
-                        </Card>
-                    );
-                }}
-            />
-        </>
-    );
+    const open = useCallback((item: Notification) => item.kind === "media"
+        ? push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType: item.mediaType, mediaId: String(item.mediaId) } })
+        : push({ pathname: "/people/[userId]", params: { userId: String(item.actor.id) } }), [push]);
+    const dismiss = useCallback((id: number) => markRead({ action: "delete", notificationId: id }), [markRead]);
+    const respondRequest = useCallback((id: number, action: "accept" | "decline") => respond({ targetId: id, action }), [respond]);
+    const renderItem = useCallback(({ item }: { item: Notification }) => <NotificationRow item={item} onOpen={open} onDismiss={dismiss} onRespond={respondRequest}
+                                                                                          disabled={mutation.isPending || social.isPending}
+                                                                                          pendingAction={item.kind === "social" && social.isPending && social.variables?.targetId === item.actor.id ? social.variables.action : undefined}/>,
+        [open, dismiss, respondRequest, mutation.isPending, social.isPending, social.variables]);
+    const Icon = type === "media" ? Bell : UsersRound;
+    return <>
+        {(mutation.error || social.error) && <AppText accessibilityRole="alert" style={styles.error}>{mutation.error?.message ?? social.error?.message}</AppText>}
+        <FlatList data={query.data ?? []} keyExtractor={item => `${item.kind}:${item.id}`} renderItem={renderItem} contentContainerStyle={styles.content}
+                  initialNumToRender={7} maxToRenderPerBatch={7} windowSize={7}
+                  refreshControl={<RefreshControl tintColor={colors.accent} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}/>}
+                  ListHeaderComponent={<View style={styles.listHeading}><AppText muted
+                                                                                 style={styles.caption}>{type === "media" ? "Release updates from your lists" : "People, requests & community updates"}</AppText></View>}
+                  ListEmptyComponent={query.isPending ? <StateView loading/> : query.error ?
+                      <StateView title="Couldn’t load notifications" message={query.error.message} retry={() => void query.refetch()}/> :
+                      <View style={styles.empty}><View style={styles.emptyIcon}><Icon size={28} color={colors.accent}/></View><AppText heading style={styles.emptyTitle}>You’re all
+                          caught up</AppText>
+                          <AppText muted
+                                   style={styles.emptyMessage}>{type === "media" ? "New releases from your tracked media will appear here." : "Follow requests and community updates will appear here."}</AppText>
+                      </View>}
+                  ListFooterComponent={query.error && query.data?.length ? <StateView title="Couldn’t refresh notifications" retry={() => void query.refetch()}/> : undefined}/>
+    </>;
 }
+
+const NotificationRow = memo(function NotificationRow({ item, onOpen, onDismiss, onRespond, disabled, pendingAction }: {
+    item: Notification;
+    onOpen: (item: Notification) => void;
+    onDismiss: (id: number) => void;
+    onRespond: (id: number, action: "accept" | "decline") => void;
+    disabled: boolean;
+    pendingAction?: SocialAction;
+}) {
+    const Icon = item.kind === "media" ? mediaIcons[item.mediaType] : UsersRound;
+    const color = item.kind === "media" ? mediaColors[item.mediaType] : colors.accent;
+    return <View style={[styles.row, !item.read && styles.unread]}>
+        <View style={styles.rowHeading}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${item.kind === "media" ? item.name : item.actor.name}${item.read ? "" : ", unread notification"}`}
+                       onPress={() => onOpen(item)} style={({ pressed }) => [styles.notification, pressed && styles.pressed]}>
+                {item.kind === "social" ? <Avatar image={item.actor.image} name={item.actor.name} size={48}/> :
+                    <View style={[styles.mediaIcon, { backgroundColor: `${color}15` }]}><Icon size={23} color={color}/></View>}
+                <View style={styles.identity}>
+                    <View style={styles.titleRow}><AppText numberOfLines={2} style={styles.title}>{item.kind === "media" ? item.name : item.actor.name}</AppText>{!item.read &&
+                        <View accessibilityLabel="Unread" style={styles.unreadDot}/>}</View>
+                    {item.kind === "media" ? <>
+                        <View style={styles.metadata}><AppText style={[styles.mediaType, { color }]}>{mediaLabels[item.mediaType]}</AppText>
+                            {item.season != null && <AppText style={styles.episode}>S{zeroPad(item.season)}.E{zeroPad(item.episode)}</AppText>}
+                            {item.isSeasonFinale && <AppText style={styles.finale}>Season finale</AppText>}
+                        </View>
+                        <View style={styles.dateRow}><CalendarDays size={12} color={colors.muted}/><AppText muted
+                                                                                                            style={styles.caption}>{item.releaseDate ? formatDate(item.releaseDate) : "Upcoming"}</AppText></View>
+                    </> : <><AppText muted style={styles.caption}>{messages[item.type]}</AppText><AppText muted style={styles.date}>{formatDate(item.createdAt)}</AppText></>}
+                </View>
+            </Pressable>
+            {item.kind === "social" && item.type !== "followRequested" &&
+                <Pressable accessibilityRole="button" accessibilityLabel="Dismiss notification" disabled={disabled} onPress={() => onDismiss(item.id)}
+                           style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}><X size={18} color={colors.muted}/></Pressable>}
+        </View>
+        {item.kind === "social" && (item.type === "followRequested" ?
+            <FollowRequestActions disabled={disabled} pendingAction={pendingAction} onAccept={() => onRespond(item.actor.id, "accept")}
+                                  onDecline={() => onRespond(item.actor.id, "decline")}/> :
+            item.featureRequest && <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(new URL("/features-vote", backendUrl).href)}
+                                              style={({ pressed }) => [styles.featureLink, pressed && styles.pressed]}>
+                <AppText style={styles.featureTitle}>{item.featureRequest.title}</AppText><ExternalLink size={14} color={colors.accent}/>
+            </Pressable>)}
+    </View>;
+});
+
+const styles = StyleSheet.create({
+    content: { paddingHorizontal: 16, paddingBottom: 28, gap: 8 },
+    listHeading: { paddingTop: 16, paddingBottom: 8 },
+    row: { paddingHorizontal: 12, paddingVertical: 16, gap: 14, borderRadius: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+    unread: { backgroundColor: `${colors.accent}08` },
+    rowHeading: { flexDirection: "row", alignItems: "flex-start", gap: 4 },
+    notification: { flex: 1, minWidth: 0, minHeight: 64, flexDirection: "row", alignItems: "flex-start", gap: 12 },
+    mediaIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+    identity: { flex: 1, minWidth: 0, gap: 6 },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    title: { flex: 1, fontSize: 15, lineHeight: 21, fontWeight: "600" },
+    unreadDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent },
+    metadata: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 4 },
+    mediaType: { fontSize: 11, lineHeight: 16, fontWeight: "500" },
+    episode: { fontSize: 12, lineHeight: 18, fontWeight: "600", fontVariant: ["tabular-nums"] },
+    finale: { fontSize: 10, lineHeight: 16, color: colors.rating },
+    caption: { fontSize: 12, lineHeight: 18 },
+    dateRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+    date: { fontSize: 11, lineHeight: 16 },
+    iconButton: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
+    featureLink: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, backgroundColor: colors.surface, borderRadius: 10 },
+    featureTitle: { flex: 1, fontSize: 12, lineHeight: 18, color: colors.accent },
+    empty: { alignItems: "center", paddingHorizontal: 24, paddingVertical: 40, gap: 12 },
+    emptyIcon: { width: 68, height: 68, borderRadius: 22, backgroundColor: `${colors.accent}10`, alignItems: "center", justifyContent: "center", marginBottom: 4 },
+    emptyTitle: { fontSize: 20, lineHeight: 28, textAlign: "center" },
+    emptyMessage: { fontSize: 14, lineHeight: 22, textAlign: "center" },
+    error: { padding: 16, color: colors.error, fontSize: 12, lineHeight: 18 },
+    disabled: { opacity: 0.4 },
+    pressed: { opacity: 0.6 },
+});

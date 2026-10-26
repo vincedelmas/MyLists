@@ -148,14 +148,16 @@ export function Content({ children, refreshControl }: { children: ReactNode; ref
     );
 }
 
-export function Section({ title, children, action }: { title?: string; children: ReactNode; action?: ReactNode }) {
+export function Section({ title, children, action, icon, description }: { title?: string; children: ReactNode; action?: ReactNode; icon?: ReactNode; description?: string }) {
     return (
         <View style={styles.section}>
             {title && (
                 <View style={styles.sectionHeading}>
-                    <AppText heading style={styles.sectionTitle}>
-                        {title}
-                    </AppText>
+                    <View style={{ flex: 1, gap: 5 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>{icon}<AppText heading
+                                                                                                            style={[styles.sectionTitle, { flex: 1 }]}>{title}</AppText></View>
+                        {description && <AppText muted style={{ fontSize: 12, lineHeight: 18 }}>{description}</AppText>}
+                    </View>
                     {action}
                 </View>
             )}

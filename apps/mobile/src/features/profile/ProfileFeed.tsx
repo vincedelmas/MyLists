@@ -1,4 +1,5 @@
 import {formatDate} from "@/lib/utils/formatting/date";
+import {Avatar} from "../../components/avatar";
 import {SectionHeading} from "../../components/section-heading";
 import {memo} from "react";
 import {useIsFocused} from "expo-router";
@@ -72,8 +73,7 @@ export const FeedRows = memo(function FeedRows({
         return <View key={item.id} style={styles.row}>
             {author ? <Pressable accessibilityRole="button" accessibilityLabel={`View ${author.username}'s profile`} style={styles.author}
                                  onPress={() => push({ pathname: "/people/[userId]", params: { userId: String(author.userId) } })}>
-                <Cover uri={author.avatar} label={author.username} style={styles.avatar}/>
-                {!author.avatar && <View style={styles.avatarFallback}><AppText muted style={styles.initial}>{Array.from(author.username)[0].toLocaleUpperCase()}</AppText></View>}
+                <Avatar image={author.avatar} name={author.username} size={50}/>
             </Pressable> : <View><Cover uri={item.cover} label={item.mediaName} style={styles.cover}/>{!item.cover &&
                 <View style={styles.avatarFallback}><Icon size={20} color={mediaColors[item.mediaType]}/></View>}</View>}
             <Pressable accessibilityRole="button" style={styles.details}
@@ -94,11 +94,9 @@ export const FeedRows = memo(function FeedRows({
 });
 
 const styles = StyleSheet.create({
-    author: { width: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
-    avatar: { width: 38, height: 38, borderRadius: 19 },
+    author: { width: 60, minHeight: 60, alignItems: "center", justifyContent: "center" },
     cover: { width: 42, height: 63, borderRadius: 7 },
     avatarFallback: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" },
-    initial: { fontSize: 15, fontWeight: "600" },
     username: { fontSize: 11, lineHeight: 16, fontWeight: "600", color: colors.accent },
     row: {
         minHeight: 96,

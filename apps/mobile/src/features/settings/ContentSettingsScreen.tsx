@@ -5,9 +5,9 @@ import {useIsFocused} from "expo-router";
 import {mediaLabels, compareMediaTypes} from "../../lib/media";
 import {useQuery} from "@tanstack/react-query";
 import {NativeHost} from "../../components/native-host";
-import {AppText, Page, QueryPanel} from "../../components/ui";
+import {AppText, Button as AppButton, Page, QueryPanel} from "../../components/ui";
 import type {MediaType, MobileSettings} from "../../lib/api-client";
-import {Button, Column, FieldGroup, Picker, Switch, Text} from "@expo/ui";
+import {Column, FieldGroup, Picker, Switch, Text} from "@expo/ui";
 import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
 import {useSettingsMutation} from "../../lib/react-query/query-mutations/settings.mutations";
 
@@ -59,7 +59,7 @@ function ContentForm({ data }: { data: MobileSettings }) {
             }
 
             <NativeHost matchContents={false} style={{ flex: 1 }}>
-                <FieldGroup>
+                <FieldGroup style={{ backgroundColor: colors.background }}>
                     <FieldGroup.Section title="Active media lists">
                         {[...lists].sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType)).map((item) =>
                             <Switch
@@ -78,17 +78,17 @@ function ContentForm({ data }: { data: MobileSettings }) {
                     </FieldGroup.Section>
                     <FieldGroup.Section title="Display preferences">
                         <Column spacing={8}>
-                            <Text>Navbar Search Selector</Text>
+                            <Text>Default search category</Text>
                             <Picker selectedValue={searchSelector} enabled={!mutation.isPending} onValueChange={value => {
                                 setSearchSelector(value);
                                 mutation.reset();
                             }}>
-                                <Picker.Item value="tmdb" label="Media"/><Picker.Item value="books" label="Books"/><Picker.Item value="igdb" label="Games"/><Picker.Item
-                                value="manga" label="Manga"/><Picker.Item value="users" label="Users"/>
+                                <Picker.Item value="tmdb" label="Movies & TV"/><Picker.Item value="books" label="Books"/><Picker.Item value="igdb" label="Games"/><Picker.Item
+                                value="manga" label="Manga"/><Picker.Item value="users" label="People"/>
                             </Picker>
                         </Column>
                         <Column spacing={8}>
-                            <Text>Default List View Mode</Text>
+                            <Text>Default list view</Text>
                             <Picker selectedValue={gridListView ? "grid" : "list"} enabled={!mutation.isPending} onValueChange={value => {
                                 setGridListView(value === "grid");
                                 mutation.reset();
@@ -144,13 +144,9 @@ function ContentForm({ data }: { data: MobileSettings }) {
                             <Text>Release alerts appear in your MyLists account.</Text>
                         </FieldGroup.SectionFooter>
                     </FieldGroup.Section>
-                    <Button
-                        onPress={save}
-                        disabled={mutation.isPending}
-                        label={mutation.isPending ? "Saving…" : "Save changes"}
-                    />
                 </FieldGroup>
             </NativeHost>
+            <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}><AppButton fullWidth label="Save changes" onPress={save} pending={mutation.isPending}/></View>
         </View>
     );
 }

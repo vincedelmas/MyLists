@@ -37,5 +37,8 @@ export const formatActivity = (update: Activity, ratingSystem: RatingSystem) => 
     if (!update.payload) return "Entry updated";
     const labels = { rating: "Rating", comment: "Comments", platform: "Platform", redo: "Repeats" } as const;
     const label = update.updateType in labels ? `${labels[update.updateType as keyof typeof labels]}: ` : "";
+    if (update.payload.old_value === null || update.payload.old_value === undefined || update.payload.old_value === "") {
+        return `${label}${activityValue(update.payload.new_value, update, ratingSystem)}`;
+    }
     return `${label}${activityValue(update.payload.old_value, update, ratingSystem)} → ${activityValue(update.payload.new_value, update, ratingSystem)}`;
 };

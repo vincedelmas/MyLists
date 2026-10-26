@@ -1,229 +1,140 @@
-import {useTabPush} from "../../hooks/use-tab-push";
-import {colors} from "../../theme";
-import {ConfirmationSheet} from "../../components/confirmation-sheet";
-import {useConfirmation} from "../../hooks/use-confirmation";
-import {PagedTabs} from "../../components/paged-tabs";
-import {UsersRound, UserRoundCheck, UserRoundPlus, Send, MoreHorizontal, type LucideIcon} from "lucide-react-native";
-import {useEffect, useMemo, useState} from "react";
-import type {api} from "../../lib/api-client";
-import {useInfiniteQuery} from "@tanstack/react-query";
+import {memo, useCallback, useEffect, useMemo, useState} from "react";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
-import {FlatList, View, RefreshControl, Pressable} from "react-native";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import {FlatList, Pressable, RefreshControl, StyleSheet, View} from "react-native";
+import {MoreHorizontal, Send, UserRoundCheck, UserRoundPlus, UsersRound, type LucideIcon} from "lucide-react-native";
+import {useTabPush} from "../../hooks/use-tab-push";
+import {useConfirmation} from "../../hooks/use-confirmation";
+import {ConfirmationSheet} from "../../components/confirmation-sheet";
+import {PagedTabs} from "../../components/paged-tabs";
+import {Avatar} from "../../components/avatar";
+import {AppText, Button, Page, StateView} from "../../components/ui";
 import {recordNavigationTiming} from "../../lib/diagnostics/navigation-timing";
 import {socialOptions} from "../../lib/react-query/query-options/social.options";
-import {AppText, Button, Card, Cover, Page, StateView} from "../../components/ui";
 import {useSocialAction} from "../../lib/react-query/query-mutations/social.mutations";
+import type {api} from "../../lib/api-client";
+import {FollowRequestActions} from "./follow-request-actions";
+import {colors} from "../../theme";
 
 type Kind = Parameters<typeof api.social>[0]["kind"];
-
-const kinds: { value: Kind; label: string; icon: LucideIcon }[] = [
-    { value: "followers", label: "Followers", icon: UsersRound },
-    { value: "following", label: "Following", icon: UserRoundCheck },
-    { value: "requests", label: "Requests", icon: UserRoundPlus },
-    { value: "pending", label: "Sent", icon: Send },
+type Connection = Awaited<ReturnType<typeof api.social>>["items"][number];
+type Action = Parameters<typeof api.socialAction>[0]["action"];
+const kinds: { value: Kind; label: string; icon: LucideIcon; description: string }[] = [
+    { value: "followers", label: "Followers", icon: UsersRound, description: "People following this profile" },
+    { value: "following", label: "Following", icon: UserRoundCheck, description: "People this profile follows" },
+    { value: "requests", label: "Requests", icon: UserRoundPlus, description: "Choose who can follow your private profile" },
+    { value: "pending", label: "Sent", icon: Send, description: "Follow requests awaiting a response" },
 ];
 
 export function SocialScreen() {
     const focused = useIsFocused();
     const params = useLocalSearchParams<{ kind?: Kind; userId?: string }>();
     const userId = params.userId ? Number(params.userId) : undefined;
-    const [kind, setKind] = useState<Kind>(params.kind ?? "followers");
-    const tabs = useMemo(() => userId
-        ? kinds.filter((item) => item.value === "followers" || item.value === "following")
-        : kinds, [userId]);
+    const [kind, setKind] = useState<Kind>(userId && params.kind !== "following" ? "followers" : params.kind ?? "followers");
+    const tabs = useMemo(() => userId ? kinds.filter(item => item.value === "followers" || item.value === "following") : kinds, [userId]);
     const counts = useInfiniteQuery({ ...socialOptions(kind, userId), enabled: focused });
     useEffect(() => {
         if (counts.isSuccess) recordNavigationTiming("data-ready", "/profile/social");
         else if (counts.isError) recordNavigationTiming("data-error", "/profile/social");
     }, [counts.isSuccess, counts.isError, counts.dataUpdatedAt]);
-
-    return (
-        <Page title="Connections" brand back>
-            <PagedTabs
-                value={kind}
-                onChange={setKind}
-                tabs={tabs.map((tab) => ({ ...tab, count: counts.data?.pages[0]?.counts[tab.value] }))}
-            >
-                {(value) => <ConnectionsContent kind={value} userId={userId} active={kind === value}/>}
-            </PagedTabs>
-        </Page>
-    );
+    return <Page title="Connections" brand back>
+        <PagedTabs value={kind} onChange={setKind} tabs={tabs.map(tab => ({ ...tab, count: counts.data?.pages[0]?.counts[tab.value] }))}>
+            {value => <ConnectionsContent kind={value} userId={userId} active={kind === value}/>}
+        </PagedTabs>
+    </Page>;
 }
 
 function ConnectionsContent({ kind, userId, active }: { kind: Kind; userId?: number; active: boolean }) {
     const focused = useIsFocused();
-    const push = useTabPush();
     const mutation = useSocialAction();
+    const { mutate } = mutation;
     const { confirmation, confirm, dismiss } = useConfirmation();
-    const query = useInfiniteQuery({
-        ...socialOptions(kind, userId),
-        enabled: focused,
-    });
-
-
-    const act = (targetId: number, action: Parameters<typeof api.socialAction>[0]["action"]) => {
-        return mutation.mutate({ targetId, action });
-    };
-
-    const items = query.data?.pages.flatMap((page) => page.items) ?? [];
-
-    return (
-        <>
-            <View style={{ flex: 1 }}>
-                {mutation.error && (
-                    <AppText accessibilityRole="alert" style={{ color: colors.error, padding: 16 }}>
-                        {mutation.error.message}
-                    </AppText>
-                )}
-                <FlatList
-                    key={kind}
-                    data={items}
-                    contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 32 }}
-                    windowSize={7}
-                    initialNumToRender={12}
-                    onEndReachedThreshold={0.5}
-                    keyExtractor={(item) => String(item.id)}
-                    onEndReached={() => {
-                        if (focused && active && query.hasNextPage && !query.isFetching) {
-                            void query.fetchNextPage();
-                        }
-                    }}
-                    refreshControl={
-                        <RefreshControl
-                            tintColor={colors.accent}
-                            onRefresh={() => void query.refetch()}
-                            refreshing={query.isRefetching && !query.isFetchingNextPage}
-                        />
-                    }
-                    ListEmptyComponent={
-                        <StateView
-                            loading={query.isPending}
-                            message={query.error?.message}
-                            retry={query.isError ? () => void query.refetch() : undefined}
-                            title={
-                                query.isError
-                                    ? "Couldn’t load connections"
-                                    : kind === "requests"
-                                        ? "No follow requests"
-                                        : kind === "pending"
-                                            ? "No pending requests"
-                                            : `No ${kind} yet`
-                            }
-                        />
-                    }
-                    ListFooterComponent={
-                        query.isFetchingNextPage ? (
-                            <StateView loading={true}/>
-                        ) : query.isError && items.length ? (
-                            <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()}/>
-                        ) : undefined
-                    }
-                    renderItem={({ item }) => (
-                        <Card
-                            style={{
-                                gap: 12,
-                                padding: 14,
-                                borderRadius: 16,
-                            }}
-                        >
-                            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                                <Pressable
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`View ${item.username}'s profile`}
-                                    onPress={() =>
-                                        push({ pathname: "/people/[userId]", params: { userId: String(item.id) } })
-                                    }
-                                    style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}
-                                >
-                                    <Cover
-                                        uri={item.image}
-                                        label={item.username}
-                                        style={{ width: 48, height: 48, borderRadius: 24 }}
-                                    />
-                                    <View style={{ flex: 1, gap: 3 }}>
-                                        <AppText numberOfLines={1} style={{ fontWeight: "600", fontSize: 15 }}>
-                                            {item.username}
-                                        </AppText>
-                                        <AppText muted style={{ fontSize: 11 }}>
-                                            {item.isOwn
-                                                ? "You"
-                                                : item.myFollowStatus === "requested"
-                                                    ? "Request pending"
-                                                    : item.myFollowStatus === "accepted"
-                                                        ? "Following"
-                                                        : item.privacy === "private"
-                                                            ? "Private profile"
-                                                            : "View profile"}
-                                        </AppText>
-                                    </View>
-                                </Pressable>
-                                {kind !== "requests" && !item.isOwn && (
-                                    <View style={{ width: 140, alignItems: "center" }}>
-                                        <Button
-                                            width={140}
-                                            secondary={Boolean(item.myFollowStatus)}
-                                            disabled={mutation.isPending}
-                                            pending={mutation.isPending && mutation.variables?.targetId === item.id}
-                                            label={
-                                                item.myFollowStatus === "accepted"
-                                                    ? "Following"
-                                                    : item.myFollowStatus === "requested"
-                                                        ? "Cancel"
-                                                        : "Follow"
-                                            }
-                                            onPress={() =>
-                                                item.myFollowStatus === "accepted"
-                                                    ? confirm({
-                                                        title: "Unfollow this person?",
-                                                        message: `Stop seeing ${item.username} in your follows feed?`,
-                                                        label: "Unfollow",
-                                                        onConfirm: () => act(item.id, "unfollow"),
-                                                    })
-                                                    : act(item.id, item.myFollowStatus ? "unfollow" : "follow")
-                                            }
-                                        />
-                                    </View>
-                                )}
-                                {kind === "followers" && !userId && (
-                                    <Pressable
-                                        accessibilityRole="button"
-                                        accessibilityLabel={`Manage ${item.username}'s connection`}
-                                        disabled={mutation.isPending}
-                                        hitSlop={8}
-                                        style={{ paddingVertical: 10, minWidth: 28, alignItems: "center" }}
-                                        onPress={() =>
-                                            confirm({
-                                                title: "Remove follower?",
-                                                message: `${item.username} will stop following you. They can follow or request access again.`,
-                                                label: "Remove",
-                                                onConfirm: () => act(item.id, "remove"),
-                                            })
-                                        }
-                                    >
-                                        <MoreHorizontal size={20} color={colors.muted}/>
-                                    </Pressable>
-                                )}
-                            </View>
-                            {kind === "requests" && (
-                                <View style={{ flexDirection: "row", gap: 12, justifyContent: "flex-end" }}>
-                                    <Button
-                                        secondary
-                                        label="Decline"
-                                        disabled={mutation.isPending}
-                                        onPress={() => act(item.id, "decline")}
-                                    />
-                                    <Button
-                                        label="Accept request"
-                                        disabled={mutation.isPending}
-                                        onPress={() => act(item.id, "accept")}
-                                    />
-                                </View>
-                            )}
-                        </Card>
-                    )}
-                />
-            </View>
-            <ConfirmationSheet confirmation={confirmation} dismiss={dismiss}/>
-        </>
-    );
+    const query = useInfiniteQuery({ ...socialOptions(kind, userId), enabled: focused && active });
+    const items = useMemo(() => query.data?.pages.flatMap(page => page.items) ?? [], [query.data]);
+    const act = useCallback((item: Connection, action: Action) => {
+        if (action === "remove" || (action === "unfollow" && item.myFollowStatus === "accepted")) {
+            const remove = action === "remove";
+            confirm({
+                title: remove ? "Remove follower?" : "Unfollow this person?",
+                message: remove ? `${item.username} will stop following you. They can follow or request access again.` : `Stop seeing ${item.username} in your follows feed?`,
+                label: remove ? "Remove" : "Unfollow", onConfirm: () => mutate({ targetId: item.id, action })
+            });
+        }
+        else mutate({ targetId: item.id, action });
+    }, [confirm, mutate]);
+    const renderItem = useCallback(({ item }: { item: Connection }) => <ConnectionRow item={item} kind={kind} owner={!userId} disabled={mutation.isPending}
+                                                                                      pendingAction={mutation.isPending && mutation.variables?.targetId === item.id ? mutation.variables.action : undefined}
+                                                                                      onAction={act}/>,
+        [kind, userId, mutation.isPending, mutation.variables, act]);
+    const category = kinds.find(item => item.value === kind)!;
+    const Icon = category.icon;
+    return <>
+        {mutation.error && <AppText accessibilityRole="alert" style={styles.error}>{mutation.error.message}</AppText>}
+        <FlatList data={items} keyExtractor={item => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.content}
+                  initialNumToRender={7} maxToRenderPerBatch={7} windowSize={7} onEndReachedThreshold={0.5}
+                  onEndReached={() => {
+                      if (focused && active && query.hasNextPage && !query.isFetching && !query.isError) void query.fetchNextPage();
+                  }}
+                  refreshControl={<RefreshControl tintColor={colors.accent} refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={() => void query.refetch()}/>}
+                  ListHeaderComponent={<View style={styles.intro}><AppText muted style={styles.caption}>{category.description}</AppText></View>}
+                  ListEmptyComponent={query.isPending ? <StateView loading/> : query.error ?
+                      <StateView title="Couldn’t load connections" message={query.error.message} retry={() => void query.refetch()}/> :
+                      <View style={styles.empty}><View style={styles.emptyIcon}><Icon size={29} color={colors.accent}/></View>
+                          <AppText heading
+                                   style={styles.emptyTitle}>{kind === "requests" ? "No follow requests" : kind === "pending" ? "No pending requests" : `No ${kind} yet`}</AppText>
+                          <AppText muted
+                                   style={styles.emptyMessage}>{kind === "requests" ? "New requests will appear here for you to review." : kind === "pending" ? "Requests you send to private profiles will appear here." : "Connections will appear here as your community grows."}</AppText>
+                      </View>}
+                  ListFooterComponent={query.isFetchingNextPage ? <StateView loading/> : query.error && items.length ?
+                      <StateView title="Couldn’t refresh connections" retry={() => void (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch())}/> : undefined}/>
+        <ConfirmationSheet confirmation={confirmation} dismiss={dismiss}/>
+    </>;
 }
+
+const ConnectionRow = memo(function ConnectionRow({ item, kind, owner, disabled, pendingAction, onAction }: {
+    item: Connection; kind: Kind; owner: boolean; disabled: boolean; pendingAction?: Action; onAction: (item: Connection, action: Action) => void;
+}) {
+    const push = useTabPush();
+    const manage = kind === "followers" && owner && !item.isOwn;
+    const follow = !item.isOwn && kind !== "requests";
+    const relationship = item.isOwn ? "You" : item.myFollowStatus === "requested" ? "Request pending" : item.myFollowStatus === "accepted" ? "Following" : item.privacy === "private" ? "Private profile" : "Public profile";
+    const followButton = follow && <Button width={100} secondary={Boolean(item.myFollowStatus)} disabled={disabled} pending={!!pendingAction && pendingAction !== "remove"}
+                                           label={item.myFollowStatus === "accepted" ? "Following" : item.myFollowStatus === "requested" ? "Cancel" : item.privacy === "private" ? "Request" : "Follow"}
+                                           onPress={() => onAction(item, item.myFollowStatus ? "unfollow" : "follow")}/>;
+    return <View style={styles.row}>
+        <View style={styles.rowHeading}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`View ${item.username}'s profile`}
+                       onPress={() => push({ pathname: "/people/[userId]", params: { userId: String(item.id) } })}
+                       style={({ pressed }) => [styles.profile, pressed && styles.pressed]}>
+                <Avatar image={item.image} name={item.username} size={52}/><View style={styles.identity}><AppText numberOfLines={2}
+                                                                                                                  style={styles.name}>{item.username}</AppText><AppText muted
+                                                                                                                                                                        style={styles.caption}>{relationship}</AppText></View>
+            </Pressable>
+            {manage ?
+                <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${item.username} as a follower`} disabled={disabled} onPress={() => onAction(item, "remove")}
+                           style={({ pressed }) => [styles.more, pressed && styles.pressed]}><MoreHorizontal size={21} color={colors.muted}/></Pressable> : followButton}
+        </View>
+        {manage && <View style={styles.followAction}>{followButton}</View>}
+        {kind === "requests" &&
+            <FollowRequestActions disabled={disabled} pendingAction={pendingAction} onAccept={() => onAction(item, "accept")} onDecline={() => onAction(item, "decline")}/>}
+    </View>;
+});
+
+const styles = StyleSheet.create({
+    content: { paddingHorizontal: 16, paddingBottom: 28 },
+    intro: { paddingTop: 16, paddingBottom: 4 },
+    caption: { fontSize: 12, lineHeight: 18 },
+    row: { paddingVertical: 16, gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+    rowHeading: { flexDirection: "row", alignItems: "center", gap: 12 },
+    profile: { flex: 1, minWidth: 0, minHeight: 56, flexDirection: "row", alignItems: "center", gap: 12 },
+    identity: { flex: 1, minWidth: 0, gap: 4 },
+    name: { fontSize: 15, lineHeight: 21, fontWeight: "600" },
+    more: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
+    followAction: { alignItems: "flex-end" },
+    empty: { alignItems: "center", paddingHorizontal: 24, paddingVertical: 40, gap: 12 },
+    emptyIcon: { width: 68, height: 68, borderRadius: 22, backgroundColor: `${colors.accent}10`, alignItems: "center", justifyContent: "center", marginBottom: 4 },
+    emptyTitle: { fontSize: 20, lineHeight: 28, textAlign: "center" },
+    emptyMessage: { fontSize: 14, lineHeight: 22, color: colors.muted, textAlign: "center" },
+    error: { padding: 16, color: colors.error, fontSize: 12, lineHeight: 18 },
+    pressed: { opacity: 0.6 },
+});

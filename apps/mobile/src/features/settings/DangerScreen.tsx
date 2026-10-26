@@ -39,9 +39,9 @@ export function DangerScreen() {
     return <Page title="Danger zone" back><QueryPanel query={query}>{data => {
         const needsPassword = data.hasPassword || data.providers.length === 0;
         return <>
-            <Content><Section title="Delete Account"><View style={uiStyles.padded}>
+            <Content><Section title="Delete Account" icon={<Trash2 size={20} color={colors.error}/>} description="Permanent account actions"><View style={uiStyles.padded}>
                 <AppText style={{ color: colors.error }}>Permanently remove your account and all associated data. This action is not reversible.</AppText>
-                <Button danger disabled={mutation.isPending} label="Delete Account" onPress={() => setOpen(true)}/>
+                <Button fullWidth danger disabled={mutation.isPending} label="Delete Account" onPress={() => setOpen(true)}/>
             </View></Section></Content>
             <ConfirmationSheet pending={mutation.isPending} error={validation || mutation.error?.message} dismiss={dismiss} confirmation={open ? {
                 title: "Delete Your Account?",

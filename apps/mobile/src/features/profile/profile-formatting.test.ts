@@ -8,18 +8,23 @@ describe("mobile activity payloads", () => {
         ["chapter", 0, 2, "Chapter 0 → Chapter 2"],
         ["tv", [1, 2], [2, 1], "S01.E02 → S02.E01"],
         ["tv", [2, 5], [12, 121], "S02.E05 → S12.E121"],
-        ["rating", null, 0, "Rating: Not set → 0/10"],
+        ["rating", null, 0, "Rating: 0/10"],
         ["favorite", false, true, "Not a favorite → Favorite"],
         ["comment", "Old note", "New note", "Comments: Old note → New note"],
-        ["platform", null, "PC", "Platform: Not set → PC"],
+        ["platform", null, "PC", "Platform: PC"],
         ["redo", 0, 1, "Repeats: 0× → 1×"],
-    ] as const)("shows both saved values for %s updates", (updateType, oldValue, newValue, expected) => {
+    ] as const)("formats saved values for %s updates", (updateType, oldValue, newValue, expected) => {
         expect(
             formatActivity(
                 { mediaType: "movies", updateType, payload: { old_value: oldValue, new_value: newValue } },
                 "score",
             ),
         ).toBe(expected);
+    });
+
+    it.each([null, undefined, ""])("omits an absent old status (%s), like the web payload", oldValue => {
+        expect(formatActivity({ mediaType: "series", updateType: "status", payload: { old_value: oldValue, new_value: "Plan to Watch" } }, "score"))
+            .toBe("Plan to Watch");
     });
 
     it("converts game minutes to the same hours used by tracking controls", () => {

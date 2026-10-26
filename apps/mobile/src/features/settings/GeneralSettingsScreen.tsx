@@ -1,3 +1,6 @@
+import {CircleUserRound, Image} from "lucide-react-native";
+import {Avatar} from "../../components/avatar";
+import {colors} from "../../theme";
 import {useState} from "react";
 import {View} from "react-native";
 import {useIsFocused} from "expo-router";
@@ -49,7 +52,8 @@ function GeneralForm({ data }: { data: MobileSettings }) {
 
     return (
         <Content>
-            <Section title="Identity & Access"><View style={uiStyles.padded}>
+            <Section title="Identity & Access" icon={<CircleUserRound size={18} color={colors.accent}/>} description="The name people see, and who can access your profile."><View
+                style={uiStyles.padded}>
                 <Field maxLength={15} label="Username" value={username} autoCorrect={false} autoCapitalize="none" editable={!mutation.isPending} onChangeText={value => {
                     setUsername(value);
                     mutation.reset();
@@ -61,17 +65,17 @@ function GeneralForm({ data }: { data: MobileSettings }) {
                 <AppText muted style={{ fontSize: 12 }}>Public: anyone. Restricted: signed-in users. Private: only you and approved followers can see your profile, lists, stats,
                     and media updates.</AppText>
             </View></Section>
-            <Section title="Profile Personalized Covers"><View style={uiStyles.padded}>
+            <Section title="Profile images" icon={<Image size={18} color={colors.accent}/>}><View style={uiStyles.padded}>
                 <AppText muted style={{ fontSize: 12 }}>Personalize your avatar and profile backdrop.</AppText>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-                    <Cover uri={images.profileImage?.uri ?? data.image} style={{ width: 80, height: 80, borderRadius: 40 }}/>
-                    <Button secondary label="Choose profile image" disabled={picking || mutation.isPending} onPress={() => void pick("profileImage")}/>
+                <View style={{ alignItems: "center", gap: 12 }}>
+                    <Avatar image={images.profileImage?.uri ?? data.image} name={data.username} size={80}/>
+                    <Button fullWidth secondary label="Choose profile image" disabled={picking || mutation.isPending} onPress={() => void pick("profileImage")}/>
                 </View>
                 <Cover uri={images.backgroundImage?.uri ?? data.backgroundImage} style={{ width: "100%", height: 110 }}/>
-                <Button secondary label="Choose background image" disabled={picking || mutation.isPending} onPress={() => void pick("backgroundImage")}/>
+                <Button fullWidth secondary label="Choose background image" disabled={picking || mutation.isPending} onPress={() => void pick("backgroundImage")}/>
             </View></Section>
             <SettingsFeedback error={imageError || mutation.error?.message} success={mutation.isSuccess && "Profile settings saved."}/>
-            <Button label="Save changes" pending={mutation.isPending} disabled={picking} onPress={() => mutation.mutate({
+            <Button fullWidth label="Save changes" pending={mutation.isPending} disabled={picking} onPress={() => mutation.mutate({
                 section: "general", username: username.trim(), privacy,
                 profileImage: images.profileImage ? { data: images.profileImage.data, mimeType: "image/jpeg" } : undefined,
                 backgroundImage: images.backgroundImage ? { data: images.backgroundImage.data, mimeType: "image/jpeg" } : undefined,

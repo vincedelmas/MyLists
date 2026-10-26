@@ -1,112 +1,339 @@
-import {memo, useCallback, useMemo, useState} from "react";
+import {memo, useCallback, useMemo, useRef, useState, type ComponentRef} from "react";
 import {useIsFocused} from "expo-router";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import {FlatList, Pressable, RefreshControl, View} from "react-native";
-import {Trophy} from "lucide-react-native";
+import {FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View} from "react-native";
+import {ArrowUpRight, ChevronRight, Clock3, Crown, Search, Trophy, X} from "lucide-react-native";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
-import {calculateMediaLevel} from "@/lib/utils/media/level";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
 import {api} from "../../lib/api-client";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {useTabPush} from "../../hooks/use-tab-push";
-import {AppText, Card, Cover, Field, Page, Select, StateView} from "../../components/ui";
-import {ProgressBar} from "../../components/ProgressBar";
+import {AppText, Cover, Field, Page, StateView} from "../../components/ui";
 import {PrivacyBadge} from "../profile/PrivacyBadge";
+import {ActionSheet} from "../../components/action-sheet";
 import {colors, achievementColors} from "../../theme";
-import {mediaColors, mediaIcons, mediaLabels, compareMediaTypes} from "../../lib/media";
+import {mediaColors, mediaIcons, mediaLabels} from "../../lib/media";
+import {getPersonalRanking, getRankingLevel, type PersonalRanks, type RankedUser, type RankingCategory} from "./hall-of-fame";
 
-const sortingOptions = [{ value: "normalized", label: "Overall" }, { value: "profile", label: "Profile level" }, ...ALL_MEDIA_TYPES.map(value => ({
-    value,
-    label: mediaLabels[value]
-}))];
+const rankingCategories = [
+    { value: "normalized", label: "Overall" },
+    { value: "profile", label: "Profile level" },
+    ...ALL_MEDIA_TYPES.map(value => ({ value, label: mediaLabels[value] })),
+] satisfies { value: RankingCategory; label: string }[];
 
 export function HallOfFameScreen() {
     const focused = useIsFocused();
+    const list = useRef<FlatList<RankedUser>>(null);
+    const categories = useRef<ComponentRef<typeof ScrollView>>(null);
+    const categoryOffsets = useRef(new Map<RankingCategory, number>());
+    const [searchOpen, setSearchOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const [sorting, setSorting] = useState("normalized");
+    const [category, setCategory] = useState<RankingCategory>("normalized");
+    const [selected, setSelected] = useState<RankedUser | "personal" | null>(null);
     const term = useDebouncedValue(search.trim());
     const query = useInfiniteQuery({
-        queryKey: ["community", "hall-of-fame", term, sorting], initialPageParam: 1,
-        queryFn: ({ signal, pageParam }) => api.hallOfFame({ page: pageParam, search: term, sorting }, signal),
-        getNextPageParam: last => last.page < last.pages ? last.page + 1 : undefined, enabled: focused,
+        queryKey: ["community", "hall-of-fame", term, category],
+        initialPageParam: 1,
+        queryFn: ({ signal, pageParam }) => api.hallOfFame({ page: pageParam, search: term, sorting: category }, signal),
+        getNextPageParam: last => last.page < last.pages ? last.page + 1 : undefined,
+        enabled: focused,
     });
     const items = useMemo(() => query.data?.pages.flatMap(page => page.items) ?? [], [query.data]);
     const first = query.data?.pages[0];
-    const renderItem = useCallback(({ item }: { item: RankedUser }) => <RankedProfile item={item}/>, []);
+    const podium = !search.trim() && !term && items.length >= 3;
+    const rows = useMemo(() => podium ? items.slice(3) : items, [items, podium]);
+    const renderItem = useCallback(({ item }: { item: RankedUser }) => <RankingRow item={item} category={category} onSelect={setSelected}/>, [category]);
+    const changeCategory = (value: RankingCategory) => {
+        if (value === category) return;
+        setCategory(value);
+        categories.current?.scrollTo({ x: Math.max(0, (categoryOffsets.current.get(value) ?? 0) - 16), animated: false });
+        list.current?.scrollToOffset({ offset: 0, animated: false });
+    };
+    const searching = search.trim() !== term;
+    const categoryLabel = rankingCategories.find(item => item.value === category)!.label;
 
     return (
-        <Page title="Hall of Fame" subtitle="The rankings" back>
-            <FlatList
-                windowSize={7} initialNumToRender={6} maxToRenderPerBatch={6}
-                data={items} keyExtractor={item => String(item.id)} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-                onEndReachedThreshold={0.5} onEndReached={() => {
-                if (focused && query.hasNextPage && !query.isFetching) void query.fetchNextPage();
-            }}
-                refreshControl={<RefreshControl tintColor={colors.accent} refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={() => void query.refetch()}/>}
-                ListHeaderComponent={<View style={{ gap: 18, paddingBottom: 20 }}>
-                    <Field label="Find a profile" placeholder="Search by name…" value={search} clearable onChangeText={setSearch} autoCorrect={false}/>
-                    <Select label="Rank by" value={sorting} onChange={setSorting} options={sortingOptions}/>
-                    {first && <Card style={{ padding: 16, gap: 16 }}>
-                        <AppText heading style={{ fontSize: 17 }}>You, across every list</AppText>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
-                            {[...first.userRanks].sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType)).map(rank => {
-                                const Icon = mediaIcons[rank.mediaType];
-                                return <View key={rank.mediaType} style={{ width: "46%", gap: 7 }}>
-                                    <View style={{ flexDirection: "row", gap: 6 }}><Icon size={15} color={mediaColors[rank.mediaType]}/><AppText muted
-                                                                                                                                                 style={{ fontSize: 12 }}>{mediaLabels[rank.mediaType]}</AppText></View>
-                                    <AppText style={{ fontWeight: "700", fontSize: 20 }}>{rank.active ? `#${rank.rank ?? "—"}` : "Inactive"}</AppText>
-                                    {rank.active && <><ProgressBar value={100 - (rank.percent ?? 100)} color={mediaColors[rank.mediaType]}/><AppText muted
-                                                                                                                                                     style={{ fontSize: 10 }}>{rank.percent == null ? "Percentile unavailable" : `Top ${formatPercent(rank.percent)}`}</AppText></>}
-                                </View>;
-                            })}
+        <Page title="Hall of Fame" back action={
+                                            <Pressable accessibilityRole="button" accessibilityLabel={searchOpen ? "Close profile search" : "Search profiles"} onPress={() => {
+                                                setSearchOpen(value => !value);
+                                                setSearch("");
+                                                list.current?.scrollToOffset({ offset: 0, animated: false });
+                                            }} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
+                                                {searchOpen ? <X size={21} color={colors.text}/> : <Search size={21} color={colors.text}/>}
+                                            </Pressable>
+                                        }>
+            <View style={styles.screen}>
+                <View style={styles.controls}>
+                    <ScrollView ref={categories} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.categories}>
+                        {rankingCategories.map(item => {
+                            const color = item.value === "normalized" || item.value === "profile" ? colors.accent : mediaColors[item.value];
+                            const chosen = category === item.value;
+                            return <Pressable key={item.value} onLayout={event => {
+                                categoryOffsets.current.set(item.value, event.nativeEvent.layout.x);
+                            }} accessibilityRole="button" accessibilityLabel={`Rank by ${item.label}`} accessibilityState={{ selected: chosen }}
+                                              onPress={() => changeCategory(item.value)} style={({ pressed }) => [styles.chipTarget, pressed && styles.pressed]}>
+                                <View style={[styles.chip, chosen && { borderColor: color, backgroundColor: `${color}18` }]}>
+                                    {item.value === "normalized" ? <Trophy size={14} color={chosen ? color : colors.muted}/> : item.value !== "profile" &&
+                                        <View style={[styles.dot, { backgroundColor: color }]}/>}
+                                    <AppText style={[styles.chipLabel, chosen && { color }]}>{item.label}</AppText>
+                                </View>
+                            </Pressable>;
+                        })}
+                    </ScrollView>
+                    <View style={styles.context}>
+                        <AppText muted
+                                 style={styles.contextLabel}>{category === "normalized" ? "Balanced across all media" : category === "profile" ? "Ranked by total time" : `${categoryLabel} rankings`}</AppText>
+                        <View style={styles.allTime}><Clock3 size={11} color={colors.muted}/><AppText muted style={styles.contextLabel}>All-time</AppText></View>
+                    </View>
+                    {searchOpen &&
+                        <View style={styles.search}><Field label="Find a profile" placeholder="Search by name…" value={search} clearable autoFocus onChangeText={value => {
+                            setSearch(value);
+                            list.current?.scrollToOffset({ offset: 0, animated: false });
+                        }} autoCorrect={false}/></View>}
+                </View>
+                <FlatList
+                    ref={list}
+                    data={rows}
+                    keyExtractor={item => String(item.id)}
+                    renderItem={renderItem}
+                    windowSize={7}
+                    initialNumToRender={6}
+                    maxToRenderPerBatch={6}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                    contentContainerStyle={styles.list}
+                    onEndReachedThreshold={0.5}
+                    onEndReached={() => {
+                        if (focused && query.hasNextPage && !query.isFetching && !searching) void query.fetchNextPage();
+                    }}
+                    refreshControl={<RefreshControl tintColor={colors.accent} refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={() => void query.refetch()}/>}
+                    ListHeaderComponent={<>
+                        {podium && <Podium users={items.slice(0, 3)} category={category} onSelect={setSelected}/>}
+                        <View style={styles.listHeading}>
+                            <AppText heading style={styles.sectionTitle}>{term ? "Search results" : "The rankings"}</AppText>
+                            <AppText muted
+                                     style={styles.contextLabel}>{first ? `${formatNumber(first.total, { locale: "en" })} ${first.total === 1 ? "profile" : "profiles"}` : "Loading…"}</AppText>
                         </View>
-                    </Card>}
-                    <AppText muted style={{ fontSize: 12 }}>{formatNumber(first?.total ?? 0, { locale: "en" })} profiles ranked</AppText>
-                </View>}
-                renderItem={renderItem}
-                ListEmptyComponent={<StateView loading={query.isPending} title={query.error ? "Couldn’t load rankings" : "No ranked profiles found"} message={query.error?.message}
-                                               retry={query.error ? () => void query.refetch() : undefined}/>}
-                ListFooterComponent={query.isFetchingNextPage ? <StateView loading/> : items.length && query.error ?
-                    <StateView title="Couldn’t load more profiles" retry={() => void query.fetchNextPage()}/> : undefined}
-            />
+                        {query.error && items.length > 0 && <StateView title="Couldn’t refresh rankings" message={query.error.message} retry={() => void query.refetch()}/>}
+                    </>}
+                    ListEmptyComponent={<StateView loading={query.isPending || searching}
+                                                   title={query.error ? "Couldn’t load rankings" : term ? "No profiles found" : "No ranked profiles yet"}
+                                                   message={query.error?.message ?? (term ? "Try a different name." : "Tracked media will bring this leaderboard to life.")}
+                                                   retry={query.error ? () => void query.refetch() : undefined}/>}
+                    ListFooterComponent={query.isFetchingNextPage ? <StateView loading/> : items.length > 0 && query.error && query.hasNextPage ?
+                        <StateView title="Couldn’t load more profiles" retry={() => void query.fetchNextPage()}/> : undefined}
+                />
+                {!searchOpen && <PersonalRanking ranks={first?.userRanks} category={category} onPress={() => setSelected("personal")}/>}
+            </View>
+            {selected && <RankingSheet user={selected === "personal" ? undefined : selected} ranks={first?.userRanks ?? []} dismiss={() => setSelected(null)} onCategory={value => {
+                setSelected(null);
+                changeCategory(value);
+            }}/>}
         </Page>
     );
 }
 
-type RankedUser = Awaited<ReturnType<typeof api.hallOfFame>>["items"][number];
+const RankAvatar = memo(function RankAvatar({ user, size, color = colors.border }: { user: RankedUser; size: number; color?: string }) {
+    const highlighted = color !== colors.border;
+    return <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: highlighted ? 2 : 0, borderColor: color, padding: highlighted ? 3 : 0 }}>
+        {user.image ? <Cover uri={user.image} label={user.name} style={{ width: "100%", height: "100%", borderRadius: size / 2 }}/> :
+            <View style={[styles.initialAvatar, { borderRadius: size / 2 }]}><AppText
+                style={{ fontSize: size * 0.32, fontWeight: "700", color: colors.muted }}>{Array.from(user.name)[0].toLocaleUpperCase()}</AppText></View>}
+    </View>;
+});
 
-const RankedProfile = memo(function RankedProfile({ item }: { item: RankedUser }) {
-    const push = useTabPush();
-    const medal = item.rank === 1 ? achievementColors.gold : item.rank === 2 ? achievementColors.silver : item.rank === 3 ? achievementColors.bronze : colors.muted;
-    return <Card style={{ marginBottom: 10, padding: 14, gap: 14, borderColor: item.isOwn ? colors.accent : colors.border }}>
-        <Pressable accessibilityRole="button" onPress={() => push({ pathname: "/people/[userId]", params: { userId: String(item.id) } })}
-                   style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, opacity: pressed ? 0.6 : 1 })}>
-            <View style={{ width: 28, alignItems: "center" }}>{item.rank && item.rank <= 3 ? <Trophy size={20} color={medal}/> :
-                <AppText muted>{item.rank ?? "—"}</AppText>}</View>
-            <Cover uri={item.image} label={item.name} style={{ width: 38, height: 38, borderRadius: 19 }}/>
-            <View style={{ flex: 1, gap: 2 }}><AppText numberOfLines={1} style={{ fontWeight: "600" }}>{item.name}</AppText>{item.isOwn &&
-                <AppText style={{ fontSize: 10, color: colors.accent }}>You</AppText>}</View>
-            <PrivacyBadge value={item.privacy}/>
-            <AppText style={{ fontSize: 18, fontWeight: "700" }}>{Math.floor(calculateMediaLevel(item.totalTime))}</AppText>
+const Podium = memo(function Podium({ users, category, onSelect }: { users: RankedUser[]; category: RankingCategory; onSelect: (user: RankedUser) => void }) {
+    return <View style={styles.podium}>
+        {[users[1], users[0], users[2]].map((user, index) => {
+            const champion = index === 1;
+            const color = champion ? achievementColors.gold : index === 0 ? achievementColors.silver : achievementColors.bronze;
+            const level = getRankingLevel(user, category);
+            return <Pressable key={user.id} accessibilityRole="button"
+                              accessibilityLabel={`Rank ${user.rank}, ${user.name}${level === null ? ", inactive list" : `, level ${level}`}. View media levels`}
+                              onPress={() => onSelect(user)} style={({ pressed }) => [styles.podiumPerson, !champion && styles.runnerUp, pressed && styles.pressed]}>
+                <View style={styles.crown}>{champion && <Crown size={21} color={color}/>}</View>
+                <View><RankAvatar user={user} size={champion ? 76 : 60} color={color}/><View style={[styles.medal, { backgroundColor: color }]}><AppText
+                    style={styles.medalLabel}>{user.rank}</AppText></View></View>
+                <AppText numberOfLines={1} style={[styles.podiumName, champion && { color: colors.text }]}>{user.name}</AppText>
+                <AppText style={[styles.podiumLevel, { color }]}>{level === null ? "Inactive" : `Lvl. ${level}`}</AppText>
+                {user.isOwn && <AppText style={styles.you}>You</AppText>}
+            </Pressable>;
+        })}
+    </View>;
+});
+
+const RankingRow = memo(function RankingRow({ item, category, onSelect }: { item: RankedUser; category: RankingCategory; onSelect: (user: RankedUser) => void }) {
+    const level = getRankingLevel(item, category);
+    return <Pressable accessibilityRole="button"
+                      accessibilityLabel={`Rank ${item.rank ?? "unavailable"}, ${item.name}, ${level === null ? "inactive list" : `level ${level}`}. View media levels`}
+                      onPress={() => onSelect(item)} style={({ pressed }) => [styles.row, item.isOwn && styles.ownRow, pressed && styles.pressed]}>
+        <AppText muted style={styles.rankNumber}>{item.rank ?? "—"}</AppText>
+        <RankAvatar user={item} size={42}/>
+        <View style={styles.rowIdentity}><AppText numberOfLines={1} style={styles.rowName}>{item.name}</AppText>{item.isOwn && <AppText style={styles.you}>You</AppText>}</View>
+        <View style={styles.rowMetric}><AppText style={styles.rowLevel}>{level ?? "—"}</AppText><AppText muted style={styles.levelLabel}>LEVEL</AppText></View>
+        <ChevronRight size={15} color={colors.muted}/>
+    </Pressable>;
+});
+
+const PersonalRanking = memo(function PersonalRanking({ ranks, category, onPress }: { ranks: PersonalRanks | undefined; category: RankingCategory; onPress: () => void }) {
+    const highlight = ranks && getPersonalRanking(ranks, category);
+    const Icon = highlight ? mediaIcons[highlight.mediaType] : Trophy;
+    return <View style={styles.dock}>
+        <Pressable accessibilityRole="button" accessibilityLabel="View your rankings across all media" onPress={onPress} disabled={!ranks}
+                   style={({ pressed }) => [styles.personal, pressed && styles.pressed]}>
+            <View style={styles.personalIcon}><Icon size={21} color={highlight ? mediaColors[highlight.mediaType] : colors.accent}/></View>
+            <View style={styles.rowIdentity}><AppText
+                style={styles.personalTitle}>{highlight && (category === "normalized" || category === "profile") ? "Your best category" : "Your rankings"}</AppText><AppText muted
+                                                                                                                                                                             style={styles.rowCaption}>{highlight ? `${mediaLabels[highlight.mediaType]}${highlight.active ? highlight.percent === null ? " · Percentile unavailable" : ` · Top ${formatPercent(highlight.percent)}` : " · Inactive"}` : ranks ? "Explore your place in every list" : "Loading your ranks…"}</AppText></View>
+            <AppText style={styles.personalRank}>{highlight?.active && highlight.rank !== null ? `#${highlight.rank}` : "—"}</AppText>
+            <ChevronRight size={17} color={colors.accent}/>
         </Pressable>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+    </View>;
+});
+
+function RankingSheet({ user, ranks, dismiss, onCategory }: { user?: RankedUser; ranks: PersonalRanks; dismiss: () => void; onCategory: (value: RankingCategory) => void }) {
+    const push = useTabPush();
+    return <ActionSheet title={user ? user.name : "Your rankings"} dismiss={dismiss}>
+        {user ? <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`View ${user.name}'s profile`} onPress={() => {
+                dismiss();
+                push({ pathname: "/people/[userId]", params: { userId: String(user.id) } });
+            }} style={({ pressed }) => [styles.sheetProfile, pressed && styles.pressed]}>
+                <RankAvatar user={user} size={50}/><View style={styles.rowIdentity}><AppText style={styles.rowName}>Profile
+                level {getRankingLevel(user, "profile")}</AppText><AppText style={styles.profileLink}>View profile</AppText></View><ArrowUpRight size={18} color={colors.accent}/>
+            </Pressable>
+            <PrivacyBadge value={user.privacy}/>
+        </View> : <AppText muted style={styles.sheetDescription}>Your all-time position in each media category. Tap a category to explore its leaderboard.</AppText>}
+        <View>
             {ALL_MEDIA_TYPES.map(mediaType => {
-                const setting = item.settings.find(value => value.mediaType === mediaType);
                 const Icon = mediaIcons[mediaType];
-                return <Pressable key={mediaType} disabled={!setting?.active} accessibilityRole="button"
-                                  accessibilityLabel={`${item.name}'s ${mediaLabels[mediaType]} list`}
-                                  onPress={() => push({ pathname: "/lists/[mediaType]", params: { mediaType, userId: item.id } })} style={({ pressed }) => ({
-                    width: "29%",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 6,
-                    opacity: !setting?.active ? 0.4 : pressed ? 0.6 : 1
-                })}>
-                    <Icon size={14} color={mediaColors[mediaType]}/><View><AppText muted style={{ fontSize: 10 }}>{mediaLabels[mediaType]}</AppText><AppText
-                    style={{ fontSize: 13, fontWeight: "600" }}>{setting?.active ? Math.floor(calculateMediaLevel(setting.timeSpent)) : "—"}</AppText></View>
+                const rank = ranks.find(item => item.mediaType === mediaType);
+                const setting = user?.settings.find(item => item.mediaType === mediaType);
+                const active = user ? !!setting?.active : !!rank?.active;
+                const value = user ? getRankingLevel(user, mediaType) : rank?.rank;
+                return <Pressable key={mediaType} accessibilityRole="button"
+                                  accessibilityLabel={user ? `Open ${user.name}'s ${mediaLabels[mediaType]} list` : `View ${mediaLabels[mediaType]} rankings`}
+                                  disabled={user ? !active : false} onPress={() => {
+                    if (!user) {
+                        onCategory(mediaType);
+                        return;
+                    }
+                    dismiss();
+                    push({ pathname: "/lists/[mediaType]", params: { mediaType, userId: user.id } });
+                }} style={({ pressed }) => [styles.sheetRow, user && !active && styles.inactive, pressed && styles.pressed]}>
+                    <View style={[styles.sheetIcon, { backgroundColor: `${mediaColors[mediaType]}18` }]}><Icon size={19} color={mediaColors[mediaType]}/></View>
+                    <View style={styles.rowIdentity}><AppText style={styles.rowName}>{mediaLabels[mediaType]}</AppText><AppText muted
+                                                                                                                                style={styles.rowCaption}>{!active ? "Inactive" : user ? "View tracking list" : rank?.percent == null ? "Percentile unavailable" : `Top ${formatPercent(rank.percent)}`}</AppText></View>
+                    <AppText style={styles.sheetValue}>{!active || value == null ? "—" : `${user ? "Lvl. " : "#"}${value}`}</AppText><ChevronRight size={16} color={colors.muted}/>
                 </Pressable>;
             })}
         </View>
-    </Card>;
+    </ActionSheet>;
+}
 
+const styles = StyleSheet.create({
+    screen: { flex: 1 },
+    controls: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+    categories: { paddingHorizontal: 16, gap: 8 },
+    chipTarget: { minHeight: 48, justifyContent: "center" },
+    chip: {
+        minHeight: 34,
+        paddingHorizontal: 13,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 7
+    },
+    chipLabel: { fontSize: 12, fontWeight: "600", color: colors.muted },
+    dot: { width: 6, height: 6, borderRadius: 3 },
+    context: { paddingHorizontal: 20, paddingTop: 3, paddingBottom: 14, flexDirection: "row", justifyContent: "space-between", gap: 8 },
+    contextLabel: { fontSize: 12, lineHeight: 18 },
+    allTime: { flexDirection: "row", alignItems: "center", gap: 5 },
+    search: { paddingHorizontal: 16, paddingBottom: 16 },
+    iconButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
+    list: { paddingHorizontal: 16, paddingBottom: 20 },
+    listHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingTop: 18, paddingBottom: 10 },
+    sectionTitle: { fontSize: 16, lineHeight: 22 },
+    podium: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 8,
+        paddingTop: 14,
+        paddingBottom: 18,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border
+    },
+    podiumPerson: { flex: 1, minWidth: 0, alignItems: "center", gap: 4 },
+    runnerUp: { paddingTop: 24 },
+    crown: { height: 23, alignItems: "center", justifyContent: "center" },
+    medal: {
+        position: "absolute",
+        bottom: -5,
+        alignSelf: "center",
+        minWidth: 22,
+        height: 22,
+        borderRadius: 11,
+        borderWidth: 3,
+        borderColor: colors.background,
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    medalLabel: { fontSize: 10, lineHeight: 14, fontWeight: "800", color: colors.background },
+    podiumName: { fontSize: 13, fontWeight: "600", marginTop: 9, maxWidth: "100%", color: colors.muted },
+    podiumLevel: { fontSize: 12, lineHeight: 18, fontWeight: "600", fontVariant: ["tabular-nums"] },
+    row: {
+        minHeight: 72,
+        paddingHorizontal: 8,
+        paddingVertical: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border
+    },
+    ownRow: { backgroundColor: `${colors.accent}10`, borderRadius: 10 },
+    rankNumber: { width: 34, fontSize: 12, fontVariant: ["tabular-nums"], textAlign: "center" },
+    initialAvatar: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.secondary },
+    rowIdentity: { flex: 1, minWidth: 0, gap: 2 },
+    rowName: { fontSize: 15, fontWeight: "600" },
+    rowCaption: { fontSize: 11, lineHeight: 16 },
+    rowMetric: { alignItems: "flex-end", gap: 1 },
+    rowLevel: { fontSize: 19, lineHeight: 25, fontWeight: "700", fontVariant: ["tabular-nums"] },
+    levelLabel: { fontSize: 10, lineHeight: 14, letterSpacing: 0.6, fontWeight: "600" },
+    you: { color: colors.accent, fontSize: 10, lineHeight: 15, fontWeight: "600" },
+    dock: { padding: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.background },
+    personal: {
+        minHeight: 68,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 11,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderRadius: 13,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        backgroundColor: `${colors.accent}0D`
+    },
+    personalIcon: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: 11, backgroundColor: colors.surface },
+    personalTitle: { fontSize: 13, lineHeight: 19, fontWeight: "700" },
+    personalRank: { color: colors.accent, fontSize: 22, lineHeight: 28, fontWeight: "700", fontVariant: ["tabular-nums"] },
+    sheetProfile: { flex: 1, minHeight: 54, flexDirection: "row", gap: 14, alignItems: "center" },
+    profileLink: { color: colors.accent, fontSize: 12, lineHeight: 18, fontWeight: "600" },
+    sheetDescription: { fontSize: 12, lineHeight: 18 },
+    sheetRow: {
+        minHeight: 66,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
+        paddingVertical: 10
+    },
+    sheetIcon: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 12 },
+    sheetValue: { fontSize: 16, fontWeight: "700", fontVariant: ["tabular-nums"] },
+    inactive: { opacity: 0.4 },
+    pressed: { opacity: 0.6 },
 });

@@ -1,3 +1,4 @@
+import type {Href} from "expo-router";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {useState} from "react";
 import {colors} from "../../theme";
@@ -8,7 +9,7 @@ import {AppText, Content, Page, Section} from "../../components/ui";
 import {ChartNoAxesCombined, Clapperboard, ExternalLink, HeartHandshake, History, LibraryBig, Coffee, TrendingUp, Trophy} from "lucide-react-native";
 
 
-const nativePages = new Set(["/moviedle", "/hall-of-fame", "/trends"]);
+const nativePages = new Map<string, Href>([["/moviedle", "/moviedle"], ["/hall-of-fame", "/hall-of-fame"], ["/trends", "/trends"]]);
 
 const sections = [
     {
@@ -99,7 +100,11 @@ export function CommunityScreen() {
                                 key={path}
                                 disabled={opening}
                                 accessibilityRole={nativePages.has(path) ? "button" : "link"}
-                                onPress={() => nativePages.has(path) ? push("/moviedle") : void open(path)}
+                                onPress={() => {
+                                    const destination = nativePages.get(path);
+                                    if (destination) push(destination);
+                                    else void open(path);
+                                }}
                                 accessibilityLabel={nativePages.has(path) ? title : `${title}. Opens in browser`}
                                 style={({ pressed }) => ({
                                     gap: 14,

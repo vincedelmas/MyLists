@@ -8,8 +8,15 @@ export const useSettingsMutation = () => {
 
     return useMutation({
         mutationFn: (input: SettingsInput) => api.saveSettings(input),
-        onSuccess: async () => {
-            authClient.$store.notify("$sessionSignal");
+        onSuccess: async (_result, input) => {
+            if (input.section === "pin" || input.section === "profile") {
+                await Promise.all([
+                    client.invalidateQueries({ queryKey: ["settings", "profile"], exact: true }),
+                    client.invalidateQueries({ queryKey: ["profile", undefined, input.section === "pin" ? "extras" : "continue"], exact: true }),
+                ]);
+                return;
+            }
+            if (input.section === "general") authClient.$store.notify("$sessionSignal");
             await Promise.all(
                 ["settings", "profile", "lists", "media"].map((key) => client.invalidateQueries({ queryKey: [key] })),
             );

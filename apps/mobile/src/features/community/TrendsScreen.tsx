@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {memo, useCallback, useMemo, useRef, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {FlatList, RefreshControl, View, Pressable} from "react-native";
 import {useQuery} from "@tanstack/react-query";
@@ -28,24 +28,32 @@ export function TrendsScreen() {
     const query = useQuery({ queryKey: ["community", "trends"], queryFn: ({ signal }) => api.trends(signal), enabled: focused });
     const resolve = useResolveMutation();
     const data = query.data;
-    const items = data ? tab === "series" ? data.seriesTrends : tab === "movies" ? data.moviesTrends : tab === "games" ? data.gamesTrends
-        : [...data.seriesTrends, ...data.moviesTrends, ...data.gamesTrends].sort((a, b) => compareDateInputs(b.releaseDate, a.releaseDate)) : [];
+    const allTrends = useMemo(() => data ? [...data.seriesTrends, ...data.moviesTrends, ...data.gamesTrends]
+        .sort((a, b) => compareDateInputs(b.releaseDate, a.releaseDate)) : [], [data]);
+    const items = !data || tab === "all" ? allTrends : tab === "series" ? data.seriesTrends : tab === "movies" ? data.moviesTrends : data.gamesTrends;
     const hero = data ? tab === "series" ? data.seriesTrends[0] : tab === "games" ? data.gamesTrends[0] : data.moviesTrends[0] : undefined;
-    const open = (item: Trend) => {
-        if (resolve.isPending) return;
-        resolve.mutate({ mediaType: item.mediaType, apiId: item.apiId }, {
-            onSuccess: ({ mediaId }) => push({
-                pathname: "/media/[mediaType]/[mediaId]",
-                params: { mediaType: item.mediaType, mediaId: String(mediaId) }
-            })
+    const opening = useRef(false);
+    const { mutate } = resolve;
+    const open = useCallback((item: Trend) => {
+        if (opening.current) return;
+        opening.current = true;
+        mutate({ mediaType: item.mediaType, apiId: item.apiId }, {
+            onSuccess: ({ mediaId }) => push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType: item.mediaType, mediaId: String(mediaId) } }),
+            onSettled: () => {
+                opening.current = false;
+            },
         });
-    };
+    }, [mutate, push]);
+    const renderItem = useCallback(({ item }: { item: Trend }) => <TrendingTitle item={item} open={open}/>, [open]);
 
     return (
         <Page title="Weekly trends" subtitle="Popular this week" back>
             <FlatList
                 data={items}
                 numColumns={2}
+                windowSize={7}
+                initialNumToRender={8}
+                maxToRenderPerBatch={6}
                 keyExtractor={item => `${item.mediaType}:${item.apiId}`}
                 contentContainerStyle={{ padding: 10, paddingBottom: 32 }}
                 refreshControl={<RefreshControl refreshing={query.isRefetching} tintColor={colors.accent} onRefresh={() => void query.refetch()}/>}
@@ -67,11 +75,14 @@ export function TrendsScreen() {
                     {resolve.error && <AppText accessibilityRole="alert" style={{ color: colors.error }}>{resolve.error.message}</AppText>}
                     <AppText muted style={{ fontSize: 12 }}>Trending titles · {items.length} {items.length === 1 ? "title" : "titles"}</AppText>
                 </View>}
-                renderItem={({ item }) => <MediaCard name={item.displayName} cover={item.posterPath} onPress={() => open(item)}
-                                                     detail={`${mediaLabels[item.mediaType]} · ${formatDate(item.releaseDate)}`}/>}
+                renderItem={renderItem}
                 ListEmptyComponent={<StateView loading={query.isPending} title={query.error ? "Couldn’t load trends" : "No trending data available right now."}
                                                message={query.error?.message} retry={query.error ? () => void query.refetch() : undefined}/>}
             />
         </Page>
     );
 }
+
+const TrendingTitle = memo(function TrendingTitle({ item, open }: { item: Trend; open: (item: Trend) => void }) {
+    return <MediaCard name={item.displayName} cover={item.posterPath} onPress={() => open(item)} detail={`${mediaLabels[item.mediaType]} · ${formatDate(item.releaseDate)}`}/>;
+});

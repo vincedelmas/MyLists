@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {memo, useCallback, useMemo, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
 import {FlatList, View} from "react-native";
@@ -19,13 +19,16 @@ export function ProfileSettingsScreen() {
     const [search, setSearch] = useState("");
     const term = useDebouncedValue(search.trim());
     const library = useInfiniteQuery({ ...libraryOptions(term), enabled: focused });
-    const items = library.data?.pages.flatMap(page => [...page.dynamic.map(item => ({ ...item, kind: "dynamic" as const })), ...page.collections.map(item => ({
-        ...item,
-        kind: "collection" as const
-    }))]) ?? [];
+    const items = useMemo(() => library.data?.pages.flatMap(page => [
+        ...page.dynamic.map(item => ({ ...item, kind: "dynamic" as const })),
+        ...page.collections.map(item => ({ ...item, kind: "collection" as const })),
+    ]) ?? [], [library.data]);
+    const { mutate } = mutation;
+    const toggle = useCallback((item: PinList, pinned: boolean) => mutate({ section: "pin", kind: item.kind, id: item.id, pinned }), [mutate]);
 
     return <Page title="Profile customization" back>
         <QueryPanel query={settings}>{data => <FlatList
+            windowSize={7} initialNumToRender={8} maxToRenderPerBatch={8}
             data={items} keyExtractor={item => `${item.kind}:${item.id}`} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
             onEndReachedThreshold={0.5} onEndReached={() => {
             if (focused && library.hasNextPage && !library.isFetching) void library.fetchNextPage();
@@ -45,11 +48,7 @@ export function ProfileSettingsScreen() {
             </View>}
             renderItem={({ item }) => {
                 const pinned = data.pins.some(pin => pin.kind === item.kind && pin.id === item.id);
-                return <View style={{ paddingVertical: 12, gap: 4 }}>
-                    <NativeHost><Switch label={item.title} value={pinned} disabled={mutation.isPending || (!pinned && data.pins.length >= MAX_PROFILE_PINS)}
-                                        onValueChange={value => mutation.mutate({ section: "pin", kind: item.kind, id: item.id, pinned: value })}/></NativeHost>
-                    <AppText muted style={{ fontSize: 11 }}>{item.kind === "dynamic" ? "Dynamic list" : "Collection"}{pinned ? " · Pinned" : ""}</AppText>
-                </View>;
+                return <ProfilePinRow item={item} pinned={pinned} disabled={mutation.isPending || (!pinned && data.pins.length >= MAX_PROFILE_PINS)} toggle={toggle}/>;
             }}
             ListEmptyComponent={<StateView loading={library.isPending} title={library.error ? "Couldn’t load lists" : "No saved lists or collections found"}
                                            message={library.error?.message} retry={library.error ? () => void library.refetch() : undefined}/>}
@@ -58,3 +57,17 @@ export function ProfileSettingsScreen() {
         />}</QueryPanel>
     </Page>;
 }
+
+type PinList = { kind: "dynamic" | "collection"; id: number; title: string };
+
+const ProfilePinRow = memo(function ProfilePinRow({ item, pinned, disabled, toggle }: {
+    item: PinList;
+    pinned: boolean;
+    disabled: boolean;
+    toggle: (item: PinList, pinned: boolean) => void
+}) {
+    return <View style={{ paddingVertical: 12, gap: 4 }}>
+        <NativeHost><Switch label={item.title} value={pinned} disabled={disabled} onValueChange={value => toggle(item, value)}/></NativeHost>
+        <AppText muted style={{ fontSize: 11 }}>{item.kind === "dynamic" ? "Dynamic list" : "Collection"}{pinned ? " · Pinned" : ""}</AppText>
+    </View>;
+});

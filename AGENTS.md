@@ -9,6 +9,8 @@
 - Do not build the project unless explicitly asked.
 - For mobile UI changes and features, check the corresponding web app implementation first. Keep labels, colors, formatting,
   and visual conventions close to the web app, and verify mobile layouts over ADB when a phone is available.
+- Treat mobile responsiveness as a requirement: virtualize long lists, keep per-keystroke JavaScript work small, and avoid unrelated
+  refetches. Use device measurements before claiming frame-rate or latency improvements.
 - Create tests only when they are really necessary.
 - Avoid creating functions that are used only once when possible. First look for an existing function that already works or can be lightly
   modified to support the use case.

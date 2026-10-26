@@ -17,7 +17,7 @@ export function NotificationButton() {
             accessibilityRole="button"
             accessibilityLabel={`Notifications, ${count} unread`}
             onPress={() => push("/profile/notifications")}
-            style={{ padding: 12 }}
+            style={({ pressed }) => ({ minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.6 : 1 })}
         >
             <Bell size={21} color={colors.muted}/>
             {count > 0 && (

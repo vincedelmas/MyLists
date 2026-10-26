@@ -1,6 +1,6 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {ArrowUpRight} from "lucide-react-native";
-import {View, Pressable, useWindowDimensions} from "react-native";
+import {View, Pressable} from "react-native";
 import type {ContinueProgress} from "@/lib/utils/media/continue";
 import {api, type MediaType} from "../../lib/api-client";
 import {AppText, Button, Cover} from "../../components/ui";
@@ -19,7 +19,6 @@ interface ContinueItem {
 }
 
 export function ContinueActions({ item, dismiss }: { item: ContinueItem; dismiss: () => void }) {
-    const { width } = useWindowDimensions();
     const client = useQueryClient();
     const push = useTabPush();
     const mutation = useMutation({
@@ -47,11 +46,18 @@ export function ContinueActions({ item, dismiss }: { item: ContinueItem; dismiss
                 <ProgressBar value={Math.min(100, item.progress.value / item.progress.total * 100)} color={mediaColors[item.mediaType]}/>}
             <View style={{ gap: 8 }}>
                 {item.progress &&
-                    <Button width={width - 80} label={item.progress.actionLabel} disabled={!item.progress.update} pending={mutation.isPending} onPress={() => mutation.mutate()}/>}
+                    <Button fullWidth label={item.progress.actionLabel} disabled={!item.progress.update} pending={mutation.isPending} onPress={() => mutation.mutate()}/>}
                 <Pressable accessibilityRole="button" onPress={() => {
                     dismiss();
                     push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType: item.mediaType, mediaId: String(item.mediaId) } });
-                }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, opacity: pressed ? 0.6 : 1 })}>
+                }} style={({ pressed }) => ({
+                    minHeight: 48,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 12,
+                    opacity: pressed ? 0.6 : 1
+                })}>
                     <AppText muted style={{ fontSize: 13 }}>Go to the details</AppText>
                     <ArrowUpRight size={17} color={colors.muted}/>
                 </Pressable>

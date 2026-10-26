@@ -16,6 +16,7 @@ export interface SectionTabsProps<T extends string> {
     onLayout?: ViewProps["onLayout"];
     scrollable?: boolean;
     showIndicator?: boolean;
+    layout?: "stacked" | "inline";
     tabs: readonly SectionTab<T>[];
     action?: {
         label: string;
@@ -34,6 +35,7 @@ export function SectionTabs<T extends string>({
                                                   action,
                                                   scrollable = false,
                                                   showIndicator = true,
+                                                  layout = "stacked",
                                               }: SectionTabsProps<T>) {
     const content = (
         <>
@@ -47,6 +49,7 @@ export function SectionTabs<T extends string>({
                     style={({ pressed }) => [
                         styles.tab,
                         scrollable && styles.scrollTab,
+                        layout === "inline" && styles.inlineTab,
                         showIndicator && value === key && styles.selected,
                         pressed && styles.pressed,
                     ]}
@@ -61,9 +64,9 @@ export function SectionTabs<T extends string>({
                     </View>
                     <AppText
                         numberOfLines={1}
-                        adjustsFontSizeToFit
+                        adjustsFontSizeToFit={layout === "stacked"}
                         minimumFontScale={0.8}
-                        style={[styles.label, value === key && styles.selectedLabel]}
+                        style={[styles.label, layout === "inline" && styles.inlineLabel, value === key && styles.selectedLabel]}
                     >
                         {label}
                     </AppText>
@@ -108,6 +111,8 @@ export function SectionTabs<T extends string>({
 const styles = StyleSheet.create({
     scroll: { flexGrow: 0 },
     scrollTab: { flex: 0, minWidth: 80, paddingHorizontal: 12 },
+    inlineTab: { flexDirection: "row", gap: 7, paddingHorizontal: 14 },
+    inlineLabel: { fontSize: 12, lineHeight: 18 },
     iconRow: { flexDirection: "row", alignItems: "center", gap: 5 },
     count: { fontSize: 11, lineHeight: 16, fontWeight: "700", color: colors.muted, fontVariant: ["tabular-nums"] },
     container: {

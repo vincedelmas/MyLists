@@ -19,7 +19,7 @@ export function ProfileScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                     <NotificationButton/>
                     <Pressable
-                        style={{ padding: 12 }}
+                        style={({ pressed }) => ({ minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.6 : 1 })}
                         accessibilityRole="button"
                         accessibilityLabel="Settings"
                         onPress={() => router.push("/(tabs)/(profile)/settings")}

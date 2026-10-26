@@ -1,6 +1,8 @@
 import {useIsFocused, useLocalSearchParams} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {ScrollView} from "react-native";
+import {ScrollView, StyleSheet, View} from "react-native";
+import {LockKeyhole} from "lucide-react-native";
+import {colors} from "../../theme";
 import {useSocialAction} from "../../lib/react-query/query-mutations/social.mutations";
 import {personOptions} from "../../lib/react-query/query-options/profile.options";
 import {AppText, Button, Page, QueryPanel} from "../../components/ui";
@@ -22,7 +24,7 @@ export function PersonScreen() {
                         <>
                             {!data.header.isOwn && (
                                 <Button
-                                    width={176}
+                                    fullWidth
                                     pending={mutation.isPending}
                                     secondary={Boolean(data.following)}
                                     label={
@@ -57,9 +59,13 @@ export function PersonScreen() {
                     return data.access === "private" ? (
                         <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 24 }}>
                             <ProfileHeader data={{ user: data.header }} action={action}/>
-                            <AppText muted style={{ paddingHorizontal: 16 }}>
-                                This profile is private. Follow this person to request access.
-                            </AppText>
+                            <View style={styles.privateState}>
+                                <View style={styles.lock}><LockKeyhole size={25} color={colors.muted}/></View>
+                                <AppText heading style={styles.privateTitle}>This profile is private</AppText>
+                                <AppText muted style={styles.privateMessage}>{data.following === "requested"
+                                    ? "Your follow request is pending. Their lists and activity will appear once it’s accepted."
+                                    : "Follow this person to request access to their lists and activity."}</AppText>
+                            </View>
                         </ScrollView>
                     ) : (
                         <ProfileLayout
@@ -76,3 +82,10 @@ export function PersonScreen() {
         </Page>
     );
 }
+
+const styles = StyleSheet.create({
+    privateState: { paddingHorizontal: 32, paddingVertical: 28, alignItems: "center", gap: 12 },
+    lock: { width: 62, height: 62, borderRadius: 22, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", marginBottom: 4 },
+    privateTitle: { fontSize: 20, lineHeight: 28, textAlign: "center" },
+    privateMessage: { textAlign: "center", fontSize: 14, lineHeight: 22, maxWidth: 280 },
+});

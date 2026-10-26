@@ -9,6 +9,7 @@ interface CollapsingTabsProps<T extends string> {
     initialTab: T;
     scrollable?: boolean;
     tabBarTopPadding?: number;
+    tabLayout?: SectionTabsProps<T>["layout"];
     onTabPress?: (tab: T) => void;
     children: (tab: T) => ReactNode;
     action?: SectionTabsProps<T>["action"];
@@ -25,6 +26,7 @@ export function CollapsingTabs<T extends string>({
                                                      action,
                                                      scrollable,
                                                      tabBarTopPadding = 0,
+                                                     tabLayout,
                                                  }: CollapsingTabsProps<T>) {
     const { tab, selectTab, context, translateY, setHeaderHeight, setTabBarHeight, setViewportHeight } =
         useCollapsingTabs(initialTab);
@@ -46,6 +48,7 @@ export function CollapsingTabs<T extends string>({
                     >
                         <SectionTabs
                             tabs={tabs}
+                            layout={tabLayout}
                             scrollable={scrollable}
                             value={tab}
                             action={action}

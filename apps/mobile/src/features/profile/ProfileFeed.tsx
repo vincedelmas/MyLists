@@ -1,3 +1,5 @@
+import {formatDate} from "@/lib/utils/formatting/date";
+import {SectionHeading} from "../../components/section-heading";
 import {memo} from "react";
 import {useIsFocused} from "expo-router";
 import {Pressable, StyleSheet, View} from "react-native";
@@ -30,9 +32,10 @@ export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSyst
                 ] as const
             ).map(({ title, query, empty }) => (
                 <View key={title} style={{ gap: 12 }}>
-                    <AppText heading style={{ fontSize: 17 }}>
-                        {title}
-                    </AppText>
+                    <SectionHeading title={title} action={title === "Recent feed" ? {
+                        label: "View all Feed",
+                        onPress: () => push({ pathname: "/profile/feed", params: { userId } }),
+                    } : undefined}/>
                     <Card>
                         <QueryPanel<readonly FeedItem[]> query={query}>
                             {(items) =>
@@ -46,23 +49,6 @@ export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSyst
                             }
                         </QueryPanel>
                     </Card>
-                    {title === "Recent feed" && (
-                        <Pressable
-                            accessibilityRole="button"
-                            onPress={() => push({ pathname: "/profile/feed", params: { userId } })}
-                            style={({ pressed }) => ({
-                                paddingVertical: 10,
-                                alignItems: "center",
-                                borderWidth: 1,
-                                borderStyle: "dashed",
-                                borderColor: colors.border,
-                                borderRadius: 8,
-                                opacity: pressed ? 0.6 : 1
-                            })}
-                        >
-                            <AppText style={{ color: colors.accent, fontSize: 12 }}>View all Feed</AppText>
-                        </Pressable>
-                    )}
                 </View>
             ))}
             <ConfirmationSheet {...confirmationProps}/>
@@ -83,80 +69,51 @@ export const FeedRows = memo(function FeedRows({
     return items.map((item) => {
         const Icon = mediaIcons[item.mediaType];
         const author = "avatar" in item ? item : null;
-        return (
-            <View key={item.id} style={styles.row}>
-                {author ? (
-                    <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`View ${author.username}'s profile`}
-                        style={styles.author}
-                        onPress={() =>
-                            push({ pathname: "/people/[userId]", params: { userId: String(author.userId) } })
-                        }
-                    >
-                        <Cover
-                            uri={author.avatar}
-                            label={author.username}
-                            style={{ width: 36, height: 36, borderRadius: 18 }}
-                        />
-                        <AppText numberOfLines={2} style={styles.username}>
-                            {author.username}
-                        </AppText>
-                    </Pressable>
-                ) : (
-                    <Icon size={16} color={mediaColors[item.mediaType]}/>
-                )}
-                <Pressable
-                    accessibilityRole="button"
-                    style={styles.details}
-                    onLongPress={onDelete ? () => onDelete(item.id) : undefined}
-                    accessibilityHint={onDelete ? "Long press to delete this update" : undefined}
-                    accessibilityActions={onDelete ? [{ name: "delete", label: "Delete update" }] : undefined}
-                    onAccessibilityAction={(event) => {
-                        if (event.nativeEvent.actionName === "delete") onDelete?.(item.id);
-                    }}
-                    onPress={() =>
-                        push({
-                            pathname: "/media/[mediaType]/[mediaId]",
-                            params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
-                        })
-                    }
-                >
-                    <View style={styles.heading}>
-                        {author && <Icon size={13} color={mediaColors[item.mediaType]}/>}
-                        <AppText numberOfLines={1} style={styles.title}>
-                            {item.mediaName}
-                        </AppText>
-                        <AppText muted style={styles.date}>
-                            {new Date(item.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                        </AppText>
-                    </View>
-                    <AppText muted style={styles.description}>
-                        {formatActivity(item, author?.ratingSystem ?? ratingSystem)}
-                    </AppText>
-                </Pressable>
-            </View>
-        );
+        return <View key={item.id} style={styles.row}>
+            {author ? <Pressable accessibilityRole="button" accessibilityLabel={`View ${author.username}'s profile`} style={styles.author}
+                                 onPress={() => push({ pathname: "/people/[userId]", params: { userId: String(author.userId) } })}>
+                <Cover uri={author.avatar} label={author.username} style={styles.avatar}/>
+                {!author.avatar && <View style={styles.avatarFallback}><AppText muted style={styles.initial}>{Array.from(author.username)[0].toLocaleUpperCase()}</AppText></View>}
+            </Pressable> : <View><Cover uri={item.cover} label={item.mediaName} style={styles.cover}/>{!item.cover &&
+                <View style={styles.avatarFallback}><Icon size={20} color={mediaColors[item.mediaType]}/></View>}</View>}
+            <Pressable accessibilityRole="button" style={styles.details}
+                       onLongPress={onDelete ? () => onDelete(item.id) : undefined} accessibilityHint={onDelete ? "Long press to delete this update" : undefined}
+                       accessibilityActions={onDelete ? [{ name: "delete", label: "Delete update" }] : undefined}
+                       onAccessibilityAction={event => {
+                           if (event.nativeEvent.actionName === "delete") onDelete?.(item.id);
+                       }}
+                       onPress={() => push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType: item.mediaType, mediaId: String(item.mediaId) } })}>
+                {author && <AppText numberOfLines={1} style={styles.username}>{author.username}</AppText>}
+                <View style={styles.heading}><Icon size={12} color={mediaColors[item.mediaType]}/><AppText numberOfLines={2} style={styles.title}>{item.mediaName}</AppText></View>
+                <AppText muted numberOfLines={2} style={styles.description}>{formatActivity(item, author?.ratingSystem ?? ratingSystem)}</AppText>
+                <AppText muted style={styles.date}>{formatDate(item.timestamp)}</AppText>
+            </Pressable>
+        </View>;
+
     });
 });
 
 const styles = StyleSheet.create({
-    author: { width: 68, alignItems: "center", gap: 4 },
-    username: { fontSize: 10, fontWeight: "600", color: colors.accent, textAlign: "center" },
+    author: { width: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
+    avatar: { width: 38, height: 38, borderRadius: 19 },
+    cover: { width: 42, height: 63, borderRadius: 7 },
+    avatarFallback: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" },
+    initial: { fontSize: 15, fontWeight: "600" },
+    username: { fontSize: 11, lineHeight: 16, fontWeight: "600", color: colors.accent },
     row: {
-        minHeight: 60,
+        minHeight: 96,
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        gap: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        gap: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.border,
+        borderBottomColor: colors.border
     },
-    details: { flex: 1, gap: 2 },
-    heading: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-    title: { flex: 1, fontSize: 13, fontWeight: "600" },
-    date: { fontSize: 10 },
-    description: { fontSize: 12 },
-    empty: { padding: 16, fontSize: 12 },
+    details: { flex: 1, minWidth: 0, minHeight: 72, justifyContent: "center", gap: 5 },
+    heading: { flexDirection: "row", alignItems: "center", gap: 6 },
+    title: { flex: 1, fontSize: 14, lineHeight: 20, fontWeight: "600" },
+    date: { fontSize: 11, lineHeight: 16 },
+    description: { fontSize: 12, lineHeight: 18 },
+    empty: { padding: 16, fontSize: 12, lineHeight: 18 },
 });

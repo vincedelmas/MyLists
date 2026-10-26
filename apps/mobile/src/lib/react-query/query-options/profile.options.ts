@@ -44,10 +44,13 @@ export const calendarOptions = (range: Parameters<typeof api.calendar>[0], userI
         queryFn: ({ signal }) => api.calendar(range, signal, userId),
     });
 
+export type ProfileContinueData = Extract<Awaited<ReturnType<typeof api.libraryDetail>>, { showPreview: boolean }>;
+
 export const profileContinueOptions = (userId?: number) =>
     queryOptions({
         queryKey: ["profile", userId, "continue"],
-        queryFn: ({ signal }) => api.libraryDetail({ kind: "continue", page: 1, search: "" }, signal, userId),
+        // The request fixes the response to the Continue branch of this endpoint.
+        queryFn: ({ signal }) => api.libraryDetail({ kind: "continue", page: 1, search: "" }, signal, userId) as Promise<ProfileContinueData>,
     });
 
 export const personOptions = (userId: number) =>

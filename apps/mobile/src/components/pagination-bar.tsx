@@ -1,4 +1,4 @@
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {AppText, Button} from "./ui";
 import {colors} from "../theme";
 
@@ -14,15 +14,7 @@ interface PaginationBarProps {
 export function PaginationBar({ page, pages, onChange, disabled }: PaginationBarProps) {
     return (
         <View
-            style={{
-                padding: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                borderTopWidth: 1,
-                borderTopColor: colors.border
-            }}
+            style={styles.spreadRow}
         >
             <Button
                 secondary
@@ -32,10 +24,7 @@ export function PaginationBar({ page, pages, onChange, disabled }: PaginationBar
             />
             <AppText
                 accessibilityLiveRegion="polite"
-                style={{
-                    fontSize: 12,
-                    fontVariant: ["tabular-nums"]
-                }}
+                style={styles.caption}
             >{page} / {Math.max(1, pages)}</AppText>
             <Button
                 secondary
@@ -46,3 +35,20 @@ export function PaginationBar({ page, pages, onChange, disabled }: PaginationBar
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    spreadRow: {
+        padding: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        borderTopWidth: 1,
+        borderTopColor: colors.border
+    },
+    caption: {
+        fontSize: 12,
+        fontVariant: ["tabular-nums"]
+    },
+});

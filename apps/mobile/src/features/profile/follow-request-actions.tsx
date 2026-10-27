@@ -1,4 +1,4 @@
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import type {api} from "../../lib/api-client";
 import {Button} from "../../components/ui";
 
@@ -10,8 +10,8 @@ export function FollowRequestActions({ disabled, pendingAction, onAccept, onDecl
     onDecline: () => void;
 }) {
     return (
-        <View style={{ flexDirection: "row", gap: 12 }}>
-            <View style={{ flex: 1 }}>
+        <View style={styles.row}>
+            <View style={styles.fill}>
                 <Button
                     fullWidth
                     secondary
@@ -21,7 +21,7 @@ export function FollowRequestActions({ disabled, pendingAction, onAccept, onDecl
                     onPress={onDecline}
                 />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.fill}>
                 <Button
                     fullWidth
                     label="Accept"
@@ -33,3 +33,9 @@ export function FollowRequestActions({ disabled, pendingAction, onAccept, onDecl
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    row: { flexDirection: "row", gap: 12 },
+    fill: { flex: 1 },
+});

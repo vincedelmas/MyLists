@@ -39,7 +39,7 @@ export function ProfileFeed({ ratingSystem, userId }: { ratingSystem: RatingSyst
             ).map(({ title, query, empty }) => (
                 <View
                     key={title}
-                    style={{ gap: 12 }}
+                    style={styles.group}
                 >
                     <SectionHeading
                         title={title}
@@ -173,7 +173,7 @@ export const FeedRows = memo(function FeedRows({
                                 <AppText
                                     style={[
                                         styles.description,
-                                        { color: colors.accent }
+                                        styles.accentText
                                     ]}
                                 > → </AppText>
                             </>
@@ -181,7 +181,7 @@ export const FeedRows = memo(function FeedRows({
                         <AppText
                             style={[
                                 styles.description,
-                                { color: colors.text }
+                                styles.text
                             ]}
                         >
                             {payload.after}
@@ -240,4 +240,8 @@ const styles = StyleSheet.create({
     date: { fontSize: 11, lineHeight: 16 },
     description: { fontSize: 12, lineHeight: 18 },
     empty: { padding: 16, fontSize: 12, lineHeight: 18 },
+
+    group: { gap: 12 },
+    accentText: { color: colors.accent },
+    text: { color: colors.text },
 });

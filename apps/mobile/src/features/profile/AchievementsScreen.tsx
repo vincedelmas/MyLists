@@ -1,7 +1,7 @@
 import {useMemo, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {Animated, FlatList, Pressable, RefreshControl, View} from "react-native";
+import {StyleSheet, Animated, FlatList, Pressable, RefreshControl, View} from "react-native";
 import {Award, Check, ChevronRight} from "lucide-react-native";
 import {AchievementDifficulty} from "@/lib/utils/enums";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
@@ -54,7 +54,7 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                 maxToRenderPerBatch={5}
                 windowSize={5}
                 contentContainerStyle={[
-                    { paddingHorizontal: 16, gap: 12 },
+                    styles.content,
                     contentContainerStyle
                 ]}
                 keyExtractor={item => String(item.id)}
@@ -69,50 +69,39 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                     />
                 }
                 ListHeaderComponent={
-                    <View style={{ gap: 16, paddingBottom: 4 }}>
-                        <View style={{ gap: 8 }}>
+                    <View style={styles.header}>
+                        <View style={styles.summary}>
                             <AppText
-                                style={{
-                                    fontSize: 30,
-                                    fontWeight: "700",
-                                    fontVariant: ["tabular-nums"]
-                                }}
+                                style={styles.title}
                             >{earned} <AppText
                                 muted
-                                style={{ fontSize: 14 }}
+                                style={styles.earnedLabel}
                             >
                                 tiers
                                 earned
                             </AppText></AppText>
-                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+                            <View style={styles.tierSummary}>
                                 {difficulties.map(tier =>
                                     <View
                                         key={tier}
-                                        style={{
-                                            flexDirection: "row",
-                                            gap: 5,
-                                            alignItems: "center"
-                                        }}
+                                        style={styles.tierCount}
                                     >
                                         <Award
                                             size={16}
                                             color={achievementColors[tier]}
                                         />
                                         <AppText
-                                            style={{
-                                                fontSize: 12,
-                                                color: achievementColors[tier]
-                                            }}
+                                            style={[styles.tierDetail, { color: achievementColors[tier] }]}
                                         >{capitalize(tier)} {highest.filter(value => value === tier).length}</AppText>
                                     </View>)
                                 }
                             </View>
                         </View>
                         {!!recent.data?.length &&
-                            <View style={{ gap: 10 }}>
+                            <View style={styles.milestones}>
                                 <AppText
                                     heading
-                                    style={{ fontSize: 16 }}
+                                    style={styles.sectionTitle}
                                 >
                                     Latest milestones
                                 </AppText>
@@ -121,18 +110,12 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                     showsHorizontalScrollIndicator={false}
                                     data={recent.data}
                                     keyExtractor={item => `${item.id}:${item.difficulty}`}
-                                    contentContainerStyle={{ gap: 10 }}
+                                    contentContainerStyle={styles.milestones}
                                     renderItem={({ item }) =>
                                         <Pressable
                                             accessibilityRole="button"
                                             onPress={() => setSelectedId(item.id)}
-                                            style={{
-                                                width: 200,
-                                                padding: 14,
-                                                gap: 8,
-                                                borderRadius: 16,
-                                                backgroundColor: colors.surface
-                                            }}
+                                            style={styles.milestoneCard}
                                         >
                                             <Award
                                                 size={22}
@@ -140,18 +123,12 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                                             />
                                             <AppText
                                                 numberOfLines={2}
-                                                style={{
-                                                    fontSize: 13,
-                                                    fontWeight: "600"
-                                                }}
+                                                style={styles.milestoneName}
                                             >
                                                 {item.name}
                                             </AppText>
                                             <AppText
-                                                style={{
-                                                    fontSize: 11,
-                                                    color: achievementColors[item.difficulty]
-                                                }}
+                                                style={[styles.metadata, { color: achievementColors[item.difficulty] }]}
                                             >{capitalize(item.difficulty)} · {formatDate(item.completedAt)}</AppText>
                                         </Pressable>
                                     }
@@ -198,35 +175,28 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                             accessibilityRole="button"
                             accessibilityLabel={`${item.name}, ${completed.length} of ${item.tiers.length} tiers earned. View tiers.`}
                             onPress={() => setSelectedId(item.id)}
-                            style={{
-                                padding: 16,
-                                gap: 12,
-                                borderRadius: 18,
-                                borderWidth: 1,
-                                borderColor: colors.border,
-                                backgroundColor: colors.surface
-                            }}
+                            style={styles.achievementCard}
                         >
-                            <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                            <View style={styles.mediaRow}>
                                 <MediaIcon
                                     size={13}
                                     color={mediaColors[item.mediaType]}
                                 />
                                 <AppText
-                                    style={{ fontSize: 11, color: mediaColors[item.mediaType], flex: 1 }}
+                                    style={[styles.mediaLabel, { color: mediaColors[item.mediaType] }]}
                                 >
                                     {mediaLabels[item.mediaType]}
                                 </AppText>
                                 <AppText
                                     muted
-                                    style={{ fontSize: 11 }}
+                                    style={styles.metadata}
                                 >{completed.length}/{item.tiers.length} tiers</AppText>
                                 <ChevronRight size={15} color={colors.muted}/>
                             </View>
-                            <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+                            <View style={styles.achievementHeading}>
                                 <Award size={22} color={color}/>
                                 <AppText
-                                    style={{ fontSize: 16, fontWeight: "600", flex: 1 }}
+                                    style={styles.heading}
                                 >
                                     {item.name}
                                 </AppText>
@@ -234,25 +204,19 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                             <AppText
                                 muted
                                 numberOfLines={2}
-                                style={{
-                                    fontSize: 13,
-                                    lineHeight: 20
-                                }}
+                                style={styles.description}
                             >
                                 {item.description}
                             </AppText>
-                            <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
+                            <View style={styles.progressSummary}>
                                 <AppText
-                                    style={{
-                                        fontSize: 11,
-                                        color: achievementColors[current.difficulty]
-                                    }}
+                                    style={[styles.metadata, { color: achievementColors[current.difficulty] }]}
                                 >
                                     {next ? `Next · ${capitalize(next.difficulty)}` : "All tiers earned"}
                                 </AppText>
                                 <AppText
                                     muted
-                                    style={{ fontSize: 11 }}
+                                    style={styles.metadata}
                                 >{current.count}/{current.criteria.count}</AppText>
                             </View>
                             <ProgressBar
@@ -285,20 +249,17 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                     {selected.tiers.map(tier =>
                         <View
                             key={tier.id}
-                            style={{
-                                gap: 10,
-                                paddingVertical: 8
-                            }}
+                            style={styles.tierSection}
                         >
                             <View
-                                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+                                style={styles.tierHeading}
                             >
                                 <Award
                                     size={20}
                                     color={achievementColors[tier.difficulty]}
                                 />
                                 <AppText
-                                    style={{ flex: 1, fontWeight: "600", color: achievementColors[tier.difficulty] }}
+                                    style={[styles.tierName, { color: achievementColors[tier.difficulty] }]}
                                 >
                                     {capitalize(tier.difficulty)}
                                 </AppText>
@@ -315,11 +276,11 @@ export function AchievementsContent({ userId }: { userId?: number }) {
                             />
                             <AppText
                                 muted
-                                style={{ fontSize: 12 }}
+                                style={styles.tierDetail}
                             >{tier.count}/{tier.criteria.count}{tier.completedAt ? ` · ${formatDate(tier.completedAt)}` : ` · ${Math.round(tier.progress)}%`}</AppText>
                             <AppText
                                 muted
-                                style={{ fontSize: 11 }}
+                                style={styles.metadata}
                             >
                                 {tier.rarity ? `${formatPercent(tier.rarity)} rarity` : "Never reached"}
                             </AppText>
@@ -330,3 +291,60 @@ export function AchievementsContent({ userId }: { userId?: number }) {
         </>
     );
 }
+
+
+const styles = StyleSheet.create({
+    content: { paddingHorizontal: 16, gap: 12 },
+    header: { gap: 16, paddingBottom: 4 },
+    summary: { gap: 8 },
+    title: {
+        fontSize: 30,
+        fontWeight: "700",
+        fontVariant: ["tabular-nums"]
+    },
+    earnedLabel: { fontSize: 14 },
+    tierSummary: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+    tierCount: {
+        flexDirection: "row",
+        gap: 5,
+        alignItems: "center"
+    },
+    tierDetail: { fontSize: 12 },
+    milestones: { gap: 10 },
+    sectionTitle: { fontSize: 16 },
+    milestoneCard: {
+        width: 200,
+        padding: 14,
+        gap: 8,
+        borderRadius: 16,
+        backgroundColor: colors.surface
+    },
+    milestoneName: {
+        fontSize: 13,
+        fontWeight: "600"
+    },
+    metadata: { fontSize: 11 },
+    achievementCard: {
+        padding: 16,
+        gap: 12,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface
+    },
+    mediaRow: { flexDirection: "row", gap: 6, alignItems: "center" },
+    mediaLabel: { flex: 1, fontSize: 11 },
+    achievementHeading: { flexDirection: "row", gap: 10, alignItems: "center" },
+    heading: { fontSize: 16, fontWeight: "600", flex: 1 },
+    description: {
+        fontSize: 13,
+        lineHeight: 20
+    },
+    progressSummary: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
+    tierSection: {
+        gap: 10,
+        paddingVertical: 8
+    },
+    tierHeading: { flexDirection: "row", alignItems: "center", gap: 8 },
+    tierName: { flex: 1, fontWeight: "600" },
+});

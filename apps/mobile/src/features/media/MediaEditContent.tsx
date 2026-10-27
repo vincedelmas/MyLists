@@ -2,7 +2,7 @@ import {DateField} from "../../components/date-field";
 import {useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {Animated, RefreshControl, View} from "react-native";
+import {StyleSheet, Animated, RefreshControl, View} from "react-native";
 import {Row, Switch, Text as NativeText} from "@expo/ui";
 import {NativeHost} from "../../components/native-host";
 import {AppText, Button, Field, QueryPanel, Section} from "../../components/ui";
@@ -24,7 +24,7 @@ export function MediaEditContent({ params }: { params: MediaParams }) {
             {...scrollProps}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={[
-                { padding: 16, gap: 20 },
+                styles.content,
                 contentContainerStyle
             ]}
             refreshControl={
@@ -57,12 +57,12 @@ function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaite
     const changed = fields.filter(({ key }) => values[key] !== initialValues[key]);
 
     return (
-        <View style={{ gap: 20 }}>
+        <View style={styles.editorSections}>
             <AppText muted>
                 Changes affect the shared catalog for everyone.
             </AppText>
             <Section title="Catalog metadata">
-                <View style={{ padding: 16, gap: 18 }}>
+                <View style={styles.metadataFields}>
                     {fields.map(({ key }) =>
                         key === "lockStatus"
                             ? (
@@ -116,7 +116,7 @@ function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaite
             {(error || mutation.error) && (
                 <AppText
                     accessibilityRole="alert"
-                    style={{ color: colors.error }}
+                    style={styles.errorText}
                 >
                     {error || mutation.error?.message}
                 </AppText>
@@ -151,3 +151,11 @@ function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaite
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    content: { padding: 16, gap: 20 },
+    editorSections: { gap: 20 },
+    metadataFields: { padding: 16, gap: 18 },
+    errorText: { color: colors.error },
+});

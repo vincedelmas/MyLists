@@ -41,7 +41,7 @@ export const MediaCard = memo(function MediaCard({
             style={({ pressed }) => [
                 styles.card,
                 layout === "grid" ? styles.grid : styles.list,
-                pressed && { opacity: 0.6 },
+                pressed && styles.pressed,
             ]}
         >
             <Cover
@@ -49,7 +49,7 @@ export const MediaCard = memo(function MediaCard({
                 label={name}
                 style={layout === "grid" ? styles.cover : styles.listCover}
             />
-            <View style={[styles.caption, layout === "list" && { flex: 1 }]}>
+            <View style={[styles.caption, layout === "list" && styles.fill]}>
                 <AppText numberOfLines={2} style={styles.title}>
                     {name}
                 </AppText>
@@ -84,4 +84,7 @@ const styles = StyleSheet.create({
         aspectRatio: 2 / 3,
         borderRadius: 10
     },
+
+    pressed: { opacity: 0.6 },
+    fill: { flex: 1 },
 });

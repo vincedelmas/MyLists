@@ -1,5 +1,5 @@
 import {colors} from "../theme";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 
 
 export function ProgressBar({ value, color = colors.accent }: { value: number; color?: string }) {
@@ -8,21 +8,25 @@ export function ProgressBar({ value, color = colors.accent }: { value: number; c
             accessible={true}
             accessibilityRole="progressbar"
             accessibilityValue={{ min: 0, max: 100, now: Math.round(value) }}
-            style={{
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: colors.secondary,
-                overflow: "hidden"
-            }}
+            style={styles.track}
         >
             <View
-                style={{
-                    height: "100%",
-                    borderRadius: 2,
-                    width: `${value}%`,
-                    backgroundColor: color,
-                }}
+                style={[styles.fill, { width: `${value}%`, backgroundColor: color }]}
             />
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    track: {
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: colors.secondary,
+        overflow: "hidden"
+    },
+    fill: {
+        height: "100%",
+        borderRadius: 2
+    },
+});

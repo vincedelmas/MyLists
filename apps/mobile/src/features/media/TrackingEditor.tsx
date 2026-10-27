@@ -170,7 +170,7 @@ export function TrackingEditor({
 
     return (
         <View style={styles.content}>
-            <View style={{ gap: 10 }}>
+            <View style={styles.group}>
                 <DateField
                     label={loggedAt ? "Log for · backlogging" : "Log for · today"}
                     value={loggedAt || toDateInputValue(new Date())}
@@ -570,4 +570,6 @@ const styles = StyleSheet.create({
     },
     rowText: { flex: 1, gap: spacing.xs },
     pressed: { opacity: 0.65 },
+
+    group: { gap: 10 },
 });

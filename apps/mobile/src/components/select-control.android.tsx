@@ -1,3 +1,4 @@
+import {StyleSheet} from "react-native";
 import {useState} from "react";
 import {colors} from "../theme";
 import {Button, Text} from "@expo/ui";
@@ -34,13 +35,13 @@ export function SelectControl<T extends string>({ value, options, onChange, disa
                         }}
                     >
                         <DropdownMenuItem.Text>
-                            <Text textStyle={{ color: option.value === value ? colors.accent : colors.text }}>
+                            <Text textStyle={option.value === value ? styles.accentText : styles.optionText}>
                                 {option.label}
                             </Text>
                         </DropdownMenuItem.Text>
                         {option.value === value &&
                             <DropdownMenuItem.TrailingIcon>
-                                <Text textStyle={{ color: colors.accent }}>
+                                <Text textStyle={styles.accentText}>
                                     ✓
                                 </Text>
                             </DropdownMenuItem.TrailingIcon>
@@ -52,3 +53,9 @@ export function SelectControl<T extends string>({ value, options, onChange, disa
         </DropdownMenu>
     );
 }
+
+
+const styles = StyleSheet.create({
+    accentText: { color: colors.accent },
+    optionText: { color: colors.text },
+});

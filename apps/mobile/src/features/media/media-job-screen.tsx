@@ -2,7 +2,7 @@ import {SearchField} from "../../components/search-field";
 import {useMemo, useState} from "react";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import {FlatList, RefreshControl, View} from "react-native";
+import {StyleSheet, FlatList, RefreshControl, View} from "react-native";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {AppText, Page, Select, StateView} from "../../components/ui";
@@ -43,11 +43,11 @@ export function MediaJobScreen() {
                 numColumns={2}
                 initialNumToRender={8}
                 windowSize={7}
-                contentContainerStyle={{ padding: 10, paddingBottom: 32 }}
+                contentContainerStyle={styles.content}
                 keyExtractor={item => String(item.mediaId)}
                 keyboardShouldPersistTaps="handled"
                 ListHeaderComponent={
-                    <View style={{ padding: 6, gap: 16, paddingBottom: 16 }}>
+                    <View style={styles.group}>
                         <AppText muted>{query.data?.pages[0].total ?? "…"} titles</AppText>
                         <SearchField
                             clearable
@@ -128,3 +128,9 @@ export function MediaJobScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    content: { padding: 10, paddingBottom: 32 },
+    group: { padding: 6, gap: 16, paddingBottom: 16 },
+});

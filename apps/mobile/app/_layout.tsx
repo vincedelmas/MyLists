@@ -1,7 +1,7 @@
 import {Profiler} from "react";
 import {navigationTimingEnabled, recordNavigationTiming} from "../src/lib/diagnostics/navigation-timing";
 import {Stack} from "expo-router";
-import {colors} from "../src/theme";
+import {commonStyles, colors} from "../src/theme";
 import {StatusBar} from "expo-status-bar";
 import {authClient} from "../src/lib/auth-client";
 import {QueryProvider} from "../src/lib/QueryProvider";
@@ -44,7 +44,7 @@ export default function RootLayout() {
 
     return (
         <ThemeProvider value={navigationTheme}>
-            <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.background }}>
+            <SafeAreaProvider style={commonStyles.screen}>
                 <StatusBar style="light"/>
                 <SessionGate>
                     <QueryProvider key={session?.user.id ?? "anonymous"}>

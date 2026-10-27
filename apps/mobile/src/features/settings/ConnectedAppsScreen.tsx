@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {Plug, Unplug} from "lucide-react-native";
 import {setStringAsync} from "expo-clipboard";
 import {api} from "../../lib/api-client";
@@ -47,19 +47,13 @@ export function ConnectedAppsScreen() {
                         </AppText>
                         <AppText
                             muted
-                            style={{ fontSize: 12 }}
+                            style={styles.connectionHelp}
                         >
                             Add this connection address in your assistant, then sign in to MyLists and approve its access.
                         </AppText>
                         <AppText
                             selectable
-                            style={{
-                                fontSize: 12,
-                                lineHeight: 20,
-                                padding: 12,
-                                borderRadius: 10,
-                                backgroundColor: colors.background
-                            }}
+                            style={styles.connectionAddress}
                         >
                             {endpoint}
                         </AppText>
@@ -109,7 +103,7 @@ export function ConnectedAppsScreen() {
                                     <AppText
                                         muted
                                         selectable
-                                        style={{ fontSize: 11 }}
+                                        style={styles.clientId}
                                     >
                                         {connection.clientId}
                                     </AppText>
@@ -144,3 +138,16 @@ export function ConnectedAppsScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    connectionHelp: { fontSize: 12 },
+    connectionAddress: {
+        fontSize: 12,
+        lineHeight: 20,
+        padding: 12,
+        borderRadius: 10,
+        backgroundColor: colors.background
+    },
+    clientId: { fontSize: 11 },
+});

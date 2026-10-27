@@ -1,7 +1,7 @@
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
 import {Bell} from "lucide-react-native";
-import {Pressable, View} from "react-native";
+import {StyleSheet, Pressable, View} from "react-native";
 import {AppText} from "../../components/ui";
 import {notificationCountsOptions} from "../../lib/react-query/query-options/notifications.options";
 import {useTabPush} from "../../hooks/use-tab-push";
@@ -19,35 +19,15 @@ export function NotificationButton() {
             accessibilityRole="button"
             accessibilityLabel={`Notifications, ${count} unread`}
             onPress={() => push("/profile/notifications")}
-            style={({ pressed }) => ({
-                minWidth: 48,
-                minHeight: 48,
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: pressed ? 0.6 : 1
-            })}
+            style={({ pressed }) => ([styles.action, { opacity: pressed ? 0.6 : 1 }])}
         >
             <Bell size={21} color={colors.muted}/>
             {count > 0 && (
                 <View
-                    style={{
-                        position: "absolute",
-                        top: 4,
-                        right: 0,
-                        minWidth: 17,
-                        paddingHorizontal: 3,
-                        borderRadius: 9,
-                        backgroundColor: colors.accent,
-                        alignItems: "center",
-                    }}
+                    style={styles.centered}
                 >
                     <AppText
-                        style={{
-                            fontSize: 9,
-                            lineHeight: 16,
-                            color: colors.background,
-                            fontWeight: "700"
-                        }}
+                        style={styles.caption}
                     >
                         {count > 99 ? "99+" : count}
                     </AppText>
@@ -57,3 +37,29 @@ export function NotificationButton() {
         </Pressable>
     );
 }
+
+
+const styles = StyleSheet.create({
+    action: {
+        minWidth: 48,
+        minHeight: 48,
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    centered: {
+        position: "absolute",
+        top: 4,
+        right: 0,
+        minWidth: 17,
+        paddingHorizontal: 3,
+        borderRadius: 9,
+        backgroundColor: colors.accent,
+        alignItems: "center",
+    },
+    caption: {
+        fontSize: 9,
+        lineHeight: 16,
+        color: colors.background,
+        fontWeight: "700"
+    },
+});

@@ -7,7 +7,7 @@ import {formatMinutes, zeroPad} from "@/lib/utils/formatting/number";
 import {useIsFocused} from "expo-router";
 import {useInfiniteQuery} from "@tanstack/react-query";
 import {Animated, Pressable, RefreshControl, StyleSheet, View} from "react-native";
-import {AppText, StateView} from "../../components/ui";
+import {uiStyles, AppText, StateView} from "../../components/ui";
 import {mediaCommunityOptions} from "../../lib/react-query/query-options/media.options";
 import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
 import {useTabPush} from "../../hooks/use-tab-push";
@@ -76,7 +76,7 @@ function ActivityPerson({ item }: { item: Person }) {
                             event.stopPropagation();
                             setExpanded(value => !value);
                         }}
-                        style={{ minHeight: 48, justifyContent: "center", gap: 4 }}
+                        style={styles.action}
                     >
                         <AppText
                             numberOfLines={expanded ? undefined : 3}
@@ -131,7 +131,7 @@ export function MediaCommunityContent({
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             ListHeaderComponent={
-                <View style={{ padding: 16, gap: 16 }}>
+                <View style={uiStyles.padded}>
                     {mode === "community" &&
                         <SearchField
                             hideLabel
@@ -179,7 +179,7 @@ export function MediaCommunityContent({
                                 {first.total} tracking · {first.stats.completedCount} completed ·{" "}
                                 {first.stats.likedCount} favorites
                             </AppText>
-                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                            <View style={styles.row}>
                                 {[
                                     { label: "Re-experiences", value: String(first.stats.totalRedo) },
                                     ...(params.mediaType === "games"
@@ -198,22 +198,16 @@ export function MediaCommunityContent({
                                 ].map(stat =>
                                     <View
                                         key={stat.label}
-                                        style={{
-                                            padding: 12,
-                                            minWidth: 120,
-                                            borderRadius: 12,
-                                            gap: 6,
-                                            backgroundColor: colors.surface
-                                        }}
+                                        style={styles.group}
                                     >
                                         <AppText
                                             muted
-                                            style={{ fontSize: 11 }}
+                                            style={styles.caption}
                                         >
                                             {stat.label}
                                         </AppText>
                                         <AppText
-                                            style={{ fontSize: 17, fontWeight: "600" }}
+                                            style={styles.heading}
                                         >
                                             {stat.value}
                                         </AppText>
@@ -281,11 +275,22 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
-    avatar: { width: 42, height: 42, borderRadius: 21 },
     personInfo: { flex: 1, gap: 4 },
     personName: { fontWeight: "600" },
     comment: { fontSize: 12, lineHeight: 18 },
     sectionHeader: { gap: 16, padding: 16 },
     sectionTitle: { fontSize: 18 },
     smallText: { fontSize: 12 },
+
+    action: { minHeight: 48, justifyContent: "center", gap: 4 },
+    row: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+    group: {
+        padding: 12,
+        minWidth: 120,
+        borderRadius: 12,
+        gap: 6,
+        backgroundColor: colors.surface
+    },
+    caption: { fontSize: 11 },
+    heading: { fontSize: 17, fontWeight: "600" },
 });

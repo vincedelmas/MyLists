@@ -1,7 +1,7 @@
 import {SearchField} from "../../components/search-field";
 import {useState} from "react";
 import {Check} from "lucide-react-native";
-import {FlatList, Pressable, View} from "react-native";
+import {StyleSheet, FlatList, Pressable, View} from "react-native";
 import {useQuery} from "@tanstack/react-query";
 import {AppText, Button, StateView} from "../../components/ui";
 import {colors} from "../../theme";
@@ -42,11 +42,11 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
         : group.options.filter((name) => name.toLocaleLowerCase().includes(term.toLocaleLowerCase()));
 
     return (
-        <View style={{ flex: 1, padding: 16, gap: 12 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View style={styles.header}>
+            <View style={styles.headingRow}>
                 <AppText
                     heading
-                    style={{ fontSize: 20 }}
+                    style={styles.title}
                 >
                     {group.label}
                 </AppText>
@@ -64,10 +64,10 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
                 label={`Find ${group.label.toLowerCase()}`}
                 placeholder={group.searchable ? "Type at least two characters…" : "Search options…"}
             />
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View style={styles.headingRow}>
                 <AppText
                     muted
-                    style={{ fontSize: 12 }}
+                    style={styles.selectedCount}
                 >
                     {selected.length} selected
                 </AppText>
@@ -84,16 +84,16 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
                     horizontal
                     data={selected}
                     keyExtractor={(value) => value}
-                    style={{ flexGrow: 0, maxHeight: 48 }}
-                    contentContainerStyle={{ gap: 6, alignItems: "center" }}
+                    style={styles.selectedList}
+                    contentContainerStyle={styles.selectedContent}
                     renderItem={({ item: value }) => (
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel={`Remove ${value}`}
-                            style={{ padding: 8, borderRadius: 8, backgroundColor: colors.secondary }}
+                            style={styles.selectedChip}
                             onPress={() => onChange(selected.filter((name) => name !== value))}
                         >
-                            <AppText style={{ fontSize: 12 }}>
+                            <AppText style={styles.selectedCount}>
                                 {value} ×
                             </AppText>
                         </Pressable>
@@ -119,32 +119,16 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
                                     : [...selected, item],
                             )
                         }
-                        style={{
-                            gap: 12,
-                            paddingVertical: 14,
-                            alignItems: "center",
-                            flexDirection: "row",
-                            borderBottomWidth: 1,
-                            borderBottomColor: colors.border,
-                        }}
+                        style={styles.optionRow}
                     >
                         <View
-                            style={{
-                                width: 22,
-                                height: 22,
-                                borderWidth: 1,
-                                borderRadius: 6,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderColor: selected.includes(item) ? colors.accent : colors.muted,
-                                backgroundColor: selected.includes(item) ? colors.primary : "transparent",
-                            }}
+                            style={[styles.checkbox, selected.includes(item) && styles.selectedCheckbox]}
                         >
                             {selected.includes(item) &&
                                 <Check size={16} color={colors.text}/>
                             }
                         </View>
-                        <AppText style={{ flex: 1 }}>
+                        <AppText style={styles.optionLabel}>
                             {item}
                         </AppText>
                     </Pressable>
@@ -168,3 +152,34 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    header: { flex: 1, padding: 16, gap: 12 },
+    headingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    title: { fontSize: 20 },
+    selectedCount: { fontSize: 12 },
+    selectedList: { flexGrow: 0, maxHeight: 48 },
+    selectedContent: { gap: 6, alignItems: "center" },
+    selectedChip: { padding: 8, borderRadius: 8, backgroundColor: colors.secondary },
+    optionRow: {
+        gap: 12,
+        paddingVertical: 14,
+        alignItems: "center",
+        flexDirection: "row",
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    selectedCheckbox: { borderColor: colors.accent, backgroundColor: colors.primary },
+    checkbox: {
+        borderColor: colors.muted,
+        backgroundColor: "transparent",
+        width: 22,
+        height: 22,
+        borderWidth: 1,
+        borderRadius: 6,
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    optionLabel: { flex: 1 },
+});

@@ -158,7 +158,7 @@ export function SearchScreen() {
                     autoCapitalize="none"
                     returnKeyType="search"
                     onSubmitEditing={() => Keyboard.dismiss()}
-                    textStyle={{ fontSize: 16 }}
+                    textStyle={styles.searchText}
                 />
             </View>
             {(provider === "tmdb" || provider === "books" || provider === "igdb") &&
@@ -169,20 +169,14 @@ export function SearchScreen() {
                         Keyboard.dismiss();
                         setFiltersOpen(true);
                     }}
-                    style={{
-                        minHeight: 48,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 8,
-                        paddingHorizontal: 16
-                    }}
+                    style={styles.advancedSearchButton}
                 >
                     <SlidersHorizontal
                         size={18}
                         color={advancedFilters ? colors.accent : colors.muted}
                     />
                     <AppText
-                        style={{ fontSize: 12, color: advancedFilters ? colors.accent : colors.muted }}
+                        style={[styles.advancedSearchLabel, advancedFilters ? styles.appliedFilterLabel : styles.emptyFilterLabel]}
                     >Advanced search{advancedFilters ? " · Filters applied" : ""}</AppText>
                 </Pressable>
             }
@@ -467,4 +461,16 @@ const styles = StyleSheet.create({
     openError: { paddingVertical: 12 },
     error: { fontSize: 12, lineHeight: 18, color: colors.error },
     pressed: { opacity: 0.6 },
+
+    searchText: { fontSize: 16 },
+    advancedSearchButton: {
+        minHeight: 48,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        paddingHorizontal: 16
+    },
+    appliedFilterLabel: { color: colors.accent },
+    emptyFilterLabel: { color: colors.muted },
+    advancedSearchLabel: { fontSize: 12 },
 });

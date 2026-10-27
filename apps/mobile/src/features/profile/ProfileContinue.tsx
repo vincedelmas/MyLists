@@ -21,7 +21,7 @@ export function ProfileContinue({ userId }: { userId?: number }) {
     if (query.data && !query.data.showPreview) return null;
 
     return (
-        <View style={{ gap: 12 }}>
+        <View style={styles.group}>
             <SectionHeading
                 title={userId ? "In progress" : "Continue"}
                 action={!userId
@@ -47,7 +47,7 @@ export function ProfileContinue({ userId }: { userId?: number }) {
                         : (
                             <AppText
                                 muted
-                                style={{ fontSize: 12 }}
+                                style={styles.caption}
                             >
                                 Titles in progress will appear here.
                             </AppText>
@@ -80,7 +80,7 @@ const ContinueCards = memo(function ContinueCards({
                 initialNumToRender={2}
                 maxToRenderPerBatch={3}
                 windowSize={5}
-                contentContainerStyle={{ gap: 12 }}
+                contentContainerStyle={styles.group}
                 keyExtractor={(item) => `${item.mediaType}:${item.mediaId}`}
                 renderItem={({ item }) => {
                     const Icon = mediaIcons[item.mediaType];
@@ -197,4 +197,7 @@ const styles = StyleSheet.create({
         flexShrink: 1
     },
     pressed: { opacity: 0.6 },
+
+    group: { gap: 12 },
+    caption: { fontSize: 12 },
 });

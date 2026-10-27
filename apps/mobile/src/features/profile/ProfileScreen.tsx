@@ -1,6 +1,6 @@
 import {router, useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {Pressable, View} from "react-native";
+import {StyleSheet, Pressable, View} from "react-native";
 import {Settings} from "lucide-react-native";
 import {colors} from "../../theme";
 import {Page, QueryPanel} from "../../components/ui";
@@ -18,16 +18,10 @@ export function ProfileScreen() {
             title="MyLists"
             brand
             action={
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={styles.row}>
                     <NotificationButton/>
                     <Pressable
-                        style={({ pressed }) => ({
-                            minWidth: 48,
-                            minHeight: 48,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            opacity: pressed ? 0.6 : 1
-                        })}
+                        style={({ pressed }) => ([styles.action, { opacity: pressed ? 0.6 : 1 }])}
                         accessibilityRole="button"
                         accessibilityLabel="Settings"
                         onPress={() => router.push("/(tabs)/(profile)/settings")}
@@ -45,3 +39,14 @@ export function ProfileScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    row: { flexDirection: "row", alignItems: "center", gap: 12 },
+    action: {
+        minWidth: 48,
+        minHeight: 48,
+        alignItems: "center",
+        justifyContent: "center"
+    },
+});

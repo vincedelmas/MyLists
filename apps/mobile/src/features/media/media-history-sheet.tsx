@@ -1,7 +1,7 @@
 import {useMemo} from "react";
 import {useIsFocused} from "expo-router";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import {FlatList, Pressable, View} from "react-native";
+import {StyleSheet, FlatList, Pressable, View} from "react-native";
 import {Trash2} from "lucide-react-native";
 import type {MediaParams, MobileMedia} from "../../lib/api-client";
 import {mediaHistoryOptions} from "../../lib/react-query/query-options/media.options";
@@ -33,7 +33,7 @@ export function MediaHistorySheet({ params, data, dismiss }: { params: MediaPara
                 {() =>
                     <FlatList
                         data={items}
-                        style={{ maxHeight: 390, flexShrink: 1 }}
+                        style={styles.container}
                         initialNumToRender={8}
                         onEndReachedThreshold={0.5}
                         onEndReached={() => {
@@ -55,27 +55,17 @@ export function MediaHistorySheet({ params, data, dismiss }: { params: MediaPara
                         }
                         renderItem={({ item }) =>
                             <View
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    gap: 12,
-                                    borderBottomWidth: 1,
-                                    borderColor: colors.border,
-                                    paddingVertical: 16
-                                }}
+                                style={styles.row}
                             >
-                                <View style={{ flex: 1, gap: 8 }}>
+                                <View style={styles.group}>
                                     <AppText
-                                        style={{
-                                            fontSize: 14,
-                                            lineHeight: 21
-                                        }}
+                                        style={styles.text}
                                     >
                                         {formatActivity(item, data.ratingSystem)}
                                     </AppText>
                                     <AppText
                                         muted
-                                        style={{ fontSize: 11 }}
+                                        style={styles.caption}
                                     >
                                         {formatDate(item.timestamp)}
                                     </AppText>
@@ -84,12 +74,7 @@ export function MediaHistorySheet({ params, data, dismiss }: { params: MediaPara
                                     accessibilityRole="button"
                                     accessibilityLabel="Delete this update"
                                     onPress={() => deleteUpdate(item.id)}
-                                    style={{
-                                        width: 48,
-                                        height: 48,
-                                        justifyContent: "center",
-                                        alignItems: "center"
-                                    }}
+                                    style={styles.action}
                                 >
                                     <Trash2 size={18} color={colors.error}/>
                                 </Pressable>
@@ -101,3 +86,28 @@ export function MediaHistorySheet({ params, data, dismiss }: { params: MediaPara
         </ActionSheet>
     );
 }
+
+
+const styles = StyleSheet.create({
+    container: { maxHeight: 390, flexShrink: 1 },
+    row: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        borderBottomWidth: 1,
+        borderColor: colors.border,
+        paddingVertical: 16
+    },
+    group: { flex: 1, gap: 8 },
+    text: {
+        fontSize: 14,
+        lineHeight: 21
+    },
+    caption: { fontSize: 11 },
+    action: {
+        width: 48,
+        height: 48,
+        justifyContent: "center",
+        alignItems: "center"
+    },
+});

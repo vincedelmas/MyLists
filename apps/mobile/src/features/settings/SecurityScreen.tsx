@@ -5,7 +5,7 @@ import {authClient} from "../../lib/auth-client";
 import {accountSecurityOptions} from "../../lib/react-query/query-options/settings.options";
 import {SettingsFeedback} from "./settings-feedback";
 import {useState} from "react";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {colors} from "../../theme";
 import {usePasswordMutation} from "../../lib/react-query/query-mutations/settings.mutations";
 import {AppText, Button, Content, Field, Page, QueryPanel, Section, uiStyles} from "../../components/ui";
@@ -86,7 +86,7 @@ function PasswordForm() {
             {(validation || mutation.error) &&
                 <AppText
                     accessibilityRole="alert"
-                    style={{ color: colors.error }}
+                    style={styles.errorText}
                 >
                     {validation || mutation.error?.message}
                 </AppText>
@@ -94,7 +94,7 @@ function PasswordForm() {
             {mutation.isSuccess &&
                 <AppText
                     accessibilityRole="alert"
-                    style={{ color: colors.accent }}
+                    style={styles.accentText}
                 >
                     Password changed.
                 </AppText>
@@ -131,11 +131,11 @@ function EmailForm() {
             <View style={uiStyles.padded}>
                 <AppText
                     muted
-                    style={{ fontSize: 12 }}
+                    style={styles.caption}
                 >Current email: {session.data?.user.email}</AppText>
                 <AppText
                     muted
-                    style={{ fontSize: 12 }}
+                    style={styles.caption}
                 >
                     Approve the change from your current email address, then verify the new address.
                 </AppText>
@@ -200,3 +200,10 @@ export function SecurityScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    errorText: { color: colors.error },
+    accentText: { color: colors.accent },
+    caption: { fontSize: 12 },
+});

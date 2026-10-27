@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {Trash2} from "lucide-react-native";
 import {api} from "../../lib/api-client";
 import {authClient} from "../../lib/auth-client";
@@ -55,7 +55,7 @@ export function DangerScreen() {
                                     description="Permanent account actions"
                                 >
                                     <View style={uiStyles.padded}>
-                                        <AppText style={{ color: colors.error }}>
+                                        <AppText style={styles.errorText}>
                                             Permanently remove your account and all associated data. This action is not reversible.
                                         </AppText>
                                         <Button
@@ -126,3 +126,8 @@ export function DangerScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    errorText: { color: colors.error },
+});

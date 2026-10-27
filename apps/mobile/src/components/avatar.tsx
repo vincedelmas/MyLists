@@ -15,7 +15,7 @@ export const Avatar = memo(function Avatar({ image, name, size = 48 }: { image: 
             {!image &&
                 <View style={styles.fallback}>
                     <AppText
-                        style={{ fontSize: size * 0.36, fontWeight: "600", color: colors.muted }}
+                        style={[{ fontSize: size * 0.36 }, styles.mutedText]}
                     >
                         {Array.from(name)[0].toLocaleUpperCase()}
                     </AppText>
@@ -26,4 +26,7 @@ export const Avatar = memo(function Avatar({ image, name, size = 48 }: { image: 
 });
 
 
-const styles = StyleSheet.create({ fallback: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" } });
+const styles = StyleSheet.create({
+    fallback: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" },
+    mutedText: { fontWeight: "600", color: colors.muted },
+});

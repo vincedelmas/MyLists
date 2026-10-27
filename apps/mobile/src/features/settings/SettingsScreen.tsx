@@ -110,14 +110,14 @@ export function SettingsScreen() {
                                     <Column
                                         key={group.title}
                                         spacing={12}
-                                        style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}
+                                        style={styles.settingsGroup}
                                     >
-                                        <Text textStyle={{ fontSize: 13, fontWeight: "600", color: colors.muted }}>
+                                        <Text textStyle={styles.groupTitle}>
                                             {group.title}
                                         </Text>
                                         <Column
                                             spacing={2}
-                                            style={{ backgroundColor: colors.surface, borderRadius: 16 }}
+                                            style={styles.groupSurface}
                                         >
                                             {group.items.map(({ label, detail, path, Icon }) =>
                                                 <ListItem
@@ -126,7 +126,7 @@ export function SettingsScreen() {
                                                     supportingText={detail}
                                                     colors={{ containerColor: colors.surface }}
                                                     leading={
-                                                        <RNHostView style={{ width: 36, height: 36 }}>
+                                                        <RNHostView style={styles.iconHost}>
                                                             <View
                                                                 style={[styles.icon, path === "/settings/danger" && styles.dangerIcon]}
                                                             >
@@ -139,7 +139,7 @@ export function SettingsScreen() {
                                                     }
                                                     trailing={
                                                         <Text
-                                                            textStyle={{ fontSize: 21, color: colors.muted }}
+                                                            textStyle={styles.disclosure}
                                                         >
                                                             ›
                                                         </Text>
@@ -153,7 +153,7 @@ export function SettingsScreen() {
                                 }
                                 <Column
                                     spacing={16}
-                                    style={{ padding: 16 }}
+                                    style={styles.signOutSection}
                                 >
                                     <Button
                                         label={signOut.isPending ? "Signing out…" : "Sign out"}
@@ -208,4 +208,11 @@ const styles = StyleSheet.create({
     dangerIcon: { backgroundColor: `${colors.error}12` },
     error: { padding: 16, color: colors.error },
     pressed: { opacity: 0.6 },
+
+    settingsGroup: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+    groupTitle: { fontSize: 13, fontWeight: "600", color: colors.muted },
+    groupSurface: { backgroundColor: colors.surface, borderRadius: 16 },
+    iconHost: { width: 36, height: 36 },
+    disclosure: { fontSize: 21, color: colors.muted },
+    signOutSection: { padding: 16 },
 });

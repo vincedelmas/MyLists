@@ -1,13 +1,13 @@
 import {useState} from "react";
 import {router, useIsFocused, useLocalSearchParams} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {toOptionalNumber} from "@/lib/utils/media/advanced-search";
 import {libraryEditorOptions} from "../../lib/react-query/query-options/library.options";
 import {useLibraryAction} from "../../lib/react-query/query-mutations/library.mutations";
 import {dynamicListSpecSchema} from "@/lib/schemas/dynamic-lists.schema";
-import {AppText, Button, Content, Field, Page, QueryPanel, Section, Select} from "../../components/ui";
+import {uiStyles, AppText, Button, Content, Field, Page, QueryPanel, Section, Select} from "../../components/ui";
 import {ChoiceChips} from "../../components/choice-chips";
 import {SettingSwitch} from "../../components/setting-switch";
 import {api} from "../../lib/api-client";
@@ -45,7 +45,7 @@ function EditorForm({ data, id }: { data: EditorData; id: number }) {
     return (
         <Content>
             <Section title={dynamic ? "Dynamic list" : "Collection"}>
-                <View style={{ padding: 16, gap: 16 }}>
+                <View style={uiStyles.padded}>
                     <Field
                         label="Title"
                         value={title}
@@ -87,7 +87,7 @@ function EditorForm({ data, id }: { data: EditorData; id: number }) {
             {spec &&
                 <>
                     <Section title="Media types">
-                        <View style={{ padding: 16, gap: 12 }}>
+                        <View style={styles.group}>
                             <SettingSwitch
                                 label="All media types"
                                 value={spec.mediaTypes === "all"}
@@ -112,7 +112,7 @@ function EditorForm({ data, id }: { data: EditorData; id: number }) {
                         </View>
                     </Section>
                     <Section title="Display & sorting">
-                        <View style={{ padding: 16, gap: 16 }}>
+                        <View style={uiStyles.padded}>
                             <ChoiceChips
                                 label="List display"
                                 value={spec.display}
@@ -170,7 +170,7 @@ function EditorForm({ data, id }: { data: EditorData; id: number }) {
                         </View>
                     </Section>
                     <Section title="Filter rules">
-                        <View style={{ padding: 16, gap: 16 }}>
+                        <View style={uiStyles.padded}>
                             <Field
                                 label="Title contains"
                                 value={search}
@@ -248,7 +248,7 @@ function EditorForm({ data, id }: { data: EditorData; id: number }) {
             {(error || mutation.error) &&
                 <AppText
                     accessibilityRole="alert"
-                    style={{ color: colors.error }}
+                    style={styles.errorText}
                 >
                     {error || mutation.error?.message}
                 </AppText>
@@ -316,3 +316,9 @@ export function LibraryEditorScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    group: { padding: 16, gap: 12 },
+    errorText: { color: colors.error },
+});

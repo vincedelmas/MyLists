@@ -1,10 +1,10 @@
 import {useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {Animated, RefreshControl, View} from "react-native";
+import {StyleSheet, Animated, RefreshControl, View} from "react-native";
 import {History, Image, Tags, Trash2} from "lucide-react-native";
 import {Switch} from "@expo/ui";
-import {AppText, Button, MenuRow, QueryPanel, Section} from "../../components/ui";
+import {uiStyles, AppText, Button, MenuRow, QueryPanel, Section} from "../../components/ui";
 import {NativeHost} from "../../components/native-host";
 import {ConfirmationSheet} from "../../components/confirmation-sheet";
 import {useConfirmation} from "../../hooks/use-confirmation";
@@ -54,7 +54,7 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
                 }
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={[
-                    { padding: 16, paddingBottom: 32 },
+                    styles.content,
                     contentContainerStyle
                 ]}
                 initialNumToRender={8}
@@ -70,11 +70,11 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
                     />
                 }
                 ListHeaderComponent={
-                    <View style={{ gap: 24, paddingBottom: 12 }}>
+                    <View style={styles.trackingSections}>
                         {error &&
                             <AppText
                                 accessibilityRole="alert"
-                                style={{ color: colors.error }}
+                                style={styles.errorText}
                             >
                                 {error}
                             </AppText>
@@ -82,7 +82,7 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
                         {saved &&
                             <AppText
                                 accessibilityRole="alert"
-                                style={{ color: colors.accent }}
+                                style={styles.successText}
                             >
                                 Changes saved.
                             </AppText>
@@ -122,7 +122,7 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
                                         onPress={() => setSheet("cover")}
                                     />
                                     {getMediaDefinition(params.mediaType).releaseNotifications &&
-                                        <View style={{ padding: 16, gap: 8 }}>
+                                        <View style={styles.notificationPreference}>
                                             <NativeHost>
                                                 <Switch
                                                     label="Release notifications"
@@ -136,7 +136,7 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
                                             </NativeHost>
                                             <AppText
                                                 muted
-                                                style={{ fontSize: 12, lineHeight: 18 }}
+                                                style={styles.notificationHelp}
                                             >
                                                 Notify me about upcoming releases. Your media type’s setting
                                                 must also be enabled.
@@ -144,7 +144,7 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
                                             {preferences.error &&
                                                 <AppText
                                                     accessibilityRole="alert"
-                                                    style={{ color: colors.error }}
+                                                    style={styles.errorText}
                                                 >
                                                     {preferences.error.message}
                                                 </AppText>
@@ -155,7 +155,7 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
                             </>
                             : data.active
                                 ? <Section title="Start tracking">
-                                    <View style={{ padding: 16, gap: 16 }}>
+                                    <View style={uiStyles.padded}>
                                         <AppText muted>
                                             Keep your progress, rating and comments
                                             here.
@@ -174,16 +174,11 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
                                 </AppText>
                         }
                         <View
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                gap: 8
-                            }}
+                            style={styles.collectionsHeading}
                         >
                             <AppText
                                 heading
-                                style={{ fontSize: 18 }}
+                                style={styles.sectionTitle}
                             >
                                 Your
                                 collections
@@ -205,11 +200,11 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
                     </View>
                 }
                 ListFooterComponent={data.tracking
-                    ? <View style={{ gap: 16, paddingTop: 24 }}>
+                    ? <View style={styles.trackingActions}>
                         {data.tracking.addedAt &&
                             <AppText
                                 muted
-                                style={{ fontSize: 12 }}
+                                style={styles.addedAt}
                             >Added {formatDate(data.tracking.addedAt)}</AppText>
                         }
                         <Button
@@ -262,3 +257,22 @@ export function MediaTrackingContent({ params, data, pending, saved, error, corr
         </>
     );
 }
+
+
+const styles = StyleSheet.create({
+    content: { padding: 16, paddingBottom: 32 },
+    trackingSections: { gap: 24, paddingBottom: 12 },
+    errorText: { color: colors.error },
+    successText: { color: colors.accent },
+    notificationPreference: { padding: 16, gap: 8 },
+    notificationHelp: { fontSize: 12, lineHeight: 18 },
+    collectionsHeading: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 8
+    },
+    sectionTitle: { fontSize: 18 },
+    trackingActions: { gap: 16, paddingTop: 24 },
+    addedAt: { fontSize: 12 },
+});

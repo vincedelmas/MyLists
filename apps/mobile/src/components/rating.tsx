@@ -1,6 +1,6 @@
 import {AppText} from "./ui";
 import {colors} from "../theme";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {Star} from "lucide-react-native";
 import {FeelingIcon} from "./feeling-icon";
 import {ratingLabel} from "../lib/ratings";
@@ -21,7 +21,7 @@ export function Rating({ value, system, size = 16, compact = false }: RatingProp
         <View
             accessible={true}
             accessibilityLabel={`Rating: ${ratingLabel(value, system)}`}
-            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            style={styles.row}
         >
             {(!compact || system === "score") &&
                 <Star size={size} color={colors.rating}/>
@@ -34,7 +34,7 @@ export function Rating({ value, system, size = 16, compact = false }: RatingProp
                     />
                 )
                 : (
-                    <AppText style={{ fontSize: compact ? 12 : size - 2 }}>
+                    <AppText style={compact ? styles.compactValue : { fontSize: size - 2 }}>
                         {compact ? ratingLabel(value, system) : value.toFixed(1)}
                     </AppText>
                 )
@@ -42,3 +42,9 @@ export function Rating({ value, system, size = 16, compact = false }: RatingProp
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    compactValue: { fontSize: 12 },
+    row: { flexDirection: "row", alignItems: "center", gap: 5 },
+});

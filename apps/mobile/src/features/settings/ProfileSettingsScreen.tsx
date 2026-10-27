@@ -1,7 +1,7 @@
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {View} from "react-native";
-import {AppText, Content, Page, QueryPanel, Section} from "../../components/ui";
+import {StyleSheet, View} from "react-native";
+import {uiStyles, AppText, Content, Page, QueryPanel, Section} from "../../components/ui";
 import {profileSettingsOptions} from "../../lib/react-query/query-options/settings.options";
 import {useSettingsMutation} from "../../lib/react-query/query-mutations/settings.mutations";
 import {SettingsFeedback} from "./settings-feedback";
@@ -20,7 +20,7 @@ export function ProfileSettingsScreen() {
                     <Content>
                         <Section title="Continue preview">
                             <View
-                                style={{ padding: 16, gap: 16 }}
+                                style={uiStyles.padded}
                             >
                                 <SettingSwitch
                                     label="Show Continue on my profile"
@@ -30,10 +30,7 @@ export function ProfileSettingsScreen() {
                                 />
                                 <AppText
                                     muted
-                                    style={{
-                                        fontSize: 12,
-                                        lineHeight: 18
-                                    }}
+                                    style={styles.caption}
                                 >
                                     Show current media in your overview, for you and your visitors. Continue stays available from Lists.
                                 </AppText>
@@ -49,3 +46,11 @@ export function ProfileSettingsScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    caption: {
+        fontSize: 12,
+        lineHeight: 18
+    },
+});

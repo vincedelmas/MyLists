@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {colors} from "../../theme";
-import {Pressable} from "react-native";
+import {StyleSheet, Pressable} from "react-native";
 import {BottomSheet, Button, Column, Text} from "@expo/ui";
 import {NativeHost} from "../../components/native-host";
 import {Globe, Lock, Shield} from "lucide-react-native";
@@ -40,7 +40,7 @@ export function PrivacyBadge({ value }: { value: MobileProfile["user"]["privacy"
                 accessibilityRole="button"
                 onPress={() => setOpen(true)}
                 accessibilityLabel={`${title}. Explain privacy`}
-                style={({ pressed }) => ({ padding: 10, opacity: pressed ? 0.5 : 1 })}
+                style={({ pressed }) => ([styles.action, { opacity: pressed ? 0.5 : 1 }])}
             >
                 <Icon size={21} color={color}/>
             </Pressable>
@@ -51,12 +51,12 @@ export function PrivacyBadge({ value }: { value: MobileProfile["user"]["privacy"
                 >
                     <Column
                         spacing={18}
-                        style={{ padding: 16 }}
+                        style={styles.inset}
                     >
-                        <Text textStyle={{ fontSize: 20, fontWeight: "600", color }}>
+                        <Text textStyle={{ ...styles.heading, color }}>
                             {title}
                         </Text>
-                        <Text textStyle={{ color: colors.muted }}>
+                        <Text textStyle={styles.mutedText}>
                             {explanation}
                         </Text>
                         <Button
@@ -69,3 +69,11 @@ export function PrivacyBadge({ value }: { value: MobileProfile["user"]["privacy"
         </>
     );
 }
+
+
+const styles = StyleSheet.create({
+    action: { padding: 10 },
+    inset: { padding: 16 },
+    heading: { fontSize: 20, fontWeight: "600" },
+    mutedText: { color: colors.muted },
+});

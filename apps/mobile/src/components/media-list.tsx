@@ -1,5 +1,5 @@
 import {useIsFocused} from "expo-router";
-import {FlatList, RefreshControl} from "react-native";
+import {StyleSheet, FlatList, RefreshControl} from "react-native";
 import type {ReactNode} from "react";
 import type {MediaType} from "../lib/api-client";
 import type {MediaLayout} from "./layout-toggle";
@@ -58,7 +58,7 @@ export function MediaList<T extends MediaListItem>({ items, layout, ratingSystem
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             numColumns={layout === "grid" ? 2 : 1}
-            contentContainerStyle={{ padding: 10 }}
+            contentContainerStyle={styles.content}
             keyExtractor={(item) => `${item.mediaType}:${item.mediaId}`}
             onEndReached={() => {
                 if (focused && query.hasNextPage && !query.isFetching) void query.fetchNextPage();
@@ -111,3 +111,8 @@ export function MediaList<T extends MediaListItem>({ items, layout, ratingSystem
         />
     );
 }
+
+
+const styles = StyleSheet.create({
+    content: { padding: 10 },
+});

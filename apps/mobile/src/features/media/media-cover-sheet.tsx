@@ -1,6 +1,6 @@
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {useState} from "react";
-import {Linking, View} from "react-native";
+import {StyleSheet, Linking, View} from "react-native";
 import {launchImageLibraryAsync} from "expo-image-picker";
 import {ActionSheet} from "../../components/action-sheet";
 import {AppText, Button, Cover, Field} from "../../components/ui";
@@ -63,11 +63,11 @@ export function MediaCoverSheet({ params, data, shared = false, dismiss }: { par
                     ? "Contribute a real cover for everyone. This is only available while the book uses the default cover."
                     : "Choose the cover displayed in your own list."}
             </AppText>
-            <View style={{ alignItems: "center" }}>
+            <View style={styles.centered}>
                 <Cover
                     uri={mode === "upload" && image ? image.uri : previewUrl || data.media.cover}
                     label={data.media.name}
-                    style={{ width: 100, height: 150, borderRadius: 12 }}
+                    style={styles.cover}
                 />
             </View>
             <ChoiceChips
@@ -143,3 +143,9 @@ export function MediaCoverSheet({ params, data, shared = false, dismiss }: { par
         </ActionSheet>
     );
 }
+
+
+const styles = StyleSheet.create({
+    centered: { alignItems: "center" },
+    cover: { width: 100, height: 150, borderRadius: 12 },
+});

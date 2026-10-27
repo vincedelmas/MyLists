@@ -1,4 +1,4 @@
-import {Pressable, View} from "react-native";
+import {StyleSheet, Pressable, View} from "react-native";
 import {AppText} from "./ui";
 import {colors} from "../theme";
 import {LayoutGrid} from "lucide-react-native";
@@ -16,7 +16,7 @@ export function FilterButtons<T extends string>({ value, options, onChange, labe
         <View
             accessibilityRole="radiogroup"
             accessibilityLabel={label}
-            style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+            style={styles.options}
         >
             {[...options].sort((a, b) => a.mediaType && b.mediaType ? compareMediaTypes(a.mediaType, b.mediaType) : 0).map((option) => {
                 const Icon = option.mediaType ? mediaIcons[option.mediaType] : LayoutGrid;
@@ -30,51 +30,25 @@ export function FilterButtons<T extends string>({ value, options, onChange, labe
                         accessibilityLabel={`${option.label}${option.count === undefined ? "" : ` (${option.count})`}`}
                         accessibilityState={{ checked: option.value === value }}
                         onPress={() => onChange(option.value)}
-                        style={({ pressed }) => ({
-                            minHeight: 52,
-                            paddingHorizontal: 12,
-                            paddingVertical: 10,
-                            flexBasis: "45%",
-                            flexGrow: 1,
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 8,
-                            borderRadius: 10,
-                            borderWidth: 1,
+                        style={({ pressed }) => ([styles.option, {
                             borderColor: selected ? color : colors.border,
                             backgroundColor: selected ? `${color}18` : colors.surface,
-                            opacity: pressed ? 0.7 : 1,
-                        })}
+                            opacity: pressed ? 0.7 : 1
+                        }])}
                     >
                         <Icon size={17} color={color}/>
                         <AppText
                             numberOfLines={1}
-                            style={{
-                                flex: 1,
-                                fontSize: 12,
-                                fontWeight: selected ? "600" : "400",
-                                color: selected ? colors.text : colors.muted
-                            }}
+                            style={[styles.optionLabel, selected ? styles.selectedOptionLabel : styles.unselectedOptionLabel]}
                         >
                             {option.label}
                         </AppText>
                         {option.count !== undefined && (
                             <View
-                                style={{
-                                    minWidth: 23,
-                                    paddingHorizontal: 5,
-                                    paddingVertical: 2,
-                                    borderRadius: 5,
-                                    backgroundColor: colors.secondary
-                                }}
+                                style={styles.countBadge}
                             >
                                 <AppText
-                                    style={{
-                                        fontSize: 11,
-                                        color,
-                                        textAlign: "center",
-                                        fontVariant: ["tabular-nums"]
-                                    }}
+                                    style={[styles.countLabel, { color }]}
                                 >
                                     {option.count}
                                 </AppText>
@@ -88,3 +62,38 @@ export function FilterButtons<T extends string>({ value, options, onChange, labe
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    options: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    option: {
+        minHeight: 52,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        flexBasis: "45%",
+        flexGrow: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        borderRadius: 10,
+        borderWidth: 1
+    },
+    optionLabel: {
+        flex: 1,
+        fontSize: 12
+    },
+    countBadge: {
+        minWidth: 23,
+        paddingHorizontal: 5,
+        paddingVertical: 2,
+        borderRadius: 5,
+        backgroundColor: colors.secondary
+    },
+    selectedOptionLabel: { fontWeight: "600", color: colors.text },
+    unselectedOptionLabel: { fontWeight: "400", color: colors.muted },
+    countLabel: {
+        fontSize: 11,
+        textAlign: "center",
+        fontVariant: ["tabular-nums"]
+    },
+});

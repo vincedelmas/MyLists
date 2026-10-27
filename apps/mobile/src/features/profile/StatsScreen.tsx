@@ -6,7 +6,7 @@ import type {api} from "../../lib/api-client";
 import {useQuery} from "@tanstack/react-query";
 import {formatCount} from "./profile-formatting";
 import {colors, statusColors} from "../../theme";
-import {Animated, RefreshControl, View} from "react-native";
+import {StyleSheet, Animated, RefreshControl, View} from "react-native";
 import {ProgressBar} from "../../components/ProgressBar";
 import {mediaLabels, mediaColors, compareMediaTypes} from "../../lib/media";
 import {statsOptions} from "../../lib/react-query/query-options/profile.options";
@@ -40,7 +40,7 @@ export function StatsContent({ userId }: { userId?: number }) {
                         <Animated.ScrollView
                             {...scrollProps}
                             contentContainerStyle={[
-                                { padding: 16, gap: 24 },
+                                styles.content,
                                 contentContainerStyle
                             ]}
                             refreshControl={
@@ -69,32 +69,19 @@ export function StatsContent({ userId }: { userId?: number }) {
                                 />
                             </View>
                             <View
-                                style={{
-                                    gap: 1,
-                                    borderRadius: 16,
-                                    flexWrap: "wrap",
-                                    overflow: "hidden",
-                                    flexDirection: "row",
-                                    backgroundColor: colors.border,
-                                }}
+                                style={styles.metrics}
                             >
                                 {metrics.map(([label, value]) => (
                                     <View
                                         key={label}
-                                        style={{
-                                            gap: 4,
-                                            padding: 18,
-                                            flexGrow: 1,
-                                            width: "49.8%",
-                                            backgroundColor: colors.surface,
-                                        }}
+                                        style={styles.metric}
                                     >
-                                        <AppText style={{ fontSize: 25, lineHeight: 32, fontWeight: "700" }}>
+                                        <AppText style={styles.metricValue}>
                                             {formatCount(value)}
                                         </AppText>
                                         <AppText
                                             muted
-                                            style={{ fontSize: 12 }}
+                                            style={styles.metricLabel}
                                         >
                                             {label}
                                         </AppText>
@@ -108,12 +95,9 @@ export function StatsContent({ userId }: { userId?: number }) {
                                         <Section title="Across media">
                                             {[...data.mediaBreakdown].sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType)).map((item) => (
                                                 <View key={item.mediaType} style={uiStyles.padded}>
-                                                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                                                    <View style={styles.distributionRow}>
                                                         <AppText
-                                                            style={{
-                                                                color: mediaColors[item.mediaType],
-                                                                fontWeight: "600",
-                                                            }}
+                                                            style={[{ color: mediaColors[item.mediaType] }, styles.mediaType]}
                                                         >
                                                             {mediaLabels[item.mediaType]}
                                                         </AppText>
@@ -125,7 +109,7 @@ export function StatsContent({ userId }: { userId?: number }) {
                                                     />
                                                     <AppText
                                                         muted
-                                                        style={{ fontSize: 12 }}
+                                                        style={styles.metricLabel}
                                                     >
                                                         {formatCount(item.totalEntries)} titles ·{" "}
                                                         {formatCount(item.totalFavorites)} favorites
@@ -149,13 +133,10 @@ export function StatsContent({ userId }: { userId?: number }) {
                                                 {data.statusesCounts.map((status) => (
                                                     <View
                                                         key={status.name}
-                                                        style={{ gap: 6, marginBottom: 10 }}
+                                                        style={styles.statusMetric}
                                                     >
                                                         <View
-                                                            style={{
-                                                                flexDirection: "row",
-                                                                justifyContent: "space-between",
-                                                            }}
+                                                            style={styles.statusRow}
                                                         >
                                                             <AppText>
                                                                 {status.name}
@@ -191,13 +172,9 @@ export function StatsContent({ userId }: { userId?: number }) {
                                                             {values.slice(0, 8).map((item) => (
                                                                 <View
                                                                     key={item.name}
-                                                                    style={{
-                                                                        gap: 12,
-                                                                        flexDirection: "row",
-                                                                        justifyContent: "space-between",
-                                                                    }}
+                                                                    style={styles.rankRow}
                                                                 >
-                                                                    <AppText style={{ flex: 1 }}>
+                                                                    <AppText style={styles.rankTitle}>
                                                                         {item.name}
                                                                     </AppText>
                                                                     <AppText muted>
@@ -219,9 +196,9 @@ export function StatsContent({ userId }: { userId?: number }) {
                                     {data.activityByMonth.data.map((month) => (
                                         <View
                                             key={month.month}
-                                            style={{ gap: 5 }}
+                                            style={styles.monthlyMetric}
                                         >
-                                            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                                            <View style={styles.distributionRow}>
                                                 <AppText muted>
                                                     {new Date(`${month.month}-01T00:00:00Z`).toLocaleDateString(
                                                         undefined,
@@ -244,3 +221,39 @@ export function StatsContent({ userId }: { userId?: number }) {
         </>
     );
 }
+
+
+const styles = StyleSheet.create({
+    content: { padding: 16, gap: 24 },
+    metrics: {
+        gap: 1,
+        borderRadius: 16,
+        flexWrap: "wrap",
+        overflow: "hidden",
+        flexDirection: "row",
+        backgroundColor: colors.border,
+    },
+    metric: {
+        gap: 4,
+        padding: 18,
+        flexGrow: 1,
+        width: "49.8%",
+        backgroundColor: colors.surface,
+    },
+    metricValue: { fontSize: 25, lineHeight: 32, fontWeight: "700" },
+    metricLabel: { fontSize: 12 },
+    distributionRow: { flexDirection: "row", justifyContent: "space-between" },
+    mediaType: { fontWeight: "600" },
+    statusMetric: { gap: 6, marginBottom: 10 },
+    statusRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+    rankRow: {
+        gap: 12,
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+    rankTitle: { flex: 1 },
+    monthlyMetric: { gap: 5 },
+});

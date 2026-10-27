@@ -2,7 +2,7 @@ import {SavedListCard, type SavedList} from "./saved-list-card";
 import {useEffect, useMemo, useRef, useState} from "react";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {FlatList, RefreshControl, View} from "react-native";
+import {StyleSheet, FlatList, RefreshControl, View} from "react-native";
 import {FolderOpen, ListFilter, Trash2} from "lucide-react-native";
 import {useLibraryAction} from "../../lib/react-query/query-mutations/library.mutations";
 import {useTabPush} from "../../hooks/use-tab-push";
@@ -76,7 +76,7 @@ export function ListsScreen() {
                 windowSize={5}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
-                contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+                contentContainerStyle={styles.content}
                 refreshControl={
                     <RefreshControl
                         tintColor={colors.accent}
@@ -85,13 +85,13 @@ export function ListsScreen() {
                     />
                 }
                 ListHeaderComponent={
-                    <View style={{ gap: 20, paddingBottom: 16 }}>
+                    <View style={styles.header}>
                         <QueryPanel query={userId ? profile : tracking}>
                             {lists =>
-                                <View style={{ gap: 12 }}>
+                                <View style={styles.trackingLists}>
                                     <AppText
                                         heading
-                                        style={{ fontSize: 18 }}
+                                        style={styles.sectionTitle}
                                     >
                                         Tracking lists
                                     </AppText>
@@ -183,7 +183,7 @@ export function ListsScreen() {
             {mutation.error &&
                 <AppText
                     accessibilityRole="alert"
-                    style={{ color: colors.error, paddingHorizontal: 16, paddingVertical: 8 }}
+                    style={styles.errorText}
                 >
                     {mutation.error.message}
                 </AppText>
@@ -206,3 +206,12 @@ export function ListsScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    content: { padding: 16, paddingBottom: 24 },
+    header: { gap: 20, paddingBottom: 16 },
+    trackingLists: { gap: 12 },
+    sectionTitle: { fontSize: 18 },
+    errorText: { color: colors.error, paddingHorizontal: 16, paddingVertical: 8 },
+});

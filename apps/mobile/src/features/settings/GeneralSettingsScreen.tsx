@@ -3,7 +3,7 @@ import {CircleUserRound, Globe, Image, Info, Lock, Shield} from "lucide-react-na
 import {Avatar} from "../../components/avatar";
 import {colors} from "../../theme";
 import {useState} from "react";
-import {Pressable, View} from "react-native";
+import {StyleSheet, Pressable, View} from "react-native";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
 import {launchImageLibraryAsync} from "expo-image-picker";
@@ -102,8 +102,8 @@ function GeneralForm({ data }: { data: MobileSettings }) {
                             mutation.reset();
                         }}
                     />
-                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                        <AppText style={{ fontWeight: "600" }}>
+                    <View style={styles.privacyHeading}>
+                        <AppText style={styles.fieldLabel}>
                             Profile
                             privacy
                         </AppText>
@@ -111,19 +111,14 @@ function GeneralForm({ data }: { data: MobileSettings }) {
                             accessibilityRole="button"
                             accessibilityLabel="Explain profile privacy"
                             onPress={() => setPrivacyHelp(true)}
-                            style={{
-                                width: 48,
-                                height: 48,
-                                alignItems: "center",
-                                justifyContent: "center"
-                            }}
+                            style={styles.privacyHelpButton}
                         >
                             <Info size={20} color={colors.muted}/>
                         </Pressable>
                     </View>
                     <View
                         accessibilityRole="radiogroup"
-                        style={{ flexDirection: "row", gap: 8 }}
+                        style={styles.privacyOptions}
                     >
                         {privacyOptions.map(({ value, label, Icon }) =>
                             <Pressable
@@ -138,24 +133,14 @@ function GeneralForm({ data }: { data: MobileSettings }) {
                                     setPrivacy(value);
                                     mutation.reset();
                                 }}
-                                style={{
-                                    flex: 1,
-                                    minHeight: 80,
-                                    gap: 8,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    borderRadius: 16,
-                                    borderWidth: 1,
-                                    borderColor: privacy === value ? colors.accent : colors.border,
-                                    backgroundColor: colors.background
-                                }}
+                                style={[styles.privacyOption, privacy === value && styles.selectedPrivacyOption]}
                             >
                                 <Icon
                                     size={21}
                                     color={privacy === value ? colors.accent : colors.muted}
                                 />
                                 <AppText
-                                    style={{ fontSize: 12, fontWeight: privacy === value ? "600" : "400" }}
+                                    style={[styles.privacyOptionLabel, privacy === value ? styles.selectedPrivacyLabel : styles.unselectedPrivacyLabel]}
                                 >
                                     {label}
                                 </AppText>
@@ -173,11 +158,11 @@ function GeneralForm({ data }: { data: MobileSettings }) {
                 <View style={uiStyles.padded}>
                     <AppText
                         muted
-                        style={{ fontSize: 12 }}
+                        style={styles.privacyOptionLabel}
                     >
                         Personalize your avatar and profile backdrop.
                     </AppText>
-                    <View style={{ alignItems: "center", gap: 12 }}>
+                    <View style={styles.profileImageSection}>
                         <Avatar
                             image={images.profileImage?.uri ?? data.image}
                             name={data.username}
@@ -193,7 +178,7 @@ function GeneralForm({ data }: { data: MobileSettings }) {
                     </View>
                     <Cover
                         uri={images.backgroundImage?.uri ?? data.backgroundImage}
-                        style={{ width: "100%", height: 110 }}
+                        style={styles.backgroundImage}
                     />
                     <Button
                         fullWidth
@@ -229,22 +214,16 @@ function GeneralForm({ data }: { data: MobileSettings }) {
                 {privacyOptions.map(({ value, label, Icon, description }) =>
                     <View
                         key={value}
-                        style={{
-                            flexDirection: "row",
-                            gap: 14
-                        }}
+                        style={styles.privacyExplanation}
                     >
                         <Icon size={22} color={colors.accent}/>
-                        <View style={{ flex: 1, gap: 6 }}>
-                            <AppText style={{ fontWeight: "600" }}>
+                        <View style={styles.privacyDescription}>
+                            <AppText style={styles.fieldLabel}>
                                 {label}
                             </AppText>
                             <AppText
                                 muted
-                                style={{
-                                    fontSize: 13,
-                                    lineHeight: 21
-                                }}
+                                style={styles.privacyExplanationText}
                             >
                                 {description}
                             </AppText>
@@ -271,3 +250,42 @@ export function GeneralSettingsScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    privacyHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    fieldLabel: { fontWeight: "600" },
+    privacyHelpButton: {
+        width: 48,
+        height: 48,
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    privacyOptions: { flexDirection: "row", gap: 8 },
+    privacyOption: {
+        flex: 1,
+        minHeight: 80,
+        gap: 8,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.background
+    },
+    selectedPrivacyOption: { borderColor: colors.accent },
+    privacyOptionLabel: { fontSize: 12 },
+    selectedPrivacyLabel: { fontWeight: "600" },
+    unselectedPrivacyLabel: { fontWeight: "400" },
+    profileImageSection: { alignItems: "center", gap: 12 },
+    backgroundImage: { width: "100%", height: 110 },
+    privacyExplanation: {
+        flexDirection: "row",
+        gap: 14
+    },
+    privacyDescription: { flex: 1, gap: 6 },
+    privacyExplanationText: {
+        fontSize: 13,
+        lineHeight: 21
+    },
+});

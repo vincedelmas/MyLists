@@ -1,5 +1,5 @@
 import {useMemo, useState} from "react";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {ActionSheet} from "../../components/action-sheet";
 import {AppText, Button, Select} from "../../components/ui";
 import {allocateActivityCorrection} from "@/lib/utils/media/activity";
@@ -42,11 +42,11 @@ export function MediaCorrectionSheet({ preview, media, pending, error, confirm, 
                     }))
                 ]}
             />
-            <View style={{ gap: 12 }}>
+            <View style={styles.allocation}>
                 {allocation.changes.map(change =>
                     <View
                         key={change.id}
-                        style={{ gap: 5 }}
+                        style={styles.allocationRow}
                     >
                         <AppText>
                             {formatMonthYear(`${change.monthBucket}-01`)}
@@ -81,3 +81,9 @@ export function MediaCorrectionSheet({ preview, media, pending, error, confirm, 
         </ActionSheet>
     );
 }
+
+
+const styles = StyleSheet.create({
+    allocation: { gap: 12 },
+    allocationRow: { gap: 5 },
+});

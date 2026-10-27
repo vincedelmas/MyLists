@@ -1,4 +1,4 @@
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {Heart, MessageCircle} from "lucide-react-native";
 import {AppText} from "./ui";
 import {colors, statusColors} from "../theme";
@@ -13,19 +13,14 @@ export function MediaListDetails({ status, rating, ratingSystem, favorite, hasCo
     hasComment: boolean;
 }) {
     return (
-        <View style={{ gap: 5 }}>
+        <View style={styles.group}>
             {status &&
-                <AppText style={{ fontSize: 11, color: statusColors[status] }}>
+                <AppText style={[styles.caption, { color: statusColors[status] }]}>
                     {status}
                 </AppText>
             }
             <View
-                style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 10,
-                    alignItems: "center"
-                }}
+                style={styles.row}
             >
                 <Rating
                     value={rating}
@@ -51,3 +46,15 @@ export function MediaListDetails({ status, rating, ratingSystem, favorite, hasCo
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    group: { gap: 5 },
+    caption: { fontSize: 11 },
+    row: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 10,
+        alignItems: "center"
+    },
+});

@@ -1,3 +1,4 @@
+import {StyleSheet} from "react-native";
 import {Field} from "./ui";
 import {colors} from "../theme";
 import type {ComponentProps} from "react";
@@ -13,16 +14,24 @@ export function SearchField(props: ComponentProps<typeof Field>) {
             autoCorrect={false}
             autoCapitalize="none"
             returnKeyType={props.returnKeyType ?? "search"}
-            textStyle={{ ...props.textStyle, fontSize: 16 }}
+            textStyle={{ ...props.textStyle, ...styles.text }}
             leadingIcon={props.leadingIcon ??
                 <Search size={20} color={colors.muted}/>
             }
             style={{
                 ...props.style,
-                borderRadius: 18,
-                backgroundColor: colors.surface,
-                height: 50
+                ...styles.input
             }}
         />
     );
 }
+
+
+const styles = StyleSheet.create({
+    text: { fontSize: 16 },
+    input: {
+        borderRadius: 18,
+        backgroundColor: colors.surface,
+        height: 50
+    },
+});

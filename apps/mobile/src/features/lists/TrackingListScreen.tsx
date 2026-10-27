@@ -8,7 +8,7 @@ import type {MediaType} from "../../lib/api-client";
 import {MediaList} from "../../components/media-list";
 import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
 import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {parseListFilters, countListFilters} from "./list-filters";
@@ -51,7 +51,7 @@ export function TrackingListScreen() {
             }
             subtitle={first ? `${first.pagination.totalItems.toLocaleString()} entries` : undefined}
         >
-            <View style={{ padding: 16, gap: 12 }}>
+            <View style={styles.group}>
                 <SearchField
                     clearable
                     value={search}
@@ -61,11 +61,11 @@ export function TrackingListScreen() {
                     onChangeText={setSearch}
                     placeholder="Find a title…"
                 />
-                <View style={{ flexDirection: "row", gap: 12 }}>
-                    <View style={{ flex: 1 }}>
+                <View style={styles.row}>
+                    <View style={styles.fill}>
                         <AppText
                             muted
-                            style={{ fontSize: 12, marginBottom: 8 }}
+                            style={styles.caption}
                         >
                             Status
                         </AppText>
@@ -77,7 +77,7 @@ export function TrackingListScreen() {
                             onPress={() => setStatusesOpen(true)}
                         />
                     </View>
-                    <View style={{ flex: 1 }}>
+                    <View style={styles.fill}>
                         <Select
                             label="Sort by"
                             value={sorting}
@@ -87,12 +87,7 @@ export function TrackingListScreen() {
                     </View>
                 </View>
                 <View
-                    style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12
-                    }}
+                    style={styles.spreadRow}
                 >
                     <Button
                         secondary
@@ -117,7 +112,7 @@ export function TrackingListScreen() {
                 footer={items.length > 0 && (
                     <AppText
                         muted
-                        style={{ textAlign: "center", padding: 20 }}
+                        style={styles.text}
                     >
                         {query.hasNextPage ? "Scroll for more" : "You’re all caught up"}
                     </AppText>
@@ -144,3 +139,18 @@ export function TrackingListScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    group: { padding: 16, gap: 12 },
+    row: { flexDirection: "row", gap: 12 },
+    fill: { flex: 1 },
+    caption: { fontSize: 12, marginBottom: 8 },
+    spreadRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12
+    },
+    text: { textAlign: "center", padding: 20 },
+});

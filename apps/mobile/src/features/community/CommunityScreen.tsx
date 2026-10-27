@@ -4,7 +4,7 @@ import {useState} from "react";
 import {colors} from "../../theme";
 import {backendUrl} from "../../lib/config";
 import {openBrowserAsync} from "expo-web-browser";
-import {Alert, Pressable, View} from "react-native";
+import {StyleSheet, Alert, Pressable, View} from "react-native";
 import {AppText, Content, Page, Section} from "../../components/ui";
 import {ChartNoAxesCombined, Clapperboard, ExternalLink, HeartHandshake, History, LibraryBig, Coffee, TrendingUp, Trophy} from "lucide-react-native";
 
@@ -107,22 +107,16 @@ export function CommunityScreen() {
                                     else void open(path);
                                 }}
                                 accessibilityLabel={nativePages.has(path) ? title : `${title}. Opens in browser`}
-                                style={({ pressed }) => ({
-                                    gap: 14,
-                                    padding: 16,
-                                    alignItems: "center",
-                                    flexDirection: "row",
-                                    opacity: pressed || opening ? 0.6 : 1,
-                                })}
+                                style={({ pressed }) => ([styles.communityDestination, { opacity: pressed || opening ? 0.6 : 1 }])}
                             >
                                 <Icon size={24} color={colors.accent}/>
-                                <View style={{ flex: 1, gap: 5 }}>
-                                    <AppText style={{ fontWeight: "600" }}>
+                                <View style={styles.destinationIdentity}>
+                                    <AppText style={styles.destinationTitle}>
                                         {title}
                                     </AppText>
                                     <AppText
                                         muted
-                                        style={{ fontSize: 12 }}
+                                        style={styles.destinationDescription}
                                     >
                                         {description}
                                     </AppText>
@@ -141,17 +135,10 @@ export function CommunityScreen() {
                     accessibilityLabel="Buy me a coffee. Opens in browser"
                     disabled={opening}
                     onPress={() => void open("https://www.buymeacoffee.com/crossoufire")}
-                    style={({ pressed }) => ({
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        paddingVertical: 20,
-                        opacity: pressed ? 0.6 : 1
-                    })}
+                    style={({ pressed }) => ([styles.supportLink, { opacity: pressed ? 0.6 : 1 }])}
                 >
                     <Coffee size={18} color={colors.rating}/>
-                    <AppText style={{ color: colors.rating, fontSize: 13 }}>
+                    <AppText style={styles.supportLabel}>
                         Buy me a coffee
                     </AppText>
                     <ExternalLink size={14} color={colors.muted}/>
@@ -160,3 +147,24 @@ export function CommunityScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    communityDestination: {
+        gap: 14,
+        padding: 16,
+        alignItems: "center",
+        flexDirection: "row"
+    },
+    destinationIdentity: { flex: 1, gap: 5 },
+    destinationTitle: { fontWeight: "600" },
+    destinationDescription: { fontSize: 12 },
+    supportLink: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        paddingVertical: 20
+    },
+    supportLabel: { color: colors.rating, fontSize: 13 },
+});

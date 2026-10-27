@@ -2,7 +2,7 @@ import {SearchField} from "../../components/search-field";
 import {useMemo, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {FlatList, Pressable, View} from "react-native";
+import {StyleSheet, FlatList, Pressable, View} from "react-native";
 import {Check, Folder, Tag} from "lucide-react-native";
 import type {MediaParams, MobileMedia} from "../../lib/api-client";
 import {mediaCollectionsOptions, mediaTagsOptions} from "../../lib/react-query/query-options/media.options";
@@ -80,7 +80,7 @@ export function MediaMemberships({ params, data, kind, dismiss }: { params: Medi
                         }
                         <FlatList
                             data={filtered}
-                            style={{ maxHeight: 330, flexShrink: 1 }}
+                            style={styles.container}
                             nestedScrollEnabled
                             keyExtractor={item => item.id}
                             keyboardShouldPersistTaps="handled"
@@ -102,27 +102,19 @@ export function MediaMemberships({ params, data, kind, dismiss }: { params: Medi
                                             selected: !item.selected
                                         }
                                         : { action: "collection", collectionId: Number(item.id), selected: !item.selected })}
-                                    style={{
-                                        minHeight: 64,
-                                        flexDirection: "row",
-                                        gap: 12,
-                                        alignItems: "center",
-                                        paddingVertical: 12,
-                                        borderBottomWidth: 1,
-                                        borderBottomColor: colors.border
-                                    }}
+                                    style={styles.action}
                                 >
                                     <Icon
                                         size={18}
                                         color={item.selected ? colors.accent : colors.muted}
                                     />
-                                    <View style={{ flex: 1, gap: 4 }}>
+                                    <View style={styles.group}>
                                         <AppText>
                                             {item.title}
                                         </AppText>
                                         <AppText
                                             muted
-                                            style={{ fontSize: 11 }}
+                                            style={styles.caption}
                                         >
                                             {item.detail}
                                         </AppText>
@@ -146,3 +138,19 @@ export function MediaMemberships({ params, data, kind, dismiss }: { params: Medi
         </ActionSheet>
     );
 }
+
+
+const styles = StyleSheet.create({
+    container: { maxHeight: 330, flexShrink: 1 },
+    action: {
+        minHeight: 64,
+        flexDirection: "row",
+        gap: 12,
+        alignItems: "center",
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border
+    },
+    group: { flex: 1, gap: 4 },
+    caption: { fontSize: 11 },
+});

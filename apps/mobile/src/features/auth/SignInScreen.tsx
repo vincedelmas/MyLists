@@ -4,7 +4,7 @@ import {useRef, useState} from "react";
 import type {TextInputRef} from "@expo/ui";
 import {backendUrl} from "../../lib/config";
 import {ListChecks} from "lucide-react-native";
-import {Linking, Pressable, View} from "react-native";
+import {StyleSheet, Linking, Pressable, View} from "react-native";
 import {useSignInMutation} from "../../lib/react-query/query-mutations/auth.mutations";
 import {AppText, Button, Content, Field, Page, Section, uiStyles} from "../../components/ui";
 
@@ -49,11 +49,11 @@ export function SignInScreen() {
     return (
         <Page title="MyLists" subtitle="Track movies, series, anime, games, books and manga">
             <Content>
-                <View style={{ paddingVertical: 24, gap: 12 }}>
+                <View style={styles.group}>
                     <ListChecks size={32} color={colors.accent}/>
                     <AppText
                         heading
-                        style={{ fontSize: 30, lineHeight: 38 }}
+                        style={styles.title}
                     >
                         Welcome back
                     </AppText>
@@ -89,16 +89,11 @@ export function SignInScreen() {
                             autoComplete="current-password"
                         />
                         <View
-                            style={{
-                                flexDirection: "row",
-                                justifyContent: "space-between",
-                                flexWrap: "wrap",
-                                gap: 8
-                            }}
+                            style={styles.spreadRow}
                         >
                             <Pressable
                                 accessibilityRole="button"
-                                style={{ paddingVertical: 12 }}
+                                style={styles.action}
                                 onPress={() => setVisible((value) => !value)}
                             >
                                 <AppText muted={true}>
@@ -107,10 +102,10 @@ export function SignInScreen() {
                             </Pressable>
                             <Pressable
                                 accessibilityRole="link"
-                                style={{ paddingVertical: 12 }}
+                                style={styles.action}
                                 onPress={() => open("/forgot-password")}
                             >
-                                <AppText style={{ color: colors.accent }}>
+                                <AppText style={styles.accentText}>
                                     Forgot password?
                                 </AppText>
                             </Pressable>
@@ -118,7 +113,7 @@ export function SignInScreen() {
                         {error &&
                             <AppText
                                 accessibilityRole="alert"
-                                style={{ color: colors.error }}
+                                style={styles.errorText}
                             >
                                 {error}
                             </AppText>
@@ -139,3 +134,18 @@ export function SignInScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    group: { paddingVertical: 24, gap: 12 },
+    title: { fontSize: 30, lineHeight: 38 },
+    spreadRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 8
+    },
+    action: { paddingVertical: 12 },
+    accentText: { color: colors.accent },
+    errorText: { color: colors.error },
+});

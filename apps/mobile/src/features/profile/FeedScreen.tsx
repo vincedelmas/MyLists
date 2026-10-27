@@ -3,7 +3,7 @@ import {SearchField} from "../../components/search-field";
 import {useEffect, useRef, useState} from "react";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {FlatList, RefreshControl, View} from "react-native";
+import {StyleSheet, FlatList, RefreshControl, View} from "react-native";
 import {Search} from "lucide-react-native";
 import {AppText, Page, StateView} from "../../components/ui";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
@@ -41,7 +41,7 @@ export function FeedScreen() {
             back
             subtitle="Tracking history"
         >
-            <View style={{ padding: 16, gap: 10 }}>
+            <View style={styles.group}>
                 <SearchField
                     label="Search feed"
                     hideLabel
@@ -60,7 +60,7 @@ export function FeedScreen() {
                 />
                 <AppText
                     muted
-                    style={{ fontSize: 12 }}
+                    style={styles.caption}
                 >
                     {searching
                         ? "Searching…"
@@ -76,7 +76,7 @@ export function FeedScreen() {
                 windowSize={5}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
-                contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 24 }}
+                contentContainerStyle={styles.content}
                 renderItem={({ item }) =>
                     <FeedRows
                         items={[item]}
@@ -117,3 +117,10 @@ export function FeedScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    group: { padding: 16, gap: 10 },
+    caption: { fontSize: 12 },
+    content: { paddingHorizontal: 8, paddingBottom: 24 },
+});

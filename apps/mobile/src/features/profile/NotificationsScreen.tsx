@@ -250,7 +250,7 @@ const NotificationRow = memo(function NotificationRow({ item, onOpen, onDismiss,
                                         ? `S${zeroPad(item.season)}.E${zeroPad(item.episode)}${item.isSeasonFinale ? " (Finale)" : ""}`
                                         : "Release"}
                                     <AppText
-                                        style={{ color: colors.accent }}
+                                        style={styles.accentText}
                                     > → </AppText>
                                     {item.releaseDate ? formatDate(item.releaseDate) : "Upcoming"}
                                 </AppText>
@@ -311,7 +311,6 @@ const NotificationRow = memo(function NotificationRow({ item, onOpen, onDismiss,
 
 const styles = StyleSheet.create({
     content: { paddingHorizontal: 16, paddingBottom: 28, gap: 8 },
-    listHeading: { paddingTop: 16, paddingBottom: 8 },
     row: {
         paddingHorizontal: 12,
         paddingVertical: 16,
@@ -413,4 +412,6 @@ const styles = StyleSheet.create({
     },
     disabled: { opacity: 0.4 },
     pressed: { opacity: 0.6 },
+
+    accentText: { color: colors.accent },
 });

@@ -35,7 +35,7 @@ export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
                 pointerEvents="box-none"
                 style={[styles.identity, media.backdrop && styles.overlap]}
             >
-                <View style={{ gap: 4 }}>
+                <View style={styles.coverSection}>
                     <Cover
                         pointerEvents="none"
                         uri={media.cover}
@@ -46,10 +46,10 @@ export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
                         <Pressable
                             accessibilityRole="button"
                             onPress={onBookCover}
-                            style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}
+                            style={styles.addCoverButton}
                         >
                             <AppText
-                                style={{ fontSize: 12, color: colors.accent }}
+                                style={styles.addCoverLabel}
                             >
                                 Add cover
                             </AppText>
@@ -60,7 +60,7 @@ export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
                     pointerEvents="none"
                     style={[styles.info, media.backdrop && styles.overlapInfo]}
                 >
-                    <AppText style={{ color: mediaColors[mediaType], fontSize: 11 }}>
+                    <AppText style={[{ color: mediaColors[mediaType] }, styles.mediaType]}>
                         {mediaLabels[mediaType]}
                     </AppText>
                     <AppText heading style={styles.title}>
@@ -99,18 +99,18 @@ export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
                 accessibilityLabel={data.tracking ? "Manage this title in your list" : "Track this title"}
                 disabled={pending}
                 onPress={onTrack}
-                style={({ pressed }) => [styles.track, pressed && { opacity: 0.6 }]}
+                style={({ pressed }) => [styles.track, pressed && styles.pressed]}
             >
                 <BookmarkCheck size={21} color={colors.accent}/>
-                <View style={{ flex: 1, gap: 4 }}>
+                <View style={styles.trackingIdentity}>
                     <AppText
-                        style={{ fontSize: 14, fontWeight: "600" }}
+                        style={styles.trackingStatus}
                     >
                         {data.tracking ? data.tracking.status : data.active ? "Add to your list" : "Media list disabled"}
                     </AppText>
                     <AppText
                         muted
-                        style={{ fontSize: 11 }}
+                        style={styles.mediaType}
                     >
                         {data.tracking ? "Progress, rating & more" : data.active ? "Track, rate and remember" : "Enable this list in settings"}
                     </AppText>
@@ -184,4 +184,12 @@ const styles = StyleSheet.create({
     },
     score: { fontSize: 15, fontWeight: "700" },
     provider: { fontSize: 10, lineHeight: 16 },
+
+    coverSection: { gap: 4 },
+    addCoverButton: { minHeight: 48, alignItems: "center", justifyContent: "center" },
+    addCoverLabel: { fontSize: 12, color: colors.accent },
+    mediaType: { fontSize: 11 },
+    pressed: { opacity: 0.6 },
+    trackingIdentity: { flex: 1, gap: 4 },
+    trackingStatus: { fontSize: 14, fontWeight: "600" },
 });

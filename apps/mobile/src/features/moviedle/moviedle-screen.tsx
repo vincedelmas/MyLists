@@ -260,7 +260,7 @@ function DailyGame({ data, active, refreshing, refetch }: { data: Daily; active:
                                 setSearch(text);
                                 setSuggestionsOpen(true);
                             }}
-                            textStyle={{ fontSize: 16 }}
+                            textStyle={styles.text}
                         />
                         <Button
                             fullWidth
@@ -875,4 +875,6 @@ const styles = StyleSheet.create({
         color: colors.accent,
         fontVariant: ["tabular-nums"]
     },
+
+    text: { fontSize: 16 },
 });

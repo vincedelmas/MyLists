@@ -1,6 +1,6 @@
 import {colors} from "../theme";
 import {SectionTabs, type SectionTab} from "./section-tabs";
-import {Animated, Keyboard, ScrollView, View} from "react-native";
+import {StyleSheet, Animated, Keyboard, ScrollView, View} from "react-native";
 import {useEffect, useRef, useState, type ComponentRef, type ReactNode} from "react";
 
 
@@ -26,7 +26,7 @@ export function PagedTabs<T extends string>({ tabs, value, onChange, children }:
 
     return (
         <View
-            style={{ flex: 1 }}
+            style={styles.pager}
             onLayout={({ nativeEvent: { layout } }) => setWidth(layout.width)}
         >
             <View>
@@ -43,17 +43,11 @@ export function PagedTabs<T extends string>({ tabs, value, onChange, children }:
                 />
                 <Animated.View
                     pointerEvents="none"
-                    style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
+                    style={[styles.indicator, {
                         transform: [
                             { translateX: Animated.divide(scrollX, tabs.length) }
-                        ],
-                        height: 2,
-                        width: width / tabs.length,
-                        backgroundColor: colors.accent,
-                    }}
+                        ]
+                    }, { width: width / tabs.length }]}
                 />
             </View>
             {width > 0 && (
@@ -80,7 +74,7 @@ export function PagedTabs<T extends string>({ tabs, value, onChange, children }:
                     {tabs.map((tab) => (
                         <View
                             key={tab.value}
-                            style={{ width, height: "100%" }}
+                            style={[{ width }, styles.page]}
                             accessibilityElementsHidden={value !== tab.value}
                             importantForAccessibility={value === tab.value ? "auto" : "no-hide-descendants"}
                         >
@@ -94,3 +88,16 @@ export function PagedTabs<T extends string>({ tabs, value, onChange, children }:
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    pager: { flex: 1 },
+    indicator: {
+        height: 2,
+        backgroundColor: colors.accent,
+        position: "absolute",
+        bottom: 0,
+        left: 0
+    },
+    page: { height: "100%" },
+});

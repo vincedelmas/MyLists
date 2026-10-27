@@ -164,14 +164,14 @@ export function Section({ title, children, action, icon, description }: { title?
         <View style={styles.section}>
             {title && (
                 <View style={styles.sectionHeading}>
-                    <View style={{ flex: 1, gap: 5 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <View style={styles.sectionIdentity}>
+                        <View style={styles.sectionTitleRow}>
                             {icon}
                             <AppText
                                 heading
                                 style={[
                                     styles.sectionTitle,
-                                    { flex: 1 }
+                                    styles.fill
                                 ]}
                             >
                                 {title}
@@ -180,7 +180,7 @@ export function Section({ title, children, action, icon, description }: { title?
                         {description &&
                             <AppText
                                 muted
-                                style={{ fontSize: 12, lineHeight: 18 }}
+                                style={styles.sectionDescription}
                             >
                                 {description}
                             </AppText>
@@ -238,7 +238,7 @@ export function Button(props: ButtonProps) {
                 disabled={disabled || pending || !online}
                 variant={secondary ? "outlined" : "filled"}
                 modifiers={fullWidth ? fullWidthButtonModifiers : undefined}
-                style={width ? { width } : fullWidth && Platform.OS === "web" ? { width: "100%" } : undefined}
+                style={width ? { width } : fullWidth && Platform.OS === "web" ? styles.fullWidth : undefined}
             />
         </NativeHost>
     );
@@ -275,14 +275,14 @@ export function Field(props: FieldProps) {
             <NativeHost style={styles.fullWidth}>
                 <Column spacing={8}>
                     {!hideLabel &&
-                        <NativeText textStyle={{ fontSize: 12, color: colors.muted }}>
+                        <NativeText textStyle={styles.fieldLabel}>
                             {label}
                         </NativeText>
                     }
                     <NativeTextInput
                         {...otherProps}
                         value={text}
-                        textStyle={{ fontSize: 16, ...otherProps.textStyle }}
+                        textStyle={{ ...styles.inputText, ...otherProps.textStyle }}
                         ref={inputRef}
                         placeholder={otherProps.placeholder ?? label}
                         onChangeText={(next) => {
@@ -290,14 +290,10 @@ export function Field(props: FieldProps) {
                             onChangeText?.(next);
                         }}
                         style={{
-                            padding: 12,
-                            ...(leadingIcon ? { paddingLeft: 48 } : {}),
-                            ...(clearable ? { paddingRight: 48 } : {}),
-                            borderWidth: 1,
-                            borderRadius: 18,
-                            backgroundColor: colors.surface,
-                            height: otherProps.multiline ? 132 : 50,
-                            borderColor: colors.border,
+                            ...styles.input,
+                            ...(leadingIcon ? styles.inputWithIcon : {}),
+                            ...(clearable ? styles.inputClearable : {}),
+                            ...(otherProps.multiline ? styles.multilineInput : {}),
                             ...style,
                         }}
                     />
@@ -306,15 +302,7 @@ export function Field(props: FieldProps) {
             {leadingIcon &&
                 <View
                     pointerEvents="none"
-                    style={{
-                        position: "absolute",
-                        left: 0,
-                        bottom: 0,
-                        width: 50,
-                        height: 50,
-                        alignItems: "center",
-                        justifyContent: "center"
-                    }}
+                    style={styles.leadingIcon}
                 >
                     {leadingIcon}
                 </View>
@@ -328,16 +316,7 @@ export function Field(props: FieldProps) {
                         lastNativeValue.current = "";
                         onChangeText?.("");
                     }}
-                    style={({ pressed }) => ({
-                        right: 0,
-                        bottom: 0,
-                        width: 44,
-                        height: 48,
-                        alignItems: "center",
-                        position: "absolute",
-                        justifyContent: "center",
-                        opacity: pressed ? 0.6 : 1
-                    })}
+                    style={({ pressed }) => [styles.clearButton, pressed && styles.clearButtonPressed]}
                 >
                     <X size={18} color={colors.muted}/>
                 </Pressable>
@@ -352,7 +331,7 @@ export function Select<T extends string>({ label, ...props }: SelectControlProps
     return (
         <NativeHost style={styles.fullWidth}>
             <Column spacing={8}>
-                <NativeText textStyle={{ fontSize: 12, color: colors.muted }}>
+                <NativeText textStyle={styles.fieldLabel}>
                     {label}
                 </NativeText>
                 <SelectControl
@@ -582,5 +561,42 @@ const styles = StyleSheet.create({
         overflow: "hidden",
         width: 56,
         height: 82
+    },
+
+    sectionIdentity: { flex: 1, gap: 5 },
+    sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    sectionDescription: { fontSize: 12, lineHeight: 18 },
+    fieldLabel: { fontSize: 12, color: colors.muted },
+    inputText: { fontSize: 16 },
+    inputWithIcon: { paddingLeft: 48 },
+    inputClearable: { paddingRight: 48 },
+    input: {
+        padding: 12,
+        height: 50,
+        borderColor: colors.border,
+        borderWidth: 1,
+        borderRadius: 18,
+        backgroundColor: colors.surface
+    },
+    multilineInput: { height: 132 },
+    leadingIcon: {
+        position: "absolute",
+        left: 0,
+        bottom: 0,
+        width: 50,
+        height: 50,
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    clearButtonPressed: { opacity: 0.6 },
+    clearButton: {
+        opacity: 1,
+        right: 0,
+        bottom: 0,
+        width: 44,
+        height: 48,
+        alignItems: "center",
+        position: "absolute",
+        justifyContent: "center"
     },
 });

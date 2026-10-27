@@ -1,6 +1,6 @@
 import {memo, useCallback, useMemo, useRef, useState} from "react";
 import {useIsFocused} from "expo-router";
-import {FlatList, RefreshControl, View, Pressable} from "react-native";
+import {StyleSheet, FlatList, RefreshControl, View, Pressable} from "react-native";
 import {useQuery} from "@tanstack/react-query";
 import {Flame} from "lucide-react-native";
 import {api} from "../../lib/api-client";
@@ -77,7 +77,7 @@ export function TrendsScreen() {
                 initialNumToRender={8}
                 maxToRenderPerBatch={6}
                 keyExtractor={item => `${item.mediaType}:${item.apiId}`}
-                contentContainerStyle={{ padding: 10, paddingBottom: 32 }}
+                contentContainerStyle={styles.content}
                 refreshControl={
                     <RefreshControl
                         refreshing={query.isRefetching}
@@ -86,7 +86,7 @@ export function TrendsScreen() {
                     />
                 }
                 ListHeaderComponent={
-                    <View style={{ padding: 6, gap: 18, paddingBottom: 18 }}>
+                    <View style={styles.header}>
                         <FilterButtons
                             label="Trending media"
                             value={tab}
@@ -99,26 +99,19 @@ export function TrendsScreen() {
                                 accessibilityLabel={`See details for ${hero.displayName}`}
                                 disabled={resolve.isPending}
                                 onPress={() => open(hero)}
-                                style={({ pressed }) => ({ borderRadius: 14, overflow: "hidden", opacity: pressed ? 0.7 : 1 })}
+                                style={({ pressed }) => ([styles.mediaResult, { opacity: pressed ? 0.7 : 1 }])}
                             >
                                 <Cover
                                     uri={hero.posterPath}
-                                    style={{ width: "100%", height: 280, borderRadius: 0 }}
+                                    style={styles.mediaCover}
                                 />
                                 <View
-                                    style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        backgroundColor: "rgba(0,0,0,0.55)",
-                                        justifyContent: "flex-end",
-                                        padding: 20,
-                                        gap: 8
-                                    }}
+                                    style={styles.mediaIdentity}
                                 >
-                                    <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                                    <View style={styles.mediaTypeRow}>
                                         <Flame size={15} color={colors.rating}/>
                                         <AppText
-                                            style={{ color: colors.rating, fontSize: 11, fontWeight: "700" }}
+                                            style={styles.mediaType}
                                         >
                                             #1 TRENDING
                                         </AppText>
@@ -126,14 +119,14 @@ export function TrendsScreen() {
                                     <AppText heading>
                                         {hero.displayName}
                                     </AppText>
-                                    <AppText style={{ fontSize: 12 }}>{mediaLabels[hero.mediaType]} · {formatDate(hero.releaseDate)}</AppText>
+                                    <AppText style={styles.releaseDate}>{mediaLabels[hero.mediaType]} · {formatDate(hero.releaseDate)}</AppText>
                                     <AppText
                                         numberOfLines={2}
-                                        style={{ fontSize: 12 }}
+                                        style={styles.releaseDate}
                                     >
                                         {hero.overview}
                                     </AppText>
-                                    <AppText style={{ fontSize: 12, color: colors.accent }}>
+                                    <AppText style={styles.trackingLabel}>
                                         {resolve.isPending ? "Opening…" : "See Details →"}
                                     </AppText>
                                 </View>
@@ -142,14 +135,14 @@ export function TrendsScreen() {
                         {resolve.error &&
                             <AppText
                                 accessibilityRole="alert"
-                                style={{ color: colors.error }}
+                                style={styles.errorText}
                             >
                                 {resolve.error.message}
                             </AppText>
                         }
                         <AppText
                             muted
-                            style={{ fontSize: 12 }}
+                            style={styles.releaseDate}
                         >Trending titles · {items.length} {items.length === 1 ? "title" : "titles"}</AppText>
                     </View>
                 }
@@ -177,4 +170,25 @@ const TrendingTitle = memo(function TrendingTitle({ item, open }: { item: Trend;
             detail={`${mediaLabels[item.mediaType]} · ${formatDate(item.releaseDate)}`}
         />
     );
+});
+
+
+const styles = StyleSheet.create({
+    content: { padding: 10, paddingBottom: 32 },
+    header: { padding: 6, gap: 18, paddingBottom: 18 },
+    mediaResult: { borderRadius: 14, overflow: "hidden" },
+    mediaCover: { width: "100%", height: 280, borderRadius: 0 },
+    mediaIdentity: {
+        position: "absolute",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.55)",
+        justifyContent: "flex-end",
+        padding: 20,
+        gap: 8
+    },
+    mediaTypeRow: { flexDirection: "row", gap: 6, alignItems: "center" },
+    mediaType: { color: colors.rating, fontSize: 11, fontWeight: "700" },
+    releaseDate: { fontSize: 12 },
+    trackingLabel: { fontSize: 12, color: colors.accent },
+    errorText: { color: colors.error },
 });

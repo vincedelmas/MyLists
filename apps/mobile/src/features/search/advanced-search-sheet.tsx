@@ -1,6 +1,6 @@
 import {useMemo, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {FlatList, Pressable, View} from "react-native";
+import {StyleSheet, FlatList, Pressable, View} from "react-native";
 import {ChevronRight} from "lucide-react-native";
 import {navbarSearchSchema} from "@/lib/schemas/search.schema";
 import {ActionSheet} from "../../components/action-sheet";
@@ -66,7 +66,7 @@ export function AdvancedSearchSheet({ provider, query, applied, apply, dismiss }
             />
             <FlatList
                 data={filtered}
-                style={{ maxHeight: 340, flexShrink: 1 }}
+                style={styles.optionList}
                 initialNumToRender={8}
                 keyboardShouldPersistTaps="handled"
                 keyExtractor={item => String(item.id)}
@@ -84,7 +84,7 @@ export function AdvancedSearchSheet({ provider, query, applied, apply, dismiss }
                             set(chooser, String(item.id));
                             setChooser(null);
                         }}
-                        style={{ minHeight: 52, paddingVertical: 14 }}
+                        style={styles.optionRow}
                     >
                         <AppText>
                             {item.name}
@@ -198,18 +198,12 @@ export function AdvancedSearchSheet({ provider, query, applied, apply, dismiss }
                                     setSearch("");
                                     setChooser(key);
                                 }}
-                                style={{
-                                    minHeight: 56,
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    gap: 12
-                                }}
+                                style={styles.filterRow}
                             >
-                                <View style={{ flex: 1, gap: 5 }}>
+                                <View style={styles.filterLabel}>
                                     <AppText
                                         muted
-                                        style={{ fontSize: 12 }}
+                                        style={styles.filterCaption}
                                     >
                                         {key === "platformId" ? "Platform" : "Genre"}
                                     </AppText>
@@ -274,3 +268,18 @@ export function AdvancedSearchSheet({ provider, query, applied, apply, dismiss }
         </ActionSheet>
     );
 }
+
+
+const styles = StyleSheet.create({
+    optionList: { maxHeight: 340, flexShrink: 1 },
+    optionRow: { minHeight: 52, paddingVertical: 14 },
+    filterRow: {
+        minHeight: 56,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12
+    },
+    filterLabel: { flex: 1, gap: 5 },
+    filterCaption: { fontSize: 12 },
+});

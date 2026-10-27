@@ -1,5 +1,5 @@
 import {colors} from "../theme";
-import {Pressable, View} from "react-native";
+import {StyleSheet, Pressable, View} from "react-native";
 import {LayoutGrid, List} from "lucide-react-native";
 
 
@@ -8,7 +8,7 @@ export type MediaLayout = "grid" | "list";
 
 export function LayoutToggle({ value, onChange }: { value: MediaLayout; onChange: (value: MediaLayout) => void }) {
     return (
-        <View style={{ flexDirection: "row", gap: 2 }}>
+        <View style={styles.row}>
             {(
                 [
                     { value: "grid", Icon: LayoutGrid },
@@ -21,16 +21,7 @@ export function LayoutToggle({ value, onChange }: { value: MediaLayout; onChange
                     accessibilityLabel={`${mode === "grid" ? "Grid" : "List"} view`}
                     accessibilityState={{ selected: mode === value }}
                     onPress={() => onChange(mode)}
-                    style={({ pressed }) => ({
-                        padding: 11,
-                        minWidth: 48,
-                        minHeight: 48,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: 8,
-                        backgroundColor: mode === value ? colors.secondary : "transparent",
-                        opacity: pressed ? 0.6 : 1,
-                    })}
+                    style={({ pressed }) => ([styles.action, { backgroundColor: mode === value ? colors.secondary : "transparent", opacity: pressed ? 0.6 : 1 }])}
                 >
                     <Icon
                         size={18}
@@ -42,3 +33,16 @@ export function LayoutToggle({ value, onChange }: { value: MediaLayout; onChange
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    row: { flexDirection: "row", gap: 2 },
+    action: {
+        padding: 11,
+        minWidth: 48,
+        minHeight: 48,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 8
+    },
+});

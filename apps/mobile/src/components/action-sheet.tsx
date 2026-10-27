@@ -47,7 +47,7 @@ export function ActionSheet({
                             {...(scrollable ? { keyboardShouldPersistTaps: "handled" as const } : {})}
                             {...(scrollable ? { contentContainerStyle: [styles.content, compact && { gap: spacing.lg }] } : {})}
                             style={[
-                                { flexGrow: 0, flexShrink: 1 },
+                                styles.container,
                                 !scrollable && styles.content
                             ]}
                         >
@@ -76,4 +76,6 @@ const styles = StyleSheet.create({
     host: { position: "absolute" },
     content: { padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
     error: { color: colors.error },
+
+    container: { flexGrow: 0, flexShrink: 1 },
 });

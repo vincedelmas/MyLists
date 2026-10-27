@@ -4,7 +4,7 @@ import type {TabParamList} from "../../lib/navigation.types";
 import {useNavigation, type NavigationProp} from "expo-router/react-navigation";
 import {useQuery} from "@tanstack/react-query";
 import {Row, Switch, Text as NativeText} from "@expo/ui";
-import {ScrollView, View} from "react-native";
+import {StyleSheet, ScrollView, View} from "react-native";
 import {AppText, Button, MenuRow, Page, QueryPanel, Section} from "../../components/ui";
 import {NativeHost} from "../../components/native-host";
 import {colors} from "../../theme";
@@ -46,11 +46,11 @@ export function ListFiltersScreen() {
         >
             <ScrollView
                 keyboardShouldPersistTaps="handled"
-                contentContainerStyle={{ padding: 16, gap: 24, paddingBottom: 32 }}
+                contentContainerStyle={styles.content}
             >
                 <AppText
                     muted
-                    style={{ fontSize: 12 }}
+                    style={styles.caption}
                 >
                     Match any selected value within a category, and all selected categories together.
                 </AppText>
@@ -73,7 +73,7 @@ export function ListFiltersScreen() {
                                 }
                             </Section>
                             <Section title="Personal filters">
-                                <View style={{ padding: 16, gap: 18 }}>
+                                <View style={styles.group}>
                                     {([
                                         { key: "favorite", label: "Favorites only" },
                                         { key: "comment", label: "With comments" },
@@ -105,12 +105,7 @@ export function ListFiltersScreen() {
                 </QueryPanel>
             </ScrollView>
             <View
-                style={{
-                    padding: 16,
-                    borderTopWidth: 1,
-                    borderTopColor: colors.border,
-                    backgroundColor: colors.surface
-                }}
+                style={styles.inset}
             >
                 <Button
                     disabled={query.isPending || query.isError}
@@ -142,3 +137,16 @@ export function ListFiltersScreen() {
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    content: { padding: 16, gap: 24, paddingBottom: 32 },
+    caption: { fontSize: 12 },
+    group: { padding: 16, gap: 18 },
+    inset: {
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        backgroundColor: colors.surface
+    },
+});

@@ -13,6 +13,9 @@
   lines. Expand callbacks, conditionals, option arrays, and configuration objects when they contain multiple steps or nested structures;
   do not compress components or several statements onto one line. Use nearby web components as the reference. Running a formatter is
   not enough: inspect the result and manually split dense code until it is as readable as the web implementation.
+- In mobile code, put static styles in named `StyleSheet.create` definitions and reuse existing shared styles where appropriate.
+  Compose state variants with style arrays; keep inline values only when they depend on runtime data, measurements, animation, or
+  caller-provided overrides. Use descriptive names for styles rather than numbered variants.
 - For mobile UI changes and features, check the corresponding web app implementation first. Keep labels, colors, formatting,
   and visual conventions close to the web app, and verify mobile layouts over ADB when a phone is available.
 - Treat mobile responsiveness as a requirement: virtualize long lists, keep per-keystroke JavaScript work small, and avoid unrelated

@@ -1,5 +1,5 @@
 import type {ReactNode} from "react";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {UserRoundMinus} from "lucide-react-native";
 import {ActionSheet} from "./action-sheet";
 import {AppText, Button} from "./ui";
@@ -30,20 +30,13 @@ export function ConfirmationSheet({
             dismiss={dismiss}
         >
             <View
-                style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: colors.secondary,
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
+                style={styles.centered}
             >
                 <Icon size={24} color={colors.error}/>
             </View>
             <AppText
                 heading
-                style={{ fontSize: 21 }}
+                style={styles.text}
             >
                 {confirmation.title}
             </AppText>
@@ -54,18 +47,13 @@ export function ConfirmationSheet({
             {error &&
                 <AppText
                     accessibilityRole="alert"
-                    style={{ color: colors.error }}
+                    style={styles.errorText}
                 >
                     {error}
                 </AppText>
             }
             <View
-                style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 12,
-                    justifyContent: "flex-end"
-                }}
+                style={styles.row}
             >
                 <Button
                     secondary
@@ -86,3 +74,23 @@ export function ConfirmationSheet({
         </ActionSheet>
     );
 }
+
+
+const styles = StyleSheet.create({
+    centered: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: colors.secondary,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    text: { fontSize: 21 },
+    errorText: { color: colors.error },
+    row: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 12,
+        justifyContent: "flex-end"
+    },
+});

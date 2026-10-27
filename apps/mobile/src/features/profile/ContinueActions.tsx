@@ -1,5 +1,5 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import type {ContinueProgress} from "@/lib/utils/media/continue";
 import {api, type MediaType} from "../../lib/api-client";
 import {AppText, Button, Cover} from "../../components/ui";
@@ -38,27 +38,27 @@ export function ContinueActions({ item, dismiss }: { item: ContinueItem; dismiss
             dismiss={dismiss}
             error={mutation.error?.message}
         >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+            <View style={styles.mediaSummary}>
                 <Cover
                     uri={item.cover}
                     label={item.name}
-                    style={{ width: 64, height: 96, borderRadius: 8 }}
+                    style={styles.mediaCover}
                 />
-                <View style={{ flex: 1, gap: 6 }}>
-                    <AppText style={{ color: mediaColors[item.mediaType], fontSize: 11, fontWeight: "600" }}>
+                <View style={styles.mediaIdentity}>
+                    <AppText style={[{ color: mediaColors[item.mediaType] }, styles.mediaType]}>
                         {mediaLabels[item.mediaType]}
                     </AppText>
                     <AppText
                         heading
                         numberOfLines={2}
-                        style={{ fontSize: 18, lineHeight: 24 }}
+                        style={styles.mediaTitle}
                     >
                         {item.name}
                     </AppText>
                     {item.progress &&
                         <AppText
                             muted
-                            style={{ fontSize: 12 }}
+                            style={styles.progressLabel}
                         >
                             {item.progress.label}
                         </AppText>
@@ -71,7 +71,7 @@ export function ContinueActions({ item, dismiss }: { item: ContinueItem; dismiss
                     color={mediaColors[item.mediaType]}
                 />
             }
-            <View style={{ gap: 8 }}>
+            <View style={styles.progressActions}>
                 {item.progress &&
                     <Button
                         fullWidth
@@ -85,3 +85,14 @@ export function ContinueActions({ item, dismiss }: { item: ContinueItem; dismiss
         </ActionSheet>
     );
 }
+
+
+const styles = StyleSheet.create({
+    mediaSummary: { flexDirection: "row", alignItems: "center", gap: 16 },
+    mediaCover: { width: 64, height: 96, borderRadius: 8 },
+    mediaIdentity: { flex: 1, gap: 6 },
+    mediaType: { fontSize: 11, fontWeight: "600" },
+    mediaTitle: { fontSize: 18, lineHeight: 24 },
+    progressLabel: { fontSize: 12 },
+    progressActions: { gap: 8 },
+});

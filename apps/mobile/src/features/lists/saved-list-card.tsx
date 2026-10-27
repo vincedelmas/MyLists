@@ -1,5 +1,5 @@
 import {memo, useRef, type ComponentRef} from "react";
-import {Pressable, View} from "react-native";
+import {StyleSheet, Pressable, View} from "react-native";
 import {MenuView} from "@expo/ui/community/menu";
 import {FolderOpen, ListFilter, MoreHorizontal, Pin} from "lucide-react-native";
 import {AppText, Cover} from "../../components/ui";
@@ -42,14 +42,7 @@ export const SavedListCard = memo(function SavedListCard({ item, pinned, owner, 
         attributes: { ...action.attributes, disabled }
     }));
     const content = <View
-        style={{
-            marginBottom: 12,
-            borderRadius: 18,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.surface,
-            overflow: "hidden"
-        }}
+        style={styles.card}
     >
         <Pressable
             accessibilityRole="button"
@@ -57,27 +50,21 @@ export const SavedListCard = memo(function SavedListCard({ item, pinned, owner, 
             accessibilityHint={owner ? "Long press for list actions" : undefined}
             onLongPress={owner ? () => menu.current?.show() : undefined}
             onPress={onOpen}
-            style={{
-                padding: 16,
-                minHeight: 88,
-                flexDirection: "row",
-                gap: 12,
-                alignItems: "center"
-            }}
+            style={styles.openButton}
         >
             <Icon size={23} color={colors.accent}/>
             <View
-                style={{ flex: 1, gap: 6 }}
+                style={styles.identity}
             >
                 <AppText
                     numberOfLines={2}
-                    style={{ fontSize: 16, fontWeight: "600" }}
+                    style={styles.title}
                 >
                     {item.title}
                 </AppText>
                 <AppText
                     muted
-                    style={{ fontSize: 12 }}
+                    style={styles.metadata}
                 >
                     {item.kind === "dynamic" ? `${item.total} titles · Dynamic list` : `${item.privacy} collection`}
                 </AppText>
@@ -93,12 +80,7 @@ export const SavedListCard = memo(function SavedListCard({ item, pinned, owner, 
                         event.stopPropagation();
                         menu.current?.show();
                     }}
-                    style={{
-                        width: 48,
-                        height: 48,
-                        alignItems: "center",
-                        justifyContent: "center"
-                    }}
+                    style={styles.menuButton}
                 >
                     <MoreHorizontal size={19} color={colors.muted}/>
                 </Pressable>
@@ -107,18 +89,13 @@ export const SavedListCard = memo(function SavedListCard({ item, pinned, owner, 
         {item.kind === "collection" && item.previews.length > 0 &&
             <View
                 pointerEvents="none"
-                style={{
-                    flexDirection: "row",
-                    gap: 8,
-                    padding: 16,
-                    paddingTop: 0
-                }}
+                style={styles.previews}
             >
                 {item.previews.slice(0, 4).map(preview =>
                     <Cover
                         key={`${preview.mediaType}:${preview.mediaId}`}
                         uri={preview.mediaCover}
-                        style={{ width: 48, height: 72, borderRadius: 8 }}
+                        style={styles.previewCover}
                     />)
                 }
             </View>
@@ -136,4 +113,39 @@ export const SavedListCard = memo(function SavedListCard({ item, pinned, owner, 
             {content}
         </MenuView>
         : content;
+});
+
+
+const styles = StyleSheet.create({
+    card: {
+        marginBottom: 12,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        overflow: "hidden"
+    },
+    openButton: {
+        padding: 16,
+        minHeight: 88,
+        flexDirection: "row",
+        gap: 12,
+        alignItems: "center"
+    },
+    identity: { flex: 1, gap: 6 },
+    title: { fontSize: 16, fontWeight: "600" },
+    metadata: { fontSize: 12 },
+    menuButton: {
+        width: 48,
+        height: 48,
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    previews: {
+        flexDirection: "row",
+        gap: 8,
+        padding: 16,
+        paddingTop: 0
+    },
+    previewCover: { width: 48, height: 72, borderRadius: 8 },
 });

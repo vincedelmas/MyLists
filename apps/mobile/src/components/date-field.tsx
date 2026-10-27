@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {Platform, Pressable, View} from "react-native";
+import {StyleSheet, Platform, Pressable, View} from "react-native";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import {CalendarDays} from "lucide-react-native";
 import {dateInputValueToDate, formatDate, toDateInputValue} from "@/lib/utils/formatting/date";
@@ -19,10 +19,10 @@ export function DateField({ label, value, onChange, minimum, maximum, disabled, 
     const [open, setOpen] = useState(false);
 
     return (
-        <View style={{ gap: 8 }}>
+        <View style={styles.group}>
             <AppText
                 muted
-                style={{ fontSize: 12 }}
+                style={styles.caption}
             >
                 {label}
             </AppText>
@@ -31,16 +31,7 @@ export function DateField({ label, value, onChange, minimum, maximum, disabled, 
                 accessibilityLabel={`${label}, ${value ? formatDate(value) : "Choose a date"}`}
                 disabled={disabled}
                 onPress={() => setOpen(true)}
-                style={{
-                    minHeight: 48,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    padding: 12
-                }}
+                style={styles.action}
             >
                 <CalendarDays size={18} color={colors.accent}/>
                 <AppText>
@@ -82,3 +73,19 @@ export function DateField({ label, value, onChange, minimum, maximum, disabled, 
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    group: { gap: 8 },
+    caption: { fontSize: 12 },
+    action: {
+        minHeight: 48,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.border,
+        padding: 12
+    },
+});

@@ -1,6 +1,6 @@
 import {COMMENT_MAX_LENGTH} from "@/lib/utils/constants";
 import {useState} from "react";
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {Button, Field} from "../../components/ui";
 
 
@@ -28,8 +28,8 @@ export function TrackingField({
     const [value, setValue] = useState(initial);
 
     return (
-        <View style={{ gap: 10 }}>
-            <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 10 }}>
+        <View style={styles.group}>
+            <View style={styles.row}>
                 {numeric && (
                     <Button
                         label="−1"
@@ -39,7 +39,7 @@ export function TrackingField({
                     />
                 )
                 }
-                <View style={{ flex: 1 }}>
+                <View style={styles.fill}>
                     <Field
                         label={label}
                         value={value}
@@ -80,3 +80,10 @@ export function TrackingField({
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    group: { gap: 10 },
+    row: { flexDirection: "row", alignItems: "flex-end", gap: 10 },
+    fill: { flex: 1 },
+});

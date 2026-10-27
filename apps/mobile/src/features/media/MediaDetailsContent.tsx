@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
-import {Animated, FlatList, Linking, Pressable, RefreshControl, View} from "react-native";
+import {StyleSheet, Animated, FlatList, Linking, Pressable, RefreshControl, View} from "react-native";
 import {ArrowUpRight, CalendarDays} from "lucide-react-native";
 import {AppText, Button, Cover, MenuRow, QueryPanel} from "../../components/ui";
 import {SectionHeading} from "../../components/section-heading";
@@ -23,7 +23,7 @@ function RelatedTitles({ title, items, params }: { title: string; items: Related
     const push = useTabPush();
 
     return (
-        <View style={{ gap: 12 }}>
+        <View style={styles.relatedSection}>
             <SectionHeading title={title}/>
             <FlatList
                 horizontal
@@ -31,7 +31,7 @@ function RelatedTitles({ title, items, params }: { title: string; items: Related
                 keyExtractor={item => String(item.mediaId)}
                 showsHorizontalScrollIndicator={false}
                 initialNumToRender={4}
-                contentContainerStyle={{ gap: 12 }}
+                contentContainerStyle={styles.relatedSection}
                 renderItem={({ item }) =>
                     <Pressable
                         accessibilityRole="button"
@@ -40,19 +40,16 @@ function RelatedTitles({ title, items, params }: { title: string; items: Related
                             pathname: "/media/[mediaType]/[mediaId]",
                             params: { ...params, mediaId: item.mediaId }
                         })}
-                        style={{ width: 112, gap: 8 }}
+                        style={styles.relatedCard}
                     >
                         <Cover
                             uri={item.mediaCover}
                             label={item.mediaName}
-                            style={{ width: 112, height: 168, borderRadius: 12 }}
+                            style={styles.relatedCover}
                         />
                         <AppText
                             numberOfLines={2}
-                            style={{
-                                fontSize: 12,
-                                lineHeight: 18
-                            }}
+                            style={styles.relatedTitle}
                         >
                             {item.mediaName}
                         </AppText>
@@ -97,7 +94,7 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
             {...scrollProps}
             contentInsetAdjustmentBehavior="automatic"
             contentContainerStyle={[
-                { padding: 16, gap: 24 },
+                styles.content,
                 contentContainerStyle
             ]}
             refreshControl={
@@ -112,41 +109,29 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
             }
         >
             <View
-                style={{
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: `${color}40`,
-                    backgroundColor: `${color}08`,
-                    padding: 16,
-                    gap: 10
-                }}
+                style={[styles.releaseCard, { borderColor: `${color}40`, backgroundColor: `${color}08` }]}
             >
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <View style={styles.releaseHeading}>
                     <CalendarDays size={17} color={color}/>
                     <AppText
                         muted
-                        style={{ fontSize: 12 }}
+                        style={styles.metadata}
                     >
                         {next ? "Next episode" : "Release date"}
                     </AppText>
                 </View>
-                <AppText style={{ fontSize: 20, lineHeight: 28, fontWeight: "600" }}>
+                <AppText style={styles.releaseDate}>
                     {formatDate(next?.date ?? media.releaseDate)}
                 </AppText>
                 {next &&
                     <AppText style={{ color }}>S{zeroPad(next.season ?? 0)}.E{zeroPad(next.episode ?? 0)}</AppText>
                 }
             </View>
-            <View style={{ gap: 12 }}>
+            <View style={styles.relatedSection}>
                 <SectionHeading title="Synopsis"/>
                 {media.tagline &&
                     <AppText
-                        style={{
-                            fontSize: 16,
-                            lineHeight: 24,
-                            fontStyle: "italic",
-                            color
-                        }}
+                        style={[styles.tagline, { color }]}
                     >
                         {media.tagline}
                     </AppText>
@@ -154,7 +139,7 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                 <AppText
                     selectable
                     numberOfLines={expanded ? undefined : 5}
-                    style={{ fontSize: 14, lineHeight: 23 }}
+                    style={styles.synopsis}
                 >
                     {media.synopsis || "No synopsis available yet."}
                 </AppText>
@@ -163,25 +148,20 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                         accessibilityRole="button"
                         accessibilityState={{ expanded }}
                         onPress={() => setExpanded(value => !value)}
-                        style={{ minHeight: 48, justifyContent: "center" }}
+                        style={styles.synopsisToggle}
                     >
                         <AppText
-                            style={{ color: colors.accent }}
+                            style={styles.synopsisToggleLabel}
                         >
                             {expanded ? "Show less" : "Read more"}
                         </AppText>
                     </Pressable>
                 }
             </View>
-            <View style={{ gap: 12 }}>
+            <View style={styles.relatedSection}>
                 <SectionHeading title="About this title"/>
                 <View
-                    style={{
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        borderTopWidth: 1,
-                        borderColor: colors.border
-                    }}
+                    style={styles.facts}
                 >
                     {completionMinutes > 0 &&
                         <Fact
@@ -223,9 +203,9 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                 </View>
             </View>
             {params.mediaType === "games" &&
-                <View style={{ gap: 12 }}>
+                <View style={styles.relatedSection}>
                     <SectionHeading title="How long to beat"/>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                    <View style={styles.completionTimes}>
                         {[
                             { label: "Main story", value: hltb.data?.hltbMainTime ?? media.completionHours },
                             {
@@ -254,18 +234,13 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                 {details =>
                     <>
                         {details.genres.length > 0 &&
-                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                            <View style={styles.genres}>
                                 {details.genres.map(genre =>
                                     <View
                                         key={genre.name}
-                                        style={{
-                                            borderRadius: 12,
-                                            paddingHorizontal: 12,
-                                            paddingVertical: 8,
-                                            backgroundColor: colors.surface
-                                        }}
+                                        style={styles.genre}
                                     >
-                                        <AppText style={{ fontSize: 12 }}>
+                                        <AppText style={styles.metadata}>
                                             {genre.name}
                                         </AppText>
                                     </View>)
@@ -274,34 +249,25 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                         }
                         {details.seasons?.length
                             ?
-                            <View style={{ gap: 12 }}>
+                            <View style={styles.relatedSection}>
                                 <SectionHeading title="Season breakdown"/>
                                 <FlatList
                                     horizontal
                                     data={details.seasons}
                                     keyExtractor={item => String(item.season)}
                                     showsHorizontalScrollIndicator={false}
-                                    contentContainerStyle={{ gap: 10 }}
+                                    contentContainerStyle={styles.seasonsContent}
                                     renderItem={({ item }) =>
                                         <View
-                                            style={{
-                                                width: 132,
-                                                padding: 14,
-                                                gap: 8,
-                                                borderRadius: 14,
-                                                backgroundColor: colors.surface
-                                            }}
+                                            style={styles.season}
                                         >
                                             <AppText
-                                                style={{
-                                                    color,
-                                                    fontWeight: "600"
-                                                }}
+                                                style={[{ color }, styles.seasonNumber]}
                                             >S{zeroPad(item.season)}</AppText>
                                             <AppText>Season {item.season}</AppText>
                                             <AppText
                                                 muted
-                                                style={{ fontSize: 12 }}
+                                                style={styles.metadata}
                                             >{item.episodes} episodes</AppText>
                                         </View>
                                     }
@@ -324,7 +290,7 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                             .map(section =>
                                 <View
                                     key={section.title}
-                                    style={{ gap: 12 }}
+                                    style={styles.relatedSection}
                                 >
                                     <SectionHeading title={section.title}/>
                                     <FlatList
@@ -333,7 +299,7 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                                         keyExtractor={item => item.name}
                                         showsHorizontalScrollIndicator={false}
                                         initialNumToRender={3}
-                                        contentContainerStyle={{ gap: 10 }}
+                                        contentContainerStyle={styles.seasonsContent}
                                         renderItem={({ item }) =>
                                             <Pressable
                                                 accessibilityRole={section.job ? "button" : undefined}
@@ -346,21 +312,11 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                                                         name: item.name
                                                     }
                                                 })}
-                                                style={{
-                                                    width: 156,
-                                                    minHeight: 80,
-                                                    padding: 14,
-                                                    borderRadius: 14,
-                                                    gap: 8,
-                                                    backgroundColor: colors.surface
-                                                }}
+                                                style={styles.credit}
                                             >
                                                 <AppText
                                                     numberOfLines={3}
-                                                    style={{
-                                                        fontSize: 14,
-                                                        lineHeight: 20
-                                                    }}
+                                                    style={styles.creditName}
                                                 >
                                                     {item.name}
                                                 </AppText>
@@ -387,7 +343,7 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                             />
                         }
                         {details.collections.length > 0 &&
-                            <View style={{ gap: 12 }}>
+                            <View style={styles.relatedSection}>
                                 <SectionHeading title="Popular collections"/>
                                 {details.collections.map(collection =>
                                     <MenuRow
@@ -408,7 +364,7 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
                     </>
                 }
             </QueryPanel>
-            <View style={{ gap: 12 }}>
+            <View style={styles.relatedSection}>
                 {params.mediaType === "books" && !media.provider.url &&
                     <AppText muted>
                         Book added manually
@@ -434,10 +390,7 @@ export function MediaDetailsContent({ params, data, refetch, refreshing }: { par
             {data.refresh.reason &&
                 <AppText
                     muted
-                    style={{
-                        fontSize: 12,
-                        lineHeight: 18
-                    }}
+                    style={styles.relatedTitle}
                 >
                     {data.refresh.reason}
                     {data.refresh.nextAllowedAt ? ` Available ${formatDate(data.refresh.nextAllowedAt)}.` : ""}
@@ -454,31 +407,98 @@ function Fact({ label, value, onPress }: { label: string; value: string; onPress
             disabled={!onPress}
             accessibilityRole={onPress ? "button" : undefined}
             onPress={onPress}
-            style={{
-                width: "50%",
-                minHeight: 76,
-                paddingVertical: 14,
-                paddingRight: 12,
-                gap: 6,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.border
-            }}
+            style={styles.fact}
         >
             <AppText
                 muted
-                style={{
-                    fontSize: 11,
-                    lineHeight: 16
-                }}
+                style={styles.factLabel}
             >
                 {label}
             </AppText>
             <AppText
                 selectable={!onPress}
-                style={{ fontSize: 13, lineHeight: 20, color: onPress ? colors.accent : colors.text }}
+                style={[styles.factValue, { color: onPress ? colors.accent : colors.text }]}
             >
                 {value}
             </AppText>
         </Pressable>
     );
 }
+
+
+const styles = StyleSheet.create({
+    relatedSection: { gap: 12 },
+    relatedCard: { width: 112, gap: 8 },
+    relatedCover: { width: 112, height: 168, borderRadius: 12 },
+    relatedTitle: {
+        fontSize: 12,
+        lineHeight: 18
+    },
+    content: { padding: 16, gap: 24 },
+    releaseCard: {
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: 16,
+        gap: 10
+    },
+    releaseHeading: { flexDirection: "row", alignItems: "center", gap: 8 },
+    metadata: { fontSize: 12 },
+    releaseDate: { fontSize: 20, lineHeight: 28, fontWeight: "600" },
+    tagline: {
+        fontSize: 16,
+        lineHeight: 24,
+        fontStyle: "italic"
+    },
+    synopsis: { fontSize: 14, lineHeight: 23 },
+    synopsisToggle: { minHeight: 48, justifyContent: "center" },
+    synopsisToggleLabel: { color: colors.accent },
+    facts: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        borderTopWidth: 1,
+        borderColor: colors.border
+    },
+    completionTimes: { flexDirection: "row", flexWrap: "wrap" },
+    genres: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    genre: {
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        backgroundColor: colors.surface
+    },
+    seasonsContent: { gap: 10 },
+    season: {
+        width: 132,
+        padding: 14,
+        gap: 8,
+        borderRadius: 14,
+        backgroundColor: colors.surface
+    },
+    seasonNumber: { fontWeight: "600" },
+    credit: {
+        width: 156,
+        minHeight: 80,
+        padding: 14,
+        borderRadius: 14,
+        gap: 8,
+        backgroundColor: colors.surface
+    },
+    creditName: {
+        fontSize: 14,
+        lineHeight: 20
+    },
+    fact: {
+        width: "50%",
+        minHeight: 76,
+        paddingVertical: 14,
+        paddingRight: 12,
+        gap: 6,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border
+    },
+    factLabel: {
+        fontSize: 11,
+        lineHeight: 16
+    },
+    factValue: { fontSize: 13, lineHeight: 20 },
+});

@@ -1,4 +1,4 @@
-import {View} from "react-native";
+import {StyleSheet, View} from "react-native";
 import {Switch} from "@expo/ui";
 import {NativeHost} from "./native-host";
 import {AppText} from "./ui";
@@ -16,23 +16,18 @@ interface SettingSwitchProps {
 export function SettingSwitch({ label, description, value, disabled, onChange }: SettingSwitchProps) {
     return (
         <View
-            style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 16,
-                minHeight: 52
-            }}
+            style={styles.row}
         >
-            <View style={{ flex: 1, gap: 5 }}>
+            <View style={styles.group}>
                 <AppText
-                    style={{ fontSize: 14, lineHeight: 21 }}
+                    style={styles.text}
                 >
                     {label}
                 </AppText>
                 {description &&
                     <AppText
                         muted
-                        style={{ fontSize: 12, lineHeight: 18 }}
+                        style={styles.caption}
                     >
                         {description}
                     </AppText>
@@ -57,3 +52,16 @@ export function SettingSwitch({ label, description, value, disabled, onChange }:
         </View>
     );
 }
+
+
+const styles = StyleSheet.create({
+    row: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 16,
+        minHeight: 52
+    },
+    group: { flex: 1, gap: 5 },
+    text: { fontSize: 14, lineHeight: 21 },
+    caption: { fontSize: 12, lineHeight: 18 },
+});

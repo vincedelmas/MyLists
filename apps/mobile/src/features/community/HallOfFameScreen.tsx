@@ -225,7 +225,7 @@ const RankAvatar = memo(function RankAvatar({ user, size, color = colors.border 
                 ? <Cover
                     uri={user.image}
                     label={user.name}
-                    style={{ width: "100%", height: "100%", borderRadius: size / 2 }}
+                    style={[styles.avatarImage, { borderRadius: size / 2 }]}
                 />
                 :
                 <View
@@ -235,7 +235,7 @@ const RankAvatar = memo(function RankAvatar({ user, size, color = colors.border 
                     ]}
                 >
                     <AppText
-                        style={{ fontSize: size * 0.32, fontWeight: "700", color: colors.muted }}
+                        style={[{ fontSize: size * 0.32 }, styles.avatarInitial]}
                     >
                         {Array.from(user.name)[0].toLocaleUpperCase()}
                     </AppText>
@@ -286,7 +286,7 @@ const Podium = memo(function Podium({ users, category, onSelect }: { users: Rank
                         </View>
                         <AppText
                             numberOfLines={1}
-                            style={[styles.podiumName, champion && { color: colors.text }]}
+                            style={[styles.podiumName, champion && styles.championName]}
                         >
                             {user.name}
                         </AppText>
@@ -400,7 +400,7 @@ function RankingSheet({ user, ranks, dismiss, onCategory }: { user?: RankedUser;
             dismiss={dismiss}
         >
             {user
-                ? <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+                ? <View style={styles.rankingHeader}>
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={`View ${user.name}'s profile`}
@@ -686,4 +686,9 @@ const styles = StyleSheet.create({
     },
     inactive: { opacity: 0.4 },
     pressed: { opacity: 0.6 },
+
+    avatarImage: { width: "100%", height: "100%" },
+    avatarInitial: { fontWeight: "700", color: colors.muted },
+    championName: { color: colors.text },
+    rankingHeader: { flexDirection: "row", gap: 12, alignItems: "center" },
 });

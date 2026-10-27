@@ -70,7 +70,7 @@ export function PersonScreen() {
 
                     return data.access === "private"
                         ? (
-                            <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 24 }}>
+                            <ScrollView contentContainerStyle={styles.content}>
                                 <ProfileHeader
                                     data={{ user: data.header }}
                                     action={action}
@@ -131,4 +131,6 @@ const styles = StyleSheet.create({
         lineHeight: 22,
         maxWidth: 280
     },
+
+    content: { gap: 16, paddingBottom: 24 },
 });

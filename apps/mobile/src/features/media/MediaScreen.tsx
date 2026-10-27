@@ -1,4 +1,4 @@
-import {Pressable} from "react-native";
+import {StyleSheet, Pressable} from "react-native";
 import {colors} from "../../theme";
 import {useState} from "react";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
@@ -81,13 +81,7 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
                     onPress={() => refresh.mutate()}
                     disabled={!query.data?.refresh.allowed || refresh.isPending}
                     accessibilityState={{ disabled: !query.data?.refresh.allowed || refresh.isPending, busy: refresh.isPending }}
-                    style={{
-                        width: 48,
-                        height: 48,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        opacity: query.data?.refresh.allowed ? 1 : 0.35
-                    }}
+                    style={[styles.action, { opacity: query.data?.refresh.allowed ? 1 : 0.35 }]}
                 >
                     <RefreshCw size={20} color={colors.muted}/>
                 </Pressable>
@@ -96,7 +90,7 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
             {refresh.error &&
                 <AppText
                     accessibilityRole="alert"
-                    style={{ padding: 12 }}
+                    style={styles.text}
                 >
                     {refresh.error.message}
                 </AppText>
@@ -104,7 +98,7 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
             {refresh.isSuccess &&
                 <AppText
                     accessibilityRole="alert"
-                    style={{ padding: 12 }}
+                    style={styles.text}
                 >
                     Metadata refreshed.
                 </AppText>
@@ -221,3 +215,14 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
         </Page>
     );
 }
+
+
+const styles = StyleSheet.create({
+    action: {
+        width: 48,
+        height: 48,
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    text: { padding: 12 },
+});

@@ -74,7 +74,7 @@ export function ActivityPeriodSheet({ period, onSelect, dismiss }: { period: Act
                                 onPress={() => onSelect({ year: Number(year), month, view: "month" })}
                                 style={({ pressed }) => [styles.month, selected && styles.selected, disabled && styles.disabled, pressed && styles.pressed]}
                             >
-                                <AppText style={[styles.monthLabel, selected && { color: colors.accent }]}>
+                                <AppText style={[styles.monthLabel, selected && styles.accentText]}>
                                     {formatMonth(month, { month: "short" })}
                                 </AppText>
                             </Pressable>
@@ -182,4 +182,6 @@ const styles = StyleSheet.create({
     error: { color: colors.error, fontSize: 12, lineHeight: 18 },
     disabled: { opacity: 0.25 },
     pressed: { opacity: 0.6 },
+
+    accentText: { color: colors.accent },
 });

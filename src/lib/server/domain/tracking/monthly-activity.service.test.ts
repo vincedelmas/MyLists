@@ -107,7 +107,6 @@ describe("MonthlyActivityService yearly consolidation", () => {
         const service = new MonthlyActivityService(repository as any, { get: () => monthlyActivity } as any);
 
         const result = await service.getMonthlyActivity(1, {
-            username: "activity-owner",
             year: 2026,
             month: 1,
             page: 1,

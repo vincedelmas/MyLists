@@ -15,9 +15,9 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const {MonthlyActivityRepository} = await import(
+const { MonthlyActivityRepository } = await import(
     "@/lib/server/domain/tracking/monthly-activity.repository"
-);
+    );
 
 
 describe("MonthlyActivityRepository", () => {
@@ -26,10 +26,10 @@ describe("MonthlyActivityRepository", () => {
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, {schema, casing: "snake_case"});
+        db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
 
-        migrate(db, {migrationsFolder: "./drizzle"});
+        migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
 
         await db.insert(user).values({
@@ -50,6 +50,22 @@ describe("MonthlyActivityRepository", () => {
     afterEach(() => {
         sqlite.close();
         dbContext.db = undefined;
+    });
+
+    it("does not edit or remove another user's monthly summary", async () => {
+        MonthlyActivityRepository.addContribution({
+            userId: 1,
+            mediaId: 10,
+            mediaType: MediaType.BOOKS,
+            progressGained: 25,
+            redoGained: 0,
+            hadCompletion: false,
+            activityDate: "2026-01-01T12:00:00.000Z"
+        });
+        const stored = db.select().from(userMediaMonthlyActivity).all()[0];
+        expect(MonthlyActivityRepository.updateMonthlyActivity(999, stored.id, { progressGained: 999, lastActivityAt: "2026-02-01T12:00:00.000Z" })).toBeNull();
+        MonthlyActivityRepository.removeFromMonth(999, stored.id);
+        expect(db.select().from(userMediaMonthlyActivity).all()).toEqual([stored]);
     });
 
     it("aggregates progress, completion, and multiple redo contributions in one month", async () => {

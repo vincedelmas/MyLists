@@ -12,6 +12,7 @@ import {timeNavigationRequest} from "./diagnostics/navigation-timing";
 import type * as Social from "../../../../src/lib/server/mobile/social";
 import type * as Library from "../../../../src/lib/server/mobile/library";
 import type * as Calendar from "../../../../src/lib/server/mobile/calendar";
+import type * as MonthlyActivity from "../../../../src/lib/server/mobile/monthly-activity";
 import type * as People from "../../../../src/lib/server/mobile/people";
 import type * as Profile from "../../../../src/lib/server/mobile/profile";
 import type * as Settings from "../../../../src/lib/server/mobile/settings";
@@ -33,6 +34,9 @@ export type SettingsInput = Parameters<typeof Settings.saveMobileSettings>[1];
 export type MobileProfile = NonNullable<Result<typeof Profile.getMobileProfile>>;
 export type MobileProfileActivity = Result<typeof Profile.getMobileProfileActivity>;
 export type MobileSettings = NonNullable<Result<typeof Settings.getMobileSettings>>;
+export type MobileMonthlyActivity = Result<typeof MonthlyActivity.getMobileMonthlyActivity>;
+export type MonthlyActivityInput = Parameters<typeof MonthlyActivity.getMobileMonthlyActivity>[1];
+export type MonthlyActivityMutation = Parameters<typeof MonthlyActivity.mutateMobileMonthlyActivity>[1];
 
 export class ApiError extends Error {
     constructor(
@@ -165,6 +169,14 @@ export const api = {
     profile: (signal?: AbortSignal, userId?: number) => request<MobileProfile>(subjectPath("/profile", userId), signal),
     profileActivity: (signal?: AbortSignal, userId?: number) =>
         request<MobileProfileActivity>(subjectPath("/profile/activity", userId), signal),
+    monthlyActivity: (input: MonthlyActivityInput, signal?: AbortSignal, userId?: number) =>
+        request<MobileMonthlyActivity>(`/profile/monthly-activity/?${queryString({ ...input, userId })}`, signal),
+    monthlyActivityStats: (input: Parameters<typeof MonthlyActivity.getMobileMonthlyActivityStats>[1], signal?: AbortSignal, userId?: number) =>
+        request<Result<typeof MonthlyActivity.getMobileMonthlyActivityStats>>(`/profile/monthly-activity/stats?${queryString({ ...input, userId })}`, signal),
+    searchActivityMedia: (mediaType: MediaType, query: string, signal?: AbortSignal) =>
+        request<Result<typeof MonthlyActivity.searchMobileActivityMedia>>(`/profile/monthly-activity/media-search?${queryString({ mediaType, query })}`, signal),
+    saveMonthlyActivity: (input: MonthlyActivityMutation) =>
+        request<Result<typeof MonthlyActivity.mutateMobileMonthlyActivity>>("/profile/monthly-activity/", undefined, "POST", input),
     deleteHistory: (updateId: number) =>
         request<Result<typeof Profile.deleteMobileHistory>>("/profile/history", undefined, "DELETE", { updateIds: [updateId] }),
     continueMedia: (input: Parameters<typeof Library.continueMobileMedia>[1]) =>

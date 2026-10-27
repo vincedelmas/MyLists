@@ -89,7 +89,7 @@ export class MonthlyActivityService {
         return { ...allocation, keptHistory: false };
     }
 
-    async getMonthlyActivityStats(userId: number, filters: MonthlyActivityStatsFilters) {
+    async getMonthlyActivityStats(userId: number, filters: Omit<MonthlyActivityStatsFilters, "username">) {
         const range = getActivityMonthRange(filters.year, filters.month, filters.view);
         const mediaTypes = Object.values(MediaType);
 
@@ -121,7 +121,7 @@ export class MonthlyActivityService {
         };
     }
 
-    async getMonthlyActivity(userId: number, filters: MonthlyActivityFilters, canViewHidden = false) {
+    async getMonthlyActivity(userId: number, filters: Omit<MonthlyActivityFilters, "username">, canViewHidden = false) {
         if (filters.hiddenOnly && !canViewHidden) {
             throw new FormattedError("Hidden activity is only available to the profile owner");
         }

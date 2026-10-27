@@ -23,6 +23,10 @@ export function LayoutToggle({ value, onChange }: { value: MediaLayout; onChange
                     onPress={() => onChange(mode)}
                     style={({ pressed }) => ({
                         padding: 11,
+                        minWidth: 48,
+                        minHeight: 48,
+                        alignItems: "center",
+                        justifyContent: "center",
                         borderRadius: 8,
                         backgroundColor: mode === value ? colors.secondary : "transparent",
                         opacity: pressed ? 0.6 : 1,

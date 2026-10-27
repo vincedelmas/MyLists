@@ -1,7 +1,7 @@
 import {useLocalSearchParams} from "expo-router";
 import {Page, StateView} from "../../components/ui";
 import {AchievementsContent} from "./AchievementsScreen";
-import {ActivityContent} from "./ActivityScreen";
+import {ActivityContent} from "../activity/activity-screen";
 import {StatsContent} from "./StatsScreen";
 import {CalendarContent} from "./CalendarContent";
 

@@ -62,7 +62,7 @@ describe("authentication on every mobile API endpoint", () => {
 
 describe("mobile resource authorization", () => {
     const profileResources = endpoints.filter(endpoint => endpoint.method === "GET" && (
-        endpoint.path.startsWith("/api/mobile/v1/profile/") && !endpoint.path.endsWith("/calendar")
+        endpoint.path.startsWith("/api/mobile/v1/profile/") && !endpoint.path.endsWith("/calendar") && !endpoint.path.endsWith("/monthly-activity/media-search")
         || endpoint.path.startsWith("/api/mobile/v1/lists/$mediaType")
         || endpoint.path.startsWith("/api/mobile/v1/library/")
         || endpoint.path === "/api/mobile/v1/social/"
@@ -79,6 +79,13 @@ describe("mobile resource authorization", () => {
     });
 
     const calendar = endpoints.find(endpoint => endpoint.path === "/api/mobile/v1/profile/calendar")!;
+    const activityOwnerEndpoints = endpoints.filter(endpoint => endpoint.path.startsWith("/api/mobile/v1/profile/monthly-activity/") && (endpoint.method === "POST" || endpoint.path.endsWith("/media-search")));
+    it.each(activityOwnerEndpoints)("rejects another user's $method $path before looking up their profile", async endpoint => {
+        mocks.session.mockResolvedValue({ id: 10 });
+        const response = await call(endpoint, "?userId=20");
+        expect(response.status).toBe(403);
+        expect(mocks.container).not.toHaveBeenCalled();
+    });
     it("rejects another user's calendar before looking up their profile, even if it is public", async () => {
         mocks.session.mockResolvedValue({ id: 10 });
         const response = await call(calendar, "?userId=20&startDate=2026-10-01&endDate=2026-10-31");

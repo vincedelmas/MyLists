@@ -97,6 +97,11 @@ const advancedSearchFiltersSchema = z.discriminatedUnion("provider", [
 ]);
 
 
+export const supportsAdvancedSearch = (provider: ApiProviderType) => {
+    return advancedSearchFiltersSchema.options.some(schema => schema.shape.provider.value === provider);
+};
+
+
 const bookAdvancedSearchSchema = z.object({
     advancedFilters: bookAdvancedSearchFiltersSchema.optional(),
     query: z.string().trim().refine(q => q.length === 0 || q.length >= 2, { message: "Book titles must contain at least two characters." }),

@@ -5,9 +5,9 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Search, SlidersHorizontal} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {Link, useNavigate} from "@tanstack/react-router";
+import {supportsAdvancedSearch} from "@/lib/schemas/search.schema";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {useNavbarSearch} from "@/lib/client/components/navbar/use-navbar-search";
-import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
 import {getSearchProviderItems} from "@/lib/client/components/navbar/navbar-search";
 import {NavbarSearchResults} from "@/lib/client/components/navbar/NavbarSearchResults";
 import {NavbarSearchDropdown} from "@/lib/client/components/navbar/NavbarSearchDropdown";
@@ -103,7 +103,7 @@ export const SearchBar = () => {
                     </Button>
                 </InputGroupAddon>
                 <InputGroupAddon align="inline-end" className="h-full p-0 has-[>button]:mr-0">
-                    {getAdvancedSearchConfig(selectDrop) &&
+                    {supportsAdvancedSearch(selectDrop) &&
                         <Button
                             size="icon-sm"
                             variant="ghost"

@@ -7,13 +7,13 @@ import {SheetClose} from "@/lib/client/components/ui/sheet";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useDebounce} from "@/lib/client/hooks/use-debounce";
 import {displayContainerError} from "@/lib/client/error-display";
+import {supportsAdvancedSearch} from "@/lib/schemas/search.schema";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {ApiProviderType, MediaType, PrivacyType} from "@/lib/utils/enums";
-import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
 import {MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
@@ -108,7 +108,7 @@ export const MobileSearch = () => {
                     <p className="text-sm font-medium text-muted-foreground">
                         {query.length >= 2 ? `Results for “${query}”` : "Find your next favorite"}
                     </p>
-                    {getAdvancedSearchConfig(provider) &&
+                    {supportsAdvancedSearch(provider) &&
                         <Link
                             replace
                             to="/search"

@@ -37,10 +37,20 @@ beforeEach(() => {
     mocks.user.mockResolvedValue({ ratingSystem: "score", userMediaSettings: [] });
     mocks.all.mockReturnValue([]);
     mocks.summaries.mockReturnValue(new Map());
-    mocks.collections.mockResolvedValue({ items: [], pages: 0 });
+    mocks.collections.mockResolvedValue({ items: [], pages: 0, total: 0 });
 });
 
 describe("mobile library access", () => {
+    it("returns separate totals and bounded pages for both saved-list sources", async () => {
+        const views = Array.from({ length: 17 }, (_, index) => ({ id: index + 1, spec: { title: `List ${index + 1}` } }));
+        mocks.all.mockReturnValue(views);
+        mocks.summaries.mockReturnValue(new Map(views.map(view => [view.id, { total: 4 }])));
+        mocks.collections.mockResolvedValue({ items: [], pages: 2, total: 13 });
+        const result = await getMobileLibrary(10, { page: 2, search: "" });
+        expect(result).toMatchObject({ page: 2, dynamicPages: 3, dynamicTotal: 17, collectionPages: 2, collectionTotal: 13 });
+        expect(result.dynamic.map(item => item.id)).toEqual([9, 10, 11, 12, 13, 14, 15, 16]);
+        expect(mocks.summaries).toHaveBeenCalledWith(10, views.slice(8, 16));
+    });
     it("scopes both library sources to the verified actor", async () => {
         await getMobileLibrary(10, { page: 1, search: "" });
         expect(mocks.all).toHaveBeenCalledWith(10);

@@ -1,3 +1,4 @@
+import {SearchField} from "../../components/search-field";
 import {memo, useCallback, useMemo, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
@@ -11,7 +12,7 @@ import {usePuzzleReset} from "../../hooks/use-puzzle-reset";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {PagedTabs} from "../../components/paged-tabs";
 import {ActionSheet} from "../../components/action-sheet";
-import {AppText, Button, Cover, Field, Page, QueryPanel, StateView} from "../../components/ui";
+import {AppText, Button, Cover, Page, QueryPanel, StateView} from "../../components/ui";
 import {useMoviedleGuess} from "../../lib/react-query/query-mutations/moviedle.mutations";
 import {moviedleOptions, moviedleLeaderboardOptions, moviedleSuggestionsOptions} from "../../lib/react-query/query-options/moviedle.options";
 
@@ -123,12 +124,12 @@ function DailyGame({ data, active, refreshing, refetch }: { data: Daily; active:
         {guessOpen && !completed && <ActionSheet title="Your guess" dismiss={() => setGuessOpen(false)}>
             <View style={styles.sheetContent}>
                 <AppText muted style={styles.caption}>Attempt {attempts + 1} of {data.maxAttempts} · Pick a title or enter your own.</AppText>
-                <Field label="Movie title" hideLabel leadingIcon={<Search size={20} color={colors.muted}/>} clearable autoFocus editable={!mutation.isPending}
-                       value={search} placeholder="Search movie titles…" autoCorrect={false} returnKeyType="done" onSubmitEditing={() => Keyboard.dismiss()}
-                       onChangeText={text => {
-                           setSearch(text);
-                           setSuggestionsOpen(true);
-                       }} style={styles.searchField} textStyle={{ fontSize: 16 }}/>
+                <SearchField label="Movie title" hideLabel leadingIcon={<Search size={20} color={colors.muted}/>} clearable autoFocus editable={!mutation.isPending}
+                             value={search} placeholder="Search movie titles…" autoCorrect={false} returnKeyType="done" onSubmitEditing={() => Keyboard.dismiss()}
+                             onChangeText={text => {
+                                 setSearch(text);
+                                 setSuggestionsOpen(true);
+                             }} textStyle={{ fontSize: 16 }}/>
                 <Button fullWidth label="Submit guess" disabled={!trimmed} pending={mutation.isPending} onPress={() => guess("guess")}/>
                 {mutation.error && <AppText accessibilityRole="alert" style={styles.error}>{mutation.error.message} Progress reloaded; this may have used an attempt.</AppText>}
                 {searching && <View style={styles.suggestionStatus}><ActivityIndicator size="small" color={colors.accent}/><AppText muted style={styles.caption}>Searching
@@ -297,7 +298,6 @@ const styles = StyleSheet.create({
     },
     timer: { fontSize: 12, fontVariant: ["tabular-nums"] },
     sheetContent: { gap: 12 },
-    searchField: { borderRadius: 16, height: 52, backgroundColor: colors.background },
     suggestionStatus: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12 },
     suggestionsLabel: { fontSize: 10, lineHeight: 16, letterSpacing: 1, paddingVertical: 8 },
     suggestion: {

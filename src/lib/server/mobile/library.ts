@@ -44,9 +44,14 @@ export const getMobileLibrary = async (userId: number, { page, search }: z.infer
     return {
         page,
         hasMore: page < Math.ceil(views.length / 8) || page < collections.pages,
+        dynamicPages: Math.ceil(views.length / 8),
+        dynamicTotal: views.length,
+        collectionPages: collections.pages,
+        collectionTotal: collections.total,
         dynamic: selected.map((view) => ({
             id: view.id,
             title: view.spec.title,
+            spec: view.spec,
             total: summaries.get(view.id)!.total,
         })),
         collections: collections.items.map((item) => ({
@@ -111,6 +116,7 @@ export const getMobileLibraryDetail = async (
             page: result.page,
             pages: result.pages,
             title: view.spec.title,
+            spec: view.spec,
             ratingSystem: user.ratingSystem,
             items: result.items.map((item) => ({
                 status: item.status,

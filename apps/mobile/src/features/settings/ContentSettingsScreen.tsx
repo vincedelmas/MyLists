@@ -1,13 +1,13 @@
 import {useState} from "react";
-import {View} from "react-native";
-import {colors} from "../../theme";
+import {StyleSheet, View} from "react-native";
 import {useIsFocused} from "expo-router";
 import {mediaLabels, compareMediaTypes} from "../../lib/media";
 import {useQuery} from "@tanstack/react-query";
-import {NativeHost} from "../../components/native-host";
-import {AppText, Button as AppButton, Page, QueryPanel} from "../../components/ui";
+import {AppText, Button as AppButton, Content, Page, QueryPanel, Section} from "../../components/ui";
 import type {MediaType, MobileSettings} from "../../lib/api-client";
-import {Column, FieldGroup, Picker, Switch, Text} from "@expo/ui";
+import {ChoiceChips} from "../../components/choice-chips";
+import {SettingSwitch} from "../../components/setting-switch";
+import {SettingsFeedback} from "./settings-feedback";
 import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
 import {useSettingsMutation} from "../../lib/react-query/query-mutations/settings.mutations";
 
@@ -44,112 +44,68 @@ function ContentForm({ data }: { data: MobileSettings }) {
         });
     }
 
-    return (
-        <View style={{ flex: 1 }}>
-            {mutation.error &&
-                <AppText accessibilityRole="alert" style={{ color: colors.error, padding: 16 }}>
-                    {mutation.error.message}
-                </AppText>
-            }
-
-            {mutation.isSuccess &&
-                <AppText accessibilityRole="alert" style={{ color: colors.accent, padding: 16 }}>
-                    Content settings saved.
-                </AppText>
-            }
-
-            <NativeHost matchContents={false} style={{ flex: 1 }}>
-                <FieldGroup style={{ backgroundColor: colors.background }}>
-                    <FieldGroup.Section title="Active media lists">
-                        {[...lists].sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType)).map((item) =>
-                            <Switch
-                                value={item.active}
-                                key={item.mediaType}
-                                label={mediaLabels[item.mediaType]}
-                                onValueChange={(value) => changeList(item.mediaType, "active", value)}
-                                disabled={mutation.isPending || item.mediaType === "series" || item.mediaType === "movies"}
-                            />
-                        )}
-                        <FieldGroup.SectionFooter>
-                            <Text>
-                                Disabling a list keeps its data and removes it from your published profile.
-                            </Text>
-                        </FieldGroup.SectionFooter>
-                    </FieldGroup.Section>
-                    <FieldGroup.Section title="Display preferences">
-                        <Column spacing={8}>
-                            <Text>Default search category</Text>
-                            <Picker selectedValue={searchSelector} enabled={!mutation.isPending} onValueChange={value => {
-                                setSearchSelector(value);
-                                mutation.reset();
-                            }}>
-                                <Picker.Item value="tmdb" label="Movies & TV"/><Picker.Item value="books" label="Books"/><Picker.Item value="igdb" label="Games"/><Picker.Item
-                                value="manga" label="Manga"/><Picker.Item value="users" label="People"/>
-                            </Picker>
-                        </Column>
-                        <Column spacing={8}>
-                            <Text>Default list view</Text>
-                            <Picker selectedValue={gridListView ? "grid" : "list"} enabled={!mutation.isPending} onValueChange={value => {
-                                setGridListView(value === "grid");
-                                mutation.reset();
-                            }}>
-                                <Picker.Item value="grid" label="Grid"/><Picker.Item value="list" label="List"/>
-                            </Picker>
-                        </Column>
-                    </FieldGroup.Section>
-                    <FieldGroup.Section title="Tracking preferences">
-                        <Column spacing={8}>
-                            <Text>Rating system</Text>
-                            <Picker
-                                selectedValue={ratingSystem}
-                                enabled={!mutation.isPending}
-                                onValueChange={(value) => {
-                                    setRatingSystem(value);
-                                    mutation.reset();
-                                }}
-                            >
-                                <Picker.Item
-                                    value="score"
-                                    label="Score (numeric)"/>
-                                <Picker.Item
-                                    value="feeling"
-                                    label="Feeling (emoticons)"
-                                />
-                            </Picker>
-                        </Column>
-                        <Switch
-                            label="Move completed TV shows to On Hold when new episodes arrive"
-                            value={autoMove}
-                            disabled={mutation.isPending}
-                            onValueChange={(value) => {
-                                setAutoMove(value);
-                                mutation.reset();
-                            }}
-                        />
-                    </FieldGroup.Section>
-                    <FieldGroup.Section title="Release notifications">
-                        {[...lists]
-                            .sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType))
-                            .filter((item) => item.supportsNotifications)
-                            .map((item) => (
-                                <Switch
-                                    key={item.mediaType}
-                                    disabled={mutation.isPending}
-                                    label={mediaLabels[item.mediaType]}
-                                    value={item.releaseNotificationsEnabled}
-                                    onValueChange={(val) => changeList(item.mediaType, "releaseNotificationsEnabled", val)}
-                                />
-                            ))}
-                        <FieldGroup.SectionFooter>
-                            <Text>Release alerts appear in your MyLists account.</Text>
-                        </FieldGroup.SectionFooter>
-                    </FieldGroup.Section>
-                </FieldGroup>
-            </NativeHost>
-            <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}><AppButton fullWidth label="Save changes" onPress={save} pending={mutation.isPending}/></View>
-        </View>
-    );
+    return <Content>
+        <Section title="Active media lists"><View style={styles.group}>
+            <AppText muted style={styles.description}>Disabling a list keeps its data and removes it from your published profile.</AppText>
+            {[...lists].sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType)).map(item => <SettingSwitch key={item.mediaType} label={mediaLabels[item.mediaType]}
+                                                                                                               value={item.active}
+                                                                                                               disabled={mutation.isPending || item.mediaType === "series" || item.mediaType === "movies"}
+                                                                                                               onChange={value => changeList(item.mediaType, "active", value)}/>)}
+        </View></Section>
+        <Section title="Display preferences"><View style={styles.group}><AppText style={styles.label}>Default search category</AppText><ChoiceChips disabled={mutation.isPending}
+                                                                                                                                                    label="Default search category"
+                                                                                                                                                    value={searchSelector}
+                                                                                                                                                    options={[{
+                                                                                                                                                        value: "tmdb",
+                                                                                                                                                        label: "Movies & TV"
+                                                                                                                                                    }, {
+                                                                                                                                                        value: "books",
+                                                                                                                                                        label: "Books"
+                                                                                                                                                    }, {
+                                                                                                                                                        value: "igdb",
+                                                                                                                                                        label: "Games"
+                                                                                                                                                    }, {
+                                                                                                                                                        value: "manga",
+                                                                                                                                                        label: "Manga"
+                                                                                                                                                    }, {
+                                                                                                                                                        value: "users",
+                                                                                                                                                        label: "People"
+                                                                                                                                                    }]} onChange={value => {
+            setSearchSelector(value);
+            mutation.reset();
+        }}/>
+            <AppText style={styles.label}>Default list view</AppText><ChoiceChips disabled={mutation.isPending} label="Default list view" value={gridListView ? "grid" : "list"}
+                                                                                  options={[{ value: "grid", label: "Grid" }, { value: "list", label: "List" }]}
+                                                                                  onChange={value => {
+                                                                                      setGridListView(value === "grid");
+                                                                                      mutation.reset();
+                                                                                  }}/>
+        </View></Section>
+        <Section title="Tracking preferences"><View style={styles.group}><AppText style={styles.label}>Rating system</AppText><ChoiceChips disabled={mutation.isPending}
+                                                                                                                                           label="Rating system"
+                                                                                                                                           value={ratingSystem} options={[{
+            value: "score",
+            label: "Score · 0–10"
+        }, { value: "feeling", label: "Feeling" }]} onChange={value => {
+            setRatingSystem(value);
+            mutation.reset();
+        }}/>
+            <SettingSwitch label="Resume returning TV shows" description="Move completed shows to On Hold when new episodes arrive." value={autoMove} disabled={mutation.isPending}
+                           onChange={value => {
+                               setAutoMove(value);
+                               mutation.reset();
+                           }}/>
+        </View></Section>
+        <Section title="Release notifications"><View style={styles.group}><AppText muted style={styles.description}>Release alerts appear in your MyLists
+            account.</AppText>{[...lists].sort((a, b) => compareMediaTypes(a.mediaType, b.mediaType)).filter(item => item.supportsNotifications).map(item => <SettingSwitch
+            key={item.mediaType} label={mediaLabels[item.mediaType]} value={item.releaseNotificationsEnabled} disabled={mutation.isPending}
+            onChange={value => changeList(item.mediaType, "releaseNotificationsEnabled", value)}/>)}</View></Section>
+        <SettingsFeedback error={mutation.error?.message} success={mutation.isSuccess && "Content settings saved."}/><AppButton fullWidth label="Save changes" onPress={save}
+                                                                                                                                pending={mutation.isPending}/>
+    </Content>;
 }
+
+const styles = StyleSheet.create({ group: { padding: 16, gap: 16 }, description: { fontSize: 12, lineHeight: 19 }, label: { fontSize: 14, fontWeight: "500" } });
 
 
 export function ContentSettingsScreen() {

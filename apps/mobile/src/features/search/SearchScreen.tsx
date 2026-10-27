@@ -1,9 +1,12 @@
+import {navbarSearchSchema} from "@/lib/schemas/search.schema";
+import {AdvancedSearchSheet} from "./advanced-search-sheet";
+import {SearchField} from "../../components/search-field";
 import {memo, useCallback, useMemo, useReducer, useRef, useState} from "react";
 import {useFocusEffect, useIsFocused, useNavigation} from "expo-router";
 import type {BottomTabNavigationProp} from "expo-router/js-tabs";
 import {ActivityIndicator, FlatList, Keyboard, Pressable, StyleSheet, View} from "react-native";
 import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
-import {BookImage, Check, ChevronRight, Gamepad2, Globe, Library, Lock, Monitor, Search, SearchX, Shield, UserRound} from "lucide-react-native";
+import {BookImage, Check, ChevronRight, Gamepad2, Globe, Library, Lock, Monitor, Search, SearchX, Shield, SlidersHorizontal, UserRound} from "lucide-react-native";
 import {formatDate} from "@/lib/utils/formatting/date";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {useTabPush} from "../../hooks/use-tab-push";
@@ -13,7 +16,7 @@ import type {SearchInput, SearchResult} from "../../lib/api-client";
 import {settingsOptions} from "../../lib/react-query/query-options/settings.options";
 import {searchOptions} from "../../lib/react-query/query-options/search.options";
 import {useResolveMutation} from "../../lib/react-query/query-mutations/media.mutations";
-import {AppText, Cover, Field, Page, StateView} from "../../components/ui";
+import {AppText, Cover, Page, StateView} from "../../components/ui";
 import {ChoiceChips} from "../../components/choice-chips";
 import {colors} from "../../theme";
 import {mediaColors, mediaIcons, mediaLabels} from "../../lib/media";
@@ -44,6 +47,8 @@ export function SearchScreen() {
         });
     }, [navigation]));
     const [text, setText] = useState("");
+    const [advancedFilters, setAdvancedFilters] = useState<SearchInput["advancedFilters"]>();
+    const [filtersOpen, setFiltersOpen] = useState(false);
     const [selectedProvider, setProvider] = useState<SearchInput["apiProvider"] | null>(null);
     const settings = useQuery(settingsOptions);
     const provider = selectedProvider ?? settings.data?.searchSelector ?? "tmdb";
@@ -51,12 +56,13 @@ export function SearchScreen() {
     const trimmed = text.trim();
     const term = useDebouncedValue(trimmed);
     const focused = useIsFocused();
-    const ready = trimmed.length >= 2 && trimmed === term;
-    const query = useInfiniteQuery({ ...searchOptions(term, provider), enabled: focused && ready });
+    const hasCriteria = trimmed.length >= 2 || !!advancedFilters;
+    const ready = hasCriteria && trimmed === term && navbarSearchSchema.safeParse({ query: term, apiProvider: provider, page: 1, advancedFilters }).success;
+    const query = useInfiniteQuery({ ...searchOptions(term, provider, advancedFilters), enabled: focused && ready });
     const resolve = useResolveMutation();
     const { mutate: resolveMedia, isPending: openingMedia } = resolve;
     const results = useMemo(() => ready ? query.data?.pages.flatMap(page => page.data) ?? [] : [], [query.data, ready]);
-    const loading = trimmed.length >= 2 && (!ready || query.isPending);
+    const loading = hasCriteria && (trimmed !== term || (ready && query.isPending));
     const open = useCallback((item: SearchItem) => {
         if (openingMedia) return;
         Keyboard.dismiss();
@@ -77,18 +83,30 @@ export function SearchScreen() {
     return <Page title="Search" hideHeader>
         <View style={styles.header}>
             <AppText heading style={styles.title}>Search</AppText>
-            <Field key={focusKey} label={provider === "users" ? "Search people" : "Search titles"} hideLabel clearable autoFocus
-                   leadingIcon={<Search size={20} color={colors.muted}/>} value={text} placeholder={provider === "users" ? "Search by name…" : "Search titles…"}
-                   onChangeText={value => {
-                       setText(value);
-                       resolve.reset();
-                       list.current?.scrollToOffset({ offset: 0, animated: false });
-                   }} autoCorrect={false} autoCapitalize="none" returnKeyType="search" onSubmitEditing={() => Keyboard.dismiss()}
-                   textStyle={{ fontSize: 16 }} style={styles.searchField}/>
+            <SearchField key={focusKey} label={provider === "users" ? "Search people" : "Search titles"} hideLabel clearable autoFocus
+                         leadingIcon={<Search size={20} color={colors.muted}/>} value={text} placeholder={provider === "users" ? "Search by name…" : "Search titles…"}
+                         onChangeText={value => {
+                             setText(value);
+                             resolve.reset();
+                             list.current?.scrollToOffset({ offset: 0, animated: false });
+                         }} autoCorrect={false} autoCapitalize="none" returnKeyType="search" onSubmitEditing={() => Keyboard.dismiss()}
+                         textStyle={{ fontSize: 16 }}/>
         </View>
+        {(provider === "tmdb" || provider === "books" || provider === "igdb") && <Pressable accessibilityRole="button" accessibilityLabel="Advanced search" onPress={() => {
+            Keyboard.dismiss();
+            setFiltersOpen(true);
+        }} style={{ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16 }}><SlidersHorizontal size={18}
+                                                                                                                                   color={advancedFilters ? colors.accent : colors.muted}/><AppText
+            style={{ fontSize: 12, color: advancedFilters ? colors.accent : colors.muted }}>Advanced search{advancedFilters ? " · Filters applied" : ""}</AppText></Pressable>}
+        {filtersOpen && (provider === "tmdb" || provider === "books" || provider === "igdb") &&
+            <AdvancedSearchSheet provider={provider} query={trimmed} applied={advancedFilters} apply={setAdvancedFilters} dismiss={() => {
+                setFiltersOpen(false);
+                list.current?.scrollToOffset({ offset: 0, animated: false });
+            }}/>}
         <View style={styles.providerBar}>
             <ChoiceChips options={providers} value={provider} label="Search in" onChange={value => {
                 setProvider(value);
+                setAdvancedFilters(undefined);
                 resolve.reset();
                 list.current?.scrollToOffset({ offset: 0, animated: false });
             }}/>
@@ -162,7 +180,6 @@ const SearchResultRow = memo(function SearchResultRow({ item, onOpen, opening, d
 const styles = StyleSheet.create({
     header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, gap: 16 },
     title: { fontSize: 26, lineHeight: 34 },
-    searchField: { borderRadius: 18, backgroundColor: colors.surface, minHeight: 52 },
     providerBar: { paddingBottom: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
     results: { paddingHorizontal: 16, paddingBottom: 24 },
     resultsHeading: { minHeight: 54, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },

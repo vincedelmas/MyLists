@@ -1,9 +1,10 @@
+import {formatCalendarRelativeLabel} from "../../lib/calendar-formatting";
 import {memo, useCallback, useEffect, useRef, useState} from "react";
 import {FlatList, Linking, Pressable, RefreshControl, StyleSheet, View} from "react-native";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
 import {Bell, CheckCheck, ExternalLink, UsersRound, X} from "lucide-react-native";
-import {formatCalendarRelativeDate, formatDate} from "@/lib/utils/formatting/date";
+import {formatDate} from "@/lib/utils/formatting/date";
 import {zeroPad} from "@/lib/utils/formatting/number";
 import type {api} from "../../lib/api-client";
 import {AppText, Page, StateView} from "../../components/ui";
@@ -19,8 +20,8 @@ import {FollowRequestActions} from "./follow-request-actions";
 import {colors} from "../../theme";
 
 
-type Notification = Awaited<ReturnType<typeof api.notifications>>[number];
 type SocialAction = Parameters<typeof api.socialAction>[0]["action"];
+type Notification = Awaited<ReturnType<typeof api.notifications>>[number];
 
 
 const messages = {
@@ -41,10 +42,12 @@ const notificationTabs = [
 
 export function NotificationsScreen() {
     const focused = useIsFocused();
-    const [type, setType] = useState<"media" | "social">("media");
     const mutation = useNotificationAction();
+    const [type, setType] = useState<"media" | "social">("media");
     const counts = useQuery({ ...notificationCountsOptions, enabled: focused });
+
     const unread = counts.data?.[type] ?? 0;
+
     return (
         <Page
             back={true}
@@ -57,7 +60,11 @@ export function NotificationsScreen() {
                     accessibilityLabel="Mark all notifications in this tab as read"
                     onPress={() => mutation.mutate({ action: "read", type })}
                     accessibilityState={{ disabled: mutation.isPending || !unread }}
-                    style={({ pressed }) => [styles.iconButton, !unread && styles.disabled, pressed && styles.pressed]}
+                    style={({ pressed }) => [
+                        styles.iconButton,
+                        !unread && styles.disabled,
+                        pressed && styles.pressed,
+                    ]}
                 >
                     <CheckCheck
                         size={23}
@@ -90,14 +97,16 @@ export function NotificationsScreen() {
 
 
 function NotificationContent({ type, active }: { type: "media" | "social"; active: boolean }) {
+    const push = useTabPush();
     const focused = useIsFocused();
-    const query = useQuery({ ...notificationsOptions(type), enabled: focused && active });
-    const mutation = useNotificationAction();
-    const { mutate: markRead } = mutation;
     const social = useSocialAction();
     const { mutate: respond } = social;
-    const push = useTabPush();
     const unread = useRef(false);
+    const mutation = useNotificationAction();
+
+    const { mutate: markRead } = mutation;
+    const query = useQuery({ ...notificationsOptions(type), enabled: focused && active });
+
     useEffect(() => {
         unread.current = query.data?.some(item => !item.read) ?? false;
     }, [query.data]);
@@ -107,6 +116,7 @@ function NotificationContent({ type, active }: { type: "media" | "social"; activ
             if (unread.current) markRead({ action: "read", type });
         };
     }, [focused, active, type, query.isSuccess, markRead]);
+
     const open = useCallback((item: Notification) => item.kind === "media"
         ? push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType: item.mediaType, mediaId: String(item.mediaId) } })
         : push({ pathname: "/people/[userId]", params: { userId: String(item.actor.id) } }), [push]);
@@ -158,6 +168,7 @@ function NotificationContent({ type, active }: { type: "media" | "social"; activ
     </>;
 }
 
+
 const NotificationRow = memo(function NotificationRow({ item, onOpen, onDismiss, onRespond, disabled, pendingAction }: {
     item: Notification;
     onOpen: (item: Notification) => void;
@@ -168,7 +179,7 @@ const NotificationRow = memo(function NotificationRow({ item, onOpen, onDismiss,
 }) {
     const Icon = item.kind === "media" ? mediaIcons[item.mediaType] : UsersRound;
     const color = item.kind === "media" ? mediaColors[item.mediaType] : colors.accent;
-    const relative = item.kind === "media" && item.releaseDate ? formatCalendarRelativeDate(item.releaseDate, { style: "long" }).relativeTime : null;
+    const relative = item.kind === "media" && item.releaseDate ? formatCalendarRelativeLabel(item.releaseDate) : null;
     return <View style={[styles.row, !item.read && styles.unread]}>
         <View style={styles.rowHeading}>
             <Pressable accessibilityRole="button" accessibilityLabel={`${item.kind === "media" ? item.name : item.actor.name}${item.read ? "" : ", unread notification"}`}
@@ -199,6 +210,7 @@ const NotificationRow = memo(function NotificationRow({ item, onOpen, onDismiss,
             </Pressable>)}
     </View>;
 });
+
 
 const styles = StyleSheet.create({
     content: { paddingHorizontal: 16, paddingBottom: 28, gap: 8 },

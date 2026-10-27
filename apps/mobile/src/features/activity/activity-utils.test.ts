@@ -21,9 +21,9 @@ describe("phone monthly activity", () => {
         expect(parseActivityAmount("oops")).toBeNaN();
         expect(parseActivityAmount("0")).toBe(0);
     });
-    it("shows all monthly contributions but only the latest yearly state, like web", () => {
+    it("shows a single summary state, using the latest month for a yearly row", () => {
         const row = { hidden: false, hadCompletion: true, redoGained: 2, progressGained: 5 };
-        expect(getActivitySignals(row, "month")).toEqual(["Completed", "Re-experienced ×2", "Progressed"]);
+        expect(getActivitySignals(row, "month")).toEqual(["Completed"]);
         expect(getActivitySignals(row, "year")).toEqual(["Completed"]);
         expect(getActivitySignals({
             ...row,

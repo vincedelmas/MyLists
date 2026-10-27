@@ -1,3 +1,4 @@
+import {SearchField} from "../../components/search-field";
 import {useState} from "react";
 import {Keyboard, Platform, Pressable, StyleSheet, View} from "react-native";
 import {useIsFocused} from "expo-router";
@@ -82,8 +83,8 @@ export function ActivityEditor({ activity, period, mediaTypes, dismiss }: { acti
                     setMediaType(value);
                     setSearch("");
                 }}/>
-                <Field label="Find media in your list" leadingIcon={<Search size={18} color={colors.muted}/>} clearable value={search} onChangeText={setSearch}
-                       placeholder={`Search your ${mediaLabels[mediaType].toLowerCase()}…`} autoCorrect={false}/>
+                <SearchField label="Find media in your list" leadingIcon={<Search size={18} color={colors.muted}/>} clearable value={search} onChangeText={setSearch}
+                             placeholder={`Search your ${mediaLabels[mediaType].toLowerCase()}…`} autoCorrect={false}/>
                 {search.trim().length >= 2 && (!ready || media.isPending || media.isFetching) ? <StateView loading/> : ready && media.error ?
                     <StateView title="Couldn’t search your list" message={media.error.message} retry={() => void media.refetch()}/> : ready && media.data?.length === 0 ?
                         <AppText muted style={styles.caption}>No matching media found in your list.</AppText> : null}

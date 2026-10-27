@@ -1,180 +1,105 @@
-import {useState} from "react";
-import {colors} from "../../theme";
+import {SavedListCard, type SavedList} from "./saved-list-card";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {FlatList, RefreshControl, View} from "react-native";
+import {FolderOpen, ListFilter, Trash2} from "lucide-react-native";
+import {api} from "../../lib/api-client";
 import {useTabPush} from "../../hooks/use-tab-push";
-import {FolderOpen, ListFilter} from "lucide-react-native";
-import {MediaListGrid} from "../../components/media-list-grid";
-import {SectionList, RefreshControl, View} from "react-native";
-import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
+import {useConfirmation} from "../../hooks/use-confirmation";
+import {ConfirmationSheet} from "../../components/confirmation-sheet";
+import {SearchField} from "../../components/search-field";
+import {PaginationBar} from "../../components/pagination-bar";
+import {ChoiceChips} from "../../components/choice-chips";
+import {MediaListGrid} from "../../components/media-list-grid";
+import {AppText, Page, QueryPanel, StateView} from "../../components/ui";
 import {libraryOptions} from "../../lib/react-query/query-options/library.options";
 import {listsSummaryOptions} from "../../lib/react-query/query-options/media.options";
 import {profileOptions} from "../../lib/react-query/query-options/profile.options";
-import {AppText, Cover, Field, MenuRow, Page, QueryPanel, StateView} from "../../components/ui";
+import {profileSettingsOptions} from "../../lib/react-query/query-options/settings.options";
+import {colors} from "../../theme";
+
+type Kind = "dynamic" | "collection";
 
 export function ListsScreen() {
     const push = useTabPush();
     const focused = useIsFocused();
     const params = useLocalSearchParams<{ userId?: string; username?: string }>();
     const userId = params.userId ? Number(params.userId) : undefined;
+    const client = useQueryClient();
+    const [kind, setKind] = useState<Kind>("collection");
+    const [pages, setPages] = useState({ collection: 1, dynamic: 1 });
     const [search, setSearch] = useState("");
-    const debounced = useDebouncedValue(search.trim());
+    const term = useDebouncedValue(search.trim());
+    const searching = term !== search.trim();
+    const list = useRef<FlatList>(null);
     const tracking = useQuery({ ...listsSummaryOptions, enabled: focused && !userId });
-    const profile = useQuery({ ...profileOptions(userId), select: (data) => data.lists, enabled: focused && !!userId });
-    const query = useInfiniteQuery({ ...libraryOptions(debounced, userId), enabled: focused });
-
-    const pages = query.data?.pages ?? [];
-    const rows = pages.flatMap((page) => [
-        ...page.dynamic.map((item) => ({ ...item, kind: "dynamic" as const })),
-        ...page.collections.map((item) => ({ ...item, kind: "collection" as const })),
-    ]);
-
-    return (
-        <Page title="Lists & collections" subtitle={userId ? params.username : "Everything you watch, read, and play"} back={!!userId}>
-            <SectionList<(typeof rows)[number]>
-                windowSize={7}
-                initialNumToRender={10}
-                onEndReachedThreshold={0.5}
-                stickySectionHeadersEnabled={false}
-                keyExtractor={(item) => `${item.kind}:${item.id}`}
-                contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-                renderSectionHeader={({ section }) =>
-                    <AppText heading style={{ fontSize: 18, paddingVertical: 14 }}>
-                        {section.title}
-                    </AppText>
-                }
-                sections={[
-                    {
-                        title: "Dynamic lists",
-                        data: rows.filter((item) => item.kind === "dynamic"),
-                    },
-                    {
-                        title: "Collections",
-                        data: rows.filter((item) => item.kind === "collection")
-                    },
-                ]}
-                renderSectionFooter={({ section }) => section.data.length === 0 && query.isSuccess
-                    ? <AppText muted style={{ paddingBottom: 16 }}>
-                        No {section.title.toLowerCase()} found.
-                    </AppText>
-                    : null
-                }
-                onEndReached={() => {
-                    if (focused && query.hasNextPage && !query.isFetching) {
-                        void query.fetchNextPage();
-                    }
-                }}
-                refreshControl={
-                    <RefreshControl
-                        tintColor={colors.accent}
-                        refreshing={(query.isRefetching && !query.isFetchingNextPage) || (userId ? profile.isRefetching : tracking.isRefetching)}
-                        onRefresh={() => {
-                            void query.refetch();
-                            if (userId) void profile.refetch();
-                            else void tracking.refetch();
-                        }}
-                    />
-                }
-                ListHeaderComponent={
-                    <View style={{ gap: 24, marginBottom: 16 }}>
-                        <QueryPanel query={userId ? profile : tracking}>
-                            {(lists) =>
-                                <View style={{ gap: 12 }}>
-                                    <AppText heading style={{ fontSize: 18 }}>
-                                        Tracking lists
-                                    </AppText>
-                                    <MediaListGrid
-                                        lists={lists}
-                                        userId={userId}
-                                        includeContinue={!userId}
-                                    />
-                                </View>
-                            }
-                        </QueryPanel>
-                        <View style={{ gap: 14 }}>
-                            <AppText heading style={{ fontSize: 18 }}>
-                                Find a saved list
-                            </AppText>
-                            <Field
-                                clearable
-                                value={search}
-                                autoCorrect={false}
-                                onChangeText={setSearch}
-                                placeholder="Search by name…"
-                                label="Find a list or collection"
-                            />
-                        </View>
-                    </View>
-                }
-                renderItem={({ item }) => (
-                    <View
-                        style={{
-                            borderWidth: 1,
-                            marginBottom: 12,
-                            borderRadius: 12,
-                            overflow: "hidden",
-                            borderColor: colors.border,
-                            backgroundColor: colors.surface,
-                        }}
-                    >
-                        <MenuRow
-                            title={item.title}
-                            detail={
-                                item.kind === "dynamic"
-                                    ? `Dynamic list · ${item.total} titles`
-                                    : `Collection · ${item.privacy}`
-                            }
-                            icon={
-                                item.kind === "dynamic" ? (
-                                    <ListFilter size={22} color={colors.accent}/>
-                                ) : (
-                                    <FolderOpen size={22} color={colors.accent}/>
-                                )
-                            }
-                            onPress={() =>
-                                push({
-                                    pathname: "/library/[kind]",
-                                    params: { kind: item.kind, id: String(item.id), userId },
-                                })
-                            }
-                        />
-                        {(item.kind === "collection" && item.previews.length > 0) &&
-                            <View
-                                pointerEvents="none"
-                                style={{ flexDirection: "row", gap: 8, padding: 12, paddingTop: 0 }}
-                            >
-                                {item.previews.slice(0, 4).map((preview) => (
-                                    <Cover
-                                        uri={preview.mediaCover}
-                                        style={{ width: 52, height: 78 }}
-                                        key={`${preview.mediaType}:${preview.mediaId}`}
-                                    />
-                                ))}
-                            </View>
-                        }
-                    </View>
-                )}
-                ListFooterComponent={
-                    rows.length === 0 ? (
-                        <StateView
-                            loading={query.isPending}
-                            retry={query.isError ? () => void query.refetch() : undefined}
-                            message={query.error?.message ?? (userId ? "This user’s dynamic lists and collections appear here." : "Your dynamic lists and collections appear here.")}
-                            title={
-                                query.isError
-                                    ? "Couldn’t load lists"
-                                    : debounced
-                                        ? "No matching lists"
-                                        : "No saved lists or collections yet"
-                            }
-                        />
-                    ) : query.isFetchingNextPage ? (
-                        <StateView loading/>
-                    ) : query.isError ? (
-                        <StateView title="Couldn’t load more" retry={() => void query.fetchNextPage()}/>
-                    ) : undefined
-                }
-            />
-        </Page>
-    );
+    const profile = useQuery({ ...profileOptions(userId), select: data => data.lists, enabled: focused && !!userId });
+    const pins = useQuery({ ...profileSettingsOptions, enabled: focused && !userId });
+    const query = useQuery({ ...libraryOptions(term, pages[kind], userId), enabled: focused && !searching });
+    const rows = useMemo<SavedList[]>(() => searching ? [] : kind === "dynamic" ? query.data?.dynamic.map(item => ({
+        ...item,
+        kind: "dynamic" as const
+    })) ?? [] : query.data?.collections.map(item => ({ ...item, kind: "collection" as const })) ?? [], [query.data, kind, searching]);
+    const { confirmation, confirm, dismiss } = useConfirmation();
+    const mutation = useMutation({
+        mutationFn: api.libraryAction, onSuccess: async () => {
+            dismiss();
+            await Promise.all([client.invalidateQueries({ queryKey: ["lists", "library"] }), client.invalidateQueries({ queryKey: ["settings", "profile"] }), client.invalidateQueries({ queryKey: ["profile", undefined, "extras"] })]);
+        }
+    });
+    const maxPage = query.data ? kind === "dynamic" ? query.data.dynamicPages : query.data.collectionPages : pages[kind];
+    useEffect(() => {
+        // An external refetch or deletion can remove the last page.
+        // oxlint-disable-next-line react-you-might-not-need-an-effect/no-event-handler, react-you-might-not-need-an-effect/no-chain-state-updates, react-you-might-not-need-an-effect/no-derived-state
+        if (query.data && pages[kind] > Math.max(1, maxPage)) setPages(previous => ({ ...previous, [kind]: Math.max(1, maxPage) }));
+    }, [query.data, kind, maxPage, pages]);
+    return <Page title="Lists & collections" subtitle={userId ? params.username : undefined} back={!!userId}>
+        <FlatList ref={list} data={rows} keyExtractor={item => `${item.kind}:${item.id}`} initialNumToRender={6} maxToRenderPerBatch={6} windowSize={5}
+                  keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+                  refreshControl={<RefreshControl tintColor={colors.accent} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}/>}
+                  ListHeaderComponent={<View style={{ gap: 20, paddingBottom: 16 }}><QueryPanel query={userId ? profile : tracking}>{lists => <View style={{ gap: 12 }}><AppText
+                      heading style={{ fontSize: 18 }}>Tracking lists</AppText><MediaListGrid lists={lists} userId={userId} includeContinue={!userId}/></View>}</QueryPanel>
+                      <SearchField label="Find a saved list" value={search} onChangeText={value => {
+                          setSearch(value);
+                          setPages({ collection: 1, dynamic: 1 });
+                      }} placeholder="Search lists & collections…"/>
+                      <ChoiceChips label="Saved list type" value={kind} onChange={value => {
+                          setKind(value);
+                          list.current?.scrollToOffset({ offset: 0, animated: false });
+                      }} options={[{
+                          value: "collection",
+                          label: `Collections${query.data ? ` (${query.data.collectionTotal})` : ""}`,
+                          icon: FolderOpen
+                      }, { value: "dynamic", label: `Dynamic lists${query.data ? ` (${query.data.dynamicTotal})` : ""}`, icon: ListFilter }]}/>
+                  </View>}
+                  renderItem={({ item }) => {
+                      const pinned = !userId && (pins.data?.pins.some(pin => pin.kind === item.kind && pin.id === item.id) ?? false);
+                      const onAction = (action: string) => {
+                          if (action === "pin") mutation.mutate({ action: "pin", kind: item.kind, id: item.id, pinned: !pinned });
+                          else if (action === "edit") push({ pathname: "/library/edit", params: { kind: item.kind, id: item.id } });
+                          else if (action === "delete") confirm({
+                              title: `Delete this ${item.kind === "collection" ? "collection" : "dynamic list"}?`,
+                              message: "Your tracked media will stay in your lists. This saved list will be permanently deleted.",
+                              label: "Delete",
+                              cancelLabel: "Keep list",
+                              icon: Trash2,
+                              closeOnConfirm: false,
+                              onConfirm: () => mutation.mutate({ action: "delete", kind: item.kind, id: item.id })
+                          });
+                      };
+                      return <SavedListCard item={item} pinned={pinned} owner={!userId} disabled={mutation.isPending} onAction={onAction}
+                                            onOpen={() => push({ pathname: "/library/[kind]", params: { kind: item.kind, id: item.id, userId } })}/>;
+                  }}
+                  ListEmptyComponent={<StateView loading={query.isPending || searching}
+                                                 title={query.error ? "Couldn’t load lists" : term ? "No matching saved lists" : kind === "collection" ? "No collections yet" : "No dynamic lists yet"}
+                                                 message={query.error?.message} retry={query.error ? () => void query.refetch() : undefined}/>}/>
+        {mutation.error && <AppText accessibilityRole="alert" style={{ color: colors.error, paddingHorizontal: 16, paddingVertical: 8 }}>{mutation.error.message}</AppText>}
+        <PaginationBar page={pages[kind]} pages={maxPage ?? pages[kind]} disabled={!query.data || searching || query.isPending} onChange={page => {
+            setPages(previous => ({ ...previous, [kind]: page }));
+            list.current?.scrollToOffset({ offset: 0, animated: false });
+        }}/>
+        <ConfirmationSheet confirmation={confirmation} dismiss={dismiss} pending={mutation.isPending} error={mutation.error?.message}/>
+    </Page>;
 }

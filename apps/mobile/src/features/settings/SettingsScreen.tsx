@@ -1,7 +1,7 @@
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
 import {Pressable, StyleSheet, View} from "react-native";
-import {Brush, ChevronRight, CircleUserRound, KeyRound, LibraryBig, LogOut, Plug, ShieldAlert} from "lucide-react-native";
+import {Brush, ChevronRight, KeyRound, LibraryBig, LogOut, Plug, ShieldAlert} from "lucide-react-native";
 import {Button, Column, List, ListItem, RNHostView, Text} from "@expo/ui";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {useTabPush} from "../../hooks/use-tab-push";
@@ -18,9 +18,8 @@ import {colors} from "../../theme";
 const groups = [
     {
         title: "Make it yours", items: [
-            { label: "General", detail: "Identity, images and privacy", path: "/settings/general", Icon: CircleUserRound },
             { label: "Content & lists", detail: "Media types, ratings and notifications", path: "/settings/content", Icon: LibraryBig },
-            { label: "Profile customization", detail: "Continue preview and pinned lists", path: "/settings/profile", Icon: Brush },
+            { label: "Profile customization", detail: "Continue preview", path: "/settings/profile", Icon: Brush },
         ]
     },
     {
@@ -76,7 +75,6 @@ export function SettingsScreen() {
                                     icon: LogOut,
                                     onConfirm: () => signOut.mutate(),
                                 })}/>
-                        <Text textStyle={{ fontSize: 12, color: colors.muted }}>MyLists · Your media, in one place.</Text>
                     </Column>
                 </List>
             </NativeHost>

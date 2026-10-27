@@ -1,13 +1,10 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {ArrowUpRight} from "lucide-react-native";
-import {View, Pressable} from "react-native";
+import {View} from "react-native";
 import type {ContinueProgress} from "@/lib/utils/media/continue";
 import {api, type MediaType} from "../../lib/api-client";
 import {AppText, Button, Cover} from "../../components/ui";
 import {ProgressBar} from "../../components/ProgressBar";
-import {useTabPush} from "../../hooks/use-tab-push";
 import {mediaColors, mediaLabels} from "../../lib/media";
-import {colors} from "../../theme";
 import {ActionSheet} from "../../components/action-sheet";
 
 interface ContinueItem {
@@ -20,7 +17,6 @@ interface ContinueItem {
 
 export function ContinueActions({ item, dismiss }: { item: ContinueItem; dismiss: () => void }) {
     const client = useQueryClient();
-    const push = useTabPush();
     const mutation = useMutation({
         mutationFn: () => {
             if (item.mediaType === "movies") throw new Error("Movies cannot be continued.");
@@ -47,20 +43,7 @@ export function ContinueActions({ item, dismiss }: { item: ContinueItem; dismiss
             <View style={{ gap: 8 }}>
                 {item.progress &&
                     <Button fullWidth label={item.progress.actionLabel} disabled={!item.progress.update} pending={mutation.isPending} onPress={() => mutation.mutate()}/>}
-                <Pressable accessibilityRole="button" onPress={() => {
-                    dismiss();
-                    push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType: item.mediaType, mediaId: String(item.mediaId) } });
-                }} style={({ pressed }) => ({
-                    minHeight: 48,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    paddingVertical: 12,
-                    opacity: pressed ? 0.6 : 1
-                })}>
-                    <AppText muted style={{ fontSize: 13 }}>Go to the details</AppText>
-                    <ArrowUpRight size={17} color={colors.muted}/>
-                </Pressable>
+
             </View>
         </ActionSheet>
     );

@@ -1,3 +1,4 @@
+import {SearchField} from "../../components/search-field";
 import {FilterValuesSheet} from "./filter-values-sheet";
 import {useState} from "react";
 import {router, useIsFocused} from "expo-router";
@@ -12,7 +13,7 @@ import {View} from "react-native";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {parseListFilters, countListFilters} from "./list-filters";
-import {AppText, Button, Field, Page, Select} from "../../components/ui";
+import {AppText, Button, Page, Select} from "../../components/ui";
 import {LayoutToggle, type MediaLayout} from "../../components/layout-toggle";
 import {listOptions} from "../../lib/react-query/query-options/media.options";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
@@ -50,7 +51,7 @@ export function TrackingListScreen() {
             subtitle={first ? `${first.pagination.totalItems.toLocaleString()} entries` : undefined}
         >
             <View style={{ padding: 16, gap: 12 }}>
-                <Field
+                <SearchField
                     clearable
                     value={search}
                     autoCorrect={false}

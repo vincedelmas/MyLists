@@ -124,13 +124,16 @@ export const formatRelativeTime = (input: string | number | null | undefined, op
 
 
 /** @returns whole-day relative time from today to the given calendar date */
-export const formatCalendarRelativeDate = (input: string | null | undefined, opts: Intl.RelativeTimeFormatOptions = {}) => {
+export const getCalendarDayDifference = (input: string | null | undefined, now = new Date()) => {
     const target = input ? readCalendarDate(input) : null;
-    if (!target) return { diffDays: null, relativeTime: "never" };
-
-    const now = new Date();
+    if (!target) return null;
     const todayEpochDay = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / MS_PER_DAY);
-    const diffDays = target.epochDay - todayEpochDay;
+    return target.epochDay - todayEpochDay;
+};
+
+export const formatCalendarRelativeDate = (input: string | null | undefined, opts: Intl.RelativeTimeFormatOptions = {}) => {
+    const diffDays = getCalendarDayDifference(input);
+    if (diffDays === null) return { diffDays: null, relativeTime: "never" };
     const absDiff = Math.abs(diffDays);
     const rtf = getRelativeTimeFormatter(opts);
 

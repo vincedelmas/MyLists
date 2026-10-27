@@ -1,3 +1,4 @@
+import {SearchField} from "../../components/search-field";
 import {useCallback, useMemo, useRef, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useInfiniteQuery, useQuery, useQueryClient} from "@tanstack/react-query";
@@ -10,7 +11,7 @@ import {useTabPush} from "../../hooks/use-tab-push";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import type {MonthlyActivityInput} from "../../lib/api-client";
 import {monthlyActivityOptions, monthlyActivityStatsOptions} from "../../lib/react-query/query-options/activity.options";
-import {AppText, Button, Field, QueryPanel, StateView} from "../../components/ui";
+import {AppText, Button, QueryPanel, StateView} from "../../components/ui";
 import {ChoiceChips} from "../../components/choice-chips";
 import {LayoutToggle, type MediaLayout} from "../../components/layout-toggle";
 import {NativeHost} from "../../components/native-host";
@@ -97,13 +98,14 @@ export function ActivityContent({ userId }: { userId?: number }) {
                   ListHeaderComponent={<View style={styles.header}>
                       <View style={styles.inset}><QueryPanel query={stats}>{data => <ActivitySummary data={data} selected={filters.activeTab}
                                                                                                      onSelect={activeTab => changeFilters({ activeTab })}/>}</QueryPanel></View>
-                      <View style={[styles.inset, styles.searchRow]}><View style={styles.searchField}><Field label="Search recorded activity" hideLabel clearable
-                                                                                                             leadingIcon={<Search size={19} color={colors.muted}/>} value={search}
-                                                                                                             onChangeText={value => {
-                                                                                                                 setSearch(value);
-                                                                                                                 list.current?.scrollToOffset({ offset: 0, animated: false });
-                                                                                                             }} placeholder="Search activity…" autoCorrect={false}
-                                                                                                             returnKeyType="search" style={styles.search}/></View>
+                      <View style={[styles.inset, styles.searchRow]}><View style={styles.searchField}><SearchField label="Search recorded activity" hideLabel clearable
+                                                                                                                   leadingIcon={<Search size={19} color={colors.muted}/>}
+                                                                                                                   value={search}
+                                                                                                                   onChangeText={value => {
+                                                                                                                       setSearch(value);
+                                                                                                                       list.current?.scrollToOffset({ offset: 0, animated: false });
+                                                                                                                   }} placeholder="Search activity…" autoCorrect={false}
+                                                                                                                   returnKeyType="search"/></View>
                           <Pressable accessibilityRole="button" accessibilityLabel={`Filter activity${filterCount ? `, ${filterCount} active` : ""}`}
                                      onPress={() => setSheet({ kind: "filters" })}
                                      style={({ pressed }) => [styles.filter, filterCount > 0 && styles.activeFilter, pressed && styles.pressed]}><SlidersHorizontal size={19}
@@ -140,9 +142,10 @@ export function ActivityContent({ userId }: { userId?: number }) {
                                                                    style={styles.sectionTitle}>{filters.hiddenOnly ? "Hidden summaries" : period.view === "year" ? "Yearly summaries" : "Monthly summaries"}</AppText><AppText
                           muted
                           style={styles.caption}>{searching ? "Searching…" : first ? `${formatNumber(first.total, { locale: "en" })} ${first.total === 1 ? "title" : "titles"}` : "Loading…"}</AppText></View>
-                      <View style={styles.resultControls}><NativeHost><SelectControl value={filters.sort} options={activitySorts}
-                                                                                     onChange={sort => changeFilters({ sort })}/></NativeHost><LayoutToggle value={layout}
-                                                                                                                                                            onChange={setLayout}/></View>
+                      <View style={styles.resultControls}><NativeHost matchContents={false} style={styles.sortControl}><SelectControl value={filters.sort} options={activitySorts}
+                                                                                                                                      onChange={sort => changeFilters({ sort })}/></NativeHost><LayoutToggle
+                          value={layout}
+                          onChange={setLayout}/></View>
                   </View>}
                   ListEmptyComponent={<StateView loading={query.isPending || searching}
                                                  title={query.error ? "Couldn’t load activity" : filtered ? "No matching summaries" : `No activity recorded this ${period.view}`}
@@ -176,9 +179,8 @@ const styles = StyleSheet.create({
     period: { flex: 1, minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
     periodTitle: { fontSize: 19, lineHeight: 27, textAlign: "center", flexShrink: 1 },
     content: { paddingHorizontal: 10, paddingBottom: 88 },
-    header: { paddingTop: 16, paddingBottom: 4, gap: 14 },
+    header: { paddingTop: 16, paddingBottom: 0, gap: 10 },
     inset: { paddingHorizontal: 6, gap: 12 },
-    search: { borderRadius: 16, height: 48, backgroundColor: colors.surface },
     searchRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     searchField: { flex: 1 },
     filter: {
@@ -196,6 +198,7 @@ const styles = StyleSheet.create({
     activeFilter: { borderColor: colors.primary, backgroundColor: `${colors.accent}10` },
     filterLabel: { fontSize: 12, lineHeight: 18 },
     resultsHeading: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 6 },
+    sortControl: { height: 48, flex: 1 },
     resultControls: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, paddingHorizontal: 6 },
     sectionTitle: { fontSize: 17, lineHeight: 24 },
     caption: { fontSize: 12, lineHeight: 18 },

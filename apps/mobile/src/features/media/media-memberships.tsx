@@ -1,3 +1,4 @@
+import {SearchField} from "../../components/search-field";
 import {useMemo, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
@@ -7,7 +8,7 @@ import type {MediaParams, MobileMedia} from "../../lib/api-client";
 import {mediaCollectionsOptions, mediaTagsOptions} from "../../lib/react-query/query-options/media.options";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {ActionSheet} from "../../components/action-sheet";
-import {AppText, Button, Field, QueryPanel} from "../../components/ui";
+import {AppText, Button, QueryPanel} from "../../components/ui";
 import {useMediaAction} from "./use-media-action";
 import {colors} from "../../theme";
 
@@ -31,7 +32,7 @@ export function MediaMemberships({ params, data, kind, dismiss }: { params: Medi
     const canCreate = useMemo(() => term.length >= (kind === "tags" ? 1 : 3) && !items?.some(item => item.title.toLowerCase() === term), [term, kind, items]);
     const Icon = kind === "tags" ? Tag : Folder;
     return <ActionSheet title={kind === "tags" ? "Manage tags" : "Manage collections"} error={mutation.error?.message} dismiss={dismiss} scrollable={false}>
-        <Field clearable label={`Find or create ${kind === "tags" ? "a tag" : "a collection"}`} value={search} onChangeText={setSearch} autoCorrect={false}/>
+        <SearchField clearable label={`Find or create ${kind === "tags" ? "a tag" : "a collection"}`} value={search} onChangeText={setSearch} autoCorrect={false}/>
         <QueryPanel query={{
             data: items,
             isPending: kind === "tags" ? tags.isPending : collections.isPending,

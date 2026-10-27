@@ -1,3 +1,5 @@
+import type * as LibraryActions from "../../../../src/lib/server/mobile/library-actions";
+import type {getMobileGameSearchOptions} from "../../../../src/lib/server/mobile/search";
 import type * as MediaPersonal from "../../../../src/lib/server/mobile/media-personal";
 import type * as Community from "../../../../src/lib/server/mobile/community";
 import type {getMcpConnections} from "../../../../src/lib/server/domain/mcp/mcp.repository";
@@ -197,6 +199,8 @@ export const api = {
         request<Result<typeof Social.getMobileSocial>>(`/social?${queryString({ ...input, userId })}`, signal),
     socialAction: (input: Parameters<typeof Social.actOnMobileSocial>[1]) =>
         request<Result<typeof Social.actOnMobileSocial>>("/social", undefined, "POST", input),
+    libraryEditor: (input: Parameters<typeof LibraryActions.getMobileLibraryEditor>[1], signal?: AbortSignal) => request<Result<typeof LibraryActions.getMobileLibraryEditor>>(`/library/manage?${queryString(input)}`, signal),
+    libraryAction: (input: Parameters<typeof LibraryActions.actOnMobileLibrary>[1]) => request<Result<typeof LibraryActions.actOnMobileLibrary>>("/library/manage", undefined, "POST", input),
     library: (input: Parameters<typeof Library.getMobileLibrary>[1], signal?: AbortSignal, userId?: number) =>
         request<Result<typeof Library.getMobileLibrary>>(`/library?${queryString({ ...input, userId })}`, signal),
     libraryDetail: (
@@ -225,8 +229,9 @@ export const api = {
         request<Result<typeof Media.updateMobileMedia>>(mediaPath({ mediaType, mediaId }), undefined, "PATCH", input),
     removeMedia: (params: MediaParams) =>
         request<Result<typeof Media.removeMobileMedia>>(mediaPath(params), undefined, "DELETE"),
-    search: (input: Omit<SearchInput, "advancedFilters">, signal?: AbortSignal) =>
-        request<SearchResult>(`/search?${queryString(input)}`, signal),
+    gameSearchOptions: (signal?: AbortSignal) => request<Result<typeof getMobileGameSearchOptions>>("/search-options", signal),
+    search: (input: SearchInput, signal?: AbortSignal) =>
+        request<SearchResult>(`/search?${queryString({ ...input, advancedFilters: input.advancedFilters ? JSON.stringify(input.advancedFilters) : undefined })}`, signal),
     resolve: (mediaType: MediaType, apiId: string | number) =>
         request<{ mediaId: number }>("/resolve", undefined, "POST", { mediaType, apiId: String(apiId) }, 45_000),
     settings: (signal?: AbortSignal) => request<MobileSettings>("/settings", signal),

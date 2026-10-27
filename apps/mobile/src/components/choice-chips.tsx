@@ -11,11 +11,12 @@ export interface ChoiceChip<T extends string> {
     icon?: LucideIcon;
 }
 
-export function ChoiceChips<T extends string>({ options, value, onChange, label }: {
+export function ChoiceChips<T extends string>({ options, value, onChange, label, disabled = false }: {
     options: readonly ChoiceChip<T>[];
     value: T;
     onChange: (value: T) => void;
     label: string;
+    disabled?: boolean;
 }) {
     const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
     const offsets = useRef(new Map<T, number>());
@@ -29,7 +30,7 @@ export function ChoiceChips<T extends string>({ options, value, onChange, label 
         {options.map(({ value: key, label: title, icon: Icon, color }) => {
             const selected = key === value;
             const tint = color ?? colors.accent;
-            return <Pressable key={key} accessibilityRole="radio" accessibilityLabel={title} accessibilityState={{ checked: selected }}
+            return <Pressable key={key} accessibilityRole="radio" accessibilityLabel={title} disabled={disabled} accessibilityState={{ checked: selected, disabled }}
                               onLayout={event => {
                                   const x = event.nativeEvent.layout.x;
                                   offsets.current.set(key, x);

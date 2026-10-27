@@ -8,6 +8,7 @@ interface MediaCardProps {
     name: string;
     detail?: string;
     onPress: () => void;
+    onLongPress?: () => void;
     layout?: MediaLayout;
     cover: string | null;
     children?: ReactNode;
@@ -19,11 +20,18 @@ export const MediaCard = memo(function MediaCard({
                                                      detail,
                                                      children,
                                                      onPress,
+                                                     onLongPress,
                                                      layout = "grid",
                                                  }: MediaCardProps) {
     return (
         <Pressable
             onPress={onPress}
+            onLongPress={onLongPress}
+            accessibilityHint={onLongPress ? "Long press for more actions" : undefined}
+            accessibilityActions={onLongPress ? [{ name: "longpress", label: "More actions" }] : undefined}
+            onAccessibilityAction={event => {
+                if (event.nativeEvent.actionName === "longpress") onLongPress?.();
+            }}
             accessibilityLabel={name}
             accessibilityRole="button"
             style={({ pressed }) => [

@@ -87,7 +87,7 @@ export const FeedRows = memo(function FeedRows({
                 {author && <AppText numberOfLines={1} style={styles.username}>{author.username}</AppText>}
                 <View style={styles.heading}><Icon size={12} color={mediaColors[item.mediaType]}/><AppText numberOfLines={2} style={styles.title}>{item.mediaName}</AppText></View>
                 <AppText muted numberOfLines={2} style={styles.description}>{payload.prefix}{payload.before !== null && <>{payload.before}<AppText
-                    style={{ color: colors.accent }}> → </AppText></>}<AppText style={{ color: colors.text }}>{payload.after}</AppText></AppText>
+                    style={[styles.description, { color: colors.accent }]}> → </AppText></>}<AppText style={[styles.description, { color: colors.text }]}>{payload.after}</AppText></AppText>
                 <AppText muted style={styles.date}>{formatDate(item.timestamp)}</AppText>
             </Pressable>
         </View>;

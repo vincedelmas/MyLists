@@ -1,5 +1,5 @@
+import {SearchField} from "../../components/search-field";
 import {useMemo, useState} from "react";
-import {ChoiceChips} from "../../components/choice-chips";
 import {Avatar} from "../../components/avatar";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {formatDate} from "@/lib/utils/formatting/date";
@@ -7,7 +7,7 @@ import {zeroPad} from "@/lib/utils/formatting/number";
 import {useIsFocused} from "expo-router";
 import {useInfiniteQuery} from "@tanstack/react-query";
 import {Animated, Pressable, RefreshControl, StyleSheet, View} from "react-native";
-import {AppText, Field, StateView} from "../../components/ui";
+import {AppText, StateView} from "../../components/ui";
 import {mediaCommunityOptions} from "../../lib/react-query/query-options/media.options";
 import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
 import {useTabPush} from "../../hooks/use-tab-push";
@@ -69,11 +69,12 @@ function ActivityPerson({ item }: { item: Person }) {
 
 export function MediaCommunityContent({
                                           params,
+                                          mode,
                                       }: {
     params: MediaParams;
+    mode: "follows" | "community";
 }) {
     const focused = useIsFocused();
-    const [mode, setMode] = useState<"follows" | "community">("community");
     const [search, setSearch] = useState("");
     const term = useDebouncedValue(search.trim());
     const searching = mode === "community" && term !== search.trim();
@@ -92,12 +93,17 @@ export function MediaCommunityContent({
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             ListHeaderComponent={<View style={{ padding: 16, gap: 16 }}>
-                <ChoiceChips label="Community view" value={mode} options={[{ value: "community", label: "Community" }, { value: "follows", label: "People you follow" }]}
-                             onChange={setMode}/>
                 {mode === "community" &&
-                    <Field label="Search users" hideLabel clearable value={search} onChangeText={setSearch} placeholder="Search community users…" autoCorrect={false}/>}
-                <AppText muted style={{ fontSize: 12, lineHeight: 18 }}>Community activity excludes private profiles. Followed users are shown according to their profile
-                    privacy.</AppText>
+                    <SearchField
+                        hideLabel
+                        clearable
+                        value={search}
+                        autoCorrect={false}
+                        label="Search users"
+                        onChangeText={setSearch}
+                        placeholder="Search community users…"
+                    />
+                }
             </View>}
             stickySectionHeadersEnabled={false}
             contentContainerStyle={contentContainerStyle}

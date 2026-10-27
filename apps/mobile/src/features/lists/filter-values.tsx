@@ -1,8 +1,9 @@
+import {SearchField} from "../../components/search-field";
 import {useState} from "react";
 import {Check} from "lucide-react-native";
 import {FlatList, Pressable, View} from "react-native";
 import {useQuery} from "@tanstack/react-query";
-import {AppText, Button, Field, StateView} from "../../components/ui";
+import {AppText, Button, StateView} from "../../components/ui";
 import {colors} from "../../theme";
 import type {api, MediaType} from "../../lib/api-client";
 import {listFilterSearchOptions} from "../../lib/react-query/query-options/media.options";
@@ -51,7 +52,7 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
                 />
             </View>
 
-            <Field
+            <SearchField
                 clearable
                 value={text}
                 autoCorrect={false}

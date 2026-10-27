@@ -2,12 +2,12 @@ import {Pressable} from "react-native";
 import {colors} from "../../theme";
 import {useState} from "react";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
-import {useQuery} from "@tanstack/react-query";
-import {BookmarkCheck, Info, Pencil, RefreshCw, UsersRound} from "lucide-react-native";
+import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
+import {BookmarkCheck, Info, Pencil, RefreshCw, UserRoundCheck, UsersRound} from "lucide-react-native";
 import {mediaLabels} from "../../lib/media";
 import {CollapsingTabs} from "../../components/collapsing-tabs";
 import {AppText, Page, QueryPanel} from "../../components/ui";
-import {mediaOptions} from "../../lib/react-query/query-options/media.options";
+import {mediaCommunityOptions, mediaOptions} from "../../lib/react-query/query-options/media.options";
 import {useTrackingMutation, useMediaRefreshMutation} from "../../lib/react-query/query-mutations/media.mutations";
 import type {MediaParams, UpdateInput} from "../../lib/api-client";
 import type {ActivityCorrectionPreview} from "@/lib/types/activity.types";
@@ -43,6 +43,11 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
     const [saved, setSaved] = useState(false);
     const [cover, setCover] = useState(false);
     const query = useQuery({ ...mediaOptions(media), enabled: focused });
+    const audience = useInfiniteQuery({
+        ...mediaCommunityOptions(media),
+        enabled: focused && query.isSuccess,
+        select: data => ({ follows: data.pages[0].follows.length, community: data.pages[0].total })
+    });
     const [correction, setCorrection] = useState<Correction | null>(null);
 
     const update = (payload: UpdateInput["payload"], activityCorrection?: UpdateInput["activityCorrection"], onSaved?: () => void) => {
@@ -101,11 +106,12 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
                 <CollapsingTabs
                     tabLayout="stacked"
                     initialTab="details"
-                    scrollable={data.canEdit}
+                    scrollable={false}
                     tabs={[
                         { value: "details", label: "Overview", icon: Info },
                         { value: "tracking", label: "Your list", icon: BookmarkCheck },
-                        { value: "community", label: "Community", icon: UsersRound },
+                        { value: "follows", label: "Follows", icon: UserRoundCheck, count: audience.data?.follows },
+                        { value: "community", label: "Community", icon: UsersRound, count: audience.data?.community },
                         ...(data.canEdit ? [{ value: "edit", label: "Edit", icon: Pencil }] : []),
                     ]}
                     header={selectTab =>
@@ -120,7 +126,7 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
                 >
                     {tab => <>
                         {tab === "details" && <MediaDetailsContent params={media} data={data} refetch={query.refetch} refreshing={query.isRefetching}/>}
-                        {tab === "community" && <MediaCommunityContent params={media}/>}
+                        {(tab === "community" || tab === "follows") && <MediaCommunityContent key={tab} params={media} mode={tab}/>}
                         {tab === "tracking" &&
                             <MediaTrackingContent params={media} data={data} pending={mutation.isPending} correcting={!!correction} saved={saved} error={mutation.error?.message}
                                                   update={(payload, onSaved) => update(payload, undefined, onSaved)} add={() => {

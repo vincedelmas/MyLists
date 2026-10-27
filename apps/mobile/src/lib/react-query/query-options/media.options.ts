@@ -29,6 +29,7 @@ export const mediaDetailsOptions = (params: MediaParams) =>
 export const mediaCommunityOptions = (params: MediaParams, search?: string) =>
     infiniteQueryOptions({
         queryKey: ["media", params.mediaType, params.mediaId, "community", search],
+        staleTime: 60_000,
         initialPageParam: 1,
         queryFn: ({ signal, pageParam }) => api.mediaCommunity(params, pageParam, signal, search),
         getNextPageParam: (page) => (page.page < page.pages ? page.page + 1 : undefined),

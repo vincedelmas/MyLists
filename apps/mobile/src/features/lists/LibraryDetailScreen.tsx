@@ -34,7 +34,7 @@ export function LibraryDetailScreen() {
         >
             <MediaList
                 query={query}
-                onItemPress={kind === "continue" && !userId ? item => setSelectedId(`${item.mediaType}:${item.mediaId}`) : undefined}
+                onItemLongPress={kind === "continue" && !userId ? item => setSelectedId(`${item.mediaType}:${item.mediaId}`) : undefined}
                 items={items}
                 layout={layout}
                 ratingSystem={first?.ratingSystem ?? "score"}

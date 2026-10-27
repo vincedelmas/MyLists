@@ -19,11 +19,10 @@ export const activitySorts = [
 export const getActivitySignals = (row: Pick<ActivityRow, "hidden" | "hadCompletion" | "redoGained" | "progressGained" | "occurrences">, view: ActivityPeriod["view"]) => {
     const latest = view === "year" ? row.occurrences?.[0] ?? row : row;
     if (latest.hidden) return ["Hidden"];
-    return [
-        ...(latest.hadCompletion ? ["Completed"] : []),
-        ...(latest.redoGained > 0 && (view === "month" || !latest.hadCompletion) ? [`Re-experienced${latest.redoGained > 1 ? ` ×${latest.redoGained}` : ""}`] : []),
-        ...(latest.progressGained > 0 && (view === "month" || (!latest.hadCompletion && latest.redoGained === 0)) ? ["Progressed"] : []),
-    ];
+    if (latest.hadCompletion) return ["Completed"];
+    if (latest.redoGained > 0) return [`Re-experienced${latest.redoGained > 1 ? ` ×${latest.redoGained}` : ""}`];
+    return latest.progressGained > 0 ? ["Progressed"] : [];
+
 };
 
 export const formatActivityProgress = (row: Pick<ActivityRow, "mediaType" | "progressGained">) =>

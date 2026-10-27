@@ -1,3 +1,4 @@
+import {SearchField} from "../../components/search-field";
 import {memo, useCallback, useMemo, useRef, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useInfiniteQuery} from "@tanstack/react-query";
@@ -8,7 +9,7 @@ import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
 import {api} from "../../lib/api-client";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {useTabPush} from "../../hooks/use-tab-push";
-import {AppText, Cover, Field, Page, StateView} from "../../components/ui";
+import {AppText, Cover, Page, StateView} from "../../components/ui";
 import {PrivacyBadge} from "../profile/PrivacyBadge";
 import {ActionSheet} from "../../components/action-sheet";
 import {ChoiceChips, type ChoiceChip} from "../../components/choice-chips";
@@ -69,7 +70,7 @@ export function HallOfFameScreen() {
                         <View style={styles.allTime}><Clock3 size={11} color={colors.muted}/><AppText muted style={styles.contextLabel}>All-time</AppText></View>
                     </View>
                     {searchOpen &&
-                        <View style={styles.search}><Field label="Find a profile" placeholder="Search by name…" value={search} clearable autoFocus onChangeText={value => {
+                        <View style={styles.search}><SearchField label="Find a profile" placeholder="Search by name…" value={search} clearable autoFocus onChangeText={value => {
                             setSearch(value);
                             list.current?.scrollToOffset({ offset: 0, animated: false });
                         }} autoCorrect={false}/></View>}

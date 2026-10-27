@@ -64,7 +64,7 @@ describe("mobile resource authorization", () => {
     const profileResources = endpoints.filter(endpoint => endpoint.method === "GET" && (
         endpoint.path.startsWith("/api/mobile/v1/profile/") && !endpoint.path.endsWith("/calendar") && !endpoint.path.endsWith("/monthly-activity/media-search")
         || endpoint.path.startsWith("/api/mobile/v1/lists/$mediaType")
-        || endpoint.path.startsWith("/api/mobile/v1/library/")
+        || (endpoint.path.startsWith("/api/mobile/v1/library/") && !endpoint.path.endsWith("/manage"))
         || endpoint.path === "/api/mobile/v1/social/"
     ));
 
@@ -79,7 +79,7 @@ describe("mobile resource authorization", () => {
     });
 
     const calendar = endpoints.find(endpoint => endpoint.path === "/api/mobile/v1/profile/calendar")!;
-    const activityOwnerEndpoints = endpoints.filter(endpoint => endpoint.path.startsWith("/api/mobile/v1/profile/monthly-activity/") && (endpoint.method === "POST" || endpoint.path.endsWith("/media-search")));
+    const activityOwnerEndpoints = endpoints.filter(endpoint => endpoint.path === "/api/mobile/v1/library/manage" || endpoint.path.startsWith("/api/mobile/v1/profile/monthly-activity/") && (endpoint.method === "POST" || endpoint.path.endsWith("/media-search")));
     it.each(activityOwnerEndpoints)("rejects another user's $method $path before looking up their profile", async endpoint => {
         mocks.session.mockResolvedValue({ id: 10 });
         const response = await call(endpoint, "?userId=20");

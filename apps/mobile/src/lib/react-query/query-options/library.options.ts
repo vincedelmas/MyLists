@@ -1,13 +1,10 @@
 import {api} from "../../api-client";
-import {infiniteQueryOptions} from "@tanstack/react-query";
+import {infiniteQueryOptions, queryOptions} from "@tanstack/react-query";
 
-export const libraryOptions = (search: string, userId?: number) =>
-    infiniteQueryOptions({
-        queryKey: ["lists", "library", search, userId],
-        initialPageParam: 1,
-        queryFn: ({ signal, pageParam }) => api.library({ search, page: pageParam }, signal, userId),
-        getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
-    });
+export const libraryOptions = (search: string, page = 1, userId?: number) => queryOptions({
+    queryKey: ["lists", "library", search, page, userId],
+    queryFn: ({ signal }) => api.library({ search, page }, signal, userId),
+});
 
 export const libraryDetailOptions = (
     kind: Parameters<typeof api.libraryDetail>[0]["kind"],

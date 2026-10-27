@@ -1,9 +1,11 @@
+import {PaginationBar} from "../../components/pagination-bar";
+import {SearchField} from "../../components/search-field";
 import {useEffect, useRef, useState} from "react";
 import {useIsFocused, useLocalSearchParams} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
 import {FlatList, RefreshControl, View} from "react-native";
 import {Search} from "lucide-react-native";
-import {AppText, Button, Field, Page, StateView} from "../../components/ui";
+import {AppText, Page, StateView} from "../../components/ui";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 import {colors} from "../../theme";
 import {historyOptions} from "../../lib/react-query/query-options/history.options";
@@ -32,11 +34,11 @@ export function FeedScreen() {
         list.current?.scrollToOffset({ offset: 0, animated: false });
     };
     return <Page title="Feed" back subtitle="Tracking history">
-        <View style={{ padding: 16, gap: 10 }}><Field label="Search feed" hideLabel clearable leadingIcon={<Search size={19} color={colors.muted}/>} value={search}
-                                                      onChangeText={value => {
-                                                          setSearch(value);
-                                                          changePage(1);
-                                                      }} placeholder="Search media in your feed…" autoCorrect={false} returnKeyType="search"/>
+        <View style={{ padding: 16, gap: 10 }}><SearchField label="Search feed" hideLabel clearable leadingIcon={<Search size={19} color={colors.muted}/>} value={search}
+                                                            onChangeText={value => {
+                                                                setSearch(value);
+                                                                changePage(1);
+                                                            }} placeholder="Search media in your feed…" autoCorrect={false} returnKeyType="search"/>
             <AppText muted
                      style={{ fontSize: 12 }}>{searching ? "Searching…" : query.data ? `${query.data.total} updates${term ? ` matching “${term}”` : ""}` : "Tracking updates"}</AppText>
         </View>
@@ -49,14 +51,8 @@ export function FeedScreen() {
                                                  message={query.error?.message ?? (term ? "Try another media title." : "Tracking updates will appear here.")}
                                                  retry={query.error ? () => void query.refetch() : undefined}/>}
                   ListFooterComponent={query.error && query.data?.items.length ? <StateView title="Couldn’t refresh feed" retry={() => void query.refetch()}/> : undefined}/>
-        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <Button secondary label="Previous" disabled={page <= 1 || searching || query.isPending} onPress={() => changePage(page - 1)}/><AppText accessibilityLiveRegion="polite"
-                                                                                                                                                   style={{
-                                                                                                                                                       fontSize: 12,
-                                                                                                                                                       fontVariant: ["tabular-nums"]
-                                                                                                                                                   }}>{query.data ? `${page} / ${pages}` : `Page ${page}`}</AppText><Button
-            secondary label="Next" disabled={!query.data || page >= pages || searching || query.isPending} onPress={() => changePage(page + 1)}/>
-        </View>
+        <PaginationBar page={page} pages={pages} onChange={changePage} disabled={searching || query.isPending || !query.data}/>
+
         <ConfirmationSheet {...confirmationProps}/>
     </Page>;
 }

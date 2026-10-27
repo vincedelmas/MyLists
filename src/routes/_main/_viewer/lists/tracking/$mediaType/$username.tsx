@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_main/_viewer/lists/tracking/$mediaType/$
         },
     },
     validateSearch: mediaListSearchSchema,
-    loaderDeps: ({ search: { filtersTab: _filtersTab, ...search } }) => ({ search }),
+    loaderDeps: ({ search: { view: _view, filtersTab: _filtersTab, ...search } }) => ({ search }),
     context: ({ params: { mediaType, username }, deps: { search } }) => ({
         mediaListQueryOptions: mediaListOptions(mediaType, username, search),
         userListHeaderQueryOptions: userListHeaderOption(mediaType, username),

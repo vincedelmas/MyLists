@@ -14,7 +14,6 @@ import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
 import {
     allUpdatesOptions,
-    continueOptions,
     historyOptions,
     mediaDetailsOptions,
     mediaListOptions,
@@ -235,57 +234,63 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
             }
             return response.userMedia;
         },
+        onMutate: () => {
+            return queryClient.cancelQueries({ queryKey: queryOption.queryKey, exact: true });
+        },
         onSuccess: async (data, variables) => {
             if (!data) return;
-            const activityUpdate = loggedActivityUpdateTypes.has(variables.payload.type);
 
-            const invalidations = [
-                invalidateUserProgressQueries(queryClient, currentUser!.name),
-                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
-                queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId] }),
-                queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey }),
-            ];
+            const { payload } = variables;
+            const activityUpdate = loggedActivityUpdateTypes.has(payload.type);
 
-            if (variables.payload.type === UpdateType.FAVORITE) {
-                invalidations.push(queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }));
-            }
-
-            if (variables.payload.type === UpdateType.PLATFORM) {
-                invalidations.push(queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }));
-            }
-
-            if (activityUpdate) {
-                invalidations.push(queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }));
-            }
-
-            if (queryOption.queryKey[0] === "details") {
-                invalidations.push(queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }));
-            }
-
-            await Promise.all(invalidations);
+            // Refetch started during save must not overwrite saved result
+            await queryClient.cancelQueries({ queryKey: queryOption.queryKey, exact: true });
 
             if (queryOption.queryKey[0] === "details") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                     if (!oldData) return;
-                    return { ...oldData, userMedia: { ...oldData.userMedia, ...data } };
-                })
+
+                    return {
+                        ...oldData,
+                        userMedia: { ...oldData.userMedia, ...data },
+                    };
+                });
             }
             else if (queryOption.queryKey[0] === "userList") {
-                await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey });
-
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                     if (!oldData) return;
                     return {
                         ...oldData,
                         results: {
                             ...oldData.results,
-                            items: oldData.results.items.map((userMedia) => {
-                                return userMedia.mediaId === mediaId ? { ...userMedia, ...data } : userMedia
-                            }),
-                        }
+                            items: oldData.results.items.map(userMedia =>
+                                userMedia.mediaId === mediaId ? { ...userMedia, ...data } : userMedia),
+                        },
                     };
                 });
             }
+
+            // Secondary screens refresh on next visit, visible feed updates in background
+            void Promise.all([
+                invalidateUserProgressQueries(queryClient, currentUser!.name, {
+                    refetchContinue: false,
+                    refetchSecondary: false,
+                    progressChanged: activityUpdate,
+                }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap"], refetchType: "none" }),
+                queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey }),
+                ...(activityUpdate || (payload.type === UpdateType.RATING && "seasonRating" in payload)
+                    ? [queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId], refetchType: "none" })] : []),
+                ...(payload.type === UpdateType.FAVORITE
+                    ? [queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey, refetchType: "none" })] : []),
+                ...(payload.type === UpdateType.PLATFORM
+                    ? [queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name], refetchType: "none" })] : []),
+                ...(activityUpdate
+                    ? [queryClient.invalidateQueries({ queryKey: ["monthly-activity"], refetchType: "none" })] : []),
+                queryOption.queryKey[0] === "details"
+                    ? queryClient.invalidateQueries({ queryKey: ["userList", mediaType], refetchType: "none" })
+                    : queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey, refetchType: "none" }),
+            ]);
         },
     });
 };
@@ -335,14 +340,12 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, 
 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
-                queryClient.invalidateQueries({ queryKey: continueOptions(currentUser!.name).queryKey }),
+                queryClient.invalidateQueries({ queryKey: ["continue", currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists"], refetchType: "none" }),
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
-                ...(queryOption.queryKey[0] === "details"
-                    ? [queryClient.invalidateQueries({ queryKey: queryOption.queryKey })]
-                    : []),
+                ...(queryOption.queryKey[0] === "details" ? [queryClient.invalidateQueries({ queryKey: queryOption.queryKey })] : []),
             ]);
         },
     });

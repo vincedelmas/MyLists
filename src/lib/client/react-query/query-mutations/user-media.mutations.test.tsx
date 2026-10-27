@@ -189,7 +189,7 @@ describe("list filter freshness", () => {
 });
 
 describe("profile progress refresh", () => {
-it.each([Status.WATCHING, Status.COMPLETED])("refreshes progress and totals without reloading highlights or another user's profile (%s)", async status => {
+it.each([Status.WATCHING, Status.COMPLETED])("marks secondary progress stale and refreshes only the feed (%s)", async status => {
         const progressKeys = [
             ["continue", "alice"],
             ["profile", "recent-feed", "alice"],
@@ -222,8 +222,13 @@ it.each([Status.WATCHING, Status.COMPLETED])("refreshes progress and totals with
                 .mutateAsync({ payload: { type: UpdateType.TV, currentEpisode: 10 } });
 
             for (const query of queries.slice(0, progressKeys.length)) {
-                expect(query.fetch).toHaveBeenCalledTimes(1);
-                expect(queryClient.getQueryData(query.key)).toEqual({ version: "after" });
+                if (query.key[1] === "recent-feed") {
+                    await vi.waitFor(() => expect(queryClient.getQueryData(query.key)).toEqual({ version: "after" }));
+                }
+                else {
+                    expect(query.fetch).not.toHaveBeenCalled();
+                    expect(queryClient.getQueryState(query.key)?.isInvalidated).toBe(true);
+                }
             }
             for (const query of queries.slice(progressKeys.length)) {
                 expect(query.fetch).not.toHaveBeenCalled();
@@ -292,4 +297,48 @@ describe("list editing refresh timing", () => {
         expect(queryClient.getQueryData(queryKey)).toEqual(refreshedList);
     });
 
+});
+
+
+describe("immediate saved media feedback", () => {
+    it("applies consecutive saves while the feed is stalled and ignores an older list response", async () => {
+        const slowFeed = Promise.withResolvers<string[]>();
+        const staleList = Promise.withResolvers<typeof initialList>();
+        const feedKey = ["profile", "recent-feed", "alice"];
+        queryClient.setQueryData(feedKey, ["before"]);
+        const observer = new QueryObserver(queryClient, { queryKey: feedKey, queryFn: () => slowFeed.promise });
+        const stopFeed = observer.subscribe(() => {});
+        fetchList.mockReturnValueOnce(staleList.promise);
+        const staleFetch = queryClient.refetchQueries({ queryKey }).catch(() => {});
+        try {
+            const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption);
+            for (const rating of [7, 8]) {
+                server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, rating } });
+                await mutation.mutateAsync({ payload: { type: UpdateType.RATING, rating } });
+                expect(queryClient.getQueryData<typeof initialList>(queryKey)?.results.items[0].rating).toBe(rating);
+                expect(queryClient.getQueryState(feedKey)?.fetchStatus).toBe("fetching");
+            }
+            staleList.resolve(initialList);
+            await staleFetch;
+            expect(queryClient.getQueryData<typeof initialList>(queryKey)?.results.items[0].rating).toBe(8);
+        }
+        finally {
+            slowFeed.resolve(["after"]);
+            staleList.resolve(initialList);
+            stopFeed();
+        }
+    });
+
+    it("does not invalidate progress-only queries for a rating edit", async () => {
+        const stable = [["continue", "alice"], ["release-calendar", "alice"], ["profile", "header", "alice"],
+            ["userList", "header", "alice", MediaType.SERIES], ["monthly-activity", "alice"], ["tvSeasons", MediaType.SERIES, 1]];
+        for (const key of stable) queryClient.setQueryData(key, { before: true });
+        const summaryKey = ["profile", "summary", "alice"];
+        queryClient.setQueryData(summaryKey, { average: 4 });
+        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, rating: 8 } });
+        await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
+            .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } });
+        for (const key of stable) expect(queryClient.getQueryState(key)?.isInvalidated).toBe(false);
+        expect(queryClient.getQueryState(summaryKey)?.isInvalidated).toBe(true);
+    });
 });

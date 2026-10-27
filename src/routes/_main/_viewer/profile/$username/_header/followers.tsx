@@ -5,7 +5,9 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
+import {paginationSchema} from "@/lib/schemas/common.schema";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {Pagination} from "@/lib/client/components/general/Pagination";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
@@ -16,8 +18,10 @@ import {useRemoveFollowerMutation} from "@/lib/client/react-query/query-mutation
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/followers")({
-    context: ({ params: { username } }) => ({
-        followersQueryOptions: followersOptions(username),
+    validateSearch: paginationSchema,
+    loaderDeps: ({ search: { page } }) => ({ page }),
+    context: ({ params: { username }, deps: { page } }) => ({
+        followersQueryOptions: followersOptions(username, page),
     }),
     loader: ({ context }) => {
         return context.queryClient.query({ ...context.followersQueryOptions, staleTime: "static" });
@@ -29,6 +33,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/f
 
 function ProfileFollowers() {
     const { currentUser } = useAuth();
+    const navigate = Route.useNavigate();
     const { username: profileOwner } = Route.useParams();
     const { followersQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(followersQueryOptions).data;
@@ -56,6 +61,12 @@ function ProfileFollowers() {
                         />
                     )}
                 </div>
+
+                <Pagination
+                    currentPage={apiData.pagination.page}
+                    totalPages={apiData.pagination.totalPages}
+                    onChangePage={page => void navigate({ search: prev => ({ ...prev, page }) })}
+                />
 
                 {apiData.followers.length === 0 &&
                     <div className="flex flex-col items-center justify-center pt-20 text-center">

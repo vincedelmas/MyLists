@@ -44,8 +44,9 @@ export class SocialRepository {
             .all();
     }
 
-    static async getUserFollowers(currentUserId: number | undefined, userId: number, limit = 8) {
+    static async getUserFollowers(currentUserId: number | undefined, userId: number, limit = 8, offset = 0) {
         const currentUserFollows = alias(followers, "currentUserFollows");
+
         const followersUsers = await getDbClient()
             .select({
                 id: user.id,
@@ -67,12 +68,13 @@ export class SocialRepository {
             ))
             .where(and(eq(followers.followedId, userId), eq(followers.status, SocialState.ACCEPTED)))
             .orderBy(asc(user.name))
-            .limit(limit);
+            .limit(limit)
+            .offset(offset);
 
         return { followers: followersUsers };
     }
 
-    static async getUserFollows(currentUserId: number | undefined, userId: number, limit = 8) {
+    static async getUserFollows(currentUserId: number | undefined, userId: number, limit = 8, offset = 0) {
         const currentUserFollows = alias(followers, "currentUserFollows");
         const followedUsers = await getDbClient()
             .select({
@@ -95,7 +97,8 @@ export class SocialRepository {
             ))
             .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED)))
             .orderBy(asc(user.name))
-            .limit(limit);
+            .limit(limit)
+            .offset(offset);
 
         return { follows: followedUsers };
     }

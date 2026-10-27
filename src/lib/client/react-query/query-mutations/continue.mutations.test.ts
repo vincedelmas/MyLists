@@ -30,9 +30,10 @@ vi.mock("@/lib/client/react-query/query-options", async () => ({
 }));
 
 const item = {
-    mediaType: MediaType.MANGA, mediaId: 1, mediaName: "Manga", status: Status.READING, currentChapter: 7,
+    mediaType: MediaType.MANGA, mediaId: 1, mediaName: "Manga", status: Status.READING, currentChapter: 7, chapters: 100,
 } as ContinueItem;
-const initial = { mediaTypes: [MediaType.MANGA], items: [item] };
+const initial = { mediaTypes: [MediaType.MANGA], items: [item], counts: { [MediaType.MANGA]: 1 },
+    pagination: { page: 1, perPage: 12, totalItems: 1, totalPages: 1 } };
 const queryKey = continueOptions("alice").queryKey;
 
 beforeEach(() => {
@@ -86,6 +87,20 @@ it("removes a completed card and offers its details without changing another use
         expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Marked completed", description: "Manga" }));
         mocks.toast.mock.calls[0][0].actionProps.onClick();
         expect(mocks.navigate).toHaveBeenCalledWith({ to: "/details/$mediaType/$mediaId", params: { mediaType: MediaType.MANGA, mediaId: 1 } });
+    });
+
+    it("updates every cached page and preview and removes newly finished titles only from previews", async () => {
+        const pageKey = continueOptions("alice", { activeTab: MediaType.MANGA, page: 2 }).queryKey;
+        const previewKey = continueOptions("alice", { preview: true }).queryKey;
+        queryClient.setQueryData(pageKey, initial);
+        queryClient.setQueryData(previewKey, initial);
+        const updatedItem = { ...item, currentChapter: 100 };
+        mocks.save.mockResolvedValueOnce({ item: updatedItem, completed: false });
+        await useContinueMediaMutation(item).mutateAsync();
+        expect(queryClient.getQueryData(pageKey)?.items).toEqual([updatedItem]);
+        expect(queryClient.getQueryData(previewKey)?.items).toEqual([]);
+        expect(queryClient.getQueryState(pageKey)?.isInvalidated).toBe(true);
+        expect(queryClient.getQueryState(previewKey)?.isInvalidated).toBe(true);
     });
 
     it("preserves saved progress when the request fails", async () => {

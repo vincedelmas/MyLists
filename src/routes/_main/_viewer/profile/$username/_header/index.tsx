@@ -22,10 +22,10 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/"
     validateSearch: profileSearchSchema,
     context: ({ params: { username } }) => ({
         profileQueryOptions: profileOptions(username),
-        continueQueryOptions: continueOptions(username),
+        pinsQueryOptions: profilePinsOptions(username),
         summaryQueryOptions: profileSummaryOptions(username),
         recentFeedQueryOptions: profileRecentFeedOptions(username),
-        pinsQueryOptions: profilePinsOptions(username),
+        continueQueryOptions: continueOptions(username, { preview: true }),
     }),
     loader: async ({ context }) => {
         await Promise.all([
@@ -48,9 +48,9 @@ function ProfileMain() {
     const { activeTab } = Route.useSearch();
     const summary = useSuspenseQuery(summaryQueryOptions).data;
     const apiData = useSuspenseQuery(profileQueryOptions).data;
+    const profilePins = useSuspenseQuery(pinsQueryOptions).data;
     const inProgress = useSuspenseQuery(continueQueryOptions).data;
     const recentFeed = useSuspenseQuery(recentFeedQueryOptions).data;
-    const profilePins = useSuspenseQuery(pinsQueryOptions).data;
     const activeMediaTypes = getActiveMediaTypes(summary.userMediaSettings);
 
     const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "overview", size: 15 });

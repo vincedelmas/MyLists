@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
+import {continueRequestSchema} from "@/lib/schemas/continue.schema";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {getContinueItems} from "@/lib/server/domain/continue/continue.repository";
@@ -10,12 +11,13 @@ import {mediaTypeFieldSchema, mediaTypeMediaIdSchema} from "@/lib/schemas/common
 
 export const getContinueMedia = createServerFn({ method: "GET" })
     .middleware([contentAuthorizationMiddleware])
-    .handler(async ({ context: { user } }) => {
-        const mediaTypes = getActiveMediaTypes(user.userMediaSettings).filter(mediaType => mediaType !== MediaType.MOVIES);
+    .validator(continueRequestSchema)
+    .handler(async ({ data, context: { user } }) => {
+        const mediaTypes = getActiveMediaTypes(user.userMediaSettings).filter(mt => mt !== MediaType.MOVIES);
 
         return {
             mediaTypes,
-            items: await getContinueItems(user.id, mediaTypes),
+            ...await getContinueItems(user.id, mediaTypes, data),
         };
     });
 

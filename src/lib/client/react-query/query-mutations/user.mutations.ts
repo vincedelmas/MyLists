@@ -7,8 +7,6 @@ import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
 import {postFollow, postRemoveFollower, postRespondToFollowRequest, postUnfollow} from "@/lib/server/functions/social";
 import {
-    followersOptions,
-    followsOptions,
     notificationsCountOptions,
     notificationsOptions,
     profileCustomOptions,
@@ -29,8 +27,8 @@ import {
 const invalidateSocialQueries = async (queryClient: QueryClient, username: string) => {
     await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["tasteMatches"] }),
-        queryClient.invalidateQueries({ queryKey: followsOptions(username).queryKey }),
-        queryClient.invalidateQueries({ queryKey: followersOptions(username).queryKey }),
+        queryClient.invalidateQueries({ queryKey: ["follows", username] }),
+        queryClient.invalidateQueries({ queryKey: ["followers", username] }),
         queryClient.invalidateQueries({ queryKey: profileHeaderOptions(username).queryKey }),
     ]);
 };

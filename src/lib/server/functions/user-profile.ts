@@ -120,17 +120,49 @@ export const getUserProfileSummary = createServerFn({ method: "GET" })
 
 export const getUsersFollows = createServerFn({ method: "GET" })
     .middleware([contentAuthorizationMiddleware])
-    .handler(async ({ context: { user, currentUser } }) => {
+    .validator(simpleSearchUsernameSchema)
+    .handler(async ({ data, context: { user, currentUser } }) => {
         const socialService = await getContainer().then((c) => c.services.social);
-        return socialService.getUserFollows(currentUser?.id, user.id, 999999);
+        const { followsCount: totalItems } = await socialService.getFollowCount(user.id);
+
+        const perPage = 24;
+        const totalPages = Math.ceil(totalItems / perPage);
+        const page = Math.min(data.page ?? 1, Math.max(1, totalPages));
+        const result = await socialService.getUserFollows(currentUser?.id, user.id, perPage, (page - 1) * perPage);
+
+        return {
+            ...result,
+            pagination: {
+                page,
+                perPage,
+                totalItems,
+                totalPages,
+            },
+        };
     });
 
 
 export const getUsersFollowers = createServerFn({ method: "GET" })
     .middleware([contentAuthorizationMiddleware])
-    .handler(async ({ context: { user, currentUser } }) => {
+    .validator(simpleSearchUsernameSchema)
+    .handler(async ({ data, context: { user, currentUser } }) => {
         const socialService = await getContainer().then((c) => c.services.social);
-        return socialService.getUserFollowers(currentUser?.id, user.id, 999999);
+        const { followersCount: totalItems } = await socialService.getFollowCount(user.id);
+
+        const perPage = 24;
+        const totalPages = Math.ceil(totalItems / perPage);
+        const page = Math.min(data.page ?? 1, Math.max(1, totalPages));
+        const result = await socialService.getUserFollowers(currentUser?.id, user.id, perPage, (page - 1) * perPage);
+
+        return {
+            ...result,
+            pagination: {
+                page,
+                perPage,
+                totalItems,
+                totalPages,
+            },
+        };
     });
 
 

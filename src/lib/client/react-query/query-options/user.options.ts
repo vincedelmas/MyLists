@@ -71,15 +71,15 @@ export const profileCustomSearchOptions = (tab: HighlightedMediaTab, query: stri
 };
 
 
-export const followersOptions = (username: string) => queryOptions({
-    queryKey: ["followers", username],
-    queryFn: () => getUsersFollowers({ data: { username } }),
+export const followersOptions = (username: string, page = 1) => queryOptions({
+    queryKey: ["followers", username, page],
+    queryFn: () => getUsersFollowers({ data: { username, page } }),
 });
 
 
-export const followsOptions = (username: string) => queryOptions({
-    queryKey: ["follows", username],
-    queryFn: () => getUsersFollows({ data: { username } }),
+export const followsOptions = (username: string, page = 1) => queryOptions({
+    queryKey: ["follows", username, page],
+    queryFn: () => getUsersFollows({ data: { username, page } }),
 });
 
 

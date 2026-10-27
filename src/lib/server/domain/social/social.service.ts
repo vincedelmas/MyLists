@@ -82,12 +82,12 @@ export class SocialService {
         return this.repository.getFollowingStatus(userId, followedId);
     }
 
-    async getUserFollowers(currentUserId: number | undefined, userId: number, limit = 8) {
-        return this.repository.getUserFollowers(currentUserId, userId, limit);
+    async getUserFollowers(currentUserId: number | undefined, userId: number, limit = 8, offset = 0) {
+        return this.repository.getUserFollowers(currentUserId, userId, limit, offset);
     }
 
-    async getUserFollows(currentUserId: number | undefined, userId: number, limit = 8) {
-        return this.repository.getUserFollows(currentUserId, userId, limit);
+    async getUserFollows(currentUserId: number | undefined, userId: number, limit = 8, offset = 0) {
+        return this.repository.getUserFollows(currentUserId, userId, limit, offset);
     }
 
     async getFollowCount(userId: number) {

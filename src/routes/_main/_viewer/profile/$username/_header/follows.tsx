@@ -3,7 +3,9 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
+import {paginationSchema} from "@/lib/schemas/common.schema";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {Pagination} from "@/lib/client/components/general/Pagination";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {followsOptions} from "@/lib/client/react-query/query-options";
@@ -12,8 +14,10 @@ import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/follows")({
-    context: ({ params: { username } }) => ({
-        followsQueryOptions: followsOptions(username),
+    validateSearch: paginationSchema,
+    loaderDeps: ({ search: { page } }) => ({ page }),
+    context: ({ params: { username }, deps: { page } }) => ({
+        followsQueryOptions: followsOptions(username, page),
     }),
     loader: ({ context }) => {
         return context.queryClient.query({ ...context.followsQueryOptions, staleTime: "static" });
@@ -25,6 +29,7 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/f
 
 function ProfileFollows() {
     const { currentUser } = useAuth();
+    const navigate = Route.useNavigate();
     const { username: profileOwner } = Route.useParams();
     const { followsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(followsQueryOptions).data;
@@ -52,6 +57,12 @@ function ProfileFollows() {
                         />
                     )}
                 </div>
+
+                <Pagination
+                    currentPage={apiData.pagination.page}
+                    totalPages={apiData.pagination.totalPages}
+                    onChangePage={page => void navigate({ search: prev => ({ ...prev, page }) })}
+                />
 
                 {apiData.follows.length === 0 &&
                     <div className="flex flex-col items-center justify-center pt-20 text-center">

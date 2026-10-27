@@ -12,6 +12,7 @@ import {TooltipProvider} from "@/lib/client/components/ui/tooltip";
 import {PwaNavControls} from "@/lib/client/components/general/PwaNavControls";
 import {AuthSessionSync} from "@/lib/client/components/general/AuthSessionSync";
 import {PostHogAuthSync} from "@/lib/client/components/general/PostHogAuthSync";
+import {MobileNavigation} from "@/lib/client/components/navbar/MobileNavigation";
 import {ConfirmDialogHost} from "@/lib/client/components/confirm/ConfirmDialogHost";
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
 import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
@@ -102,6 +103,7 @@ function AppShell() {
             <Footer/>
             <FeatureVoteLink/>
             <PwaNavControls/>
+            <MobileNavigation/>
         </TooltipProvider>
     );
 }

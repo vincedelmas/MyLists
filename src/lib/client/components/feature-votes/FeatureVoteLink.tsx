@@ -6,14 +6,23 @@ export const FeatureVoteLink = () => {
     return (
         <Link
             to="/features-vote"
-            className="group fixed bottom-5 right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full border
-            border-border bg-background/80 backdrop-blur-xl transition-all duration-300 hover:border-brand
-            hover:shadow-[0_0_20px_color-mix(in_oklch,var(--brand)_40%,transparent)] active:scale-95 overflow-hidden"
+            className="group fixed bottom-5 right-5 z-50 hidden lg:flex h-10 w-10 items-center justify-center
+            rounded-full border border-border bg-background/80 backdrop-blur-xl transition-all duration-300
+            hover:border-brand hover:shadow-[0_0_20px_color-mix(in_oklch,var(--brand)_40%,transparent)] active:scale-95
+            overflow-hidden"
         >
-            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-linear-to-r
-            from-transparent via-white/30 to-transparent"/>
-            <Lightbulb className="size-4 transition-transform duration-300 group-hover:scale-110 group-hover:text-brand"/>
-            <span className="sr-only">Feature voting</span>
+            <div
+                className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-linear-to-r
+                from-transparent via-white/30 to-transparent"
+            />
+
+            <Lightbulb
+                className="size-4 transition-transform duration-300 group-hover:scale-110 group-hover:text-brand"
+            />
+
+            <span className="sr-only">
+                Feature voting
+            </span>
         </Link>
     );
 };

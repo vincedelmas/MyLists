@@ -1,7 +1,7 @@
 import {ReactNode} from "react";
+import {Link} from "@tanstack/react-router";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/formatting/text";
-import {Link, LinkProps} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ButtonGroup} from "@/lib/client/components/ui/button-group";
@@ -9,6 +9,7 @@ import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {ApiProviderType, MediaType, PrivacyType} from "@/lib/utils/enums";
 import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
+import {getSearchResultLink} from "@/lib/client/components/navbar/navbar-search";
 import {ArrowRight, ChevronLeft, ChevronRight, Plus, Search} from "lucide-react";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
@@ -226,19 +227,9 @@ interface ResultLinkProps {
 
 
 const ResultLink = ({ item, onNavigate, children }: ResultLinkProps) => {
-    const destination: LinkProps = item.itemType === ApiProviderType.USERS
-        ? {
-            to: "/profile/$username",
-            params: { username: item.name },
-        }
-        : {
-            to: "/details/$mediaType/external/$apiId",
-            params: { mediaType: item.itemType as MediaType, apiId: item.id.toString() },
-        };
-
     return (
         <Link
-            {...destination}
+            {...getSearchResultLink(item)}
             onClick={onNavigate}
             className="flex min-w-0 flex-1 items-center gap-3 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >

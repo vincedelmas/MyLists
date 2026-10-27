@@ -1,6 +1,6 @@
-import {toast} from "@/lib/client/components/ui/toast";
 import {routeTree} from "@/routeTree.gen";
 import {createRouter} from "@tanstack/react-router";
+import {toast} from "@/lib/client/components/ui/toast";
 import {ValidationError} from "@/lib/utils/error-classes";
 import {NotFound} from "@/lib/client/components/general/NotFound";
 import {NavLoader} from "./lib/client/components/general/NavLoader";
@@ -15,7 +15,7 @@ export function getRouter() {
         queryCache: new QueryCache({
             onError: async (_error, query) => {
                 if (query?.meta?.errorToastMessage) {
-                    toast.add({title: query.meta.errorToastMessage, type: "error", priority: "high"});
+                    toast.add({ title: query.meta.errorToastMessage, type: "error", priority: "high" });
                 }
             },
         }),
@@ -24,15 +24,15 @@ export function getRouter() {
                 if (mutation.meta?.noErrorToast || error instanceof ValidationError) return;
 
                 if ("isNotFound" in error && error.isNotFound) {
-                    toast.add({title: DEFAULT_NOT_FOUND_MESSAGE, type: "error", priority: "high"});
+                    toast.add({ title: DEFAULT_NOT_FOUND_MESSAGE, type: "error", priority: "high" });
                     return;
                 }
 
-                toast.add({title: error.message || DEFAULT_ERROR_MESSAGE, type: "error", priority: "high"});
+                toast.add({ title: error.message || DEFAULT_ERROR_MESSAGE, type: "error", priority: "high" });
             },
             onSuccess: (_data, _variables, _context, mutation) => {
                 if (mutation?.meta?.successToastMessage) {
-                    toast.add({title: mutation.meta.successToastMessage, type: "success"});
+                    toast.add({ title: mutation.meta.successToastMessage, type: "success" });
                 }
             }
         }),
@@ -78,6 +78,13 @@ export function getRouter() {
     }
 
     return router;
+}
+
+
+declare module "@tanstack/react-router" {
+    interface HistoryState {
+        mobileSearchOpen?: boolean;
+    }
 }
 
 

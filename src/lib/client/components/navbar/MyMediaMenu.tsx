@@ -59,7 +59,7 @@ export const MyMediaMenu = ({ username, settings, preview = false, triggerClassN
             <DropdownMenuTrigger className={cn(defaultTriggerClassName, triggerClassName)}>
                 MyMedia <ChevronDown className="ml-2 size-3 opacity-70"/>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-92 p-0" align="end">
+            <DropdownMenuContent align="end" className="w-92 max-w-[calc(100vw-2rem)] p-0">
                 {content}
             </DropdownMenuContent>
         </DropdownMenu>
@@ -76,8 +76,8 @@ interface MyMediaMenuContentProps extends Pick<MyMediaMenuProps, "username" | "s
 
 const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentMonth, highlightReleaseCalendar, }: MyMediaMenuContentProps) => {
     return (
-        <div className="grid grid-cols-2">
-            <div className="bg-muted/30 px-3 pt-1 pb-2">
+        <div className="grid lg:grid-cols-2">
+            <div className="hidden bg-muted/30 px-3 pt-1 pb-2 lg:block">
                 <MenuGroup preview={preview}>
                     <MenuLabel preview={preview}>
                         Tracking Lists
@@ -97,14 +97,27 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                                 {capitalize(setting.mediaType)} List
                             </MenuEntry>
                         )}
-                    <MenuEntry preview={preview} renderLink={(children) => <Link to="/lists/continue/$username" params={{ username }}>{children}</Link>}>
+                    <MenuEntry
+                        preview={preview}
+                        renderLink={(children) =>
+                            <Link to="/lists/continue/$username" params={{ username }}>
+                                {children}
+                            </Link>
+                        }
+                    >
                         <Play/> Continue
                     </MenuEntry>
                 </MenuGroup>
             </div>
-            <div className="border-l px-3 pt-1 pb-2">
-                <MenuGroup preview={preview}>
-                    <MenuLabel preview={preview}>
+
+            <div className="px-3 pt-1 pb-2 lg:border-l">
+                <MenuGroup
+                    preview={preview}
+                    className="max-lg:grid max-lg:grid-cols-2 max-lg:[&_[data-slot=dropdown-menu-item]]:min-h-16
+                    max-lg:[&_[data-slot=dropdown-menu-item]]:flex-col max-lg:[&_[data-slot=dropdown-menu-item]]:justify-center
+                    max-lg:[&_svg]:size-6"
+                >
+                    <MenuLabel preview={preview} className="max-lg:col-span-2">
                         Personal
                     </MenuLabel>
                     <MenuEntry
@@ -122,8 +135,8 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                             preview={preview}
                             renderLink={(children) =>
                                 <Link
-                                    to="/activity/$username"
                                     params={{ username }}
+                                    to="/activity/$username"
                                     search={{ year: currentYear, month: String(Number(currentMonth)) }}
                                 >
                                     {children}
@@ -135,10 +148,8 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                     }
                     <MenuEntry
                         preview={preview}
-                        className={highlightReleaseCalendar
-                            ? "bg-brand/20 font-bold text-brand ring-1 ring-brand/30"
-                            : undefined}
                         renderLink={(children) => <Link to="/release-calendar">{children}</Link>}
+                        className={highlightReleaseCalendar ? "bg-brand/20 font-bold text-brand ring-1 ring-brand/30" : undefined}
                     >
                         <Calendar className="size-4"/> Release Calendar
                     </MenuEntry>
@@ -169,29 +180,37 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
 }
 
 
-const MenuLabel = ({ preview, children }: { preview: boolean; children: ReactNode }) => {
+const MenuLabel = ({ preview, children, className }: { preview: boolean; className?: string; children: ReactNode }) => {
     if (preview) {
         return (
-            <div className="mb-2 px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            <div className={cn("mb-2 px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground", className)}>
                 {children}
             </div>
         );
     }
 
     return (
-        <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <DropdownMenuLabel className={cn("px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground", className)}>
             {children}
         </DropdownMenuLabel>
     );
 };
 
 
-const MenuGroup = ({ preview, children }: { preview: boolean; children: ReactNode }) => {
+const MenuGroup = ({ preview, children, className }: { preview: boolean; children: ReactNode; className?: string }) => {
     if (preview) {
-        return <div>{children}</div>;
+        return (
+            <div className={className}>
+                {children}
+            </div>
+        );
     }
 
-    return <DropdownMenuGroup>{children}</DropdownMenuGroup>;
+    return (
+        <DropdownMenuGroup className={className}>
+            {children}
+        </DropdownMenuGroup>
+    );
 };
 
 
@@ -206,7 +225,7 @@ interface MenuEntryProps {
 const MenuEntry = ({ preview, children, className, renderLink }: MenuEntryProps) => {
     if (preview) {
         return (
-            <div className={cn(previewItemClassName, className)}>
+            <div data-slot="dropdown-menu-item" className={cn(previewItemClassName, className)}>
                 {children}
             </div>
         );

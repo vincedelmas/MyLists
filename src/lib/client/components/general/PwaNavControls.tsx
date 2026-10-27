@@ -46,9 +46,9 @@ export const PwaNavControls = () => {
     return (
         <nav
             aria-label="Page history"
-            style={{ bottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
-            className="fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-0.5 rounded-full border
-            border-border/80 bg-background/80 p-1 shadow-lg shadow-black/25 backdrop-blur-xl"
+            className="bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] lg:bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]
+            fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-border/80 bg-background/80 p-1
+            shadow-lg shadow-black/25 backdrop-blur-xl"
         >
             <Button
                 size="icon-lg"

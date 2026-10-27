@@ -1,26 +1,21 @@
 import React, {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
+import {ApiProviderType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Search, SlidersHorizontal} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {Link, useNavigate} from "@tanstack/react-router";
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
-import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
 import {useNavbarSearch} from "@/lib/client/components/navbar/use-navbar-search";
 import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
+import {getSearchProviderItems} from "@/lib/client/components/navbar/navbar-search";
 import {NavbarSearchResults} from "@/lib/client/components/navbar/NavbarSearchResults";
 import {NavbarSearchDropdown} from "@/lib/client/components/navbar/NavbarSearchDropdown";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
-interface SearchBarProps {
-    setMobileMenu?: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-
-export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
+export const SearchBar = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const [page, setPage] = useState(1);
@@ -35,19 +30,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
         setSelectDrop(currentUser?.searchSelector ?? ApiProviderType.USERS);
     }
 
-    const searchProviderItems = [
-        { label: "Movies & TV", value: ApiProviderType.TMDB },
-        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS)
-            ? [{ label: "Books", value: ApiProviderType.BOOKS }]
-            : []),
-        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES)
-            ? [{ label: "Games", value: ApiProviderType.IGDB }]
-            : []),
-        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA)
-            ? [{ label: "Manga", value: ApiProviderType.MANGA }]
-            : []),
-        { label: "Users", value: ApiProviderType.USERS },
-    ];
+    const searchProviderItems = getSearchProviderItems(currentUser?.settings);
 
     const handleInputChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
         setPage(1);
@@ -64,7 +47,6 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     const handleSearchLinkClick = (ev: React.MouseEvent<HTMLAnchorElement>) => {
         ev.stopPropagation();
         setIsOpen(false);
-        setMobileMenu?.(false);
     };
 
     const handleSearchSubmit = (ev: React.KeyboardEvent<HTMLInputElement>) => {
@@ -82,7 +64,6 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
 
         setPage(1);
         setIsOpen(false);
-        setMobileMenu?.(false);
 
         void navigate({ to: "/search", search: { query, page: 1, apiProvider: selectDrop, advancedFilters: undefined } });
         reset();
@@ -170,16 +151,13 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     <NavbarSearchResults
                         page={page}
                         search={search}
+                        onNavigate={reset}
                         provider={selectDrop}
                         onPageChange={setPage}
                         items={searchResults.data}
                         currentUserId={currentUser?.id}
                         hasNextPage={searchResults.hasNextPage}
                         providerLabel={searchProviderItems.find(({ value }) => value === selectDrop)?.label ?? "Search"}
-                        onNavigate={() => {
-                            reset();
-                            setMobileMenu?.(false);
-                        }}
                     />
                 }
             </NavbarSearchDropdown>

@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useRef, useState} from "react";
 import {cva} from "class-variance-authority";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {toast} from "@/lib/client/components/ui/toast";
@@ -9,6 +9,7 @@ import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {MyMediaMenu} from "@/lib/client/components/navbar/MyMediaMenu";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {useOnClickOutside} from "@/lib/client/hooks/use-clicked-outside";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
 import {useFeatureFlagMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -27,6 +28,7 @@ import {
     ChevronDown,
     Clapperboard,
     GitCompareArrows,
+    Lightbulb,
     ListOrdered,
     LogOut,
     Menu,
@@ -46,7 +48,7 @@ const navStyle = cva("inline-flex items-center justify-center rounded-md px-4 te
 )
 
 
-const mobileNavStyle = "flex flex-col items-center gap-1 rounded-md p-1 text-muted-foreground outline-none " +
+const mobileNavStyle = "flex min-h-24 flex-col justify-center items-center gap-2 rounded-xl p-3 text-muted-foreground outline-none " +
     "hover:text-brand focus-visible:ring-3 focus-visible:ring-ring/50";
 
 
@@ -54,7 +56,15 @@ export const Navbar = () => {
     const location = useLocation();
     const featureFlagMutation = useFeatureFlagMutation();
     const { currentUser, isAnonymous, signOut } = useAuth();
+    const mobileMenuRef = useRef<HTMLDivElement>(null);
+    const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    useOnClickOutside(mobileMenuRef, (ev) => {
+        if (!mobileMenuTriggerRef.current?.contains(ev.target as Node)) {
+            setIsMobileMenuOpen(false);
+        }
+    });
 
     const logoutUser = async () => {
         try {
@@ -240,27 +250,36 @@ export const Navbar = () => {
                         }
 
                         <button
-                            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                            ref={mobileMenuTriggerRef}
+                            aria-expanded={isMobileMenuOpen}
+                            aria-controls="mobile-more-menu"
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            aria-label={isMobileMenuOpen ? "Close more menu" : "More"}
                             className="rounded-md p-2 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3
                             focus-visible:ring-ring/50 lg:hidden"
                         >
-                            {isMobileMenuOpen ? <X className="size-6"/> : <Menu className="size-6"/>}
+                            {isMobileMenuOpen
+                                ? <X className="size-6"/>
+                                : <Menu className="size-6"/>
+                            }
                         </button>
                     </div>
                 </div>
 
                 {isMobileMenuOpen &&
-                    <div className="lg:hidden absolute left-0 right-0 z-50 border-b bg-background p-4 animate-in slide-in-from-top-5">
-                        <div className="relative mb-4 flex-1 mx-auto max-w-md z-50 block">
-                            <SearchBar setMobileMenu={setIsMobileMenuOpen}/>
-                        </div>
-
+                    <div
+                        ref={mobileMenuRef}
+                        id="mobile-more-menu"
+                        className="lg:hidden absolute left-0 right-0 z-50 border-b bg-background p-4 animate-in slide-in-from-top-5"
+                    >
+                        <p className="px-3 text-sm font-semibold">More</p>
                         <div className="p-2 max-h-[70vh] overflow-y-auto scrollbar-thin mt-3">
-                            <div className="flex flex-wrap justify-around items-center gap-x-4 gap-y-4 px-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 <Link className={mobileNavStyle} to="/moviedle" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <Clapperboard className="size-4"/>
-                                    <span className="text-[10px]">Moviedle</span>
+                                    <Clapperboard className="size-7"/>
+                                    <span className="text-xs">
+                                        Moviedle
+                                    </span>
                                 </Link>
                                 <Link
                                     to="/which-came-first"
@@ -268,12 +287,16 @@ export const Navbar = () => {
                                     aria-label="Which Came First?"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
-                                    <GitCompareArrows className="size-4"/>
-                                    <span className="text-[10px]">WCF?</span>
+                                    <GitCompareArrows className="size-7"/>
+                                    <span className="text-xs">
+                                        Which Came First?
+                                    </span>
                                 </Link>
                                 <Link className={mobileNavStyle} to="/collections/discover" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <ListOrdered className="size-4"/>
-                                    <span className="text-[10px]">Collections</span>
+                                    <ListOrdered className="size-7"/>
+                                    <span className="text-xs">
+                                        Collections
+                                    </span>
                                 </Link>
                                 <Link
                                     to="/hall-of-fame"
@@ -281,21 +304,35 @@ export const Navbar = () => {
                                     className={mobileNavStyle}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
-                                    <Trophy className="size-4"/>
-                                    <span className="text-[10px]">HoF</span>
+                                    <Trophy className="size-7"/>
+                                    <span className="text-xs">
+                                        Hall of Fame
+                                    </span>
                                 </Link>
                                 <Link className={mobileNavStyle} to="/platform-stats" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <BarChart2 className="size-4"/>
-                                    <span className="text-[10px]">Stats</span>
+                                    <BarChart2 className="size-7"/>
+                                    <span className="text-xs">
+                                        Stats
+                                    </span>
                                 </Link>
                                 <Link className={mobileNavStyle} to="/trends" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <TrendingUp className="size-4"/>
-                                    <span className="text-[10px]">Trends</span>
+                                    <TrendingUp className="size-7"/>
+                                    <span className="text-xs">
+                                        Trends
+                                    </span>
+                                </Link>
+                                <Link className={mobileNavStyle} to="/features-vote" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Lightbulb className="size-7"/>
+                                    <span className="text-xs">
+                                        Feature voting
+                                    </span>
                                 </Link>
                                 {!isAnonymous &&
                                     <Link className={mobileNavStyle} to="/taste-matches" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <UsersRound className="size-4"/>
-                                        <span className="text-[10px]">Matches</span>
+                                        <UsersRound className="size-7"/>
+                                        <span className="text-xs">
+                                            Matches
+                                        </span>
                                     </Link>
                                 }
                             </div>

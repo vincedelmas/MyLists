@@ -3,8 +3,7 @@ import {getContainer} from "@/lib/server/core/container";
 import {UnauthorizedError} from "@/lib/utils/error-classes";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
-import type {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
-import {releaseCalendarMediaTypeSchema} from "@/lib/schemas/release-calendar.schema";
+import {releaseCalendarMediaTypeSchema, type ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
 
@@ -29,6 +28,7 @@ export const getMobileCalendar = async (userId: number, range: ReleaseCalendarRa
                 cover: mobileImagePath(
                     getImageUrl(getServerMediaDefinition(item.mediaType).identity.coverDirectory, item.imageCover),
                 ),
-            })).sort((a, b) => a.date.localeCompare(b.date) || a.mediaName.localeCompare(b.mediaName)),
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date) || a.mediaName.localeCompare(b.mediaName)),
     };
 };

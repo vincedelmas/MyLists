@@ -2,6 +2,7 @@ import {describe, expect, it} from "vitest";
 import {formatActivityProgress, getActivitySignals, isFutureActivityPeriod, parseActivityAmount, shiftActivityPeriod} from "./activity-utils";
 import {toActivityStoredValue} from "@/lib/utils/media/activity";
 
+
 describe("phone monthly activity", () => {
     it("navigates across year boundaries without losing the view", () => {
         expect(shiftActivityPeriod({ year: 2026, month: 1, view: "month" }, -1)).toEqual({ year: 2025, month: 12, view: "month" });
@@ -22,13 +23,28 @@ describe("phone monthly activity", () => {
         expect(parseActivityAmount("0")).toBe(0);
     });
     it("shows a single summary state, using the latest month for a yearly row", () => {
-        const row = { hidden: false, hadCompletion: true, redoGained: 2, progressGained: 5 };
+        const row = {
+            hidden: false,
+            hadCompletion: true,
+            redoGained: 2,
+            progressGained: 5
+        };
         expect(getActivitySignals(row, "month")).toEqual(["Completed"]);
         expect(getActivitySignals(row, "year")).toEqual(["Completed"]);
         expect(getActivitySignals({
             ...row,
-            occurrences: [{ ...row, id: 1, monthBucket: "2026-10", lastActivityAt: "2026-10-01", timeGained: 10, hadCompletion: false }]
-        }, "year")).toEqual(["Re-experienced ×2"]);
+            occurrences: [
+                {
+                    ...row,
+                    id: 1,
+                    monthBucket: "2026-10",
+                    lastActivityAt: "2026-10-01",
+                    timeGained: 10,
+                    hadCompletion: false
+                }
+            ]
+        }, "year"))
+            .toEqual(["Re-experienced ×2"]);
         expect(getActivitySignals({ ...row, hidden: true }, "month")).toEqual(["Hidden"]);
     });
 });

@@ -1,8 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { mobileRequest } from "@/lib/server/mobile/request";
-import { resolveMobileProfileUser } from "@/lib/server/mobile/profile-access";
-import { mediaListSearchFiltersSchema } from "@/lib/schemas/media-lists.schema";
-import { searchMobileListFilterOptions } from "@/lib/server/mobile/list-filters";
+import {createFileRoute} from "@tanstack/react-router";
+import {mobileRequest} from "@/lib/server/mobile/request";
+import {resolveMobileProfileUser} from "@/lib/server/mobile/profile-access";
+import {mediaListSearchFiltersSchema} from "@/lib/schemas/media-lists.schema";
+import {searchMobileListFilterOptions} from "@/lib/server/mobile/list-filters";
+
+
 export const Route = createFileRoute("/api/mobile/v1/lists/$mediaType/filter-search")({
     server: {
         handlers: {
@@ -13,6 +15,7 @@ export const Route = createFileRoute("/api/mobile/v1/lists/$mediaType/filter-sea
                         ...Object.fromEntries(new URL(request.url).searchParams),
                         mediaType: params.mediaType,
                     });
+
                     return searchMobileListFilterOptions(userId, input.mediaType, input.field, input.query);
                 }),
         },

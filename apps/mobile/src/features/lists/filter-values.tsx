@@ -9,12 +9,14 @@ import type {api, MediaType} from "../../lib/api-client";
 import {listFilterSearchOptions} from "../../lib/react-query/query-options/media.options";
 import {useDebouncedValue} from "../../hooks/use-debounced-value";
 
+
 export type FilterGroup = Awaited<ReturnType<typeof api.listFilters>>["groups"][number] | {
     key: "status";
     label: string;
     searchable: boolean;
     options: string[];
 };
+
 
 interface FilterValuesProps {
     group: FilterGroup;
@@ -42,7 +44,10 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
     return (
         <View style={{ flex: 1, padding: 16, gap: 12 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <AppText heading style={{ fontSize: 20 }}>
+                <AppText
+                    heading
+                    style={{ fontSize: 20 }}
+                >
                     {group.label}
                 </AppText>
                 <Button
@@ -51,7 +56,6 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
                     secondary={true}
                 />
             </View>
-
             <SearchField
                 clearable
                 value={text}
@@ -60,12 +64,13 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
                 label={`Find ${group.label.toLowerCase()}`}
                 placeholder={group.searchable ? "Type at least two characters…" : "Search options…"}
             />
-
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <AppText muted style={{ fontSize: 12 }}>
+                <AppText
+                    muted
+                    style={{ fontSize: 12 }}
+                >
                     {selected.length} selected
                 </AppText>
-
                 {selected.length > 0 &&
                     <Button
                         label="Clear"
@@ -74,7 +79,6 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
                     />
                 }
             </View>
-
             {group.searchable && selected.length > 0 && (
                 <FlatList
                     horizontal
@@ -93,10 +97,11 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
                                 {value} ×
                             </AppText>
                         </Pressable>
-                    )}
+                    )
+                    }
                 />
-            )}
-
+            )
+            }
             <FlatList
                 data={names}
                 windowSize={5}
@@ -136,17 +141,15 @@ export function FilterValues({ mediaType, userId, group, selected, onChange, clo
                             }}
                         >
                             {selected.includes(item) &&
-                                <Check
-                                    size={16}
-                                    color={colors.text}
-                                />
+                                <Check size={16} color={colors.text}/>
                             }
                         </View>
                         <AppText style={{ flex: 1 }}>
                             {item}
                         </AppText>
                     </Pressable>
-                )}
+                )
+                }
                 ListEmptyComponent={
                     <StateView
                         message={query.error?.message}

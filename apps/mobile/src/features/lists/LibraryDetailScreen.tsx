@@ -29,7 +29,9 @@ export function LibraryDetailScreen() {
     return (
         <Page
             back={true}
-            action={<LayoutToggle value={layout} onChange={setLayout}/>}
+            action={
+                <LayoutToggle value={layout} onChange={setLayout}/>
+            }
             title={first?.title ?? (kind === "continue" ? "Continue" : "List")}
         >
             <MediaList
@@ -40,7 +42,12 @@ export function LibraryDetailScreen() {
                 ratingSystem={first?.ratingSystem ?? "score"}
                 emptyTitle="No titles here yet"
             />
-            {selected && <ContinueActions item={selected} dismiss={() => setSelectedId(null)}/>}
+            {selected &&
+                <ContinueActions
+                    item={selected}
+                    dismiss={() => setSelectedId(null)}
+                />
+            }
         </Page>
     );
 }

@@ -14,7 +14,9 @@ import {deleteUserUpdatesSchema} from "@/lib/schemas/user-media.schema";
 import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
 import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 
+
 export const statsTabSchema = z.union([z.literal("overview"), mediaTypeFieldSchema]).default("overview");
+
 
 export const getMobileProfile = async (userId: number) => {
     const { services } = await getContainer();
@@ -30,7 +32,12 @@ export const getMobileProfile = async (userId: number) => {
 
     return {
         social,
-        summary: { totalDays: summary.totalDays, totalEntries: summary.totalEntries, avgRated: summary.avgRated, percentRated: summary.percentRated },
+        summary: {
+            totalDays: summary.totalDays,
+            totalEntries: summary.totalEntries,
+            avgRated: summary.avgRated,
+            percentRated: summary.percentRated
+        },
         lists: lists.map(({ mediaType, entriesFavorites, timeSpent, totalEntries }) => ({
             mediaType,
             timeSpent,
@@ -57,6 +64,7 @@ export const getMobileProfile = async (userId: number) => {
     };
 };
 
+
 export const getMobileProfileActivity = async (userId: number) => {
     const { services } = await getContainer();
     const updates = await services.updateHistory.getUserUpdates(userId);
@@ -66,6 +74,7 @@ export const getMobileProfileActivity = async (userId: number) => {
         timestamp: dateFromUTCInput(update.timestamp).toISOString(),
     }));
 };
+
 
 export const getMobileStats = async (userId: number, tab: z.infer<typeof statsTabSchema> = "overview") => {
     const { services, cacheManager } = await getContainer();
@@ -97,8 +106,14 @@ export const getMobileStats = async (userId: number, tab: z.infer<typeof statsTa
         { ttl: ONE_HOUR_CACHE_TTL_MS },
     );
 
-    return { ...stats, ...context, kind: "media" as const, mediaType: tab };
+    return {
+        ...stats,
+        ...context,
+        kind: "media" as const,
+        mediaType: tab
+    };
 };
+
 
 export const getMobileProfileExtras = async (userId: number, viewerId = userId) => {
     const { services } = await getContainer();
@@ -115,13 +130,24 @@ export const getMobileProfileExtras = async (userId: number, viewerId = userId) 
     const authors = new Map(people.map((person) => [person.id, person]));
     const pinnedItems = await getProfilePinnedItems(userId, toActor({ id: viewerId }));
     const pins = pinnedItems.map(item => item.kind === "dynamic"
-        ? { kind: item.kind, id: item.view.id, title: item.view.spec.title, total: item.preview.total }
-        : { kind: item.kind, id: item.collection.id, title: item.collection.title, total: item.collection.itemsCount });
+        ? {
+            kind: item.kind,
+            id: item.view.id,
+            title: item.view.spec.title,
+            total: item.preview.total
+        }
+        : {
+            kind: item.kind,
+            id: item.collection.id,
+            title: item.collection.title,
+            total: item.collection.itemsCount
+        });
 
     return {
         pins,
         followsFeed: withMobileActivityCovers(followsFeed).map((item) => {
             const author = authors.get(item.userId)!;
+
             return {
                 ...item,
                 avatar: author.image ? mobileImagePath(author.image) : null,
@@ -132,14 +158,17 @@ export const getMobileProfileExtras = async (userId: number, viewerId = userId) 
     };
 };
 
+
 export const getMobileRecentAchievements = async (userId: number) => {
     const { services } = await getContainer();
     const items = await services.achievements.getAchievementsDetails(userId, 3);
+
     return items.map((item) => ({
         ...item,
         completedAt: item.completedAt ? dateFromUTCInput(item.completedAt).toISOString() : null,
     }));
 };
+
 
 export const getMobileAchievements = async (userId: number) => {
     const { services } = await getContainer();
@@ -162,6 +191,7 @@ export const getMobileAchievements = async (userId: number) => {
         }));
 };
 
+
 export const getMobileHistory = async (userId: number, page: number, search?: string) => {
     const { services } = await getContainer();
 
@@ -182,8 +212,10 @@ export const getMobileHistory = async (userId: number, page: number, search?: st
     };
 };
 
+
 export const deleteMobileHistory = async (userId: number, input: z.infer<typeof deleteUserUpdatesSchema>) => {
     const { services } = await getContainer();
     await services.updateHistory.deleteUserUpdates(userId, input.updateIds, false);
+
     return { deleted: true };
 };

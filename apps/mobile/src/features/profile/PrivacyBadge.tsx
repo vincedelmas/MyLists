@@ -28,6 +28,7 @@ const privacy = {
     },
 };
 
+
 export function PrivacyBadge({ value }: { value: MobileProfile["user"]["privacy"] }) {
     const [open, setOpen] = useState(false);
     const { Icon, color, title, explanation } = privacy[value];
@@ -43,10 +44,15 @@ export function PrivacyBadge({ value }: { value: MobileProfile["user"]["privacy"
             >
                 <Icon size={21} color={color}/>
             </Pressable>
-
             <NativeHost matchContents>
-                <BottomSheet isPresented={open} onDismiss={() => setOpen(false)}>
-                    <Column spacing={18} style={{ padding: 16 }}>
+                <BottomSheet
+                    isPresented={open}
+                    onDismiss={() => setOpen(false)}
+                >
+                    <Column
+                        spacing={18}
+                        style={{ padding: 16 }}
+                    >
                         <Text textStyle={{ fontSize: 20, fontWeight: "600", color }}>
                             {title}
                         </Text>

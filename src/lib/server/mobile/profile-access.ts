@@ -15,5 +15,6 @@ export const resolveMobileProfileUser = async (request: Request, viewerId: numbe
     if (!target) throw notFound();
     const decision = await services.authorization.decideProfile(toActor({ id: viewerId }), target);
     if (!decision.allowed) throw new UnauthorizedError("private");
+
     return targetId;
 };

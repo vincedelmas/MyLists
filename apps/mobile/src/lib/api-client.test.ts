@@ -1,14 +1,26 @@
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {api, ApiError, assetUrl} from "./api-client";
 
+
 const mocks = vi.hoisted(() => ({ getCookie: vi.fn(), notify: vi.fn() }));
+
+
 vi.mock("./config", () => ({ backendUrl: "http://192.168.1.61:3000" }));
-vi.mock("./auth-client", () => ({ authClient: { getCookie: mocks.getCookie, $store: { notify: mocks.notify } } }));
+
+
+vi.mock("./auth-client", () => ({
+    authClient: {
+        getCookie: mocks.getCookie,
+        $store: { notify: mocks.notify }
+    }
+}));
+
 
 afterEach(() => {
     vi.unstubAllGlobals();
     vi.resetAllMocks();
 });
+
 
 describe("native API transport", () => {
     it("sends the secure-store session cookie to the isolated mobile API", async () => {
@@ -101,7 +113,11 @@ describe("native API transport", () => {
     it("uses JSON mutations and keeps path parameters out of the editable payload", async () => {
         const fetcher = vi.fn().mockResolvedValue(Response.json({ kind: "saved" }));
         vi.stubGlobal("fetch", fetcher);
-        await api.updateMedia({ mediaType: "books", mediaId: 7, payload: { type: "page", actualPage: 20 } });
+        await api.updateMedia({
+            mediaType: "books",
+            mediaId: 7,
+            payload: { type: "page", actualPage: 20 }
+        });
         const [url, options] = fetcher.mock.calls[0];
         expect(url).toBe("http://192.168.1.61:3000/api/mobile/v1/media/books/7");
         expect(options.method).toBe("PATCH");

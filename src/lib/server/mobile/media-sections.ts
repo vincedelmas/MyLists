@@ -7,12 +7,13 @@ import {UnauthorizedError, FormattedError} from "@/lib/utils/error-classes";
 import {mobileImagePath} from "./images";
 import {getMobileMedia, mediaParamsSchema} from "./media";
 import {mediaCatalogBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
-import {mediaDetailsJobSchema} from "@/lib/schemas/media-details.schema";
-import {editMediaDetailsSchema} from "@/lib/schemas/media-details.schema";
+import {editMediaDetailsSchema, mediaDetailsJobSchema} from "@/lib/schemas/media-details.schema";
 import {refreshCatalogMedia} from "@/lib/server/domain/media/media-refresh";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
 
+
 type Params = z.infer<typeof mediaParamsSchema>;
+
 
 export async function getMobileMediaDetails(userId: number, { mediaType, mediaId }: Params) {
     const { services, registries } = await getContainer();
@@ -24,6 +25,7 @@ export async function getMobileMediaDetails(userId: number, { mediaType, mediaId
         mediaType,
         toActor({ id: userId }),
     );
+
     return {
         seasons: "epsPerSeason" in media ? media.epsPerSeason : [],
         series: (media.collection ?? []).map(item => ({ ...item, mediaCover: mobileImagePath(item.mediaCover) })),
@@ -45,6 +47,7 @@ export async function getMobileMediaDetails(userId: number, { mediaType, mediaId
     };
 }
 
+
 export async function getMobileMediaCommunity(userId: number, { mediaType, mediaId }: Params, page: number, search?: string) {
     const { registries } = await getContainer();
     const service = registries.mediaService.get(mediaType);
@@ -55,6 +58,7 @@ export async function getMobileMediaCommunity(userId: number, { mediaType, media
     const summarize = (item: (typeof community.items)[number], includeComment = false) => {
         // Drizzle erases the generic list columns in this community projection.
         const tracking = item.userMedia as NonNullable<Awaited<ReturnType<typeof getMobileMedia>>["tracking"]>;
+
         return {
             id: item.id,
             name: item.name,
@@ -76,6 +80,7 @@ export async function getMobileMediaCommunity(userId: number, { mediaType, media
             updatedAt: tracking.lastUpdated ? dateFromUTCInput(tracking.lastUpdated).toISOString() : null,
         };
     };
+
     return {
         page,
         pages: community.pages,
@@ -86,11 +91,14 @@ export async function getMobileMediaCommunity(userId: number, { mediaType, media
     };
 }
 
+
 export async function getMobileMediaCollections(userId: number, { mediaType, mediaId }: Params) {
     const { services, registries } = await getContainer();
     if (!registries.mediaService.get(mediaType).findById(mediaId)) throw notFound();
+
     return services.collections.getUserCollectionMemberships(userId, mediaId, mediaType);
 }
+
 
 export async function getMobileMediaEdit(userId: number, { mediaType, mediaId }: Params) {
     const { services, registries } = await getContainer();
@@ -98,33 +106,43 @@ export async function getMobileMediaEdit(userId: number, { mediaType, mediaId }:
     if (!hasRequiredRole(toActor(user), RoleType.MANAGER)) throw new UnauthorizedError("restricted");
     const result = await registries.mediaService.get(mediaType).getMediaEditableFields(mediaId);
     const values: Record<string, unknown> = result.fields;
+
     return result.editableFields.map((key) => ({ key, value: key === "imageCover" ? "" : (values[key] ?? null) }));
 }
+
 
 export async function saveMobileMediaEdit(userId: number, input: z.infer<typeof editMediaDetailsSchema>) {
     const { services, registries } = await getContainer();
     const user = (await services.account.getUserById(userId))!;
     if (!hasRequiredRole(toActor(user), RoleType.MANAGER)) throw new UnauthorizedError("restricted");
     await registries.mediaService.get(input.mediaType).updateMediaEditableFields(input.mediaId, input.payload);
+
     return { kind: "saved" as const };
 }
+
 
 export async function refreshMobileMedia(userId: number, { mediaType, mediaId }: Params) {
     const { services } = await getContainer();
     const user = (await services.account.getUserById(userId))!;
+
     return refreshCatalogMedia(toActor(user), mediaType, mediaId);
 }
+
 
 export async function checkMobileGameHltb(_userId: number, { mediaType, mediaId }: Params) {
     if (mediaType !== "games") throw new FormattedError("HLTB lookup is only available for games.");
     const { registries } = await getContainer();
+
     return registries.ingestionServices.get("games").checkMissingHltb(mediaId);
 }
 
+
 export const mobileJobSchema = mediaDetailsJobSchema.extend(mediaCatalogBrowseFiltersSchema.shape);
+
 
 export async function getMobileJob(userId: number, { mediaType, job, name, ...filters }: z.infer<typeof mobileJobSchema>) {
     const { registries } = await getContainer();
     const result = await registries.mediaService.get(mediaType).getMediaJobDetails(job, name, filters, userId);
+
     return { ...result, items: result.items.map(item => ({ ...item, imageCover: mobileImagePath(item.imageCover) })) };
 }

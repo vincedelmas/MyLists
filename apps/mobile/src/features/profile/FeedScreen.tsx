@@ -13,6 +13,7 @@ import {FeedRows} from "./ProfileFeed";
 import {ConfirmationSheet} from "../../components/confirmation-sheet";
 import {useFeedDeletion} from "./use-feed-deletion";
 
+
 export function FeedScreen() {
     const { userId } = useLocalSearchParams<{ userId?: string }>();
     const focused = useIsFocused();
@@ -33,26 +34,86 @@ export function FeedScreen() {
         setPage(value);
         list.current?.scrollToOffset({ offset: 0, animated: false });
     };
-    return <Page title="Feed" back subtitle="Tracking history">
-        <View style={{ padding: 16, gap: 10 }}><SearchField label="Search feed" hideLabel clearable leadingIcon={<Search size={19} color={colors.muted}/>} value={search}
-                                                            onChangeText={value => {
-                                                                setSearch(value);
-                                                                changePage(1);
-                                                            }} placeholder="Search media in your feed…" autoCorrect={false} returnKeyType="search"/>
-            <AppText muted
-                     style={{ fontSize: 12 }}>{searching ? "Searching…" : query.data ? `${query.data.total} updates${term ? ` matching “${term}”` : ""}` : "Tracking updates"}</AppText>
-        </View>
-        <FlatList ref={list} data={searching ? [] : query.data?.items ?? []} keyExtractor={item => String(item.id)} initialNumToRender={8} maxToRenderPerBatch={8} windowSize={5}
-                  keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 24 }}
-                  renderItem={({ item }) => <FeedRows items={[item]} ratingSystem={query.data!.ratingSystem} onDelete={!userId ? deleteUpdate : undefined}/>}
-                  refreshControl={<RefreshControl tintColor={colors.accent} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}/>}
-                  ListEmptyComponent={<StateView loading={query.isPending || searching}
-                                                 title={query.error ? "Couldn’t load feed" : term ? "No matching updates" : "No activity yet"}
-                                                 message={query.error?.message ?? (term ? "Try another media title." : "Tracking updates will appear here.")}
-                                                 retry={query.error ? () => void query.refetch() : undefined}/>}
-                  ListFooterComponent={query.error && query.data?.items.length ? <StateView title="Couldn’t refresh feed" retry={() => void query.refetch()}/> : undefined}/>
-        <PaginationBar page={page} pages={pages} onChange={changePage} disabled={searching || query.isPending || !query.data}/>
 
-        <ConfirmationSheet {...confirmationProps}/>
-    </Page>;
+    return (
+        <Page
+            title="Feed"
+            back
+            subtitle="Tracking history"
+        >
+            <View style={{ padding: 16, gap: 10 }}>
+                <SearchField
+                    label="Search feed"
+                    hideLabel
+                    clearable
+                    leadingIcon={
+                        <Search size={19} color={colors.muted}/>
+                    }
+                    value={search}
+                    onChangeText={value => {
+                        setSearch(value);
+                        changePage(1);
+                    }}
+                    placeholder="Search media in your feed…"
+                    autoCorrect={false}
+                    returnKeyType="search"
+                />
+                <AppText
+                    muted
+                    style={{ fontSize: 12 }}
+                >
+                    {searching
+                        ? "Searching…"
+                        : query.data ? `${query.data.total} updates${term ? ` matching “${term}”` : ""}` : "Tracking updates"}
+                </AppText>
+            </View>
+            <FlatList
+                ref={list}
+                data={searching ? [] : query.data?.items ?? []}
+                keyExtractor={item => String(item.id)}
+                initialNumToRender={8}
+                maxToRenderPerBatch={8}
+                windowSize={5}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 24 }}
+                renderItem={({ item }) =>
+                    <FeedRows
+                        items={[item]}
+                        ratingSystem={query.data!.ratingSystem}
+                        onDelete={!userId ? deleteUpdate : undefined}
+                    />
+                }
+                refreshControl={
+                    <RefreshControl
+                        tintColor={colors.accent}
+                        refreshing={query.isRefetching}
+                        onRefresh={() => void query.refetch()}
+                    />
+                }
+                ListEmptyComponent={
+                    <StateView
+                        loading={query.isPending || searching}
+                        title={query.error ? "Couldn’t load feed" : term ? "No matching updates" : "No activity yet"}
+                        message={query.error?.message ?? (term ? "Try another media title." : "Tracking updates will appear here.")}
+                        retry={query.error ? () => void query.refetch() : undefined}
+                    />
+                }
+                ListFooterComponent={query.error && query.data?.items.length
+                    ? <StateView
+                        title="Couldn’t refresh feed"
+                        retry={() => void query.refetch()}
+                    />
+                    : undefined
+                }
+            />
+            <PaginationBar
+                page={page}
+                pages={pages}
+                onChange={changePage}
+                disabled={searching || query.isPending || !query.data}
+            />
+            <ConfirmationSheet {...confirmationProps}/>
+        </Page>
+    );
 }

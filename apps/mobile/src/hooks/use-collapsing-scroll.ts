@@ -1,7 +1,9 @@
 import {createContext, useCallback, useContext, useRef, type ComponentRef} from "react";
 import type {ScrollViewProps, ScrollView} from "react-native";
 
+
 type ScrollResponder = Pick<ComponentRef<typeof ScrollView>, "scrollTo">;
+
 
 export const CollapsingScrollContext = createContext<{
     onScroll: NonNullable<ScrollViewProps["onScroll"]>;
@@ -48,6 +50,7 @@ export function useCollapsingScroll() {
             restored.current = true;
         }
     }, [viewportHeight]);
+
     return {
         scrollProps: {
             ref: attachScroll,

@@ -1,9 +1,17 @@
 import {describe, expect, it} from "vitest";
 import {getPersonalRanking, getRankingLevel, type PersonalRanks, type RankedUser} from "./hall-of-fame";
 
+
 const minutes = (level: number) => 20 * level * (level + 1);
+
+
 const user: RankedUser = {
-    id: 1, name: "Ranked user", image: null, privacy: "public", isOwn: false, rank: 4,
+    id: 1,
+    name: "Ranked user",
+    image: null,
+    privacy: "public",
+    isOwn: false,
+    rank: 4,
     totalTime: minutes(50),
     settings: [
         { mediaType: "series", active: true, timeSpent: minutes(12) },
@@ -11,12 +19,34 @@ const user: RankedUser = {
     ],
 };
 
+
 const ranks: PersonalRanks = [
-    { mediaType: "series", rank: 4, percent: 20, active: true },
-    { mediaType: "movies", rank: 24, percent: 6.2, active: true },
-    { mediaType: "books", rank: 1, percent: 1, active: false },
-    { mediaType: "games", rank: 2, percent: null, active: true },
+    {
+        mediaType: "series",
+        rank: 4,
+        percent: 20,
+        active: true
+    },
+    {
+        mediaType: "movies",
+        rank: 24,
+        percent: 6.2,
+        active: true
+    },
+    {
+        mediaType: "books",
+        rank: 1,
+        percent: 1,
+        active: false
+    },
+    {
+        mediaType: "games",
+        rank: 2,
+        percent: null,
+        active: true
+    },
 ];
+
 
 describe("phone leaderboard metrics", () => {
     it("shows the selected media's level instead of repeating the profile level", () => {

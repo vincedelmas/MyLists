@@ -3,6 +3,7 @@ import {mobileRequest} from "@/lib/server/mobile/request";
 import {resolveMobileProfileUser} from "@/lib/server/mobile/profile-access";
 import {getMobileMonthlyActivityStats, mobileMonthlyActivityStatsSchema} from "@/lib/server/mobile/monthly-activity";
 
+
 export const Route = createFileRoute("/api/mobile/v1/profile/monthly-activity/stats")({
     server: {
         handlers: {

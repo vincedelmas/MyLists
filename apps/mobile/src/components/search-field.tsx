@@ -14,8 +14,15 @@ export function SearchField(props: ComponentProps<typeof Field>) {
             autoCapitalize="none"
             returnKeyType={props.returnKeyType ?? "search"}
             textStyle={{ ...props.textStyle, fontSize: 16 }}
-            leadingIcon={props.leadingIcon ?? <Search size={20} color={colors.muted}/>}
-            style={{ ...props.style, borderRadius: 18, backgroundColor: colors.surface, height: 50 }}
+            leadingIcon={props.leadingIcon ??
+                <Search size={20} color={colors.muted}/>
+            }
+            style={{
+                ...props.style,
+                borderRadius: 18,
+                backgroundColor: colors.surface,
+                height: 50
+            }}
         />
     );
 }

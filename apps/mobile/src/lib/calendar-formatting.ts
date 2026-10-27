@@ -12,5 +12,6 @@ export function formatCalendarRelativeLabel(input: string | null | undefined, no
     const value = Math.round(days / divisor);
     if (Math.abs(value) === 1) return `${value > 0 ? "next" : "last"} ${unit}`;
     const duration = `${Math.abs(value)} ${unit}s`;
+
     return value > 0 ? `in ${duration}` : `${duration} ago`;
 }

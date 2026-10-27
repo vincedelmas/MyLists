@@ -23,11 +23,13 @@ function PasswordForm() {
 
         if (!currentPassword || newPassword.length < 8 || newPassword.length > 50) {
             setValidation("Enter your current password and a new password of 8–50 characters.");
+
             return;
         }
 
         if (newPassword !== confirm) {
             setValidation("The new passwords do not match.");
+
             return;
         }
 
@@ -42,7 +44,12 @@ function PasswordForm() {
 
     return (
         <>
-            <Section title="Change password" icon={<KeyRound size={18} color={colors.accent}/>}>
+            <Section
+                title="Change password"
+                icon={
+                    <KeyRound size={18} color={colors.accent}/>
+                }
+            >
                 <View style={uiStyles.padded}>
                     <Field
                         autoCapitalize="none"
@@ -77,17 +84,21 @@ function PasswordForm() {
                 </View>
             </Section>
             {(validation || mutation.error) &&
-                <AppText accessibilityRole="alert" style={{ color: colors.error }}>
+                <AppText
+                    accessibilityRole="alert"
+                    style={{ color: colors.error }}
+                >
                     {validation || mutation.error?.message}
                 </AppText>
             }
-
             {mutation.isSuccess &&
-                <AppText accessibilityRole="alert" style={{ color: colors.accent }}>
+                <AppText
+                    accessibilityRole="alert"
+                    style={{ color: colors.accent }}
+                >
                     Password changed.
                 </AppText>
             }
-
             <Button
                 fullWidth
                 onPress={submit}
@@ -97,6 +108,7 @@ function PasswordForm() {
         </>
     );
 }
+
 
 function EmailForm() {
     const [email, setEmail] = useState("");
@@ -108,26 +120,83 @@ function EmailForm() {
         },
         onSuccess: () => setEmail(""),
     });
-    return <Section title="Email address" icon={<Mail size={18} color={colors.accent}/>}><View style={uiStyles.padded}>
-        <AppText muted style={{ fontSize: 12 }}>Current email: {session.data?.user.email}</AppText>
-        <AppText muted style={{ fontSize: 12 }}>Approve the change from your current email address, then verify the new address.</AppText>
-        <Field label="New email address" placeholder="new-email@example.com" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false}
-               keyboardType="email-address" editable={!mutation.isPending}/>
-        <SettingsFeedback error={mutation.error?.message}
-                          success={mutation.isSuccess && "Check your current inbox to approve the change. After approval, check your new inbox to verify the new address."}/>
-        <Button fullWidth label="Change Email" pending={mutation.isPending} disabled={!email.trim()} onPress={() => mutation.mutate()}/>
-    </View></Section>;
+
+    return (
+        <Section
+            title="Email address"
+            icon={
+                <Mail size={18} color={colors.accent}/>
+            }
+        >
+            <View style={uiStyles.padded}>
+                <AppText
+                    muted
+                    style={{ fontSize: 12 }}
+                >Current email: {session.data?.user.email}</AppText>
+                <AppText
+                    muted
+                    style={{ fontSize: 12 }}
+                >
+                    Approve the change from your current email address, then verify the new address.
+                </AppText>
+                <Field
+                    label="New email address"
+                    placeholder="new-email@example.com"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    editable={!mutation.isPending}
+                />
+                <SettingsFeedback
+                    error={mutation.error?.message}
+                    success={mutation.isSuccess && "Check your current inbox to approve the change. After approval, check your new inbox to verify the new address."}
+                />
+                <Button
+                    fullWidth
+                    label="Change Email"
+                    pending={mutation.isPending}
+                    disabled={!email.trim()}
+                    onPress={() => mutation.mutate()}
+                />
+            </View>
+        </Section>
+    );
 }
+
 
 export function SecurityScreen() {
     const focused = useIsFocused();
     const query = useQuery({ ...accountSecurityOptions, enabled: focused });
-    return <Page title="Email & password" back><QueryPanel query={query}>{data => <Content>
-        <EmailForm/>
-        {data.hasPassword ? <PasswordForm/> :
-            <Section title="Password" icon={<KeyRound size={18} color={colors.accent}/>}><View style={uiStyles.padded}><AppText muted>Your account has no password because you sign
-                in
-                with {data.providers.map(provider => provider === "google" ? "Google" : "GitHub").join(" or ")}. Manage your password with your sign-in
-                provider.</AppText></View></Section>}
-    </Content>}</QueryPanel></Page>;
+
+    return (
+        <Page title="Email & password" back>
+            <QueryPanel query={query}>
+                {data =>
+                    <Content>
+                        <EmailForm/>
+                        {data.hasPassword
+                            ? <PasswordForm/>
+                            :
+                            <Section
+                                title="Password"
+                                icon={
+                                    <KeyRound size={18} color={colors.accent}/>
+                                }
+                            >
+                                <View style={uiStyles.padded}>
+                                    <AppText muted>Your account has no password because you sign
+                                        in
+                                        with {data.providers.map(provider => provider === "google" ? "Google" : "GitHub").join(" or ")}. Manage your password with your
+                                        sign-in
+                                        provider.</AppText>
+                                </View>
+                            </Section>
+                        }
+                    </Content>
+                }
+            </QueryPanel>
+        </Page>
+    );
 }

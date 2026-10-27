@@ -8,10 +8,16 @@ export function ProfileQueryPanel<T>(props: ComponentProps<typeof QueryPanel<T>>
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     if (props.query.data === undefined) {
         return (
-            <Animated.ScrollView {...scrollProps} contentContainerStyle={contentContainerStyle}>
+            <Animated.ScrollView
+                {...scrollProps}
+                contentContainerStyle={contentContainerStyle}
+            >
                 <QueryPanel {...props} />
             </Animated.ScrollView>
         );
     }
-    return <QueryPanel {...props} />;
+
+    return (
+        <QueryPanel {...props} />
+    );
 }

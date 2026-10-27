@@ -36,13 +36,22 @@ export function ListFiltersScreen() {
             back={true}
             brand={true}
             title="Filter your list"
-            action={<Button secondary label="Reset" onPress={() => setDraft({ status: draft.status, sorting: draft.sorting })}/>}
+            action={
+                <Button
+                    secondary
+                    label="Reset"
+                    onPress={() => setDraft({ status: draft.status, sorting: draft.sorting })}
+                />
+            }
         >
             <ScrollView
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={{ padding: 16, gap: 24, paddingBottom: 32 }}
             >
-                <AppText muted style={{ fontSize: 12 }}>
+                <AppText
+                    muted
+                    style={{ fontSize: 12 }}
+                >
                     Match any selected value within a category, and all selected categories together.
                 </AppText>
                 <QueryPanel query={query}>
@@ -60,14 +69,19 @@ export function ListFiltersScreen() {
                                             detail={selected.length ? selected.join(", ") : "Any"}
                                         />
                                     );
-                                })}
+                                })
+                                }
                             </Section>
                             <Section title="Personal filters">
                                 <View style={{ padding: 16, gap: 18 }}>
                                     {([
                                         { key: "favorite", label: "Favorites only" },
                                         { key: "comment", label: "With comments" },
-                                        ...(userId ? [{ key: "hideCommon" as const, label: "Hide titles in my list" }] : []),
+                                        ...(userId
+                                            ? [
+                                                { key: "hideCommon" as const, label: "Hide titles in my list" }
+                                            ]
+                                            : []),
                                     ] as const)
                                         .filter((item) => item.key === "hideCommon" || data.common.includes(item.key))
                                         .map(({ key, label }) => (
@@ -82,14 +96,22 @@ export function ListFiltersScreen() {
                                                     />
                                                 </Row>
                                             </NativeHost>
-                                        ))}
+                                        ))
+                                    }
                                 </View>
                             </Section>
                         </>
                     }
                 </QueryPanel>
             </ScrollView>
-            <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface }}>
+            <View
+                style={{
+                    padding: 16,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                    backgroundColor: colors.surface
+                }}
+            >
                 <Button
                     disabled={query.isPending || query.isError}
                     label={`Apply${count ? ` ${count}` : ""} filters`}
@@ -104,7 +126,6 @@ export function ListFiltersScreen() {
                     }}
                 />
             </View>
-
             {group &&
                 <FilterValuesSheet
                     group={group}
@@ -117,7 +138,6 @@ export function ListFiltersScreen() {
                         setDraft({ ...draft, [group.key]: values.length ? values : undefined })
                     }
                 />
-
             }
         </Page>
     );

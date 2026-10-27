@@ -11,6 +11,7 @@ import {ChartNoAxesCombined, Clapperboard, ExternalLink, HeartHandshake, History
 
 const nativePages = new Map<string, Href>([["/moviedle", "/moviedle"], ["/hall-of-fame", "/hall-of-fame"], ["/trends", "/trends"]]);
 
+
 const sections = [
     {
         title: "Discover",
@@ -115,32 +116,44 @@ export function CommunityScreen() {
                                 })}
                             >
                                 <Icon size={24} color={colors.accent}/>
-
                                 <View style={{ flex: 1, gap: 5 }}>
                                     <AppText style={{ fontWeight: "600" }}>
                                         {title}
                                     </AppText>
-                                    <AppText muted style={{ fontSize: 12 }}>
+                                    <AppText
+                                        muted
+                                        style={{ fontSize: 12 }}
+                                    >
                                         {description}
                                     </AppText>
                                 </View>
-
-                                {!nativePages.has(path) && <ExternalLink size={17} color={colors.muted}/>}
+                                {!nativePages.has(path) &&
+                                    <ExternalLink size={17} color={colors.muted}/>
+                                }
                             </Pressable>
-                        )}
+                        )
+                        }
                     </Section>
-                ))}
-                <Pressable accessibilityRole="link" accessibilityLabel="Buy me a coffee. Opens in browser" disabled={opening}
-                           onPress={() => void open("https://www.buymeacoffee.com/crossoufire")} style={({ pressed }) => ({
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    paddingVertical: 20,
-                    opacity: pressed ? 0.6 : 1
-                })}>
+                ))
+                }
+                <Pressable
+                    accessibilityRole="link"
+                    accessibilityLabel="Buy me a coffee. Opens in browser"
+                    disabled={opening}
+                    onPress={() => void open("https://www.buymeacoffee.com/crossoufire")}
+                    style={({ pressed }) => ({
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        paddingVertical: 20,
+                        opacity: pressed ? 0.6 : 1
+                    })}
+                >
                     <Coffee size={18} color={colors.rating}/>
-                    <AppText style={{ color: colors.rating, fontSize: 13 }}>Buy me a coffee</AppText>
+                    <AppText style={{ color: colors.rating, fontSize: 13 }}>
+                        Buy me a coffee
+                    </AppText>
                     <ExternalLink size={14} color={colors.muted}/>
                 </Pressable>
             </Content>

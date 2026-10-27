@@ -4,17 +4,28 @@ import {notFound} from "@tanstack/react-router";
 import {mobileRequest} from "./request";
 import {FormattedError, InactiveMediaTypeError, UnauthorizedError} from "@/lib/utils/error-classes";
 
+
 const session = vi.hoisted(() => vi.fn());
+
+
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
+
+
 vi.mock("@/lib/server/core/request-user", () => ({ getRequestUser: session }));
+
+
 vi.mock("@/lib/server/core/logger", () => ({ logger: { error: vi.fn() } }));
+
 
 beforeEach(() => {
     session.mockReset();
     session.mockResolvedValue({ id: 10 });
 });
+
+
 const request = (headers: HeadersInit = { "content-type": "application/json" }, body = "{}") =>
     new Request("http://192.168.1.61:3000/api/mobile/v1/settings", { method: "PATCH", headers, body });
+
 
 describe("mobile mutation boundary", () => {
     it("rejects cross-origin browser writes and non-JSON forms before invoking the mutation", async () => {
@@ -22,7 +33,8 @@ describe("mobile mutation boundary", () => {
         expect(
             (await mobileRequest(request({ origin: "https://other.invalid", "content-type": "application/json" }), save))
                 .status,
-        ).toBe(403);
+        )
+            .toBe(403);
         expect(
             (
                 await mobileRequest(
@@ -30,7 +42,8 @@ describe("mobile mutation boundary", () => {
                     save,
                 )
             ).status,
-        ).toBe(415);
+        )
+            .toBe(415);
         expect(save).not.toHaveBeenCalled();
     });
 
@@ -78,14 +91,16 @@ describe("mobile mutation boundary", () => {
                     throw notFound();
                 })
             ).status,
-        ).toBe(404);
+        )
+            .toBe(404);
         expect(
             (
                 await mobileRequest(request(), async () => {
                     throw new InactiveMediaTypeError("games");
                 })
             ).status,
-        ).toBe(409);
+        )
+            .toBe(409);
         const known = await mobileRequest(request(), async () => {
             throw new FormattedError("Invalid episode");
         });

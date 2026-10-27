@@ -5,6 +5,7 @@ import {getMobileHistory, deleteMobileHistory} from "@/lib/server/mobile/profile
 import {deleteUserUpdatesSchema} from "@/lib/schemas/user-media.schema";
 import {coercedPositiveIntFieldSchema, optionalTrimmedSearchFieldSchema} from "@/lib/schemas/common.schema";
 
+
 export const Route = createFileRoute("/api/mobile/v1/profile/history")({
     server: {
         handlers: {

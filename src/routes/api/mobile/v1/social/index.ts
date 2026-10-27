@@ -1,7 +1,8 @@
-import { resolveMobileProfileUser } from "@/lib/server/mobile/profile-access";
-import { createFileRoute } from "@tanstack/react-router";
-import { mobileRequest } from "@/lib/server/mobile/request";
-import { getMobileSocial, actOnMobileSocial, socialListSchema, socialActionSchema } from "@/lib/server/mobile/social";
+import {resolveMobileProfileUser} from "@/lib/server/mobile/profile-access";
+import {createFileRoute} from "@tanstack/react-router";
+import {mobileRequest} from "@/lib/server/mobile/request";
+import {getMobileSocial, actOnMobileSocial, socialListSchema, socialActionSchema} from "@/lib/server/mobile/social";
+
 
 export const Route = createFileRoute("/api/mobile/v1/social/")({
     server: {

@@ -2,8 +2,14 @@
 // physical touch latency or proof that a frame has reached the phone's display.
 export const navigationTimingEnabled =
     typeof __DEV__ !== "undefined" && __DEV__ && process.env.EXPO_PUBLIC_NAV_TIMING === "1";
+
+
 const captureMs = 3_000;
+
+
 let sequence = 0;
+
+
 let current:
     | {
     id: number;
@@ -15,7 +21,9 @@ let current:
 }
     | undefined;
 
+
 const rounded = (value: number) => Math.round(value * 10) / 10;
+
 
 function report(reason: "capture-ended" | "next-navigation") {
     if (!current) return;
@@ -24,6 +32,7 @@ function report(reason: "capture-ended" | "next-navigation") {
     current = undefined;
     console.info(`[nav-timing] ${JSON.stringify({ ...trace, reason })}`);
 }
+
 
 export function beginNavigationTiming(route: string, phase: "press-in" | "navigation-requested") {
     if (!navigationTimingEnabled) return;
@@ -45,6 +54,7 @@ export function beginNavigationTiming(route: string, phase: "press-in" | "naviga
     recordNavigationTiming(phase, route);
 }
 
+
 export function recordNavigationTiming(phase: string, route?: string, renderMs?: number) {
     if (!navigationTimingEnabled || !current || (route !== undefined && current.route !== route)) return;
     current.events.push({
@@ -54,6 +64,7 @@ export function recordNavigationTiming(phase: string, route?: string, renderMs?:
     });
 }
 
+
 export function observeNavigationFrame(route: string) {
     if (!navigationTimingEnabled || !current || current.route !== route) return;
     const id = current.id;
@@ -61,6 +72,7 @@ export function observeNavigationFrame(route: string) {
         if (current?.id === id) recordNavigationTiming("js-frame-after-layout", route);
     });
 }
+
 
 export function timeNavigationRequest(path: string) {
     const trace = current;
@@ -71,6 +83,7 @@ export function timeNavigationRequest(path: string) {
         startMs: rounded(startedAt - trace.startedAt),
     };
     trace.requests.push(request);
+
     return (outcome: string) => {
         request.durationMs = rounded(performance.now() - startedAt);
         request.outcome = outcome;

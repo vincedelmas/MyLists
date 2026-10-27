@@ -3,6 +3,7 @@ import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {api, type MediaParams} from "../../lib/api-client";
 import {useConfirmation} from "../../hooks/use-confirmation";
 
+
 export function useFeedDeletion(media?: MediaParams) {
     const client = useQueryClient();
     const { confirmation, confirm, dismiss } = useConfirmation();
@@ -10,15 +11,23 @@ export function useFeedDeletion(media?: MediaParams) {
         mutationFn: api.deleteHistory,
         onSuccess: async () => {
             dismiss();
-            await Promise.all([client.invalidateQueries({
-                queryKey: ["profile"],
-                refetchType: media ? "none" : "active"
-            }), ...(media ? [client.invalidateQueries({ queryKey: ["media", media.mediaType, media.mediaId, "history"] })] : [])]);
+            await Promise.all([
+                client.invalidateQueries({
+                    queryKey: ["profile"],
+                    refetchType: media ? "none" : "active"
+                }),
+                ...(media ? [client.invalidateQueries({ queryKey: ["media", media.mediaType, media.mediaId, "history"] })] : [])
+            ]);
         },
     });
 
     return {
-        confirmationProps: { confirmation, dismiss, pending: mutation.isPending, error: mutation.error?.message },
+        confirmationProps: {
+            confirmation,
+            dismiss,
+            pending: mutation.isPending,
+            error: mutation.error?.message
+        },
         deleteUpdate: (updateId: number) => {
             if (mutation.isPending) return;
             mutation.reset();

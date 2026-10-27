@@ -1,12 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {
     getMobileNotificationCounts,
     getMobileNotifications,
     actOnMobileNotification,
     mobileNotificationActionSchema,
 } from "./notifications";
-const mocks = vi.hoisted(() => ({ list: vi.fn(), counts: vi.fn(), read: vi.fn(), remove: vi.fn() }));
+
+
+const mocks = vi.hoisted(() => ({
+    list: vi.fn(),
+    counts: vi.fn(),
+    read: vi.fn(),
+    remove: vi.fn()
+}));
+
+
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
+
+
 vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         services: {
@@ -19,7 +30,11 @@ vi.mock("@/lib/server/core/container", () => ({
         },
     }),
 }));
+
+
 beforeEach(() => vi.resetAllMocks());
+
+
 describe("mobile notifications", () => {
     it("loads counts and notifications for the authenticated recipient only", async () => {
         mocks.counts.mockResolvedValue({ media: 2, social: 1, total: 3 });

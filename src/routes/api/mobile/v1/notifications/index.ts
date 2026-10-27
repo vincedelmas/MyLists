@@ -1,11 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { mobileRequest } from "@/lib/server/mobile/request";
+import {createFileRoute} from "@tanstack/react-router";
+import {mobileRequest} from "@/lib/server/mobile/request";
 import {
     getMobileNotifications,
     notificationTypeSchema,
     actOnMobileNotification,
     mobileNotificationActionSchema,
 } from "@/lib/server/mobile/notifications";
+
+
 export const Route = createFileRoute("/api/mobile/v1/notifications/")({
     server: {
         handlers: {

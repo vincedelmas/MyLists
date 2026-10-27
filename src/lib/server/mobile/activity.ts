@@ -1,8 +1,8 @@
-import { inArray } from "drizzle-orm";
-import type { MediaType } from "@/lib/utils/enums";
-import { getDbClient } from "@/lib/server/database/async-storage";
-import { getServerMediaDefinition } from "@/lib/media-definitions/definition.registry.server";
-import { mobileImagePath } from "./images";
+import {inArray} from "drizzle-orm";
+import type {MediaType} from "@/lib/utils/enums";
+import {getDbClient} from "@/lib/server/database/async-storage";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
+import {mobileImagePath} from "./images";
 
 // One cover lookup per media type, rather than a request/query for every card.
 export const withMobileActivityCovers = <T extends { mediaType: MediaType; mediaId: number }>(items: readonly T[]) => {

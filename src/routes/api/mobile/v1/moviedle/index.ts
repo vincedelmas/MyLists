@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { mobileRequest } from "@/lib/server/mobile/request";
-import { getMobileMoviedle, guessMobileMoviedle, moviedleGuessSchema } from "@/lib/server/mobile/moviedle";
+import {createFileRoute} from "@tanstack/react-router";
+import {mobileRequest} from "@/lib/server/mobile/request";
+import {getMobileMoviedle, guessMobileMoviedle, moviedleGuessSchema} from "@/lib/server/mobile/moviedle";
+
 
 export const Route = createFileRoute("/api/mobile/v1/moviedle/")({
     server: {

@@ -9,6 +9,7 @@ import {SessionGate} from "../src/features/auth/SessionGate";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {DarkTheme, ThemeProvider} from "expo-router/react-navigation";
 
+
 const navigationTheme = {
     ...DarkTheme,
     colors: {
@@ -21,11 +22,17 @@ const navigationTheme = {
     },
 };
 
+
 export default function RootLayout() {
     const { data: session } = authClient.useSession();
 
     const navigator = (
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+        <Stack
+            screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background }
+            }}
+        >
             <Stack.Protected guard={!session}>
                 <Stack.Screen name="sign-in"/>
             </Stack.Protected>
@@ -41,18 +48,21 @@ export default function RootLayout() {
                 <StatusBar style="light"/>
                 <SessionGate>
                     <QueryProvider key={session?.user.id ?? "anonymous"}>
-                        {navigationTimingEnabled ? (
-                            <Profiler
-                                id="navigation-tree"
-                                onRender={(_id, phase, duration) =>
-                                    recordNavigationTiming(`navigation-tree-${phase}`, undefined, duration)
-                                }
-                            >
-                                {navigator}
-                            </Profiler>
-                        ) : (
-                            navigator
-                        )}
+                        {navigationTimingEnabled
+                            ? (
+                                <Profiler
+                                    id="navigation-tree"
+                                    onRender={(_id, phase, duration) =>
+                                        recordNavigationTiming(`navigation-tree-${phase}`, undefined, duration)
+                                    }
+                                >
+                                    {navigator}
+                                </Profiler>
+                            )
+                            : (
+                                navigator
+                            )
+                        }
                     </QueryProvider>
                 </SessionGate>
             </SafeAreaProvider>

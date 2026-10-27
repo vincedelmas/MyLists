@@ -32,9 +32,13 @@ export function LayoutToggle({ value, onChange }: { value: MediaLayout; onChange
                         opacity: pressed ? 0.6 : 1,
                     })}
                 >
-                    <Icon size={18} color={mode === value ? colors.accent : colors.muted}/>
+                    <Icon
+                        size={18}
+                        color={mode === value ? colors.accent : colors.muted}
+                    />
                 </Pressable>
-            ))}
+            ))
+            }
         </View>
     );
 }

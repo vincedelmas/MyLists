@@ -1,9 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getMobileListFilterOptions, searchMobileListFilterOptions } from "./list-filters";
-import { listInputSchema, getMobileList } from "./media";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {getMobileListFilterOptions, searchMobileListFilterOptions} from "./list-filters";
+import {listInputSchema, getMobileList} from "./media";
 
-const mocks = vi.hoisted(() => ({ user: vi.fn(), options: vi.fn(), search: vi.fn(), list: vi.fn() }));
+
+const mocks = vi.hoisted(() => ({
+    user: vi.fn(),
+    options: vi.fn(),
+    search: vi.fn(),
+    list: vi.fn()
+}));
+
+
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
+
+
 vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         services: { account: { getUserById: mocks.user } },
@@ -18,27 +28,67 @@ vi.mock("@/lib/server/core/container", () => ({
         },
     }),
 }));
+
+
 beforeEach(() => {
     vi.resetAllMocks();
-    mocks.user.mockResolvedValue({ ratingSystem: "score", userMediaSettings: [{ mediaType: "movies", active: true }] });
-    mocks.options.mockResolvedValue({
-        genres: [{ name: "Drama" }],
-        tags: [{ name: "Weekend" }],
-        langs: [{ name: "en" }],
+    mocks.user.mockResolvedValue({
+        ratingSystem: "score",
+        userMediaSettings: [
+            { mediaType: "movies", active: true }
+        ]
     });
-    mocks.search.mockResolvedValue([{ name: "A Director" }]);
-    mocks.list.mockResolvedValue({ items: [], pagination: { page: 1, totalPages: 1 } });
+    mocks.options.mockResolvedValue({
+        genres: [
+            { name: "Drama" }
+        ],
+        tags: [
+            { name: "Weekend" }
+        ],
+        langs: [
+            { name: "en" }
+        ],
+    });
+    mocks.search.mockResolvedValue([
+        { name: "A Director" }
+    ]);
+    mocks.list.mockResolvedValue({
+        items: [],
+        pagination: { page: 1, totalPages: 1 }
+    });
 });
+
+
 describe("mobile tracking list filters", () => {
     it("uses the subject's real list options and identifies searchable metadata", async () => {
         const result = await getMobileListFilterOptions(20, "movies");
         expect(mocks.options).toHaveBeenCalledWith(20);
         expect(result.groups).toEqual(
             expect.arrayContaining([
-                { key: "genres", label: "Genres", searchable: false, options: ["Drama"] },
-                { key: "tags", label: "Tags", searchable: false, options: ["Weekend"] },
-                { key: "directors", label: "Directors", searchable: true, options: [] },
-                { key: "langs", label: "Languages", searchable: false, options: ["en"] },
+                {
+                    key: "genres",
+                    label: "Genres",
+                    searchable: false,
+                    options: ["Drama"]
+                },
+                {
+                    key: "tags",
+                    label: "Tags",
+                    searchable: false,
+                    options: ["Weekend"]
+                },
+                {
+                    key: "directors",
+                    label: "Directors",
+                    searchable: true,
+                    options: []
+                },
+                {
+                    key: "langs",
+                    label: "Languages",
+                    searchable: false,
+                    options: ["en"]
+                },
             ]),
         );
     });

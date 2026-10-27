@@ -1,23 +1,26 @@
 import * as z from "zod";
-import { and, asc, count, eq, or, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/sqlite-core";
-import { notFound } from "@tanstack/react-router";
-import { getContainer } from "@/lib/server/core/container";
-import { FormattedError, UnauthorizedError } from "@/lib/utils/error-classes";
-import { mobileImagePath } from "@/lib/server/mobile/images";
-import { PrivacyType, SocialState } from "@/lib/utils/enums";
-import { followers, user } from "@/lib/server/database/schema";
-import { getDbClient } from "@/lib/server/database/async-storage";
+import {and, asc, count, eq, or, sql} from "drizzle-orm";
+import {alias} from "drizzle-orm/sqlite-core";
+import {notFound} from "@tanstack/react-router";
+import {getContainer} from "@/lib/server/core/container";
+import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
+import {mobileImagePath} from "@/lib/server/mobile/images";
+import {PrivacyType, SocialState} from "@/lib/utils/enums";
+import {followers, user} from "@/lib/server/database/schema";
+import {getDbClient} from "@/lib/server/database/async-storage";
+
 
 export const socialListSchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     kind: z.enum(["followers", "following", "requests", "pending"]).default("followers"),
 });
 
+
 export const socialActionSchema = z.object({
     targetId: z.number().int().positive(),
     action: z.enum(["follow", "unfollow", "remove", "accept", "decline"]),
 });
+
 
 export const getMobileSocial = async (
     userId: number,
@@ -62,7 +65,12 @@ export const getMobileSocial = async (
         .from(followers)
         .where(or(eq(followers.followerId, userId), eq(followers.followedId, userId)))
         .groupBy(isOutgoing, followers.status);
-    const counts = { followers: 0, following: 0, requests: 0, pending: 0 };
+    const counts = {
+        followers: 0,
+        following: 0,
+        requests: 0,
+        pending: 0
+    };
     for (const row of totals) {
         const outgoing = Boolean(row.outgoing);
         const key =
@@ -71,8 +79,8 @@ export const getMobileSocial = async (
                     ? "following"
                     : "followers"
                 : outgoing
-                  ? "pending"
-                  : "requests";
+                    ? "pending"
+                    : "requests";
         counts[key] += row.total;
     }
 
@@ -80,7 +88,12 @@ export const getMobileSocial = async (
         counts:
             viewerId === userId
                 ? counts
-                : { followers: counts.followers, following: counts.following, requests: undefined, pending: undefined },
+                : {
+                    followers: counts.followers,
+                    following: counts.following,
+                    requests: undefined,
+                    pending: undefined
+                },
         page,
         hasMore: items.length > 30,
         items: items.slice(0, 30).map((item) => ({
@@ -90,6 +103,7 @@ export const getMobileSocial = async (
         })),
     };
 };
+
 
 export const actOnMobileSocial = async (userId: number, { targetId, action }: z.infer<typeof socialActionSchema>) => {
     const { services } = await getContainer();
@@ -104,13 +118,17 @@ export const actOnMobileSocial = async (userId: number, { targetId, action }: z.
 
         if (!services.social.getFollowingStatus(userId, targetId))
             services.social.follow(userId, targetId, target.privacy === PrivacyType.PRIVATE);
-    } else if (action === "unfollow") {
+    }
+    else if (action === "unfollow") {
         services.social.unfollow(userId, targetId);
-    } else if (action === "remove") {
+    }
+    else if (action === "remove") {
         services.social.removeFollower(targetId, userId);
-    } else if (action === "accept") {
+    }
+    else if (action === "accept") {
         services.social.acceptFollowRequest(targetId, userId);
-    } else {
+    }
+    else {
         services.social.declineFollowRequest(targetId, userId);
     }
 

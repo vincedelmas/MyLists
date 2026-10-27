@@ -1,9 +1,10 @@
-import { calculateMediaLevel } from "@/lib/utils/media/level";
-import { toActor } from "@/lib/server/authorization";
-import { getContainer } from "@/lib/server/core/container";
-import { getMobileProfile } from "./profile";
-import { dateFromUTCInput } from "@/lib/utils/formatting/date";
-import { mobileImagePath } from "./images";
+import {calculateMediaLevel} from "@/lib/utils/media/level";
+import {toActor} from "@/lib/server/authorization";
+import {getContainer} from "@/lib/server/core/container";
+import {getMobileProfile} from "./profile";
+import {dateFromUTCInput} from "@/lib/utils/formatting/date";
+import {mobileImagePath} from "./images";
+
 
 export const getMobilePerson = async (viewerId: number, targetId: number) => {
     const { services } = await getContainer();
@@ -29,5 +30,11 @@ export const getMobilePerson = async (viewerId: number, targetId: number) => {
     };
     if (!decision.allowed) return { access: "private" as const, header, following: following?.status ?? null };
     const profile = await getMobileProfile(targetId);
-    return { access: "allowed" as const, header, following: following?.status ?? null, profile: profile! };
+
+    return {
+        access: "allowed" as const,
+        header,
+        following: following?.status ?? null,
+        profile: profile!
+    };
 };

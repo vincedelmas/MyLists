@@ -9,6 +9,7 @@ import {MediaListDetails} from "./media-list-details";
 import {StateView} from "./ui";
 import {colors} from "../theme";
 
+
 interface MediaListItem {
     mediaId: number;
     mediaType: MediaType;
@@ -19,6 +20,7 @@ interface MediaListItem {
     favorite: boolean | null;
     hasComment: boolean;
 }
+
 
 interface MediaListProps<T extends MediaListItem> {
     items: T[];
@@ -39,6 +41,7 @@ interface MediaListProps<T extends MediaListItem> {
         fetchNextPage: () => unknown;
     };
 }
+
 
 export function MediaList<T extends MediaListItem>({ items, layout, ratingSystem, emptyTitle, emptyMessage, footer, query, onItemLongPress }: MediaListProps<T>) {
     const focused = useIsFocused();
@@ -86,14 +89,25 @@ export function MediaList<T extends MediaListItem>({ items, layout, ratingSystem
                         params: { mediaType: item.mediaType, mediaId: String(item.mediaId) },
                     })}
                 >
-                    <MediaListDetails {...item} ratingSystem={ratingSystem}/>
+                    <MediaListDetails
+                        {...item}
+                        ratingSystem={ratingSystem}
+                    />
                 </MediaCard>
-            )}
+            )
+            }
             ListFooterComponent={query.isFetchingNextPage
                 ? <StateView loading/>
                 : query.error && items.length
-                    ? <StateView title="Couldn’t load more" message={query.error.message} retry={() => void (query.hasNextPage ? query.fetchNextPage() : query.refetch())}/>
-                    : <>{footer}</>}
+                    ? <StateView
+                        title="Couldn’t load more"
+                        message={query.error.message}
+                        retry={() => void (query.hasNextPage ? query.fetchNextPage() : query.refetch())}
+                    />
+                    : <>
+                        {footer}
+                    </>
+            }
         />
     );
 }

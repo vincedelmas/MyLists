@@ -30,10 +30,14 @@ export function SignInScreen() {
         const input = credentialsSchema.safeParse({ email: email.trim(), password });
         if (!input.success) {
             setError(input.error.issues[0].message);
+
             return;
         }
 
-        login.mutate(input.data, { onSuccess: () => setPassword(""), onError: (failure) => setError(failure.message) });
+        login.mutate(input.data, {
+            onSuccess: () => setPassword(""),
+            onError: (failure) => setError(failure.message)
+        });
     };
 
     const open = (path: string) => {
@@ -47,7 +51,10 @@ export function SignInScreen() {
             <Content>
                 <View style={{ paddingVertical: 24, gap: 12 }}>
                     <ListChecks size={32} color={colors.accent}/>
-                    <AppText heading style={{ fontSize: 30, lineHeight: 38 }}>
+                    <AppText
+                        heading
+                        style={{ fontSize: 30, lineHeight: 38 }}
+                    >
                         Welcome back
                     </AppText>
                     <AppText muted={true}>
@@ -81,7 +88,14 @@ export function SignInScreen() {
                             editable={!login.isPending}
                             autoComplete="current-password"
                         />
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                flexWrap: "wrap",
+                                gap: 8
+                            }}
+                        >
                             <Pressable
                                 accessibilityRole="button"
                                 style={{ paddingVertical: 12 }}
@@ -102,7 +116,10 @@ export function SignInScreen() {
                             </Pressable>
                         </View>
                         {error &&
-                            <AppText accessibilityRole="alert" style={{ color: colors.error }}>
+                            <AppText
+                                accessibilityRole="alert"
+                                style={{ color: colors.error }}
+                            >
                                 {error}
                             </AppText>
                         }

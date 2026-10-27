@@ -3,6 +3,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {mobileRequest} from "@/lib/server/mobile/request";
 import {getMobileLibraryEditor, actOnMobileLibrary, libraryItemSchema, libraryActionSchema} from "@/lib/server/mobile/library-actions";
 
+
 export const Route = createFileRoute("/api/mobile/v1/library/manage")({
     server: {
         handlers: {

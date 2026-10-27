@@ -15,6 +15,7 @@ import {
     refreshMobileMedia,
 } from "@/lib/server/mobile/media-sections";
 
+
 export const Route = createFileRoute("/api/mobile/v1/media/$mediaType/$mediaId/$section")({
     server: {
         handlers: {
@@ -48,6 +49,7 @@ export const Route = createFileRoute("/api/mobile/v1/media/$mediaType/$mediaId/$
                     const section = z.enum(["edit", "refresh", "personal", "hltb"]).parse(params.section);
                     if (section === "personal") return actOnMobileMedia(userId, media, mobileMediaActionSchema.parse(await request.json()));
                     if (section === "hltb") return checkMobileGameHltb(userId, media);
+
                     return section === "refresh"
                         ? refreshMobileMedia(userId, media)
                         : saveMobileMediaEdit(

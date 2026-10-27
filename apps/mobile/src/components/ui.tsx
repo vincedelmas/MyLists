@@ -90,48 +90,59 @@ export function Page({
                         >
                             <ArrowLeft size={22} color={colors.text}/>
                         </Pressable>
-                    )}
-                    {brand && <Image source={brandLogo} style={styles.logo}/>}
+                    )
+                    }
+                    {brand &&
+                        <Image source={brandLogo} style={styles.logo}/>
+                    }
                     <View style={styles.fill}>
-                        <AppText heading style={brand ? styles.brandTitle : undefined}>
+                        <AppText
+                            heading
+                            style={brand ? styles.brandTitle : undefined}
+                        >
                             {title}
                         </AppText>
                         {subtitle && (
                             <AppText muted style={styles.caption}>
                                 {subtitle}
                             </AppText>
-                        )}
+                        )
+                        }
                     </View>
                     {action}
                 </View>
-            )}
+            )
+            }
             {!online && (
-                <AppText
-                    accessibilityRole="alert"
-                    style={styles.offline}
-                >
+                <AppText accessibilityRole="alert" style={styles.offline}>
                     You’re offline. Reconnect to save changes or load more.
                 </AppText>
-            )}
-            <KeyboardAvoidingView style={styles.fill} behavior={Platform.select({ ios: "padding" as const, android: "height" as const })}>
+            )
+            }
+            <KeyboardAvoidingView
+                style={styles.fill}
+                behavior={Platform.select({ ios: "padding" as const, android: "height" as const })}
+            >
                 {children}
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
 
-    return navigationTimingEnabled ? (
-        <Profiler
-            id={route}
-            onRender={(_id, phase, actualDuration) => {
-                recordNavigationTiming(`react-${phase}`, route, actualDuration);
-                recordNavigationTiming(`screen-render:${route}:${phase}`, undefined, actualDuration);
-            }}
-        >
-            {screen}
-        </Profiler>
-    ) : (
-        screen
-    );
+    return navigationTimingEnabled
+        ? (
+            <Profiler
+                id={route}
+                onRender={(_id, phase, actualDuration) => {
+                    recordNavigationTiming(`react-${phase}`, route, actualDuration);
+                    recordNavigationTiming(`screen-render:${route}:${phase}`, undefined, actualDuration);
+                }}
+            >
+                {screen}
+            </Profiler>
+        )
+        : (
+            screen
+        );
 }
 
 
@@ -154,22 +165,46 @@ export function Section({ title, children, action, icon, description }: { title?
             {title && (
                 <View style={styles.sectionHeading}>
                     <View style={{ flex: 1, gap: 5 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>{icon}<AppText heading
-                                                                                                            style={[styles.sectionTitle, { flex: 1 }]}>{title}</AppText></View>
-                        {description && <AppText muted style={{ fontSize: 12, lineHeight: 18 }}>{description}</AppText>}
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                            {icon}
+                            <AppText
+                                heading
+                                style={[
+                                    styles.sectionTitle,
+                                    { flex: 1 }
+                                ]}
+                            >
+                                {title}
+                            </AppText>
+                        </View>
+                        {description &&
+                            <AppText
+                                muted
+                                style={{ fontSize: 12, lineHeight: 18 }}
+                            >
+                                {description}
+                            </AppText>
+                        }
                     </View>
                     {action}
                 </View>
-            )}
-
-            <Card>{children}</Card>
+            )
+            }
+            <Card>
+                {children}
+            </Card>
         </View>
     );
 }
 
 
 export function Card({ style, ...props }: ViewProps) {
-    return <View {...props} style={[styles.card, style]}/>;
+    return (
+        <View
+            {...props}
+            style={[styles.card, style]}
+        />
+    );
 }
 
 
@@ -271,12 +306,19 @@ export function Field(props: FieldProps) {
             {leadingIcon &&
                 <View
                     pointerEvents="none"
-                    style={{ position: "absolute", left: 0, bottom: 0, width: 50, height: 50, alignItems: "center", justifyContent: "center" }}
+                    style={{
+                        position: "absolute",
+                        left: 0,
+                        bottom: 0,
+                        width: 50,
+                        height: 50,
+                        alignItems: "center",
+                        justifyContent: "center"
+                    }}
                 >
                     {leadingIcon}
                 </View>
             }
-
             {clearable && value.length > 0 && (
                 <Pressable
                     accessibilityRole="button"
@@ -299,7 +341,8 @@ export function Field(props: FieldProps) {
                 >
                     <X size={18} color={colors.muted}/>
                 </Pressable>
-            )}
+            )
+            }
         </View>
     );
 }
@@ -347,14 +390,11 @@ export function MenuRow({ title, detail, icon, onPress }: MenuRowProps) {
                     </AppText>
                 }
             </View>
-
-            <ChevronRight
-                size={18}
-                color={colors.muted}
-            />
+            <ChevronRight size={18} color={colors.muted}/>
         </Pressable>
     );
 }
+
 
 export function StateView({ loading, title, message, retry }: {
     title?: string;
@@ -364,11 +404,9 @@ export function StateView({ loading, title, message, retry }: {
 }) {
     return (
         <View style={styles.state}>
-            {loading ?
-                <ActivityIndicator
-                    size="large"
-                    color={colors.accent}
-                />
+            {loading
+                ?
+                <ActivityIndicator size="large" color={colors.accent}/>
                 :
                 <>
                     {title &&
@@ -377,7 +415,11 @@ export function StateView({ loading, title, message, retry }: {
                         </AppText>
                     }
                     {message &&
-                        <AppText muted accessibilityRole={retry ? "alert" : undefined} style={styles.centerText}>
+                        <AppText
+                            muted
+                            accessibilityRole={retry ? "alert" : undefined}
+                            style={styles.centerText}
+                        >
                             {message}
                         </AppText>
                     }
@@ -402,7 +444,10 @@ export function Cover({ uri, style, label, pointerEvents }: {
     pointerEvents?: ViewProps["pointerEvents"];
 }) {
     return (
-        <View pointerEvents={pointerEvents} style={[styles.cover, style]}>
+        <View
+            pointerEvents={pointerEvents}
+            style={[styles.cover, style]}
+        >
             {uri && (
                 <Image
                     transition={120}
@@ -413,7 +458,8 @@ export function Cover({ uri, style, label, pointerEvents }: {
                     source={{ uri: assetUrl(uri) }}
                     style={StyleSheet.absoluteFill}
                 />
-            )}
+            )
+            }
         </View>
     );
 }
@@ -450,7 +496,8 @@ export function QueryPanel<T>({ query, children }: {
                         </AppText>
                     </Pressable>
                 </View>
-            )}
+            )
+            }
             {children(query.data)}
         </>
     );
@@ -479,7 +526,6 @@ const styles = StyleSheet.create({
     error: { color: colors.error },
     retry: { paddingVertical: 8 },
     accent: { color: colors.accent },
-
     text: { color: colors.text, fontSize: 14, lineHeight: 21 },
     muted: { color: colors.muted },
     heading: { fontSize: 22, lineHeight: 30, fontWeight: "700" },
@@ -494,8 +540,20 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.border,
     },
     back: { minWidth: 40, minHeight: 44, justifyContent: "center" },
-    content: { padding: 16, paddingBottom: 40, gap: 24, width: "100%", maxWidth: 760, alignSelf: "center" },
-    sectionHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+    content: {
+        padding: 16,
+        paddingBottom: 40,
+        gap: 24,
+        width: "100%",
+        maxWidth: 760,
+        alignSelf: "center"
+    },
+    sectionHeading: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12
+    },
     card: {
         backgroundColor: colors.surface,
         borderWidth: 1,
@@ -512,6 +570,17 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
     },
-    state: { padding: 32, gap: 16, justifyContent: "center", flexGrow: 1 },
-    cover: { backgroundColor: colors.secondary, borderRadius: 8, overflow: "hidden", width: 56, height: 82 },
+    state: {
+        padding: 32,
+        gap: 16,
+        justifyContent: "center",
+        flexGrow: 1
+    },
+    cover: {
+        backgroundColor: colors.secondary,
+        borderRadius: 8,
+        overflow: "hidden",
+        width: 56,
+        height: 82
+    },
 });

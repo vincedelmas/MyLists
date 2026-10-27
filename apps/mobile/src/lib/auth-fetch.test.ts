@@ -8,6 +8,7 @@ afterEach(() => {
     vi.useRealTimers();
 });
 
+
 describe("native auth transport", () => {
     it("discards changing browser cache cookies while preserving the authenticated session body", async () => {
         let reads = 0;

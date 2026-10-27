@@ -25,7 +25,10 @@ export function PagedTabs<T extends string>({ tabs, value, onChange, children }:
     }, [width, scrollX]);
 
     return (
-        <View style={{ flex: 1 }} onLayout={({ nativeEvent: { layout } }) => setWidth(layout.width)}>
+        <View
+            style={{ flex: 1 }}
+            onLayout={({ nativeEvent: { layout } }) => setWidth(layout.width)}
+        >
             <View>
                 <SectionTabs
                     tabs={tabs}
@@ -41,9 +44,15 @@ export function PagedTabs<T extends string>({ tabs, value, onChange, children }:
                 <Animated.View
                     pointerEvents="none"
                     style={{
-                        position: "absolute", bottom: 0, left: 0,
-                        transform: [{ translateX: Animated.divide(scrollX, tabs.length) }],
-                        height: 2, width: width / tabs.length, backgroundColor: colors.accent,
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        transform: [
+                            { translateX: Animated.divide(scrollX, tabs.length) }
+                        ],
+                        height: 2,
+                        width: width / tabs.length,
+                        backgroundColor: colors.accent,
                     }}
                 />
             </View>
@@ -60,7 +69,9 @@ export function PagedTabs<T extends string>({ tabs, value, onChange, children }:
                     keyboardDismissMode="on-drag"
                     keyboardShouldPersistTaps="handled"
                     showsHorizontalScrollIndicator={false}
-                    onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true })}
+                    onScroll={Animated.event([
+                        { nativeEvent: { contentOffset: { x: scrollX } } }
+                    ], { useNativeDriver: true })}
                     onMomentumScrollEnd={({ nativeEvent }) => {
                         pageIndex.current = Math.round(nativeEvent.contentOffset.x / width);
                         onChange(tabs[pageIndex.current].value);
@@ -75,9 +86,11 @@ export function PagedTabs<T extends string>({ tabs, value, onChange, children }:
                         >
                             {children(tab.value)}
                         </View>
-                    ))}
+                    ))
+                    }
                 </Animated.ScrollView>
-            )}
+            )
+            }
         </View>
     );
 }

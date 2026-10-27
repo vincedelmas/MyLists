@@ -29,15 +29,40 @@ export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
                     <Cover uri={media.backdrop} style={styles.backdropImage}/>
                     <View style={styles.fade}/>
                 </View>
-            )}
-
-            <View pointerEvents="box-none" style={[styles.identity, media.backdrop && styles.overlap]}>
+            )
+            }
+            <View
+                pointerEvents="box-none"
+                style={[styles.identity, media.backdrop && styles.overlap]}
+            >
                 <View style={{ gap: 4 }}>
-                    <Cover pointerEvents="none" uri={media.cover} label={media.name} style={styles.poster}/>{media.needsCover &&
-                    <Pressable accessibilityRole="button" onPress={onBookCover} style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}><AppText
-                        style={{ fontSize: 12, color: colors.accent }}>Add cover</AppText></Pressable>}</View>
-                <View pointerEvents="none" style={[styles.info, media.backdrop && styles.overlapInfo]}>
-                    <AppText style={{ color: mediaColors[mediaType], fontSize: 11 }}>{mediaLabels[mediaType]}</AppText>
+                    <Cover
+                        pointerEvents="none"
+                        uri={media.cover}
+                        label={media.name}
+                        style={styles.poster}
+                    />
+                    {media.needsCover &&
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={onBookCover}
+                            style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}
+                        >
+                            <AppText
+                                style={{ fontSize: 12, color: colors.accent }}
+                            >
+                                Add cover
+                            </AppText>
+                        </Pressable>
+                    }
+                </View>
+                <View
+                    pointerEvents="none"
+                    style={[styles.info, media.backdrop && styles.overlapInfo]}
+                >
+                    <AppText style={{ color: mediaColors[mediaType], fontSize: 11 }}>
+                        {mediaLabels[mediaType]}
+                    </AppText>
                     <AppText heading style={styles.title}>
                         {media.name}
                     </AppText>
@@ -48,31 +73,64 @@ export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
                         <AppText muted style={styles.metadata}>
                             {media.byline}
                         </AppText>
-                    )}
+                    )
+                    }
                     {media.score != null && (
                         <View style={styles.scoreRow}>
-                            <Star size={15} color={colors.rating} fill={colors.rating}/>
-                            <AppText style={styles.score}>{(media.score / media.scoreDivisor).toFixed(1)}</AppText>
+                            <Star
+                                size={15}
+                                color={colors.rating}
+                                fill={colors.rating}
+                            />
+                            <AppText style={styles.score}>
+                                {(media.score / media.scoreDivisor).toFixed(1)}
+                            </AppText>
                             <AppText muted style={styles.provider}>
                                 {media.provider.name}
                                 {media.votes != null ? ` · ${media.votes.toLocaleString()} votes` : ""}
                             </AppText>
                         </View>
-                    )}
+                    )
+                    }
                 </View>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel={data.tracking ? "Manage this title in your list" : "Track this title"} disabled={pending} onPress={onTrack}
-                       style={({ pressed }) => [styles.track, pressed && { opacity: 0.6 }]}>
-                <BookmarkCheck size={21} color={colors.accent}/><View style={{ flex: 1, gap: 4 }}><AppText
-                style={{ fontSize: 14, fontWeight: "600" }}>{data.tracking ? data.tracking.status : data.active ? "Add to your list" : "Media list disabled"}</AppText><AppText
-                muted
-                style={{ fontSize: 11 }}>{data.tracking ? "Progress, rating & more" : data.active ? "Track, rate and remember" : "Enable this list in settings"}</AppText></View>
-                {data.tracking?.favorite && <Heart size={17} color={colors.favorite} fill={colors.favorite}/>}{data.tracking?.rating != null &&
-                <Rating value={data.tracking.rating} system={data.ratingSystem}/>}<ChevronRight size={18} color={colors.accent}/>
+            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={data.tracking ? "Manage this title in your list" : "Track this title"}
+                disabled={pending}
+                onPress={onTrack}
+                style={({ pressed }) => [styles.track, pressed && { opacity: 0.6 }]}
+            >
+                <BookmarkCheck size={21} color={colors.accent}/>
+                <View style={{ flex: 1, gap: 4 }}>
+                    <AppText
+                        style={{ fontSize: 14, fontWeight: "600" }}
+                    >
+                        {data.tracking ? data.tracking.status : data.active ? "Add to your list" : "Media list disabled"}
+                    </AppText>
+                    <AppText
+                        muted
+                        style={{ fontSize: 11 }}
+                    >
+                        {data.tracking ? "Progress, rating & more" : data.active ? "Track, rate and remember" : "Enable this list in settings"}
+                    </AppText>
+                </View>
+                {data.tracking?.favorite &&
+                    <Heart
+                        size={17}
+                        color={colors.favorite}
+                        fill={colors.favorite}
+                    />
+                }
+                {data.tracking?.rating != null &&
+                    <Rating value={data.tracking.rating} system={data.ratingSystem}/>
+                }
+                <ChevronRight size={18} color={colors.accent}/>
             </Pressable>
         </View>
     );
 }
+
 
 const styles = StyleSheet.create({
     hero: { paddingBottom: spacing.lg, gap: 16 },
@@ -89,7 +147,12 @@ const styles = StyleSheet.create({
         borderColor: colors.border
     },
     backdrop: { height: 156 },
-    backdropImage: { ...StyleSheet.absoluteFill, width: "100%", height: "100%", borderRadius: 0 },
+    backdropImage: {
+        ...StyleSheet.absoluteFill,
+        width: "100%",
+        height: "100%",
+        borderRadius: 0
+    },
     fade: {
         ...StyleSheet.absoluteFill,
         backgroundImage: `linear-gradient(to bottom, rgba(11,11,11,0.05), ${colors.background})`,
@@ -102,12 +165,23 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
     },
     overlap: { marginTop: -40, paddingTop: 0 },
-    poster: { width: 100, height: undefined, aspectRatio: 0.67, borderRadius: 10 },
+    poster: {
+        width: 100,
+        height: undefined,
+        aspectRatio: 0.67,
+        borderRadius: 10
+    },
     info: { flex: 1, gap: spacing.sm },
     overlapInfo: { paddingTop: 36 },
     title: { fontSize: 22, lineHeight: 27 },
     metadata: { fontSize: 12, lineHeight: 18 },
-    scoreRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 5, paddingTop: spacing.xs },
+    scoreRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 5,
+        paddingTop: spacing.xs
+    },
     score: { fontSize: 15, fontWeight: "700" },
     provider: { fontSize: 10, lineHeight: 16 },
 });

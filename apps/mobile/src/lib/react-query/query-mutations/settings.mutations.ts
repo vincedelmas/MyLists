@@ -11,9 +11,16 @@ export const useSettingsMutation = () => {
         onSuccess: async (_result, input) => {
             if (input.section === "pin" || input.section === "profile") {
                 await Promise.all([
-                    client.invalidateQueries({ queryKey: ["settings", "profile"], exact: true }),
-                    client.invalidateQueries({ queryKey: ["profile", undefined, input.section === "pin" ? "extras" : "continue"], exact: true }),
+                    client.invalidateQueries({
+                        queryKey: ["settings", "profile"],
+                        exact: true
+                    }),
+                    client.invalidateQueries({
+                        queryKey: ["profile", undefined, input.section === "pin" ? "extras" : "continue"],
+                        exact: true
+                    }),
                 ]);
+
                 return;
             }
             if (input.section === "general") authClient.$store.notify("$sessionSignal");

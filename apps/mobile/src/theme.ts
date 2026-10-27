@@ -68,9 +68,31 @@ export const commonStyles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.background },
     body: { color: colors.muted, fontSize: 14, lineHeight: 22 },
     brand: { color: colors.text, fontSize: 20, fontWeight: "700" },
-    centered: { flex: 1, justifyContent: "center", padding: 24, gap: 16 },
-    content: { width: "100%", maxWidth: 560, alignSelf: "center", gap: 20 },
+    centered: {
+        flex: 1,
+        justifyContent: "center",
+        padding: 24,
+        gap: 16
+    },
+    content: {
+        width: "100%",
+        maxWidth: 560,
+        alignSelf: "center",
+        gap: 20
+    },
     buttonText: { color: colors.accentText, fontSize: 14, fontWeight: "600" },
-    title: { color: colors.text, fontSize: 28, fontWeight: "700", lineHeight: 36 },
-    button: { backgroundColor: colors.primary, borderRadius: 8, padding: 14, minHeight: 48, alignItems: "center", justifyContent: "center" },
+    title: {
+        color: colors.text,
+        fontSize: 28,
+        fontWeight: "700",
+        lineHeight: 36
+    },
+    button: {
+        backgroundColor: colors.primary,
+        borderRadius: 8,
+        padding: 14,
+        minHeight: 48,
+        alignItems: "center",
+        justifyContent: "center"
+    },
 });

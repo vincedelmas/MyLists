@@ -8,9 +8,11 @@ import {profileOptions} from "../../lib/react-query/query-options/profile.option
 import {NotificationButton} from "./NotificationButton";
 import {ProfileLayout} from "./profile-layout";
 
+
 export function ProfileScreen() {
     const focused = useIsFocused();
     const query = useQuery({ ...profileOptions(), enabled: focused });
+
     return (
         <Page
             title="MyLists"
@@ -19,7 +21,13 @@ export function ProfileScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                     <NotificationButton/>
                     <Pressable
-                        style={({ pressed }) => ({ minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.6 : 1 })}
+                        style={({ pressed }) => ({
+                            minWidth: 48,
+                            minHeight: 48,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            opacity: pressed ? 0.6 : 1
+                        })}
                         accessibilityRole="button"
                         accessibilityLabel="Settings"
                         onPress={() => router.push("/(tabs)/(profile)/settings")}
@@ -30,7 +38,9 @@ export function ProfileScreen() {
             }
         >
             <QueryPanel query={query}>
-                {(data) => <ProfileLayout data={data} refreshing={query.isRefetching}/>}
+                {(data) =>
+                    <ProfileLayout data={data} refreshing={query.isRefetching}/>
+                }
             </QueryPanel>
         </Page>
     );

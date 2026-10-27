@@ -11,6 +11,7 @@ import {
 } from "./profile";
 import {mobileRequest} from "./request";
 
+
 const mocks = vi.hoisted(() => ({
     earned: vi.fn(),
     pins: vi.fn(),
@@ -29,23 +30,38 @@ const mocks = vi.hoisted(() => ({
     activity: vi.fn(),
     history: vi.fn(),
 }));
+
+
 vi.mock("@/lib/server/domain/profile/profile-pins.queries", () => ({ getProfilePinnedItems: mocks.pins }));
+
+
 vi.mock("./activity", () => ({
     withMobileActivityCovers: (items: readonly Record<string, unknown>[]) =>
         items.map((item) => ({ ...item, cover: null })),
 }));
+
+
 vi.mock("@/lib/server/database/async-storage", () => ({
     getDbClient: () => ({ select: () => ({ from: () => ({ where: () => ({ all: mocks.avatars }) }) }) }),
 }));
+
+
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
+
+
 vi.mock("@/lib/server/core/auth", () => ({ auth: { api: { getSession: mocks.session } } }));
+
+
 vi.mock("@/lib/server/core/logger", () => ({ logger: { warn: vi.fn(), error: vi.fn() } }));
+
+
 vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         cacheManager: { wrap: mocks.wrap },
         services: {
             account: {
-                getUserById: mocks.user, updateUserLastSeen: async () => {
+                getUserById: mocks.user,
+                updateUserLastSeen: async () => {
                 }
             },
             social: { getFollowCount: mocks.social },
@@ -56,21 +72,30 @@ vi.mock("@/lib/server/core/container", () => ({
                 userPerMediaSummaryStats: mocks.lists,
             },
             profile: { resolveHighlightedMedia: mocks.highlights },
-            updateHistory: { getUserUpdatesPaginated: mocks.history, deleteUserUpdates: mocks.deleteUpdates, getUserUpdates: mocks.activity, getFollowsUpdates: mocks.feed },
+            updateHistory: {
+                getUserUpdatesPaginated: mocks.history,
+                deleteUserUpdates: mocks.deleteUpdates,
+                getUserUpdates: mocks.activity,
+                getFollowsUpdates: mocks.feed
+            },
         },
     }),
 }));
+
 
 const request = () =>
     new Request("http://localhost:3000/api/mobile/v1/profile?userId=999", {
         headers: { cookie: "mylists.session_token=example" },
     });
 
+
 beforeEach(() => {
     vi.resetAllMocks();
     mocks.session.mockResolvedValue({ user: { id: "10", role: "user" } });
     mocks.user.mockResolvedValue({
-        userMediaSettings: [{ mediaType: "movies", active: true, timeSpent: 240 }],
+        userMediaSettings: [
+            { mediaType: "movies", active: true, timeSpent: 240 }
+        ],
         id: 10,
         name: "owner",
         privacy: "private",
@@ -98,7 +123,13 @@ beforeEach(() => {
         totalComments: 99,
     });
     mocks.lists.mockResolvedValue([
-        { mediaType: "movies", entriesFavorites: 2, timeSpent: 4, totalEntries: 3, statusList: [] },
+        {
+            mediaType: "movies",
+            entriesFavorites: 2,
+            timeSpent: 4,
+            totalEntries: 3,
+            statusList: []
+        },
     ]);
     mocks.highlights.mockResolvedValue({
         overview: {
@@ -115,15 +146,21 @@ beforeEach(() => {
             ],
         },
     });
-    mocks.activity.mockResolvedValue([{ id: 1, userId: 10, timestamp: "2026-10-21 14:00:00" }]);
+    mocks.activity.mockResolvedValue([
+        { id: 1, userId: 10, timestamp: "2026-10-21 14:00:00" }
+    ]);
 });
+
 
 describe("isolated mobile profile API", () => {
     it("uses the verified session ID and returns only the mobile overview fields", async () => {
         const req = request();
         const response = await mobileRequest(req, getMobileProfile);
         expect(response.status).toBe(200);
-        expect(mocks.session).toHaveBeenCalledWith({ headers: req.headers, query: { disableCookieCache: true } });
+        expect(mocks.session).toHaveBeenCalledWith({
+            headers: req.headers,
+            query: { disableCookieCache: true }
+        });
         expect(mocks.user).toHaveBeenCalledWith(10);
         expect(mocks.stats).toHaveBeenCalledWith(10);
         expect(mocks.highlights).not.toHaveBeenCalled();
@@ -138,9 +175,22 @@ describe("isolated mobile profile API", () => {
                 image: "/static/avatar.jpg",
                 backgroundImage: "/static/background.jpg",
             },
-            summary: { totalDays: 4 / 24, totalEntries: 3, avgRated: 8, percentRated: 50 },
+            summary: {
+                totalDays: 4 / 24,
+                totalEntries: 3,
+                avgRated: 8,
+                percentRated: 50
+            },
             social: { followsCount: 1, followersCount: 2 },
-            lists: [{ mediaType: "movies", entriesFavorites: 2, timeSpent: 4, totalEntries: 3, level: 3 }],
+            lists: [
+                {
+                    mediaType: "movies",
+                    entriesFavorites: 2,
+                    timeSpent: 4,
+                    totalEntries: 3,
+                    level: 3
+                }
+            ],
         });
         expect(response.headers.get("cache-control")).toBe("private, no-store");
         expect(response.headers.get("vary")).toBe("Cookie");
@@ -172,7 +222,9 @@ describe("isolated mobile profile API", () => {
                 timestamp: "2026-10-21 14:00:00",
             },
         ]);
-        mocks.avatars.mockReturnValue([{ id: 20, image: "http://localhost:3000/avatar.jpg", ratingSystem: "feeling" }]);
+        mocks.avatars.mockReturnValue([
+            { id: 20, image: "http://localhost:3000/avatar.jpg", ratingSystem: "feeling" }
+        ]);
         expect((await getMobileProfileExtras(10)).followsFeed[0]).toMatchObject({
             avatar: "/avatar.jpg",
             ratingSystem: "feeling",
@@ -181,13 +233,20 @@ describe("isolated mobile profile API", () => {
     });
 
     it("deletes history only through the verified owner's scoped service", async () => {
-        await deleteMobileHistory(10, { updateIds: [7], returnData: false });
+        await deleteMobileHistory(10, {
+            updateIds: [7],
+            returnData: false
+        });
         expect(mocks.deleteUpdates).toHaveBeenCalledWith(10, [7], false);
     });
 
     it("loads only the three latest achievements when requested", async () => {
-        mocks.earned.mockResolvedValue([{ id: 1, completedAt: "2026-10-21 14:00:00" }]);
-        expect(await getMobileRecentAchievements(10)).toEqual([{ id: 1, completedAt: "2026-10-21T14:00:00.000Z" }]);
+        mocks.earned.mockResolvedValue([
+            { id: 1, completedAt: "2026-10-21 14:00:00" }
+        ]);
+        expect(await getMobileRecentAchievements(10)).toEqual([
+            { id: 1, completedAt: "2026-10-21T14:00:00.000Z" }
+        ]);
         expect(mocks.earned).toHaveBeenCalledWith(10, 3);
         expect(mocks.feed).not.toHaveBeenCalled();
     });
@@ -195,7 +254,11 @@ describe("isolated mobile profile API", () => {
     it("keeps all achievement tiers on the full page and excludes inactive media", async () => {
         mocks.catalog.mockResolvedValue([
             { id: 1, mediaType: "movies", tiers: Array.from({ length: 5 }, (_, id) => ({ id, completedAt: null })) },
-            { id: 2, mediaType: "games", tiers: [] },
+            {
+                id: 2,
+                mediaType: "games",
+                tiers: []
+            },
         ]);
         const items = await getMobileAchievements(10);
         expect(items).toHaveLength(1);
@@ -203,7 +266,10 @@ describe("isolated mobile profile API", () => {
     });
 
     it("uses advanced statistics and rejects inactive media before computing them", async () => {
-        mocks.advanced.mockResolvedValue({ totalEntries: 5, activityByMonth: { data: [] } });
+        mocks.advanced.mockResolvedValue({
+            totalEntries: 5,
+            activityByMonth: { data: [] }
+        });
         expect(await getMobileStats(10)).toMatchObject({ kind: "overview", totalEntries: 5 });
         expect(mocks.advanced).toHaveBeenCalledWith(10);
         await expect(getMobileStats(10, "games")).rejects.toThrow();
@@ -212,7 +278,12 @@ describe("isolated mobile profile API", () => {
     it("loads activity independently with native-compatible UTC timestamps", async () => {
         const response = await mobileRequest(request(), getMobileProfileActivity);
         expect(await response.json()).toEqual([
-            { id: 1, userId: 10, cover: null, timestamp: "2026-10-21T14:00:00.000Z" },
+            {
+                id: 1,
+                userId: 10,
+                cover: null,
+                timestamp: "2026-10-21T14:00:00.000Z"
+            },
         ]);
         expect(mocks.activity).toHaveBeenCalledWith(10);
         expect(mocks.stats).not.toHaveBeenCalled();
@@ -248,10 +319,23 @@ describe("isolated mobile profile API", () => {
         expect(await response.text()).not.toContain("private database details");
     });
     it("searches a bounded feed page for only the selected authorized profile", async () => {
-        mocks.history.mockResolvedValue({ total: 61, items: [{ id: 7, mediaType: "movies", timestamp: "2026-10-21 14:00:00" }] });
+        mocks.history.mockResolvedValue({
+            total: 61,
+            items: [
+                { id: 7, mediaType: "movies", timestamp: "2026-10-21 14:00:00" }
+            ]
+        });
         const result = await getMobileHistory(10, 2, "Film");
         expect(mocks.history).toHaveBeenCalledWith({ page: 2, perPage: 30, search: "Film" }, 10);
-        expect(result).toMatchObject({ page: 2, pages: 3, total: 61, ratingSystem: "score", items: [{ id: 7, timestamp: "2026-10-21T14:00:00.000Z" }] });
+        expect(result).toMatchObject({
+            page: 2,
+            pages: 3,
+            total: 61,
+            ratingSystem: "score",
+            items: [
+                { id: 7, timestamp: "2026-10-21T14:00:00.000Z" }
+            ]
+        });
     });
 
 });

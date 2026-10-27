@@ -7,6 +7,8 @@ if (!apiUrl) {
 
 
 const parsedUrl = new URL(apiUrl);
+
+
 if (!["http:", "https:"].includes(parsedUrl.protocol) || parsedUrl.pathname !== "/" || parsedUrl.search || parsedUrl.hash) {
     throw new Error("EXPO_PUBLIC_API_URL must be an HTTP(S) origin, without a path, query, or fragment.");
 }

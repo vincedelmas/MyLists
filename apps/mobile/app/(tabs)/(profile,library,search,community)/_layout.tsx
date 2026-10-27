@@ -24,7 +24,10 @@ export default function TabStack() {
                     if (!event.data.closing) recordNavigationTiming("transition-end", `/${route.name}`);
                 },
             })}
-            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
+            screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background }
+            }}
         />
     );
 }

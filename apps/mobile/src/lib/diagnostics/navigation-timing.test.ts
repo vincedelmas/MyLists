@@ -1,7 +1,12 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
+
 let timing: typeof import("./navigation-timing");
+
+
 let output: ReturnType<typeof vi.spyOn>;
+
+
 beforeEach(async () => {
     vi.resetModules();
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
@@ -11,6 +16,8 @@ beforeEach(async () => {
     });
     timing = await import("./navigation-timing");
 });
+
+
 afterEach(() => {
     vi.clearAllTimers();
     vi.useRealTimers();
@@ -18,7 +25,10 @@ afterEach(() => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
 });
+
+
 const readReport = (index = 0) => JSON.parse(String(output.mock.calls[index][0]).replace("[nav-timing] ", ""));
+
 
 describe("development navigation timing", () => {
     it("batches observations, separates finger-down time, and ignores the outgoing screen", () => {
@@ -44,7 +54,9 @@ describe("development navigation timing", () => {
         vi.advanceTimersByTime(100);
         finish!("http-200");
         vi.advanceTimersByTime(3000);
-        expect(readReport(0).requests).toEqual([{ path: "/social", startMs: 0 }]);
+        expect(readReport(0).requests).toEqual([
+            { path: "/social", startMs: 0 }
+        ]);
         expect(readReport(1).requests).toEqual([]);
         expect(output.mock.calls.join()).not.toContain("secret");
     });

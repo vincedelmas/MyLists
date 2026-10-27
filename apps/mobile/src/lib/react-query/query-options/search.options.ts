@@ -7,6 +7,11 @@ export const searchOptions = (query: string, apiProvider: SearchInput["apiProvid
     initialPageParam: 1,
     enabled: query.trim().length >= 2,
     staleTime: 60_000,
-    queryFn: ({ pageParam, signal }) => api.search({ query, apiProvider, page: pageParam, advancedFilters }, signal),
+    queryFn: ({ pageParam, signal }) => api.search({
+        query,
+        apiProvider,
+        page: pageParam,
+        advancedFilters
+    }, signal),
     getNextPageParam: (page, _pages, lastPage) => (page.hasNextPage ? lastPage + 1 : undefined),
 });

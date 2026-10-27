@@ -52,7 +52,10 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
 
     const update = (payload: UpdateInput["payload"], activityCorrection?: UpdateInput["activityCorrection"], onSaved?: () => void) => {
         setSaved(false);
-        mutation.mutate({ action: "update", input: { payload, activityCorrection } }, {
+        mutation.mutate({
+            action: "update",
+            input: { payload, activityCorrection }
+        }, {
             onSuccess: result => {
                 if (result.kind === "saved") {
                     setSaved(true);
@@ -91,64 +94,130 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
             }
         >
             {refresh.error &&
-                <AppText accessibilityRole="alert" style={{ padding: 12 }}>
+                <AppText
+                    accessibilityRole="alert"
+                    style={{ padding: 12 }}
+                >
                     {refresh.error.message}
                 </AppText>
             }
-
             {refresh.isSuccess &&
-                <AppText accessibilityRole="alert" style={{ padding: 12 }}>
+                <AppText
+                    accessibilityRole="alert"
+                    style={{ padding: 12 }}
+                >
                     Metadata refreshed.
                 </AppText>
             }
-
-            <QueryPanel query={query}>{data => <>
-                <CollapsingTabs
-                    tabLayout="stacked"
-                    initialTab="details"
-                    scrollable={false}
-                    tabs={[
-                        { value: "details", label: "Overview", icon: Info },
-                        { value: "tracking", label: "Your list", icon: BookmarkCheck },
-                        { value: "follows", label: "Follows", icon: UserRoundCheck, count: audience.data?.follows },
-                        { value: "community", label: "Community", icon: UsersRound, count: audience.data?.community },
-                        ...(data.canEdit ? [{ value: "edit", label: "Edit", icon: Pencil }] : []),
-                    ]}
-                    header={selectTab =>
-                        <MediaHero
-                            data={data}
-                            mediaType={media.mediaType}
-                            pending={mutation.isPending}
-                            onBookCover={() => setCover(true)}
-                            onTrack={() => selectTab("tracking")}
-                        />
-                    }
-                >
-                    {tab => <>
-                        {tab === "details" && <MediaDetailsContent params={media} data={data} refetch={query.refetch} refreshing={query.isRefetching}/>}
-                        {(tab === "community" || tab === "follows") && <MediaCommunityContent key={tab} params={media} mode={tab}/>}
-                        {tab === "tracking" &&
-                            <MediaTrackingContent params={media} data={data} pending={mutation.isPending} correcting={!!correction} saved={saved} error={mutation.error?.message}
-                                                  update={(payload, onSaved) => update(payload, undefined, onSaved)} add={() => {
-                                setSaved(false);
-                                mutation.mutate({ action: "add" });
-                            }} remove={onSaved => {
-                                setSaved(false);
-                                mutation.mutate({ action: "remove" }, {
-                                    onSuccess: () => {
-                                        setSaved(true);
-                                        onSaved();
+            <QueryPanel query={query}>
+                {data =>
+                    <>
+                        <CollapsingTabs
+                            tabLayout="stacked"
+                            initialTab="details"
+                            scrollable={false}
+                            tabs={[
+                                { value: "details", label: "Overview", icon: Info },
+                                { value: "tracking", label: "Your list", icon: BookmarkCheck },
+                                {
+                                    value: "follows",
+                                    label: "Follows",
+                                    icon: UserRoundCheck,
+                                    count: audience.data?.follows
+                                },
+                                {
+                                    value: "community",
+                                    label: "Community",
+                                    icon: UsersRound,
+                                    count: audience.data?.community
+                                },
+                                ...(data.canEdit
+                                    ? [
+                                        { value: "edit", label: "Edit", icon: Pencil }
+                                    ]
+                                    : []),
+                            ]}
+                            header={selectTab =>
+                                <MediaHero
+                                    data={data}
+                                    mediaType={media.mediaType}
+                                    pending={mutation.isPending}
+                                    onBookCover={() => setCover(true)}
+                                    onTrack={() => selectTab("tracking")}
+                                />
+                            }
+                        >
+                            {tab =>
+                                <>
+                                    {tab === "details" &&
+                                        <MediaDetailsContent
+                                            params={media}
+                                            data={data}
+                                            refetch={query.refetch}
+                                            refreshing={query.isRefetching}
+                                        />
                                     }
-                                });
-                            }} refetch={query.refetch} refreshing={query.isRefetching}/>}
-                        {tab === "edit" && data.canEdit && <MediaEditContent params={media}/>}
-                    </>}
-                </CollapsingTabs>
-                {cover && <MediaCoverSheet shared params={media} data={data} dismiss={() => setCover(false)}/>}
-            </>}</QueryPanel>
+                                    {(tab === "community" || tab === "follows") &&
+                                        <MediaCommunityContent
+                                            key={tab}
+                                            params={media}
+                                            mode={tab}
+                                        />
+                                    }
+                                    {tab === "tracking" &&
+                                        <MediaTrackingContent
+                                            params={media}
+                                            data={data}
+                                            pending={mutation.isPending}
+                                            correcting={!!correction}
+                                            saved={saved}
+                                            error={mutation.error?.message}
+                                            update={(payload, onSaved) => update(payload, undefined, onSaved)}
+                                            add={() => {
+                                                setSaved(false);
+                                                mutation.mutate({ action: "add" });
+                                            }}
+                                            remove={onSaved => {
+                                                setSaved(false);
+                                                mutation.mutate({ action: "remove" }, {
+                                                    onSuccess: () => {
+                                                        setSaved(true);
+                                                        onSaved();
+                                                    }
+                                                });
+                                            }}
+                                            refetch={query.refetch}
+                                            refreshing={query.isRefetching}
+                                        />
+                                    }
+                                    {tab === "edit" && data.canEdit &&
+                                        <MediaEditContent params={media}/>
+                                    }
+                                </>
+                            }
+                        </CollapsingTabs>
+                        {cover &&
+                            <MediaCoverSheet
+                                shared
+                                params={media}
+                                data={data}
+                                dismiss={() => setCover(false)}
+                            />
+                        }
+                    </>
+                }
+            </QueryPanel>
             {correction &&
-                <MediaCorrectionSheet key={correction.preview.version} preview={correction.preview} media={media} pending={mutation.isPending} error={mutation.error?.message}
-                                      dismiss={() => setCorrection(null)} confirm={choice => update(correction.payload, choice, correction.onSaved)}/>}
+                <MediaCorrectionSheet
+                    key={correction.preview.version}
+                    preview={correction.preview}
+                    media={media}
+                    pending={mutation.isPending}
+                    error={mutation.error?.message}
+                    dismiss={() => setCorrection(null)}
+                    confirm={choice => update(correction.payload, choice, correction.onSaved)}
+                />
+            }
         </Page>
     );
 }

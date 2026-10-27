@@ -6,6 +6,7 @@ import {NativeHost} from "./native-host";
 import {AppText} from "./ui";
 import {colors, spacing} from "../theme";
 
+
 export function ActionSheet({
                                 title,
                                 error,
@@ -25,8 +26,13 @@ export function ActionSheet({
 }) {
     const Container = scrollable ? ScrollView : View;
     const { width, height } = useWindowDimensions();
+
     return (
-        <NativeHost style={styles.host} matchContents={false} pointerEvents="none">
+        <NativeHost
+            style={styles.host}
+            matchContents={false}
+            pointerEvents="none"
+        >
             <BottomSheet
                 isPresented={!suspended}
                 onDismiss={() => {
@@ -40,14 +46,22 @@ export function ActionSheet({
                         <Container
                             {...(scrollable ? { keyboardShouldPersistTaps: "handled" as const } : {})}
                             {...(scrollable ? { contentContainerStyle: [styles.content, compact && { gap: spacing.lg }] } : {})}
-                            style={[{ flexGrow: 0, flexShrink: 1 }, !scrollable && styles.content]}
+                            style={[
+                                { flexGrow: 0, flexShrink: 1 },
+                                !scrollable && styles.content
+                            ]}
                         >
-                            {!compact && <AppText heading>{title}</AppText>}
+                            {!compact &&
+                                <AppText heading>
+                                    {title}
+                                </AppText>
+                            }
                             {error && (
                                 <AppText accessibilityRole="alert" style={styles.error}>
                                     {error}
                                 </AppText>
-                            )}
+                            )
+                            }
                             {children}
                         </Container>
                     </View>
@@ -56,6 +70,7 @@ export function ActionSheet({
         </NativeHost>
     );
 }
+
 
 const styles = StyleSheet.create({
     host: { position: "absolute" },

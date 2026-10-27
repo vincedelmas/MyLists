@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getMobileSocial, actOnMobileSocial, socialListSchema, socialActionSchema } from "./social";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {getMobileSocial, actOnMobileSocial, socialListSchema, socialActionSchema} from "./social";
+
 
 const mocks = vi.hoisted(() => ({
     user: vi.fn(),
@@ -11,7 +12,11 @@ const mocks = vi.hoisted(() => ({
     accept: vi.fn(),
     decline: vi.fn(),
 }));
+
+
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
+
+
 vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         services: {
@@ -27,6 +32,8 @@ vi.mock("@/lib/server/core/container", () => ({
         },
     }),
 }));
+
+
 vi.mock("@/lib/server/database/async-storage", () => ({
     getDbClient: () => ({
         select: () => {
@@ -40,15 +47,19 @@ vi.mock("@/lib/server/database/async-storage", () => ({
                 offset: async () => [],
                 groupBy: async () => mocks.totals,
             };
+
             return query;
         },
     }),
 }));
+
+
 beforeEach(() => {
     vi.resetAllMocks();
     mocks.totals = [];
     mocks.user.mockResolvedValue({ privacy: "private" });
 });
+
 
 describe("mobile social authorization", () => {
     it("counts incoming and outgoing relationships separately and hides request counts from visitors", async () => {

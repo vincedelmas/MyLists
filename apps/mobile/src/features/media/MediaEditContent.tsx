@@ -13,15 +13,20 @@ import {editMediaDetailsSchema} from "@/lib/schemas/media-details.schema";
 import type {api, MediaParams} from "../../lib/api-client";
 import {colors} from "../../theme";
 
+
 export function MediaEditContent({ params }: { params: MediaParams }) {
     const focused = useIsFocused();
     const query = useQuery({ ...mediaEditOptions(params), enabled: focused });
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
+
     return (
         <Animated.ScrollView
             {...scrollProps}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[{ padding: 16, gap: 20 }, contentContainerStyle]}
+            contentContainerStyle={[
+                { padding: 16, gap: 20 },
+                contentContainerStyle
+            ]}
             refreshControl={
                 <RefreshControl
                     tintColor={colors.accent}
@@ -30,10 +35,15 @@ export function MediaEditContent({ params }: { params: MediaParams }) {
                 />
             }
         >
-            <QueryPanel query={query}>{(fields) => <MediaEditForm params={params} fields={fields}/>}</QueryPanel>
+            <QueryPanel query={query}>
+                {(fields) =>
+                    <MediaEditForm params={params} fields={fields}/>
+                }
+            </QueryPanel>
         </Animated.ScrollView>
     );
 }
+
 
 function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaited<ReturnType<typeof api.mediaEdit>> }) {
     const [initialValues, setInitialValues] = useState(() =>
@@ -45,53 +55,73 @@ function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaite
     const [error, setError] = useState("");
     const mutation = useMediaEditMutation();
     const changed = fields.filter(({ key }) => values[key] !== initialValues[key]);
+
     return (
         <View style={{ gap: 20 }}>
-            <AppText muted>Changes affect the shared catalog for everyone.</AppText>
+            <AppText muted>
+                Changes affect the shared catalog for everyone.
+            </AppText>
             <Section title="Catalog metadata">
                 <View style={{ padding: 16, gap: 18 }}>
                     {fields.map(({ key }) =>
-                        key === "lockStatus" ? (
-                            <NativeHost key={key}>
-                                <Row spacing={12}>
-                                    <NativeText>Lock provider updates</NativeText>
-                                    <Switch
-                                        value={Boolean(values[key])}
-                                        disabled={mutation.isPending}
-                                        onValueChange={(value) => setValues({ ...values, [key]: value })}
-                                    />
-                                </Row>
-                            </NativeHost>
-                        ) : key.toLowerCase().endsWith("date") ?
-                            <DateField key={key} clearable label={key.replace(/([A-Z])/g, " $1")} value={String(values[key])} disabled={mutation.isPending}
-                                       onChange={value => setValues({ ...values, [key]: value })}/> : (
-                                <Field
+                        key === "lockStatus"
+                            ? (
+                                <NativeHost key={key}>
+                                    <Row spacing={12}>
+                                        <NativeText>
+                                            Lock provider updates
+                                        </NativeText>
+                                        <Switch
+                                            value={Boolean(values[key])}
+                                            disabled={mutation.isPending}
+                                            onValueChange={(value) => setValues({ ...values, [key]: value })}
+                                        />
+                                    </Row>
+                                </NativeHost>
+                            )
+                            : key.toLowerCase().endsWith("date")
+                                ?
+                                <DateField
                                     key={key}
-                                    label={key.replace(/([A-Z])/g, " $1").replace(/^./, (value) => value.toUpperCase())}
+                                    clearable
+                                    label={key.replace(/([A-Z])/g, " $1")}
                                     value={String(values[key])}
-                                    editable={!mutation.isPending}
-                                    multiline={key === "synopsis"}
-                                    autoCapitalize="none"
-                                    onChangeText={(value) => setValues({ ...values, [key]: value })}
-                                    placeholder={
-                                        key === "genres" || key === "authors"
-                                            ? "Comma-separated names"
-                                            : key.toLowerCase().includes("date")
-                                                ? "YYYY-MM-DD"
-                                                : key === "imageCover"
-                                                    ? "https://…"
-                                                    : undefined
-                                    }
+                                    disabled={mutation.isPending}
+                                    onChange={value => setValues({ ...values, [key]: value })}
                                 />
-                            ),
-                    )}
+                                : (
+                                    <Field
+                                        key={key}
+                                        label={key.replace(/([A-Z])/g, " $1").replace(/^./, (value) => value.toUpperCase())}
+                                        value={String(values[key])}
+                                        editable={!mutation.isPending}
+                                        multiline={key === "synopsis"}
+                                        autoCapitalize="none"
+                                        onChangeText={(value) => setValues({ ...values, [key]: value })}
+                                        placeholder={
+                                            key === "genres" || key === "authors"
+                                                ? "Comma-separated names"
+                                                : key.toLowerCase().includes("date")
+                                                    ? "YYYY-MM-DD"
+                                                    : key === "imageCover"
+                                                        ? "https://…"
+                                                        : undefined
+                                        }
+                                    />
+                                ),
+                    )
+                    }
                 </View>
             </Section>
             {(error || mutation.error) && (
-                <AppText accessibilityRole="alert" style={{ color: colors.error }}>
+                <AppText
+                    accessibilityRole="alert"
+                    style={{ color: colors.error }}
+                >
                     {error || mutation.error?.message}
                 </AppText>
-            )}
+            )
+            }
             <Button
                 label="Save catalog changes"
                 pending={mutation.isPending}
@@ -111,6 +141,7 @@ function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaite
                     const parsed = editMediaDetailsSchema.safeParse({ ...params, payload });
                     if (!parsed.success) {
                         setError(parsed.error.issues[0].message);
+
                         return;
                     }
                     setError("");

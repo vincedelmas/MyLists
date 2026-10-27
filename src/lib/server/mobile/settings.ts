@@ -12,6 +12,7 @@ import {generalSettingsSchema, mediaListSettingsSchema} from "@/lib/schemas/user
 
 const imageInputSchema = z.object({ data: z.base64().max(14_000_000), mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]) }).optional();
 
+
 export const settingsInputSchema = z.discriminatedUnion("section", [
     generalSettingsSchema.pick({ username: true, privacy: true }).extend({ section: z.literal("general"), profileImage: imageInputSchema, backgroundImage: imageInputSchema }),
     mediaListSettingsSchema.extend({ section: z.literal("content") }),
@@ -37,6 +38,7 @@ export const getMobileSettings = async (userId: number) => {
         autoMoveCompletedTvToOnHold: user.autoMoveCompletedTvToOnHold,
         lists: ALL_MEDIA_TYPES.map((mediaType) => {
             const setting = user.userMediaSettings.find((item) => item.mediaType === mediaType)!;
+
             return {
                 mediaType,
                 active: setting.active,
@@ -93,7 +95,12 @@ export const saveMobileSettings = async (userId: number, data: z.infer<typeof se
 
             container.services.stats.updateUserMediaListSettings(
                 userId,
-                { anime: data.anime, books: data.books, manga: data.manga, games: data.games },
+                {
+                    anime: data.anime,
+                    books: data.books,
+                    manga: data.manga,
+                    games: data.games
+                },
                 data.releaseNotificationsEnabled,
             );
         });
@@ -104,12 +111,16 @@ export const saveMobileSettings = async (userId: number, data: z.infer<typeof se
     return { saved: true };
 };
 
+
 export const getMobileProfileSettings = async (userId: number) => {
     const { services } = await getContainer();
+
     return { showContinue: await services.profile.getContinueVisibility(userId), pins: profilePinsRepository.getOwn(userId) };
 };
 
+
 export const getMobileAccountSecurity = async (userId: number) => {
     const { services } = await getContainer();
+
     return services.account.getAccountSecurity(userId);
 };

@@ -7,6 +7,12 @@
   policy. Keep server dependencies out of shared definitions and utilities.
 - Keep tests beside their modules and use direct imports when moving code; do not leave forwarding modules at the old paths.
 - Do not build the project unless explicitly asked.
+- Match the existing web app's readable code style in every change, including mobile code: use four-space indentation, spaces around
+  operators and inside object literals/destructuring, and blank lines between logical sections and top-level declarations.
+- Write expanded JSX with nested elements and their content on separate, indented lines. Put multiple or complex props on separate
+  lines. Expand callbacks, conditionals, option arrays, and configuration objects when they contain multiple steps or nested structures;
+  do not compress components or several statements onto one line. Use nearby web components as the reference. Running a formatter is
+  not enough: inspect the result and manually split dense code until it is as readable as the web implementation.
 - For mobile UI changes and features, check the corresponding web app implementation first. Keep labels, colors, formatting,
   and visual conventions close to the web app, and verify mobile layouts over ADB when a phone is available.
 - Treat mobile responsiveness as a requirement: virtualize long lists, keep per-keystroke JavaScript work small, and avoid unrelated

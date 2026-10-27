@@ -3,6 +3,7 @@ import {useState} from "react";
 import {View} from "react-native";
 import {Button, Field} from "../../components/ui";
 
+
 interface TrackingFieldProps {
     label: string;
     initial: string;
@@ -36,7 +37,8 @@ export function TrackingField({
                         disabled={pending || !Number.isFinite(Number(value)) || Number(value) < 1}
                         onPress={() => setValue(String(Number(value) - 1))}
                     />
-                )}
+                )
+                }
                 <View style={{ flex: 1 }}>
                     <Field
                         label={label}
@@ -55,7 +57,8 @@ export function TrackingField({
                         disabled={pending || !Number.isFinite(Number(value))}
                         onPress={() => setValue(String(Number(value) + 1))}
                     />
-                )}
+                )
+                }
             </View>
             {value !== initial && (
                 <Button
@@ -72,7 +75,8 @@ export function TrackingField({
                                 (!allowDecimals && !Number.isInteger(Number(value)))))
                     }
                 />
-            )}
+            )
+            }
         </View>
     );
 }

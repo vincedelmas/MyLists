@@ -10,7 +10,11 @@ export function SelectControl<T extends string>({ value, options, onChange, disa
     const selectedLabel = options.find((option) => option.value === value)?.label ?? "";
 
     return (
-        <DropdownMenu expanded={expanded} onDismissRequest={() => setExpanded(false)} color={colors.surface}>
+        <DropdownMenu
+            expanded={expanded}
+            onDismissRequest={() => setExpanded(false)}
+            color={colors.surface}
+        >
             <DropdownMenu.Trigger>
                 <Button
                     variant="outlined"
@@ -42,7 +46,8 @@ export function SelectControl<T extends string>({ value, options, onChange, disa
                             </DropdownMenuItem.TrailingIcon>
                         }
                     </DropdownMenuItem>
-                )}
+                )
+                }
             </DropdownMenu.Items>
         </DropdownMenu>
     );

@@ -13,6 +13,7 @@ export const authClient = createAuthClient({
             const url = new URL(context.url);
             if (url.pathname.endsWith("/get-session")) {
                 url.searchParams.set("disableCookieCache", "true");
+
                 return { ...context, url };
             }
         },

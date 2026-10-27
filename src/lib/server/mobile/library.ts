@@ -13,10 +13,12 @@ import {
     getDynamicListSummaries,
 } from "@/lib/server/domain/dynamic-lists/dynamic-lists.queries";
 
+
 export const librarySearchSchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     search: z.string().trim().max(100).default(""),
 });
+
 
 export const libraryDetailSchema = librarySearchSchema
     .extend({
@@ -24,6 +26,7 @@ export const libraryDetailSchema = librarySearchSchema
         id: z.coerce.number().int().positive().optional(),
     })
     .refine((input) => input.kind === "continue" || input.id !== undefined, "A list ID is required.");
+
 
 export const getMobileLibrary = async (userId: number, { page, search }: z.infer<typeof librarySearchSchema>, viewerId = userId) => {
     const { services } = await getContainer();
@@ -43,7 +46,6 @@ export const getMobileLibrary = async (userId: number, { page, search }: z.infer
 
     return {
         page,
-        hasMore: page < Math.ceil(views.length / 8) || page < collections.pages,
         dynamicPages: Math.ceil(views.length / 8),
         dynamicTotal: views.length,
         collectionPages: collections.pages,
@@ -51,7 +53,6 @@ export const getMobileLibrary = async (userId: number, { page, search }: z.infer
         dynamic: selected.map((view) => ({
             id: view.id,
             title: view.spec.title,
-            spec: view.spec,
             total: summaries.get(view.id)!.total,
         })),
         collections: collections.items.map((item) => ({
@@ -63,6 +64,7 @@ export const getMobileLibrary = async (userId: number, { page, search }: z.infer
         })),
     };
 };
+
 
 export const getMobileLibraryDetail = async (
     userId: number,
@@ -90,8 +92,10 @@ export const getMobileLibraryDetail = async (
             ratingSystem: user.ratingSystem,
             pages: Math.ceil(all.length / 30),
             items: all.slice((input.page - 1) * 30, input.page * 30).map((item) => ({
-                progress: item.mediaType === "series" || item.mediaType === "anime" ? getTvContinueProgress(item)
-                    : item.mediaType === "books" ? getBooksContinueProgress(item)
+                progress: item.mediaType === "series" || item.mediaType === "anime"
+                    ? getTvContinueProgress(item)
+                    : item.mediaType === "books"
+                        ? getBooksContinueProgress(item)
                         : item.mediaType === "games" ? getGamesContinueProgress(item)
                             : getMangaContinueProgress(item),
                 status: item.status,
@@ -116,7 +120,6 @@ export const getMobileLibraryDetail = async (
             page: result.page,
             pages: result.pages,
             title: view.spec.title,
-            spec: view.spec,
             ratingSystem: user.ratingSystem,
             items: result.items.map((item) => ({
                 status: item.status,
@@ -153,10 +156,13 @@ export const getMobileLibraryDetail = async (
     };
 };
 
+
 export const continueMobileMediaSchema = mediaTypeMediaIdSchema.extend({ mediaType: z.enum(["series", "anime", "books", "games", "manga"]) });
+
 
 export const continueMobileMedia = async (userId: number, input: z.infer<typeof continueMobileMediaSchema>) => {
     const { services } = await getContainer();
     const { item, completed } = services.mediaTracking.continueUserMedia({ userId, ...input });
+
     return { completed, available: item !== null };
 };

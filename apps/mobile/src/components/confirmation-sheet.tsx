@@ -6,6 +6,7 @@ import {AppText, Button} from "./ui";
 import type {Confirmation} from "../hooks/use-confirmation";
 import {colors} from "../theme";
 
+
 export function ConfirmationSheet({
                                       confirmation,
                                       dismiss,
@@ -21,8 +22,13 @@ export function ConfirmationSheet({
 }) {
     if (!confirmation) return null;
     const Icon = confirmation.icon ?? UserRoundMinus;
+
     return (
-        <ActionSheet title={confirmation.title} compact dismiss={dismiss}>
+        <ActionSheet
+            title={confirmation.title}
+            compact
+            dismiss={dismiss}
+        >
             <View
                 style={{
                     width: 48,
@@ -35,14 +41,38 @@ export function ConfirmationSheet({
             >
                 <Icon size={24} color={colors.error}/>
             </View>
-            <AppText heading style={{ fontSize: 21 }}>
+            <AppText
+                heading
+                style={{ fontSize: 21 }}
+            >
                 {confirmation.title}
             </AppText>
-            <AppText muted>{confirmation.message}</AppText>
+            <AppText muted>
+                {confirmation.message}
+            </AppText>
             {children}
-            {error && <AppText accessibilityRole="alert" style={{ color: colors.error }}>{error}</AppText>}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "flex-end" }}>
-                <Button secondary disabled={pending} label={confirmation.cancelLabel ?? "Keep connection"} onPress={dismiss}/>
+            {error &&
+                <AppText
+                    accessibilityRole="alert"
+                    style={{ color: colors.error }}
+                >
+                    {error}
+                </AppText>
+            }
+            <View
+                style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 12,
+                    justifyContent: "flex-end"
+                }}
+            >
+                <Button
+                    secondary
+                    disabled={pending}
+                    label={confirmation.cancelLabel ?? "Keep connection"}
+                    onPress={dismiss}
+                />
                 <Button
                     danger
                     pending={pending}

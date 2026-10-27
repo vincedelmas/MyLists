@@ -2,9 +2,15 @@ import {createRequire} from "node:module";
 import path from "node:path";
 import {describe, expect, it} from "vitest";
 
+
 const require = createRequire(import.meta.url);
+
+
 const metroRequire = createRequire(require.resolve("@expo/metro-config/package.json"));
+
+
 const babel = metroRequire("@babel/core") as typeof import("@babel/core");
+
 
 describe("mobile Babel compatibility", () => {
     it("transforms Expo UI's real worklets with Metro and the installed Worklets plugin", () => {

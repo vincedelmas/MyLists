@@ -13,4 +13,5 @@ export const ratingLabel = (value: number, system: "score" | "feeling") =>
         ? String(value)
         : feelingOptions.reduce((closest, item) => {
             return Math.abs(Number(item.value) - value) < Math.abs(Number(closest.value) - value) ? item : closest
-        }).label;
+        })
+            .label;

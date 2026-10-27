@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {useIsFocused} from "expo-router";
 import {AppState} from "react-native";
 
+
 export function usePuzzleReset(resetsAt: string, onReset: () => void) {
     const focused = useIsFocused();
     const [remaining, setRemaining] = useState(() => Math.max(0, Date.parse(resetsAt) - Date.now()));
@@ -17,8 +18,10 @@ export function usePuzzleReset(resetsAt: string, onReset: () => void) {
             }
         };
         const timer = setInterval(tick, 1000);
+
         return () => clearInterval(timer);
     }, [resetsAt, onReset, focused]);
+
     return [Math.floor(remaining / 3_600_000), Math.floor(remaining / 60_000) % 60, Math.floor(remaining / 1000) % 60]
         .map((value) => String(value).padStart(2, "0"))
         .join(":");

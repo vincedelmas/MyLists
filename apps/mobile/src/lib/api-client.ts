@@ -25,21 +25,51 @@ import type {searchCatalog} from "../../../../src/lib/server/domain/search/catal
 // from the backend implementation rather than maintained as parallel interfaces.
 type Result<T extends (...args: never[]) => unknown> = Awaited<ReturnType<T>>;
 
+
 export type MediaType = MediaParams["mediaType"];
+
+
 export type SearchResult = Result<typeof searchCatalog>;
+
+
 export type MobileList = Result<typeof Media.getMobileList>;
+
+
 export type MobileMedia = Result<typeof Media.getMobileMedia>;
+
+
 export type SearchInput = Parameters<typeof searchCatalog>[0];
+
+
 export type ListInput = Parameters<typeof Media.getMobileList>[2];
+
+
 export type MediaParams = Parameters<typeof Media.getMobileMedia>[1];
+
+
 export type UpdateInput = Parameters<typeof Media.updateMobileMedia>[1];
+
+
 export type SettingsInput = Parameters<typeof Settings.saveMobileSettings>[1];
+
+
 export type MobileProfile = NonNullable<Result<typeof Profile.getMobileProfile>>;
+
+
 export type MobileProfileActivity = Result<typeof Profile.getMobileProfileActivity>;
+
+
 export type MobileSettings = NonNullable<Result<typeof Settings.getMobileSettings>>;
+
+
 export type MobileMonthlyActivity = Result<typeof MonthlyActivity.getMobileMonthlyActivity>;
+
+
 export type MonthlyActivityInput = Parameters<typeof MonthlyActivity.getMobileMonthlyActivity>[1];
+
+
 export type MonthlyActivityMutation = Parameters<typeof MonthlyActivity.mutateMobileMonthlyActivity>[1];
+
 
 export class ApiError extends Error {
     constructor(
@@ -51,7 +81,9 @@ export class ApiError extends Error {
     }
 }
 
+
 const mediaPath = ({ mediaType, mediaId }: MediaParams) => `/media/${mediaType}/${mediaId}`;
+
 
 const request = async <T>(
     path: string,
@@ -94,6 +126,7 @@ const request = async <T>(
     }
 };
 
+
 const queryString = (input: object) => {
     return new URLSearchParams(
         Object.entries(input)
@@ -102,8 +135,10 @@ const queryString = (input: object) => {
     ).toString();
 };
 
+
 const subjectPath = (path: string, userId?: number) =>
     userId === undefined ? path : `${path}?${queryString({ userId })}`;
+
 
 export const api = {
     trends: (signal?: AbortSignal) => request<Result<typeof Community.getMobileTrends>>("/trends", signal),
@@ -238,5 +273,6 @@ export const api = {
     saveSettings: (input: SettingsInput) =>
         request<Result<typeof Settings.saveMobileSettings>>("/settings", undefined, "PATCH", input),
 };
+
 
 export const assetUrl = (path: string) => new URL(path, backendUrl).href;

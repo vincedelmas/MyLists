@@ -1,5 +1,8 @@
 import {ProfileSectionScreen} from "../../../../src/features/profile/ProfileSectionScreen";
 
+
 export default function Screen() {
-    return <ProfileSectionScreen section="activity"/>;
+    return (
+        <ProfileSectionScreen section="activity"/>
+    );
 }

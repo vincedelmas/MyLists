@@ -15,11 +15,9 @@ export function SessionGate({ children }: { children: React.ReactNode }) {
                     <Text style={commonStyles.brand}>
                         MyLists.
                     </Text>
-                    {isPending ?
-                        <ActivityIndicator
-                            color={colors.accent}
-                            accessibilityLabel="Checking your session"
-                        />
+                    {isPending
+                        ?
+                        <ActivityIndicator color={colors.accent} accessibilityLabel="Checking your session"/>
                         :
                         <>
                             <Text accessibilityRole="header" style={commonStyles.title}>

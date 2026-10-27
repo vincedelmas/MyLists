@@ -26,4 +26,5 @@ export const mediaIcons = {
 
 export {mediaColors};
 
+
 export const compareMediaTypes = (a: MediaType, b: MediaType) => ALL_MEDIA_TYPES.indexOf(a) - ALL_MEDIA_TYPES.indexOf(b);

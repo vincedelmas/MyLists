@@ -2,6 +2,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {mobileRequest} from "@/lib/server/mobile/request";
 import {getMobileJob, mobileJobSchema} from "@/lib/server/mobile/media-sections";
 
+
 export const Route = createFileRoute("/api/mobile/v1/catalog-job")({
     server: {
         handlers: {

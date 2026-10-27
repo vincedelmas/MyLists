@@ -3,6 +3,7 @@ import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it, vi} from "vitest";
 import {CollapsingScrollContext, useCollapsingScroll} from "./use-collapsing-scroll";
 
+
 function renderScroll(viewportHeight = 640) {
     const getOffset = vi.fn(() => 150);
     const value = {
@@ -17,12 +18,15 @@ function renderScroll(viewportHeight = 640) {
 
     function Harness() {
         result = useCollapsingScroll();
+
         return null;
     }
 
     renderToStaticMarkup(createElement(CollapsingScrollContext.Provider, { value }, createElement(Harness)));
+
     return { scroll: result!, getOffset };
 }
+
 
 describe("collapsing profile scroll panes", () => {
     it("supports standalone pages without reserving space for a profile header", () => {
@@ -30,6 +34,7 @@ describe("collapsing profile scroll panes", () => {
 
         function Standalone() {
             scroll = useCollapsingScroll();
+
             return null;
         }
 

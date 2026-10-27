@@ -1,10 +1,22 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getMobileCalendar } from "./calendar";
-import { releaseCalendarRangeSchema } from "@/lib/schemas/release-calendar.schema";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {getMobileCalendar} from "./calendar";
+import {releaseCalendarRangeSchema} from "@/lib/schemas/release-calendar.schema";
 
-const mocks = vi.hoisted(() => ({ settings: vi.fn(), get: vi.fn(), movies: vi.fn(), series: vi.fn() }));
+
+const mocks = vi.hoisted(() => ({
+    settings: vi.fn(),
+    get: vi.fn(),
+    movies: vi.fn(),
+    series: vi.fn()
+}));
+
+
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
+
+
 vi.mock("@/env/server", () => ({ serverEnv: { UPLOADS_DIR_NAME: "uploads" } }));
+
+
 vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         services: { account: { getMinimalUserSettings: mocks.settings } },
@@ -12,7 +24,10 @@ vi.mock("@/lib/server/core/container", () => ({
     }),
 }));
 
+
 const range = { startDate: "2026-10-01", endDate: "2026-10-31" };
+
+
 beforeEach(() => {
     vi.resetAllMocks();
     mocks.settings.mockResolvedValue([
@@ -25,12 +40,25 @@ beforeEach(() => {
         getReleaseCalendarMedia: type === "movies" ? mocks.movies : mocks.series,
     }));
     mocks.movies.mockResolvedValue([
-        { mediaType: "movies", mediaId: 1, mediaName: "Movie", date: "2026-10-20", imageCover: "movie.jpg" },
+        {
+            mediaType: "movies",
+            mediaId: 1,
+            mediaName: "Movie",
+            date: "2026-10-20",
+            imageCover: "movie.jpg"
+        },
     ]);
     mocks.series.mockResolvedValue([
-        { mediaType: "series", mediaId: 2, mediaName: "Series", date: "2026-10-02", imageCover: "series.jpg" },
+        {
+            mediaType: "series",
+            mediaId: 2,
+            mediaName: "Series",
+            date: "2026-10-02",
+            imageCover: "series.jpg"
+        },
     ]);
 });
+
 
 describe("mobile release calendar", () => {
     it("rejects visitors before loading another user's release calendar", async () => {
@@ -50,8 +78,13 @@ describe("mobile release calendar", () => {
     });
 
     it("returns an empty agenda without reading inactive lists", async () => {
-        mocks.settings.mockResolvedValue([{ mediaType: "movies", active: false }]);
-        expect(await getMobileCalendar(10, range)).toEqual({ mediaTypes: [], items: [] });
+        mocks.settings.mockResolvedValue([
+            { mediaType: "movies", active: false }
+        ]);
+        expect(await getMobileCalendar(10, range)).toEqual({
+            mediaTypes: [],
+            items: []
+        });
         expect(mocks.get).not.toHaveBeenCalled();
     });
 
@@ -59,7 +92,8 @@ describe("mobile release calendar", () => {
         expect(releaseCalendarRangeSchema.safeParse(range).success).toBe(true);
         expect(
             releaseCalendarRangeSchema.safeParse({ startDate: range.endDate, endDate: range.startDate }).success,
-        ).toBe(false);
+        )
+            .toBe(false);
         expect(releaseCalendarRangeSchema.safeParse({ ...range, endDate: "2026-12-31" }).success).toBe(false);
     });
 });

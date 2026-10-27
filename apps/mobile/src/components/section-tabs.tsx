@@ -51,12 +51,16 @@ export function SectionTabs<T extends string>(props: SectionTabsProps<T>) {
                     ]}
                 >
                     <View style={styles.iconRow}>
-                        <Icon size={19} color={value === key ? colors.accent : colors.muted}/>
+                        <Icon
+                            size={19}
+                            color={value === key ? colors.accent : colors.muted}
+                        />
                         {count !== undefined && (
                             <AppText style={[styles.count, value === key && styles.selectedLabel]}>
                                 {count.toLocaleString()}
                             </AppText>
-                        )}
+                        )
+                        }
                     </View>
                     <AppText
                         numberOfLines={1}
@@ -67,7 +71,8 @@ export function SectionTabs<T extends string>(props: SectionTabsProps<T>) {
                         {label}
                     </AppText>
                 </Pressable>
-            ))}
+            ))
+            }
             {action && (
                 <Pressable
                     onPress={action.onPress}
@@ -81,19 +86,18 @@ export function SectionTabs<T extends string>(props: SectionTabsProps<T>) {
                         action.disabled ? styles.disabled : pressed && styles.pressed,
                     ]}
                 >
-                    <action.icon
-                        size={19}
-                        color={colors.muted}
-                    />
+                    <action.icon size={19} color={colors.muted}/>
                     <AppText style={styles.actionLabel}>
                         {action.busy ? "Refreshing" : action.label}
                     </AppText>
                 </Pressable>
-            )}
+            )
+            }
         </>
     );
 
-    return scrollable ?
+    return scrollable
+        ?
         <ScrollView
             horizontal
             onLayout={onLayout}
@@ -116,7 +120,13 @@ const styles = StyleSheet.create({
     inlineTab: { flexDirection: "row", gap: 7, paddingHorizontal: 14 },
     inlineLabel: { fontSize: 12, lineHeight: 18 },
     iconRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-    count: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: colors.muted, fontVariant: ["tabular-nums"] },
+    count: {
+        fontSize: 12,
+        lineHeight: 16,
+        fontWeight: "700",
+        color: colors.muted,
+        fontVariant: ["tabular-nums"]
+    },
     container: {
         flexDirection: "row",
         borderBottomWidth: 1,
@@ -135,7 +145,12 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     selected: { borderBottomColor: colors.accent },
-    label: { fontSize: 11, lineHeight: 14, fontWeight: "600", color: colors.muted },
+    label: {
+        fontSize: 11,
+        lineHeight: 14,
+        fontWeight: "600",
+        color: colors.muted
+    },
     selectedLabel: { color: colors.accent },
     actionLabel: { fontSize: 10, lineHeight: 14, color: colors.muted },
     pressed: { opacity: 0.6 },

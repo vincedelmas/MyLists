@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getMobileMoviedle, guessMobileMoviedle, moviedleGuessSchema, getMobileMoviedleLeaderboard } from "./moviedle";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {getMobileMoviedle, guessMobileMoviedle, moviedleGuessSchema, getMobileMoviedleLeaderboard} from "./moviedle";
+
 
 const mocks = vi.hoisted(() => ({
     daily: vi.fn(),
@@ -8,11 +9,19 @@ const mocks = vi.hoisted(() => ({
     find: vi.fn(),
     leaderboard: vi.fn(),
 }));
+
+
 const movies = { findById: mocks.find };
+
+
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
+
+
 vi.mock("@/lib/server/domain/mediadle/mediadle.repository", () => ({
     MediadleRepository: { getTodayMoviedle: mocks.today },
 }));
+
+
 vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         services: {
@@ -25,6 +34,8 @@ vi.mock("@/lib/server/core/container", () => ({
         registries: { mediaService: { get: () => movies } },
     }),
 }));
+
+
 beforeEach(() => {
     vi.resetAllMocks();
     mocks.today.mockReturnValue({ id: 12 });
@@ -36,6 +47,8 @@ beforeEach(() => {
         userData: { attempts: 1, completed: false },
     });
 });
+
+
 describe("mobile Moviedle", () => {
     it("uses the signed-in player's puzzle and does not reveal the movie before completion", async () => {
         const data = await getMobileMoviedle(7);
@@ -68,7 +81,10 @@ describe("mobile Moviedle", () => {
     });
     it("keeps the same leaderboard and converts avatar paths for mobile", async () => {
         const entry = { userId: 7, rank: 1, image: "http://localhost:3000/avatar.jpg" };
-        mocks.leaderboard.mockReturnValue({ entries: [entry], currentUserEntry: entry });
+        mocks.leaderboard.mockReturnValue({
+            entries: [entry],
+            currentUserEntry: entry
+        });
         const result = await getMobileMoviedleLeaderboard(7);
         expect(mocks.leaderboard).toHaveBeenCalledWith(7);
         expect(result.entries[0].image).toBe("/avatar.jpg");

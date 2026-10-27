@@ -19,6 +19,7 @@ import {addMediaToListSchema, updateUserMediaSchema} from "@/lib/schemas/user-me
 import {mediaTypeFieldSchema, coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
 import {ActivityCorrectionRequired} from "@/lib/server/domain/tracking/monthly-activity.service";
 
+
 export const mediaParamsSchema = z.object({ mediaType: mediaTypeFieldSchema, mediaId: coercedPositiveIntFieldSchema });
 
 // Never accept the web list's identity or pagination-size overrides from a mobile client.
@@ -29,6 +30,7 @@ export const listInputSchema = mediaListSearchSchema.omit({
     view: true,
     filtersTab: true,
 });
+
 
 export const getMobileList = async (
     userId: number,
@@ -69,6 +71,7 @@ export const getMobileList = async (
         })),
     };
 };
+
 
 export const getMobileMedia = async (userId: number, params: z.infer<typeof mediaParamsSchema>) => {
     const container = await getContainer();
@@ -122,7 +125,10 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
 
     const facts = Object.entries(labels).flatMap(([key, label]) => {
         const value = fields[key];
-        return value === null || value === undefined || value === "" ? [] : [{ label, value: String(value) }];
+
+        return value === null || value === undefined || value === "" ? [] : [
+            { label, value: String(value) }
+        ];
     });
 
     const serverDefinition = getServerMediaDefinition(params.mediaType);
@@ -167,7 +173,9 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
             name: media.name,
             synopsis: media.synopsis,
             releaseDate: media.releaseDate,
-            totalProgress: "pages" in media ? media.pages : "chapters" in media ? media.chapters : "totalEpisodes" in media ? media.totalEpisodes : null,
+            totalProgress: "pages" in media
+                ? media.pages
+                : "chapters" in media ? media.chapters : "totalEpisodes" in media ? media.totalEpisodes : null,
             needsCover: params.mediaType === "books" && media.imageCover.endsWith("default.jpg"),
             homepage: "homepage" in media ? media.homepage : null,
             hltbNeedsCheck: "hltbLastCheckedAt" in media ? shouldCheckGameHltb(media) : false,
@@ -205,6 +213,7 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
     };
 };
 
+
 export const addMobileMedia = async (userId: number, input: z.infer<typeof addMediaToListSchema>) => {
     const { services } = await getContainer();
     services.mediaTracking.addMediaToList({ ...input, userId });
@@ -212,11 +221,13 @@ export const addMobileMedia = async (userId: number, input: z.infer<typeof addMe
     return { kind: "saved" as const };
 };
 
+
 export const updateMobileMedia = async (userId: number, input: z.infer<typeof updateUserMediaSchema>) => {
     const { services } = await getContainer();
 
     try {
         services.mediaTracking.updateUserMedia({ ...input, userId });
+
         return { kind: "saved" as const };
     }
     catch (error) {
@@ -226,12 +237,14 @@ export const updateMobileMedia = async (userId: number, input: z.infer<typeof up
     }
 };
 
+
 export const removeMobileMedia = async (userId: number, params: z.infer<typeof mediaParamsSchema>) => {
     const { services } = await getContainer();
     services.mediaTracking.removeMediaFromList({ ...params, userId });
 
     return { kind: "saved" as const };
 };
+
 
 export const getMobileLists = async (userId: number) => {
     const { services } = await getContainer();

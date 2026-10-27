@@ -14,7 +14,9 @@ export const Route = createFileRoute("/api/mobile/v1/search")({
                     const result = await searchCatalog(
                         navbarSearchSchema.parse({
                             ...Object.fromEntries(new URL(request.url).searchParams),
-                            advancedFilters: new URL(request.url).searchParams.has("advancedFilters") ? JSON.parse(new URL(request.url).searchParams.get("advancedFilters")!) : undefined
+                            advancedFilters: new URL(request.url).searchParams.has("advancedFilters")
+                                ? JSON.parse(new URL(request.url).searchParams.get("advancedFilters")!)
+                                : undefined
                         }),
                         userId,
                     );

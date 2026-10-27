@@ -1,7 +1,10 @@
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {formatCalendarRelativeLabel} from "./calendar-formatting";
 
+
 afterEach(() => vi.unstubAllGlobals());
+
+
 describe("mobile calendar labels", () => {
     const now = new Date(2026, 9, 27, 23, 59);
     it.each([

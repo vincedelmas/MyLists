@@ -11,7 +11,9 @@ export function useCollapsingTabs<T extends string>(initialTab: T) {
     const [viewportHeight, setViewportHeight] = useState(0);
     const [scrollY] = useState(() => new Animated.Value(0));
 
-    const onScroll = useMemo(() => Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+    const onScroll = useMemo(() => Animated.event([
+        { nativeEvent: { contentOffset: { y: scrollY } } }
+    ], {
         useNativeDriver: true,
         listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => offsets.current.set(tab, event.nativeEvent.contentOffset.y),
     }), [scrollY, tab]);

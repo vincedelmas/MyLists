@@ -10,11 +10,16 @@ import {imageUrlSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schem
 import {updateBookCoverSchema} from "@/lib/schemas/media-details.schema";
 import {editUserTagSchema, updateUserCustomCoverSchema} from "@/lib/schemas/user-media.schema";
 
+
 type Params = z.infer<typeof mediaParamsSchema>;
+
+
 const coverInputSchema = z.object({
     imageUrl: imageUrlSchema.optional(),
     image: z.object({ data: z.base64().max(14_000_000), mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]) }).optional(),
 });
+
+
 export const mobileMediaActionSchema = z.discriminatedUnion("action", [
     z.object({ action: z.literal("tag"), name: editUserTagSchema.shape.tag.shape.name.trim().min(1), selected: z.boolean() }),
     z.object({ action: z.literal("notifications"), enabled: z.boolean() }),
@@ -24,16 +29,25 @@ export const mobileMediaActionSchema = z.discriminatedUnion("action", [
     coverInputSchema.extend({ action: z.literal("book-cover") }),
 ]);
 
+
 export async function getMobileMediaHistory(userId: number, { mediaType, mediaId }: Params, page = 1) {
     const { services } = await getContainer();
     const rows = services.updateHistory.getUserMediaHistory(userId, mediaType, mediaId, { limit: 31, offset: (page - 1) * 30 });
-    return { page, hasMore: rows.length > 30, items: rows.slice(0, 30).map(item => ({ ...item, timestamp: dateFromUTCInput(item.timestamp).toISOString() })) };
+
+    return {
+        page,
+        hasMore: rows.length > 30,
+        items: rows.slice(0, 30).map(item => ({ ...item, timestamp: dateFromUTCInput(item.timestamp).toISOString() }))
+    };
 }
+
 
 export async function getMobileMediaTags(userId: number, { mediaType }: Params) {
     const { registries } = await getContainer();
+
     return registries.mediaService.get(mediaType).getTagNames(userId);
 }
+
 
 export async function actOnMobileMedia(userId: number, media: Params, input: z.infer<typeof mobileMediaActionSchema>) {
     const { services, registries } = await getContainer();
@@ -52,7 +66,13 @@ export async function actOnMobileMedia(userId: number, media: Params, input: z.i
             break;
         }
         case "create-collection":
-            services.collections.createCollection({ title: input.title, ownerId: userId, privacy: PrivacyType.PRIVATE, ordered: false, items: [media] });
+            services.collections.createCollection({
+                title: input.title,
+                ownerId: userId,
+                privacy: PrivacyType.PRIVATE,
+                ordered: false,
+                items: [media]
+            });
             break;
         case "cover":
         case "book-cover": {
@@ -71,5 +91,6 @@ export async function actOnMobileMedia(userId: number, media: Params, input: z.i
             break;
         }
     }
+
     return { saved: true };
 }

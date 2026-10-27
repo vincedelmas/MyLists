@@ -1,9 +1,8 @@
 import {SearchField} from "../../components/search-field";
 import {FilterValuesSheet} from "./filter-values-sheet";
 import {useState} from "react";
-import {router, useIsFocused} from "expo-router";
+import {router, useIsFocused, useLocalSearchParams} from "expo-router";
 import {mediaLabels} from "../../lib/media";
-import {useLocalSearchParams} from "expo-router";
 import {useTabPush} from "../../hooks/use-tab-push";
 import type {MediaType} from "../../lib/api-client";
 import {MediaList} from "../../components/media-list";
@@ -47,7 +46,9 @@ export function TrackingListScreen() {
         <Page
             back={true}
             title={mediaLabels[mediaType] ?? "List"}
-            action={<LayoutToggle value={layout} onChange={setLayout}/>}
+            action={
+                <LayoutToggle value={layout} onChange={setLayout}/>
+            }
             subtitle={first ? `${first.pagination.totalItems.toLocaleString()} entries` : undefined}
         >
             <View style={{ padding: 16, gap: 12 }}>
@@ -62,10 +63,17 @@ export function TrackingListScreen() {
                 />
                 <View style={{ flexDirection: "row", gap: 12 }}>
                     <View style={{ flex: 1 }}>
-                        <AppText muted style={{ fontSize: 12, marginBottom: 8 }}>Status</AppText>
+                        <AppText
+                            muted
+                            style={{ fontSize: 12, marginBottom: 8 }}
+                        >
+                            Status
+                        </AppText>
                         <Button
                             secondary
-                            label={!filters.status?.length ? "All statuses" : filters.status.length === 1 ? filters.status[0] : `${filters.status.length} statuses`}
+                            label={!filters.status?.length
+                                ? "All statuses"
+                                : filters.status.length === 1 ? filters.status[0] : `${filters.status.length} statuses`}
                             onPress={() => setStatusesOpen(true)}
                         />
                     </View>
@@ -78,7 +86,14 @@ export function TrackingListScreen() {
                         />
                     </View>
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <View
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12
+                    }}
+                >
                     <Button
                         secondary
                         label={`Filters${count ? ` · ${count}` : ""}`}
@@ -89,7 +104,6 @@ export function TrackingListScreen() {
                             })
                         }
                     />
-
                 </View>
             </View>
             <MediaList
@@ -101,23 +115,32 @@ export function TrackingListScreen() {
                 emptyTitle="No matching titles"
                 emptyMessage="Try different filters or add something from Search."
                 footer={items.length > 0 && (
-                    <AppText muted style={{ textAlign: "center", padding: 20 }}>
+                    <AppText
+                        muted
+                        style={{ textAlign: "center", padding: 20 }}
+                    >
                         {query.hasNextPage ? "Scroll for more" : "You’re all caught up"}
                     </AppText>
-                )}
+                )
+                }
             />
             {statusesOpen && (
                 <FilterValuesSheet
                     mediaType={mediaType}
                     userId={userId ? Number(userId) : undefined}
-                    group={{ key: "status", label: "Status", searchable: false, options: [...getMediaDefinition(mediaType).statuses] }}
+                    group={{
+                        key: "status",
+                        label: "Status",
+                        searchable: false,
+                        options: [...getMediaDefinition(mediaType).statuses]
+                    }}
                     selected={filters.status ?? []}
                     close={() => setStatusesOpen(false)}
                     onChange={(status) => router.setParams({ filters: JSON.stringify({ ...filters, status: status.length ? status : undefined }) })}
                 />
 
-            )}
-
+            )
+            }
         </Page>
     );
 }

@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { resolveMobileProfileUser } from "./profile-access";
-import { UnauthorizedError } from "@/lib/utils/error-classes";
-import { getMobilePerson } from "./people";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {resolveMobileProfileUser} from "./profile-access";
+import {UnauthorizedError} from "@/lib/utils/error-classes";
+import {getMobilePerson} from "./people";
+
 
 const mocks = vi.hoisted(() => ({
     user: vi.fn(),
@@ -10,8 +11,14 @@ const mocks = vi.hoisted(() => ({
     profile: vi.fn(),
     activity: vi.fn(),
 }));
+
+
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
+
+
 vi.mock("./profile", () => ({ getMobileProfile: mocks.profile, getMobileProfileActivity: mocks.activity }));
+
+
 vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         services: {
@@ -21,12 +28,16 @@ vi.mock("@/lib/server/core/container", () => ({
         },
     }),
 }));
+
+
 beforeEach(() => {
     vi.resetAllMocks();
     mocks.user.mockResolvedValue({
         id: 20,
         name: "Other",
-        userMediaSettings: [{ mediaType: "movies", active: true, timeSpent: 240 }],
+        userMediaSettings: [
+            { mediaType: "movies", active: true, timeSpent: 240 }
+        ],
         privacy: "private",
         createdAt: "2026-01-01 00:00:00",
         image: "/avatar.jpg",
@@ -38,6 +49,7 @@ beforeEach(() => {
     mocks.profile.mockResolvedValue({ user: { id: 20 } });
     mocks.activity.mockResolvedValue([]);
 });
+
 
 describe("mobile visitor profiles", () => {
     it("checks the visitor's access before loading any private activity or stats", async () => {
@@ -59,7 +71,10 @@ describe("mobile visitor profiles", () => {
 
     it("loads the selected user's content after the shared privacy policy allows access", async () => {
         mocks.decide.mockResolvedValue({ allowed: true });
-        expect(await getMobilePerson(10, 20)).toMatchObject({ access: "allowed", profile: { user: { id: 20 } } });
+        expect(await getMobilePerson(10, 20)).toMatchObject({
+            access: "allowed",
+            profile: { user: { id: 20 } }
+        });
         expect(mocks.profile).toHaveBeenCalledWith(20);
         expect(mocks.activity).not.toHaveBeenCalled();
         expect(mocks.following).toHaveBeenCalledWith(10, 20);
@@ -71,6 +86,7 @@ describe("mobile visitor profiles", () => {
         expect(mocks.decide).not.toHaveBeenCalled();
     });
 });
+
 
 describe("mobile profile resource authorization", () => {
     const request = (query = "") => new Request(`http://localhost/api/mobile/v1/profile/stats${query}`);

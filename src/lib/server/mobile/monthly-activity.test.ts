@@ -8,8 +8,22 @@ import {
     searchMobileActivityMedia
 } from "./monthly-activity";
 
-const mocks = vi.hoisted(() => ({ rows: vi.fn(), stats: vi.fn(), settings: vi.fn(), search: vi.fn(), get: vi.fn(), add: vi.fn(), update: vi.fn(), remove: vi.fn() }));
+
+const mocks = vi.hoisted(() => ({
+    rows: vi.fn(),
+    stats: vi.fn(),
+    settings: vi.fn(),
+    search: vi.fn(),
+    get: vi.fn(),
+    add: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn()
+}));
+
+
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
+
+
 vi.mock("@/lib/server/core/container", () => ({
     getContainer: async () => ({
         services: {
@@ -26,18 +40,44 @@ vi.mock("@/lib/server/core/container", () => ({
     })
 }));
 
+
 beforeEach(() => {
     vi.resetAllMocks();
-    mocks.rows.mockResolvedValue({ items: [{ id: 7, mediaCover: "http://localhost:3000/uploads/books/cover.jpg" }], pages: 1, total: 1 });
-    mocks.settings.mockResolvedValue([{ mediaType: "games", active: false }, { mediaType: "books", active: true }, { mediaType: "series", active: true }]);
+    mocks.rows.mockResolvedValue({
+        items: [
+            { id: 7, mediaCover: "http://localhost:3000/uploads/books/cover.jpg" }
+        ],
+        pages: 1,
+        total: 1
+    });
+    mocks.settings.mockResolvedValue([
+        { mediaType: "games", active: false },
+        { mediaType: "books", active: true },
+        { mediaType: "series", active: true }
+    ]);
     mocks.get.mockReturnValue({ searchUserMedia: mocks.search });
 });
+
+
 const period = { year: 2026, month: 10, view: "month" as const };
+
 
 describe("mobile monthly activity", () => {
     it("parses false URL flags as false and shares the web filter validation", () => {
-        const filters = mobileMonthlyActivitySchema.parse({ ...period, hiddenOnly: "false", activeTab: "books", activityKind: "redo", sort: "time_desc" });
-        expect(filters).toMatchObject({ hiddenOnly: false, page: 1, activeTab: "books", activityKind: "redo", sort: "time_desc" });
+        const filters = mobileMonthlyActivitySchema.parse({
+            ...period,
+            hiddenOnly: "false",
+            activeTab: "books",
+            activityKind: "redo",
+            sort: "time_desc"
+        });
+        expect(filters).toMatchObject({
+            hiddenOnly: false,
+            page: 1,
+            activeTab: "books",
+            activityKind: "redo",
+            sort: "time_desc"
+        });
         expect(mobileMonthlyActivitySchema.parse({ ...period, hiddenOnly: "true" }).hiddenOnly).toBe(true);
         expect(mobileMonthlyActivitySchema.safeParse({ ...period, month: 13 }).success).toBe(false);
     });
@@ -64,15 +104,30 @@ describe("mobile monthly activity", () => {
     });
 
     it("keeps statistics independent of result filters and orders media canonically", async () => {
-        mocks.stats.mockResolvedValue({ totalTime: 90, mediaStats: [{ mediaType: "games", timeGained: 70 }, { mediaType: "series", timeGained: 20 }] });
+        mocks.stats.mockResolvedValue({
+            totalTime: 90,
+            mediaStats: [
+                { mediaType: "games", timeGained: 70 },
+                { mediaType: "series", timeGained: 20 }
+            ]
+        });
         const result = await getMobileMonthlyActivityStats(10, period);
         expect(mocks.stats).toHaveBeenCalledWith(10, period);
         expect(result.mediaStats.map(item => item.mediaType)).toEqual(["series", "games"]);
     });
 
     it("searches only the authenticated actor's tracked media and respects custom covers", async () => {
-        mocks.search.mockResolvedValue([{ mediaId: 3, mediaName: "Book", mediaCover: "/uploads/books/default.jpg", customCover: "/uploads/custom/book.jpg" }]);
-        expect(await searchMobileActivityMedia(10, { mediaType: "books", query: " Book " })).toEqual([{ mediaId: 3, mediaName: "Book", cover: "/uploads/custom/book.jpg" }]);
+        mocks.search.mockResolvedValue([
+            {
+                mediaId: 3,
+                mediaName: "Book",
+                mediaCover: "/uploads/books/default.jpg",
+                customCover: "/uploads/custom/book.jpg"
+            }
+        ]);
+        expect(await searchMobileActivityMedia(10, { mediaType: "books", query: " Book " })).toEqual([
+            { mediaId: 3, mediaName: "Book", cover: "/uploads/custom/book.jpg" }
+        ]);
         expect(mocks.search).toHaveBeenCalledWith(10, "Book", 20);
     });
 
@@ -93,7 +148,11 @@ describe("mobile monthly activity", () => {
         });
         await mutateMobileMonthlyActivity(10, add);
         expect(mocks.add).toHaveBeenCalledWith(10, expect.not.objectContaining({ userId: 20 }));
-        await mutateMobileMonthlyActivity(10, { action: "update", activityId: 88, payload: { hidden: true } });
+        await mutateMobileMonthlyActivity(10, {
+            action: "update",
+            activityId: 88,
+            payload: { hidden: true }
+        });
         expect(mocks.update).toHaveBeenCalledWith(10, 88, { hidden: true });
         await mutateMobileMonthlyActivity(10, { action: "remove", activityId: 88 });
         expect(mocks.remove).toHaveBeenCalledWith(10, 88);

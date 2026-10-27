@@ -4,7 +4,7 @@ import type * as MediaPersonal from "../../../../src/lib/server/mobile/media-per
 import type * as Community from "../../../../src/lib/server/mobile/community";
 import type {getMcpConnections} from "../../../../src/lib/server/domain/mcp/mcp.repository";
 import type {DeleteAccountForm} from "../../../../src/lib/schemas/user-settings.schema";
-import type * as Moviedle from "../../../../src/lib/server/mobile/moviedle";
+import type * as Collections from "../../../../src/lib/server/mobile/collections";
 import {backendUrl} from "./config";
 import {authClient} from "./auth-client";
 import type * as ListFilters from "../../../../src/lib/server/mobile/list-filters";
@@ -141,6 +141,12 @@ const subjectPath = (path: string, userId?: number) =>
 
 
 export const api = {
+    communityCollections: (input: Parameters<typeof Collections.getMobileCommunityCollections>[1], signal?: AbortSignal) =>
+        request<Result<typeof Collections.getMobileCommunityCollections>>(`/collections?${queryString(input)}`, signal),
+    communityCollection: (input: Parameters<typeof Collections.getMobileCommunityCollection>[1], signal?: AbortSignal) =>
+        request<Result<typeof Collections.getMobileCommunityCollection>>(`/collections/detail?${queryString(input)}`, signal),
+    communityCollectionAction: (input: Parameters<typeof Collections.actOnMobileCommunityCollection>[1]) =>
+        request<Result<typeof Collections.actOnMobileCommunityCollection>>("/collections/detail", undefined, "POST", input),
     trends: (signal?: AbortSignal) => request<Result<typeof Community.getMobileTrends>>("/trends", signal),
     hallOfFame: (input: Parameters<typeof Community.getMobileHallOfFame>[1], signal?: AbortSignal) => request<Result<typeof Community.getMobileHallOfFame>>(`/hall-of-fame?${queryString(input)}`, signal),
     profileSettings: (signal?: AbortSignal) => request<Result<typeof Settings.getMobileProfileSettings>>("/settings/profile", signal),
@@ -148,10 +154,6 @@ export const api = {
     connectedApps: (signal?: AbortSignal) => request<Result<typeof getMcpConnections>>("/settings/apps", signal),
     disconnectApp: (clientId: string) => request<{ disconnected: boolean }>("/settings/apps", undefined, "POST", { clientId }),
     deleteAccount: (input: DeleteAccountForm) => request<{ deleted: boolean }>("/settings/security", undefined, "DELETE", input),
-    moviedle: (signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedle>>("/moviedle", signal),
-    moviedleSuggestions: (query: string, signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedleSuggestions>>(`/moviedle/suggestions?${queryString({ query })}`, signal),
-    moviedleLeaderboard: (signal?: AbortSignal) => request<Result<typeof Moviedle.getMobileMoviedleLeaderboard>>("/moviedle/leaderboard", signal),
-    moviedleGuess: (input: Parameters<typeof Moviedle.guessMobileMoviedle>[1]) => request<Result<typeof Moviedle.guessMobileMoviedle>>("/moviedle", undefined, "POST", input),
     notificationCounts: (signal?: AbortSignal) =>
         request<Result<typeof Notifications.getMobileNotificationCounts>>("/notifications/counts", signal),
     notifications: (type: Parameters<typeof Notifications.getMobileNotifications>[1], signal?: AbortSignal) =>

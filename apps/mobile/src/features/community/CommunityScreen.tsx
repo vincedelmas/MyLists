@@ -9,12 +9,12 @@ import {AppText, Content, Page, Section} from "../../components/ui";
 import {ChartNoAxesCombined, Clapperboard, ExternalLink, HeartHandshake, History, LibraryBig, Coffee, TrendingUp, Trophy} from "lucide-react-native";
 
 
-const nativePages = new Map<string, Href>([["/moviedle", "/moviedle"], ["/hall-of-fame", "/hall-of-fame"], ["/trends", "/trends"]]);
+const nativePages = new Map<string, Href>([["/hall-of-fame", "/hall-of-fame"], ["/trends", "/trends"], ["/collections/discover", "/collections"]]);
 
 
 const sections = [
     {
-        title: "Discover",
+        title: "In the app",
         items: [
             {
                 title: "Trends",
@@ -23,38 +23,21 @@ const sections = [
                 description: "What’s popular in movies, series and games",
             },
             {
-                path: "/platform-stats",
-                title: "Platform stats",
-                Icon: ChartNoAxesCombined,
-                description: "Explore how the community tracks media",
-            },
-        ],
-    },
-    {
-        title: "Community",
-        items: [
-            {
-                Icon: Trophy,
-                title: "Hall of fame",
-                path: "/hall-of-fame",
-                description: "Community milestones and leaderboards",
-            },
-            {
-                Icon: LibraryBig,
-                path: "/collections/discover",
                 title: "Community collections",
+                path: "/collections/discover",
+                Icon: LibraryBig,
                 description: "Discover collections shared by other members",
             },
             {
-                Icon: HeartHandshake,
-                path: "/taste-matches",
-                title: "Taste matches",
-                description: "Find people who share your taste",
+                title: "Hall of fame",
+                path: "/hall-of-fame",
+                Icon: Trophy,
+                description: "Community milestones and leaderboards",
             },
         ],
     },
     {
-        title: "Games",
+        title: "Explore on the web",
         items: [
             {
                 title: "Moviedle",
@@ -63,10 +46,22 @@ const sections = [
                 description: "Guess today’s movie",
             },
             {
-                Icon: History,
-                path: "/which-came-first",
                 title: "Which came first?",
+                path: "/which-came-first",
+                Icon: History,
                 description: "Put your release-date knowledge to the test",
+            },
+            {
+                title: "Taste matches",
+                path: "/taste-matches",
+                Icon: HeartHandshake,
+                description: "Find people who share your taste",
+            },
+            {
+                title: "Platform stats",
+                path: "/platform-stats",
+                Icon: ChartNoAxesCombined,
+                description: "Explore how the community tracks media",
             },
         ],
     },
@@ -107,17 +102,23 @@ export function CommunityScreen() {
                                     else void open(path);
                                 }}
                                 accessibilityLabel={nativePages.has(path) ? title : `${title}. Opens in browser`}
-                                style={({ pressed }) => ([styles.communityDestination, { opacity: pressed || opening ? 0.6 : 1 }])}
+                                style={({ pressed }) => [styles.communityDestination, (pressed || opening) && styles.pressed]}
                             >
                                 <Icon size={24} color={colors.accent}/>
                                 <View style={styles.destinationIdentity}>
-                                    <AppText style={styles.destinationTitle}>
-                                        {title}
-                                    </AppText>
-                                    <AppText
-                                        muted
-                                        style={styles.destinationDescription}
-                                    >
+                                    <View style={styles.destinationHeading}>
+                                        <AppText style={styles.destinationTitle}>
+                                            {title}
+                                        </AppText>
+                                        {!nativePages.has(path) &&
+                                            <View style={styles.webBadge}>
+                                                <AppText style={styles.webBadgeLabel}>
+                                                    Web only
+                                                </AppText>
+                                            </View>
+                                        }
+                                    </View>
+                                    <AppText muted style={styles.destinationDescription}>
                                         {description}
                                     </AppText>
                                 </View>
@@ -135,7 +136,7 @@ export function CommunityScreen() {
                     accessibilityLabel="Buy me a coffee. Opens in browser"
                     disabled={opening}
                     onPress={() => void open("https://www.buymeacoffee.com/crossoufire")}
-                    style={({ pressed }) => ([styles.supportLink, { opacity: pressed ? 0.6 : 1 }])}
+                    style={({ pressed }) => [styles.supportLink, pressed && styles.pressed]}
                 >
                     <Coffee size={18} color={colors.rating}/>
                     <AppText style={styles.supportLabel}>
@@ -150,6 +151,20 @@ export function CommunityScreen() {
 
 
 const styles = StyleSheet.create({
+    pressed: { opacity: 0.6 },
+    destinationHeading: {
+        flexDirection: "row",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 8
+    },
+    webBadge: {
+        borderRadius: 5,
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        backgroundColor: colors.secondary
+    },
+    webBadgeLabel: { fontSize: 10, color: colors.muted, fontWeight: "600" },
     communityDestination: {
         gap: 14,
         padding: 16,

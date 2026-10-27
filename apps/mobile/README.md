@@ -12,7 +12,7 @@ options/mutations. Both clients reuse backend services. Admin and imports remain
 - Advanced statistics using the web domain services, loaded per media type with monthly activity, status breakdowns, and affinities.
 - All six tracking lists with server-side search, status/favorite filters, sorting, pagination, and pull-to-refresh.
 - Progress-first tracking with quick updates, native edit/rating sheets, and separate counted Follows/Community media tabs.
-- Native Moviedle from Community: daily poster, title suggestions, guessing/skipping, personal stats and leaderboard. Puzzle progress is shared with web.
+- Native Trends, Hall of fame, and Community collections, with searchable, paginated discovery and collection details, likes and copying.
 - Provider search (TMDB, IGDB, Google Books, manga), catalog resolution, and media details.
 - Add/remove media, status, score/feeling ratings, favorites, notes, page/chapter/hour progress, TV season/episode progress,
   season ratings/rewatches, game platform, and repeat counts. Progress reductions preserve the web's explicit monthly-history correction
@@ -239,10 +239,11 @@ calendar. The shared header collapses as each section scrolls, keeping the tabs 
 compact rows, and highlighted media. Achievements loads its latest three completions separately from the
 catalog. The calendar is a month-by-month agenda of releases from active supported lists, with media filtering.
 
-Connections uses top tabs for Followers, Following, Follow requests, and Sent requests. Community is currently a native navigation hub:
-Trends, Platform stats, Hall of fame, Community collections, Taste matches, Moviedle, and Which came first open their existing web pages in
-the system browser. These links are labeled accordingly; native implementations of those sections are future work, and browser sign-in is
-separate from the mobile session.
+Connections uses top tabs for Followers, Following, Follow requests, and Sent requests. Community groups native Trends, Community
+collections, and Hall of fame under “In the app”. Collections support paginated discovery, search and media filters, owner profiles,
+collection contents and annotations, likes, and copying into the viewer’s library. Moviedle, Which came first, Taste matches, and Platform
+stats open their existing web pages under “Explore on the web”, each marked “Web only”. Browser sign-in is separate from the mobile
+session.
 
 On the phone, check every profile/connection tab, scrolling to the last tab, month changes and calendar filtering, pull-to-refresh, the
 Profile cog and Android back behavior, and the persistent bottom bar while opening lists/media. Check that Community links open the

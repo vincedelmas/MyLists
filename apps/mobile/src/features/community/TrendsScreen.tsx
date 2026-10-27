@@ -6,9 +6,9 @@ import {Flame} from "lucide-react-native";
 import {api} from "../../lib/api-client";
 import {AppText, Cover, Page, StateView} from "../../components/ui";
 import {MediaCard} from "../../components/media-card";
-import {FilterButtons} from "../../components/filter-buttons";
+import {ChoiceChips} from "../../components/choice-chips";
 import {colors} from "../../theme";
-import {mediaLabels} from "../../lib/media";
+import {mediaColors, mediaIcons, mediaLabels} from "../../lib/media";
 import {useTabPush} from "../../hooks/use-tab-push";
 import {useResolveMutation} from "../../lib/react-query/query-mutations/media.mutations";
 import {formatDate, compareDateInputs} from "@/lib/utils/formatting/date";
@@ -19,9 +19,24 @@ type Trend = Awaited<ReturnType<typeof api.trends>>["seriesTrends"][number];
 
 const filters = [
     { value: "all", label: "All media" },
-    { value: "series", label: "Series", mediaType: "series" },
-    { value: "movies", label: "Movies", mediaType: "movies" },
-    { value: "games", label: "Games", mediaType: "games" },
+    {
+        value: "series",
+        label: "Series",
+        color: mediaColors.series,
+        icon: mediaIcons.series
+    },
+    {
+        value: "movies",
+        label: "Movies",
+        color: mediaColors.movies,
+        icon: mediaIcons.movies
+    },
+    {
+        value: "games",
+        label: "Games",
+        color: mediaColors.games,
+        icon: mediaIcons.games
+    },
 ] as const;
 
 
@@ -87,7 +102,7 @@ export function TrendsScreen() {
                 }
                 ListHeaderComponent={
                     <View style={styles.header}>
-                        <FilterButtons
+                        <ChoiceChips
                             label="Trending media"
                             value={tab}
                             onChange={setTab}
@@ -99,20 +114,16 @@ export function TrendsScreen() {
                                 accessibilityLabel={`See details for ${hero.displayName}`}
                                 disabled={resolve.isPending}
                                 onPress={() => open(hero)}
-                                style={({ pressed }) => ([styles.mediaResult, { opacity: pressed ? 0.7 : 1 }])}
+                                style={({ pressed }) => ([
+                                    styles.mediaResult,
+                                    { opacity: pressed ? 0.7 : 1 }
+                                ])}
                             >
-                                <Cover
-                                    uri={hero.posterPath}
-                                    style={styles.mediaCover}
-                                />
-                                <View
-                                    style={styles.mediaIdentity}
-                                >
+                                <Cover uri={hero.posterPath} style={styles.mediaCover}/>
+                                <View style={styles.mediaIdentity}>
                                     <View style={styles.mediaTypeRow}>
                                         <Flame size={15} color={colors.rating}/>
-                                        <AppText
-                                            style={styles.mediaType}
-                                        >
+                                        <AppText style={styles.mediaType}>
                                             #1 TRENDING
                                         </AppText>
                                     </View>
@@ -120,10 +131,7 @@ export function TrendsScreen() {
                                         {hero.displayName}
                                     </AppText>
                                     <AppText style={styles.releaseDate}>{mediaLabels[hero.mediaType]} · {formatDate(hero.releaseDate)}</AppText>
-                                    <AppText
-                                        numberOfLines={2}
-                                        style={styles.releaseDate}
-                                    >
+                                    <AppText numberOfLines={2} style={styles.releaseDate}>
                                         {hero.overview}
                                     </AppText>
                                     <AppText style={styles.trackingLabel}>
@@ -133,17 +141,11 @@ export function TrendsScreen() {
                             </Pressable>
                         }
                         {resolve.error &&
-                            <AppText
-                                accessibilityRole="alert"
-                                style={styles.errorText}
-                            >
+                            <AppText accessibilityRole="alert" style={styles.errorText}>
                                 {resolve.error.message}
                             </AppText>
                         }
-                        <AppText
-                            muted
-                            style={styles.releaseDate}
-                        >Trending titles · {items.length} {items.length === 1 ? "title" : "titles"}</AppText>
+                        <AppText muted style={styles.releaseDate}>Trending titles · {items.length} {items.length === 1 ? "title" : "titles"}</AppText>
                     </View>
                 }
                 renderItem={renderItem}

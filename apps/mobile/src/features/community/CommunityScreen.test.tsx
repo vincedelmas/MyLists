@@ -36,7 +36,7 @@ vi.mock("../../components/ui", () => {
         AppText: children,
         Content: children,
         Page: children,
-        Section: children
+        Section: ({ title, children }: { title: string; children: ReactNode }) => createElement("section", { "aria-label": title }, children)
     };
 });
 
@@ -58,19 +58,34 @@ beforeEach(() => {
 
 
 describe("community row navigation", () => {
+    it("groups native screens separately and labels all four browser destinations", () => {
+        const markup = renderToStaticMarkup(createElement(CommunityScreen));
+
+        expect(markup).toContain('aria-label="In the app"');
+        expect(markup).toContain('aria-label="Explore on the web"');
+        expect(markup.match(/Web only/g)).toHaveLength(4);
+        expect(markup.indexOf("Trends")).toBeLessThan(markup.indexOf("Moviedle"));
+        expect(markup.indexOf("Community collections")).toBeLessThan(markup.indexOf("Moviedle"));
+    });
+
     it.each([
         ["Trends", "/trends"],
         ["Hall of fame", "/hall-of-fame"],
-        ["Moviedle", "/moviedle"],
+        ["Community collections", "/collections"],
     ])("opens the correct native screen when pressing %s", (label, destination) => {
         buttons.get(label)!();
         expect(push).toHaveBeenCalledExactlyOnceWith(destination);
         expect(openBrowser).not.toHaveBeenCalled();
     });
 
-    it("keeps web-only destinations in the browser", () => {
-        buttons.get("Platform stats. Opens in browser")!();
-        expect(openBrowser).toHaveBeenCalledWith("https://mylists.example/platform-stats");
+    it.each([
+        ["Moviedle", "/moviedle"],
+        ["Which came first?", "/which-came-first"],
+        ["Taste matches", "/taste-matches"],
+        ["Platform stats", "/platform-stats"],
+    ])("keeps %s in the browser", (label, path) => {
+        buttons.get(`${label}. Opens in browser`)!();
+        expect(openBrowser).toHaveBeenCalledWith(`https://mylists.example${path}`);
         expect(push).not.toHaveBeenCalled();
     });
 });

@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
     getContainer: vi.fn(),
     getUserByUsername: vi.fn(),
     getAllViews: vi.fn(),
+    getSummaries: vi.fn(),
     getSummary: vi.fn(),
     getCollections: vi.fn(),
     getFollowingStatus: vi.fn(),
@@ -83,8 +84,12 @@ vi.mock("@/lib/server/domain/dynamic-lists/dynamic-lists.repository", () => ({
     dynamicListsRepository: { getAll: mocks.getAllViews },
 }));
 vi.mock("@/lib/server/domain/dynamic-lists/dynamic-lists.queries", () => ({
-    getDynamicListSummaries: (userId: number, views: { id: number; spec: DynamicListSpec }[]) => {
-        return new Map(views.map(view => [view.id, mocks.getSummary(userId, view.spec)]));
+    getDynamicListSummaries: (userId: number, views: { id: number; spec: DynamicListSpec }[], options: { includeCovers?: boolean } = {}) => {
+        mocks.getSummaries(userId, views, options);
+        return new Map(views.map(view => {
+            const summary = mocks.getSummary(userId, view.spec);
+            return [view.id, options.includeCovers === false ? { ...summary, covers: [] } : summary];
+        }));
     },
 }));
 
@@ -238,6 +243,28 @@ describe("lists hub privacy", () => {
         expect(result.views.map(({ id }) => id)).toEqual([view.id]);
         expect(mocks.getSummary).toHaveBeenCalledTimes(2);
         expect(mocks.getSummary).not.toHaveBeenCalledWith(10, otherView.spec);
+    });
+
+    it("loads covers only for the visible page after filtering a large directory by actual matching media", async () => {
+        const views = Array.from({ length: 24 }, (_, index) => ({
+            ...view, id: 30 + index, spec: { ...view.spec, title: `List ${index}` },
+        }));
+        const covers = [{ mediaType: MediaType.MOVIES, mediaId: 1, title: "Cover", imageCover: "/cover.jpg" }];
+        mocks.getAllViews.mockReturnValue(views);
+        mocks.getSummary.mockImplementation((_userId, spec: DynamicListSpec) => ({
+            ...preview, covers,
+            mediaTypes: Number(spec.title.split(" ")[1]) % 3 === 2 ? [MediaType.GAMES] : [MediaType.MOVIES],
+        }));
+
+        const result = await getUserListViews({ data: { username: "list-owner", mediaType: MediaType.MOVIES, dynamicPage: 2 } });
+        const pageViews = views.filter((_, index) => index % 3 !== 2).slice(8, 16);
+
+        expect(result).toMatchObject({ total: 16, page: 2, pages: 2, perPage: 8 });
+        expect(result.views.map(({ id }) => id)).toEqual(pageViews.map(({ id }) => id));
+        expect(result.views.map(({ preview }) => preview.covers)).toEqual(pageViews.map(() => covers));
+        expect(mocks.getSummaries).toHaveBeenCalledTimes(2);
+        expect(mocks.getSummaries).toHaveBeenNthCalledWith(1, 10, views, { includeCovers: false });
+        expect(mocks.getSummaries).toHaveBeenNthCalledWith(2, 10, pageViews, {});
     });
 
     it("clamps stale pages to the final remaining page", async () => {

@@ -20,41 +20,46 @@ export const getUserListViews = createServerFn({ method: "GET" })
         }
 
         const container = await getContainer();
-        const decision = await container.services.authorization.decideProfile(toActor(currentUser), targetUser);
-        const activeSettings = getActiveMediaSettings(targetUser.userMediaSettings);
         const query = search?.trim().toLocaleLowerCase() ?? "";
+        const activeSettings = getActiveMediaSettings(targetUser.userMediaSettings);
+        const decision = await container.services.authorization.decideProfile(toActor(currentUser), targetUser);
+
+        const perPage = 8;
         const views = decision.allowed
-            ? dynamicListsRepository.getAll(targetUser.id)
+            ? dynamicListsRepository
+                .getAll(targetUser.id)
                 .filter(view => (!pinnedOnly || view.profilePosition !== null) && view.spec.title.toLocaleLowerCase().includes(query))
             : [];
 
-        const summaries = mediaType ? getDynamicListSummaries(targetUser.id, views) : undefined;
+        const summaries = mediaType
+            ? getDynamicListSummaries(targetUser.id, views, { includeCovers: views.length <= perPage })
+            : undefined;
+
         const matchingViews = mediaType
             ? views.filter(view => summaries!.get(view.id)!.mediaTypes.includes(mediaType))
             : views;
 
-        const perPage = 8;
         const total = matchingViews.length;
         const pages = Math.ceil(total / perPage);
         const page = Math.max(1, Math.min(dynamicPage, pages));
         const pageViews = matchingViews.slice((page - 1) * perPage, page * perPage);
-        const pageSummaries = summaries ?? getDynamicListSummaries(targetUser.id, pageViews);
+
+        const pageSummaries = summaries && views.length <= perPage
+            ? summaries
+            : getDynamicListSummaries(targetUser.id, pageViews);
 
         return {
+            page,
+            total,
+            pages,
+            perPage,
             canReadTracking: decision.allowed,
             isOwner: currentUser?.id === targetUser.id,
             activeMediaTypes: activeSettings.map(({ mediaType }) => mediaType),
+            views: pageViews.map(view => ({ ...view, preview: pageSummaries.get(view.id)! })),
             presets: decision.allowed
                 ? activeSettings.map(({ mediaType, totalEntries }) => ({ mediaType, totalEntries }))
                 : [],
-            views: pageViews.map(view => ({
-                ...view,
-                preview: pageSummaries.get(view.id)!,
-            })),
-            total,
-            page,
-            pages,
-            perPage,
         };
     });
 

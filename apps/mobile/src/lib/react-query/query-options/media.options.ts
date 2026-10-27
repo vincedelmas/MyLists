@@ -26,11 +26,11 @@ export const mediaDetailsOptions = (params: MediaParams) =>
         queryKey: ["media", params.mediaType, params.mediaId, "details"],
         queryFn: ({ signal }) => api.mediaDetails(params, signal),
     });
-export const mediaCommunityOptions = (params: MediaParams) =>
+export const mediaCommunityOptions = (params: MediaParams, search?: string) =>
     infiniteQueryOptions({
-        queryKey: ["media", params.mediaType, params.mediaId, "community"],
+        queryKey: ["media", params.mediaType, params.mediaId, "community", search],
         initialPageParam: 1,
-        queryFn: ({ signal, pageParam }) => api.mediaCommunity(params, pageParam, signal),
+        queryFn: ({ signal, pageParam }) => api.mediaCommunity(params, pageParam, signal, search),
         getNextPageParam: (page) => (page.page < page.pages ? page.page + 1 : undefined),
     });
 export const mediaCollectionsOptions = (params: MediaParams) =>
@@ -61,3 +61,23 @@ export const listFilterSearchOptions = (
         enabled: query.length >= 2,
         staleTime: 60_000,
     });
+
+export const mediaHistoryOptions = (params: MediaParams) => infiniteQueryOptions({
+    queryKey: ["media", params.mediaType, params.mediaId, "history"],
+    initialPageParam: 1,
+    queryFn: ({ signal, pageParam }) => api.mediaHistory(params, pageParam, signal),
+    getNextPageParam: last => last.hasMore ? last.page + 1 : undefined
+});
+export const mediaTagsOptions = (params: MediaParams) => queryOptions({ queryKey: ["media-tags", params.mediaType], queryFn: ({ signal }) => api.mediaTags(params, signal) });
+export const gameHltbOptions = (params: MediaParams) => queryOptions({
+    queryKey: ["game-hltb", params.mediaId],
+    queryFn: ({ signal }) => api.gameHltb(params, signal),
+    staleTime: Infinity
+});
+
+export const mediaJobOptions = (input: Omit<Parameters<typeof api.mediaJob>[0], "page">) => infiniteQueryOptions({
+    queryKey: ["media-job", input],
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) => api.mediaJob({ ...input, page: pageParam }, signal),
+    getNextPageParam: last => last.page < last.pages ? last.page + 1 : undefined
+});

@@ -12,28 +12,35 @@ export function ActionSheet({
                                 dismiss,
                                 children,
                                 compact = false,
+                                scrollable = true,
+                                suspended = false,
                             }: {
     title: string;
     error?: string;
     dismiss: () => void;
     children: ReactNode;
     compact?: boolean;
+    scrollable?: boolean;
+    suspended?: boolean;
 }) {
+    const Container = scrollable ? ScrollView : View;
     const { width, height } = useWindowDimensions();
     return (
         <NativeHost>
             <BottomSheet
-                isPresented
-                onDismiss={dismiss}
+                isPresented={!suspended}
+                onDismiss={() => {
+                    if (!suspended) dismiss();
+                }}
                 modifiers={actionSheetModifiers}
                 containerColor={colors.surface}
             >
                 <RNHostView matchContents={{ vertical: true }}>
                     <View style={{ width: width - 48, maxHeight: height * 0.72 }}>
-                        <ScrollView
-                            style={{ flexGrow: 0 }}
-                            keyboardShouldPersistTaps="handled"
-                            contentContainerStyle={[styles.content, compact && { gap: spacing.lg }]}
+                        <Container
+                            {...(scrollable ? { keyboardShouldPersistTaps: "handled" as const } : {})}
+                            {...(scrollable ? { contentContainerStyle: [styles.content, compact && { gap: spacing.lg }] } : {})}
+                            style={[{ flexGrow: 0, flexShrink: 1 }, !scrollable && styles.content]}
                         >
                             {!compact && <AppText heading>{title}</AppText>}
                             {error && (
@@ -42,7 +49,7 @@ export function ActionSheet({
                                 </AppText>
                             )}
                             {children}
-                        </ScrollView>
+                        </Container>
                     </View>
                 </RNHostView>
             </BottomSheet>

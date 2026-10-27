@@ -1,22 +1,23 @@
+import {shouldCheckGameHltb} from "@/lib/utils/media/hltb";
 import * as z from "zod";
-import { RoleType } from "@/lib/utils/enums";
-import { notFound } from "@tanstack/react-router";
-import { getContainer } from "@/lib/server/core/container";
-import { mobileImagePath } from "@/lib/server/mobile/images";
-import { calculateMediaLevel } from "@/lib/utils/media/level";
-import { dateFromUTCInput } from "@/lib/utils/formatting/date";
-import { InactiveMediaTypeError } from "@/lib/utils/error-classes";
-import { toActor, hasRequiredRole } from "@/lib/server/authorization";
-import { mediaListSearchSchema } from "@/lib/schemas/media-lists.schema";
-import { getMediaDefinition } from "@/lib/media-definitions/definition.registry";
-import { getMediaSortLabel } from "@/lib/utils/media/sorting";
-import { isManualBookId } from "@/lib/media-definitions/books/book.definition.server";
-import type { MediaListDataByType } from "@/lib/server/domain/media/media-list.types";
-import { getMediaRefreshAvailability } from "@/lib/server/domain/media/media-refresh";
-import { getServerMediaDefinition } from "@/lib/media-definitions/definition.registry.server";
-import { addMediaToListSchema, updateUserMediaSchema } from "@/lib/schemas/user-media.schema";
-import { mediaTypeFieldSchema, coercedPositiveIntFieldSchema } from "@/lib/schemas/common.schema";
-import { ActivityCorrectionRequired } from "@/lib/server/domain/tracking/monthly-activity.service";
+import {RoleType} from "@/lib/utils/enums";
+import {notFound} from "@tanstack/react-router";
+import {getContainer} from "@/lib/server/core/container";
+import {mobileImagePath} from "@/lib/server/mobile/images";
+import {calculateMediaLevel} from "@/lib/utils/media/level";
+import {dateFromUTCInput} from "@/lib/utils/formatting/date";
+import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
+import {toActor, hasRequiredRole} from "@/lib/server/authorization";
+import {mediaListSearchSchema} from "@/lib/schemas/media-lists.schema";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
+import {isManualBookId} from "@/lib/media-definitions/books/book.definition.server";
+import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
+import {getMediaRefreshAvailability} from "@/lib/server/domain/media/media-refresh";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
+import {addMediaToListSchema, updateUserMediaSchema} from "@/lib/schemas/user-media.schema";
+import {mediaTypeFieldSchema, coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {ActivityCorrectionRequired} from "@/lib/server/domain/tracking/monthly-activity.service";
 
 export const mediaParamsSchema = z.object({ mediaType: mediaTypeFieldSchema, mediaId: coercedPositiveIntFieldSchema });
 
@@ -88,6 +89,9 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
             : [];
 
     const labels = {
+        budget: "Total Budget",
+        revenue: "Total Revenue",
+        lastAirDate: "Last aired",
         pages: "Pages",
         voteCount: "Votes",
         volumes: "Volumes",
@@ -128,17 +132,17 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
         params.mediaType === "books" && isManualBookId(String(media.apiId))
             ? null
             : "igdbUrl" in media
-              ? media.igdbUrl
-              : "mediaUrl" in attribution
-                ? `${attribution.mediaUrl}${media.apiId}`
-                : null;
+                ? media.igdbUrl
+                : "mediaUrl" in attribution
+                    ? `${attribution.mediaUrl}${media.apiId}`
+                    : null;
 
     const backdrop =
         "backdropPath" in media && media.backdropPath
             ? `https://image.tmdb.org/t/p/w1280${media.backdropPath}`
             : "backdropImageId" in media && media.backdropImageId
-              ? `https://images.igdb.com/igdb/image/upload/t_1080p/${media.backdropImageId}.jpg`
-              : null;
+                ? `https://images.igdb.com/igdb/image/upload/t_1080p/${media.backdropImageId}.jpg`
+                : null;
 
     const actor = toActor(settings!);
 
@@ -163,6 +167,12 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
             name: media.name,
             synopsis: media.synopsis,
             releaseDate: media.releaseDate,
+            totalProgress: "pages" in media ? media.pages : "chapters" in media ? media.chapters : "totalEpisodes" in media ? media.totalEpisodes : null,
+            needsCover: params.mediaType === "books" && media.imageCover.endsWith("default.jpg"),
+            homepage: "homepage" in media ? media.homepage : null,
+            hltbNeedsCheck: "hltbLastCheckedAt" in media ? shouldCheckGameHltb(media) : false,
+            hltbMainAndExtraTime: "hltbMainAndExtraTime" in media ? media.hltbMainAndExtraTime : null,
+            hltbTotalCompleteTime: "hltbTotalCompleteTime" in media ? media.hltbTotalCompleteTime : null,
             tagline: "tagline" in media ? media.tagline : null,
             scoreDivisor: params.mediaType === "games" ? 10 : 1,
             votes: "voteCount" in media ? media.voteCount : null,
@@ -179,18 +189,18 @@ export const getMobileMedia = async (userId: number, params: z.infer<typeof medi
                 "directorName" in media
                     ? media.directorName
                     : "createdBy" in media
-                      ? media.createdBy
-                      : "publishers" in media
-                        ? media.publishers
-                        : null,
+                        ? media.createdBy
+                        : "publishers" in media
+                            ? media.publishers
+                            : null,
         },
         tracking: userMedia
             ? {
-                  ...userMedia,
-                  customCover: userMedia.customCover ? mobileImagePath(userMedia.customCover) : null,
-                  addedAt: userMedia.addedAt ? dateFromUTCInput(userMedia.addedAt).toISOString() : null,
-                  lastUpdated: userMedia.lastUpdated ? dateFromUTCInput(userMedia.lastUpdated).toISOString() : null,
-              }
+                ...userMedia,
+                customCover: userMedia.customCover ? mobileImagePath(userMedia.customCover) : null,
+                addedAt: userMedia.addedAt ? dateFromUTCInput(userMedia.addedAt).toISOString() : null,
+                lastUpdated: userMedia.lastUpdated ? dateFromUTCInput(userMedia.lastUpdated).toISOString() : null,
+            }
             : null,
     };
 };
@@ -208,7 +218,8 @@ export const updateMobileMedia = async (userId: number, input: z.infer<typeof up
     try {
         services.mediaTracking.updateUserMedia({ ...input, userId });
         return { kind: "saved" as const };
-    } catch (error) {
+    }
+    catch (error) {
         if (error instanceof ActivityCorrectionRequired)
             return { kind: "correction-required" as const, preview: error.preview };
         throw error;

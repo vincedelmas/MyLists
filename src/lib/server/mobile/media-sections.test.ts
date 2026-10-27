@@ -1,12 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {
+    checkMobileGameHltb,
+    getMobileJob,
+    mobileJobSchema,
     getMobileMediaCollections,
     getMobileMediaCommunity,
     getMobileMediaDetails,
     getMobileMediaEdit,
     saveMobileMediaEdit,
 } from "./media-sections";
-import { UnauthorizedError } from "@/lib/utils/error-classes";
+import {UnauthorizedError} from "@/lib/utils/error-classes";
 
 const mocks = vi.hoisted(() => ({
     user: vi.fn(),
@@ -18,6 +21,8 @@ const mocks = vi.hoisted(() => ({
     collections: vi.fn(),
     edit: vi.fn(),
     save: vi.fn(),
+    hltb: vi.fn(),
+    job: vi.fn(),
 }));
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
 vi.mock("@/lib/server/core/container", () => ({
@@ -30,8 +35,10 @@ vi.mock("@/lib/server/core/container", () => ({
             },
         },
         registries: {
+            ingestionServices: { get: () => ({ checkMissingHltb: mocks.hltb }) },
             mediaService: {
                 get: () => ({
+                    getMediaJobDetails: mocks.job,
                     findById: mocks.find,
                     getMediaAndUserDetails: mocks.details,
                     getMediaCommunityActivity: mocks.community,
@@ -121,4 +128,34 @@ describe("mobile media sections", () => {
         expect(mocks.collections).toHaveBeenCalledWith(7, "movies", { kind: "user", id: 10, role: "user" });
         expect(JSON.stringify(result)).not.toContain("secret");
     });
+    it("returns season breakdown and franchise titles using mobile cover paths", async () => {
+        mocks.details.mockResolvedValue({
+            media: {
+                genres: [],
+                epsPerSeason: [{ season: 1, episodes: 10 }],
+                collection: [{ mediaId: 8, mediaName: "Sequel", mediaCover: "http://localhost:3000/sequel.jpg" }]
+            }, similarMedia: []
+        });
+        const result = await getMobileMediaDetails(10, params);
+        expect(result.seasons).toEqual([{ season: 1, episodes: 10 }]);
+        expect(result.series[0]).toMatchObject({ mediaId: 8, mediaCover: "/sequel.jpg" });
+    });
+    it("passes community search to the web visibility service", async () => {
+        await getMobileMediaCommunity(10, params, 2, "Name");
+        expect(mocks.community).toHaveBeenCalledWith({ kind: "user", id: 10, role: "user" }, 7, { page: 2, perPage: 20, search: "Name" });
+    });
+    it("uses existing rate-limited game time lookup and rejects non-games", async () => {
+        await expect(checkMobileGameHltb(10, params)).rejects.toThrow("only available for games");
+        expect(mocks.hltb).not.toHaveBeenCalled();
+        await checkMobileGameHltb(10, { mediaType: "games", mediaId: 7 });
+        expect(mocks.hltb).toHaveBeenCalledWith(7);
+    });
+    it("scopes credit browsing and in-list filters to the session user", async () => {
+        mocks.job.mockResolvedValue({ items: [{ mediaId: 8, imageCover: "http://localhost:3000/cover.jpg" }], page: 1, pages: 1 });
+        const input = mobileJobSchema.parse({ mediaType: "movies", job: "actor", name: "Actor", library: "in", page: "1", userId: 999 });
+        const result = await getMobileJob(10, input);
+        expect(mocks.job).toHaveBeenCalledWith("actor", "Actor", { library: "in", page: 1 }, 10);
+        expect(result.items[0].imageCover).toBe("/cover.jpg");
+    });
+
 });

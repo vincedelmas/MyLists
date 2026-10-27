@@ -1,10 +1,12 @@
+import {actOnMobileMedia, getMobileMediaHistory, getMobileMediaTags, mobileMediaActionSchema} from "@/lib/server/mobile/media-personal";
 import * as z from "zod";
-import { createFileRoute } from "@tanstack/react-router";
-import { mobileRequest } from "@/lib/server/mobile/request";
-import { mediaParamsSchema } from "@/lib/server/mobile/media";
-import { coercedPositiveIntFieldSchema } from "@/lib/schemas/common.schema";
-import { editMediaDetailsSchema } from "@/lib/schemas/media-details.schema";
+import {createFileRoute} from "@tanstack/react-router";
+import {mobileRequest} from "@/lib/server/mobile/request";
+import {mediaParamsSchema} from "@/lib/server/mobile/media";
+import {coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {editMediaDetailsSchema} from "@/lib/schemas/media-details.schema";
 import {
+    checkMobileGameHltb,
     getMobileMediaDetails,
     getMobileMediaCommunity,
     getMobileMediaCollections,
@@ -19,8 +21,12 @@ export const Route = createFileRoute("/api/mobile/v1/media/$mediaType/$mediaId/$
             GET: ({ request, params }) =>
                 mobileRequest(request, async (userId) => {
                     const media = mediaParamsSchema.parse(params);
-                    const section = z.enum(["details", "community", "collections", "edit"]).parse(params.section);
+                    const section = z.enum(["details", "community", "collections", "edit", "history", "tags"]).parse(params.section);
                     switch (section) {
+                        case "history":
+                            return getMobileMediaHistory(userId, media, coercedPositiveIntFieldSchema.parse(new URL(request.url).searchParams.get("page") ?? 1));
+                        case "tags":
+                            return getMobileMediaTags(userId, media);
                         case "details":
                             return getMobileMediaDetails(userId, media);
                         case "community":
@@ -28,6 +34,7 @@ export const Route = createFileRoute("/api/mobile/v1/media/$mediaType/$mediaId/$
                                 userId,
                                 media,
                                 coercedPositiveIntFieldSchema.parse(new URL(request.url).searchParams.get("page") ?? 1),
+                                new URL(request.url).searchParams.get("search") ?? undefined,
                             );
                         case "collections":
                             return getMobileMediaCollections(userId, media);
@@ -38,13 +45,15 @@ export const Route = createFileRoute("/api/mobile/v1/media/$mediaType/$mediaId/$
             POST: ({ request, params }) =>
                 mobileRequest(request, async (userId) => {
                     const media = mediaParamsSchema.parse(params);
-                    const section = z.enum(["edit", "refresh"]).parse(params.section);
+                    const section = z.enum(["edit", "refresh", "personal", "hltb"]).parse(params.section);
+                    if (section === "personal") return actOnMobileMedia(userId, media, mobileMediaActionSchema.parse(await request.json()));
+                    if (section === "hltb") return checkMobileGameHltb(userId, media);
                     return section === "refresh"
                         ? refreshMobileMedia(userId, media)
                         : saveMobileMediaEdit(
-                              userId,
-                              editMediaDetailsSchema.parse({ ...(await request.json()), ...media }),
-                          );
+                            userId,
+                            editMediaDetailsSchema.parse({ ...(await request.json()), ...media }),
+                        );
                 }),
         },
     },

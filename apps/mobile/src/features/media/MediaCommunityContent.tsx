@@ -1,7 +1,13 @@
+import {useMemo, useState} from "react";
+import {ChoiceChips} from "../../components/choice-chips";
+import {Avatar} from "../../components/avatar";
+import {useDebouncedValue} from "../../hooks/use-debounced-value";
+import {formatDate} from "@/lib/utils/formatting/date";
+import {zeroPad} from "@/lib/utils/formatting/number";
 import {useIsFocused} from "expo-router";
 import {useInfiniteQuery} from "@tanstack/react-query";
 import {Animated, Pressable, RefreshControl, StyleSheet, View} from "react-native";
-import {AppText, Cover, StateView} from "../../components/ui";
+import {AppText, Field, StateView} from "../../components/ui";
 import {mediaCommunityOptions} from "../../lib/react-query/query-options/media.options";
 import {useCollapsingScroll} from "../../hooks/use-collapsing-scroll";
 import {useTabPush} from "../../hooks/use-tab-push";
@@ -14,8 +20,9 @@ type Person = Awaited<ReturnType<typeof api.mediaCommunity>>["items"][number];
 
 function ActivityPerson({ item }: { item: Person }) {
     const push = useTabPush();
+    const [expanded, setExpanded] = useState(false);
     const progress = [
-        item.progress.season != null ? `S${item.progress.season} · E${item.progress.episode}` : null,
+        item.progress.season != null ? `S${zeroPad(item.progress.season)}.E${zeroPad(item.progress.episode ?? 0)}` : null,
         item.progress.playtimeMinutes != null ? formatMinutes(item.progress.playtimeMinutes) : null,
         item.progress.pages != null ? `Page ${item.progress.pages}` : null,
         item.progress.chapters != null ? `Chapter ${item.progress.chapters}` : null,
@@ -31,7 +38,7 @@ function ActivityPerson({ item }: { item: Person }) {
             onPress={() => push({ pathname: "/people/[userId]", params: { userId: String(item.id) } })}
             style={styles.person}
         >
-            <Cover uri={item.image} label={item.name} style={styles.avatar}/>
+            <Avatar image={item.image} name={item.name} size={44}/>
             <View style={styles.personInfo}>
                 <AppText style={styles.personName}>{item.name}</AppText>
                 <AppText muted style={styles.smallText}>
@@ -43,10 +50,16 @@ function ActivityPerson({ item }: { item: Person }) {
                         {progress}
                     </AppText>
                 )}
+                {item.updatedAt && <AppText muted style={styles.smallText}>{formatDate(item.updatedAt)}</AppText>}
                 {item.comment && (
-                    <AppText numberOfLines={3} style={styles.comment}>
-                        {item.comment}
-                    </AppText>
+                    <Pressable accessibilityRole="button" accessibilityLabel={expanded ? "Collapse comment" : "Read full comment"} accessibilityState={{ expanded }}
+                               onPress={event => {
+                                   event.stopPropagation();
+                                   setExpanded(value => !value);
+                               }} style={{ minHeight: 48, justifyContent: "center", gap: 4 }}>
+                        <AppText numberOfLines={expanded ? undefined : 3} style={styles.comment}>{item.comment}</AppText>
+                        <AppText muted style={styles.smallText}>{expanded ? "Show less" : "Read comment"}</AppText>
+                    </Pressable>
                 )}
             </View>
             <Rating value={item.rating} system={item.ratingSystem}/>
@@ -56,18 +69,18 @@ function ActivityPerson({ item }: { item: Person }) {
 
 export function MediaCommunityContent({
                                           params,
-                                          ratingSystem,
-                                          mode,
                                       }: {
     params: MediaParams;
-    mode: "follows" | "community";
-    ratingSystem: "score" | "feeling";
 }) {
     const focused = useIsFocused();
-    const query = useInfiniteQuery({ ...mediaCommunityOptions(params), enabled: focused });
+    const [mode, setMode] = useState<"follows" | "community">("community");
+    const [search, setSearch] = useState("");
+    const term = useDebouncedValue(search.trim());
+    const searching = mode === "community" && term !== search.trim();
+    const query = useInfiniteQuery({ ...mediaCommunityOptions(params, mode === "community" ? term || undefined : undefined), enabled: focused && !searching });
     const { scrollProps, contentContainerStyle } = useCollapsingScroll();
     const first = query.data?.pages[0];
-    const items = query.data?.pages.flatMap((page) => page.items) ?? [];
+    const items = useMemo(() => searching ? [] : query.data?.pages.flatMap(page => page.items) ?? [], [query.data, searching]);
     const sections =
         mode === "follows"
             ? [{ key: "follows", title: "People you follow", data: first?.follows ?? [] }]
@@ -76,6 +89,16 @@ export function MediaCommunityContent({
         <Animated.SectionList
             {...scrollProps}
             sections={sections}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            ListHeaderComponent={<View style={{ padding: 16, gap: 16 }}>
+                <ChoiceChips label="Community view" value={mode} options={[{ value: "community", label: "Community" }, { value: "follows", label: "People you follow" }]}
+                             onChange={setMode}/>
+                {mode === "community" &&
+                    <Field label="Search users" hideLabel clearable value={search} onChangeText={setSearch} placeholder="Search community users…" autoCorrect={false}/>}
+                <AppText muted style={{ fontSize: 12, lineHeight: 18 }}>Community activity excludes private profiles. Followed users are shown according to their profile
+                    privacy.</AppText>
+            </View>}
             stickySectionHeadersEnabled={false}
             contentContainerStyle={contentContainerStyle}
             keyExtractor={(item) => String(item.id)}
@@ -90,7 +113,7 @@ export function MediaCommunityContent({
             }
             onEndReachedThreshold={0.5}
             onEndReached={() => {
-                if (mode === "community" && focused && query.hasNextPage && !query.isFetching)
+                if (mode === "community" && focused && !searching && query.hasNextPage && !query.isFetching && !query.isError)
                     void query.fetchNextPage();
             }}
             renderSectionHeader={({ section }) => (
@@ -107,8 +130,18 @@ export function MediaCommunityContent({
                                 {first.total} tracking · {first.stats.completedCount} completed ·{" "}
                                 {first.stats.likedCount} favorites
                             </AppText>
+                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>{[
+                                { label: "Re-experiences", value: String(first.stats.totalRedo) },
+                                ...(params.mediaType === "games" ? [{ label: "Time played", value: formatMinutes(first.stats.totalPlaytime) }] : []),
+                                ...(["series", "anime", "books", "manga"].includes(params.mediaType) ? [{
+                                    label: "Total progress",
+                                    value: String(first.stats.totalSpecific)
+                                }] : []),
+                            ].map(stat => <View key={stat.label} style={{ padding: 12, minWidth: 120, borderRadius: 12, gap: 6, backgroundColor: colors.surface }}><AppText muted
+                                                                                                                                                                            style={{ fontSize: 11 }}>{stat.label}</AppText><AppText
+                                style={{ fontSize: 17, fontWeight: "600" }}>{stat.value}</AppText></View>)}</View>
                             {first.stats.averageRating != null && (
-                                <Rating value={first.stats.averageRating} system={ratingSystem}/>
+                                <Rating value={first.stats.averageRating} system="score"/>
                             )}
                         </>
                     )}
@@ -118,15 +151,15 @@ export function MediaCommunityContent({
             renderSectionFooter={({ section }) =>
                 !first ? (
                     <StateView
-                        loading={query.isPending}
+                        loading={query.isPending || searching}
                         title="Couldn’t load activity"
                         message={query.error?.message}
                         retry={() => void query.refetch()}
                     />
                 ) : section.key === "community" && !items.length ? (
                     <StateView
-                        loading={query.isPending}
-                        title={query.isError ? "Couldn’t load activity" : "No community activity yet"}
+                        loading={query.isPending || searching}
+                        title={query.isError ? "Couldn’t load activity" : search ? "No matching users" : "No community activity yet"}
                         message={query.error?.message}
                         retry={query.isError ? () => void query.refetch() : undefined}
                     />

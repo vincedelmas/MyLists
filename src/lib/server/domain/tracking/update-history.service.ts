@@ -14,8 +14,8 @@ export class UpdateHistoryService {
         return this.repository.getUserUpdates(userId, limit);
     }
 
-    getUserMediaHistory(userId: number, mediaType: MediaType, mediaId: number) {
-        return this.repository.getUserMediaHistory(userId, mediaType, mediaId);
+    getUserMediaHistory(userId: number, mediaType: MediaType, mediaId: number, pagination?: { limit: number; offset: number }) {
+        return this.repository.getUserMediaHistory(userId, mediaType, mediaId, pagination);
     }
 
     deleteMediaUpdatesForUser(userId: number, mediaType: MediaType, mediaId: number) {

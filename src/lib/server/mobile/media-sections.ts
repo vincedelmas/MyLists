@@ -1,14 +1,16 @@
 import * as z from "zod";
-import { notFound } from "@tanstack/react-router";
-import { getContainer } from "@/lib/server/core/container";
-import { toActor, hasRequiredRole } from "@/lib/server/authorization";
-import { RoleType } from "@/lib/utils/enums";
-import { UnauthorizedError } from "@/lib/utils/error-classes";
-import { mobileImagePath } from "./images";
-import { getMobileMedia, mediaParamsSchema } from "./media";
-import { editMediaDetailsSchema } from "@/lib/schemas/media-details.schema";
-import { refreshCatalogMedia } from "@/lib/server/domain/media/media-refresh";
-import { dateFromUTCInput } from "@/lib/utils/formatting/date";
+import {notFound} from "@tanstack/react-router";
+import {getContainer} from "@/lib/server/core/container";
+import {toActor, hasRequiredRole} from "@/lib/server/authorization";
+import {RoleType} from "@/lib/utils/enums";
+import {UnauthorizedError, FormattedError} from "@/lib/utils/error-classes";
+import {mobileImagePath} from "./images";
+import {getMobileMedia, mediaParamsSchema} from "./media";
+import {mediaCatalogBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
+import {mediaDetailsJobSchema} from "@/lib/schemas/media-details.schema";
+import {editMediaDetailsSchema} from "@/lib/schemas/media-details.schema";
+import {refreshCatalogMedia} from "@/lib/server/domain/media/media-refresh";
+import {dateFromUTCInput} from "@/lib/utils/formatting/date";
 
 type Params = z.infer<typeof mediaParamsSchema>;
 
@@ -23,6 +25,8 @@ export async function getMobileMediaDetails(userId: number, { mediaType, mediaId
         toActor({ id: userId }),
     );
     return {
+        seasons: "epsPerSeason" in media ? media.epsPerSeason : [],
+        series: (media.collection ?? []).map(item => ({ ...item, mediaCover: mobileImagePath(item.mediaCover) })),
         genres: media.genres.filter((item) => item.name),
         actors: (media.actors ?? []).filter((item) => item.name),
         authors: (media.authors ?? []).filter((item) => item.name),
@@ -41,11 +45,11 @@ export async function getMobileMediaDetails(userId: number, { mediaType, mediaId
     };
 }
 
-export async function getMobileMediaCommunity(userId: number, { mediaType, mediaId }: Params, page: number) {
+export async function getMobileMediaCommunity(userId: number, { mediaType, mediaId }: Params, page: number, search?: string) {
     const { registries } = await getContainer();
     const service = registries.mediaService.get(mediaType);
     const [community, follows] = await Promise.all([
-        service.getMediaCommunityActivity(toActor({ id: userId }), mediaId, { page, perPage: 20 }),
+        service.getMediaCommunityActivity(toActor({ id: userId }), mediaId, { page, perPage: 20, ...(search ? { search } : {}) }),
         page === 1 ? service.getUserFollowsMediaData(userId, mediaId) : [],
     ]);
     const summarize = (item: (typeof community.items)[number], includeComment = false) => {
@@ -109,4 +113,18 @@ export async function refreshMobileMedia(userId: number, { mediaType, mediaId }:
     const { services } = await getContainer();
     const user = (await services.account.getUserById(userId))!;
     return refreshCatalogMedia(toActor(user), mediaType, mediaId);
+}
+
+export async function checkMobileGameHltb(_userId: number, { mediaType, mediaId }: Params) {
+    if (mediaType !== "games") throw new FormattedError("HLTB lookup is only available for games.");
+    const { registries } = await getContainer();
+    return registries.ingestionServices.get("games").checkMissingHltb(mediaId);
+}
+
+export const mobileJobSchema = mediaDetailsJobSchema.extend(mediaCatalogBrowseFiltersSchema.shape);
+
+export async function getMobileJob(userId: number, { mediaType, job, name, ...filters }: z.infer<typeof mobileJobSchema>) {
+    const { registries } = await getContainer();
+    const result = await registries.mediaService.get(mediaType).getMediaJobDetails(job, name, filters, userId);
+    return { ...result, items: result.items.map(item => ({ ...item, imageCover: mobileImagePath(item.imageCover) })) };
 }

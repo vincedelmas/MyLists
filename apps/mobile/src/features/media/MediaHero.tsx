@@ -1,11 +1,19 @@
-import {View, StyleSheet} from "react-native";
-import {Star} from "lucide-react-native";
+import {Pressable, View, StyleSheet} from "react-native";
+import {BookmarkCheck, ChevronRight, Heart, Star} from "lucide-react-native";
 import {AppText, Cover} from "../../components/ui";
 import type {MobileMedia} from "../../lib/api-client";
+import {Rating} from "../../components/rating";
+import {mediaColors, mediaLabels} from "../../lib/media";
 import {colors, spacing} from "../../theme";
 import {formatMinutes} from "@/lib/utils/formatting/number";
 
-export function MediaHero({ data }: { data: MobileMedia }) {
+export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
+    data: MobileMedia;
+    mediaType: keyof typeof mediaLabels;
+    pending: boolean;
+    onTrack: () => void;
+    onBookCover: () => void
+}) {
     const media = data.media;
     const time = media.completionHours
         ? `${formatMinutes(media.completionHours * 60, { compact: true })} · main story`
@@ -21,8 +29,11 @@ export function MediaHero({ data }: { data: MobileMedia }) {
                 </View>
             )}
             <View pointerEvents="box-none" style={[styles.identity, media.backdrop && styles.overlap]}>
-                <Cover pointerEvents="none" uri={media.cover} label={media.name} style={styles.poster}/>
+                <View style={{ gap: 4 }}><Cover pointerEvents="none" uri={media.cover} label={media.name} style={styles.poster}/>{media.needsCover &&
+                    <Pressable accessibilityRole="button" onPress={onBookCover} style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}><AppText
+                        style={{ fontSize: 12, color: colors.accent }}>Add cover</AppText></Pressable>}</View>
                 <View pointerEvents="none" style={[styles.info, media.backdrop && styles.overlapInfo]}>
+                    <AppText style={{ color: mediaColors[mediaType], fontSize: 11 }}>{mediaLabels[mediaType]}</AppText>
                     <AppText heading style={styles.title}>
                         {media.name}
                     </AppText>
@@ -46,12 +57,33 @@ export function MediaHero({ data }: { data: MobileMedia }) {
                     )}
                 </View>
             </View>
+            <Pressable accessibilityRole="button" accessibilityLabel={data.tracking ? "Manage this title in your list" : "Track this title"} disabled={pending} onPress={onTrack}
+                       style={({ pressed }) => [styles.track, pressed && { opacity: 0.6 }]}>
+                <BookmarkCheck size={21} color={colors.accent}/><View style={{ flex: 1, gap: 4 }}><AppText
+                style={{ fontSize: 14, fontWeight: "600" }}>{data.tracking ? data.tracking.status : data.active ? "Add to your list" : "Media list disabled"}</AppText><AppText
+                muted
+                style={{ fontSize: 11 }}>{data.tracking ? "Progress, rating & more" : data.active ? "Track, rate and remember" : "Enable this list in settings"}</AppText></View>
+                {data.tracking?.favorite && <Heart size={17} color={colors.favorite} fill={colors.favorite}/>}{data.tracking?.rating != null &&
+                <Rating value={data.tracking.rating} system={data.ratingSystem}/>}<ChevronRight size={18} color={colors.accent}/>
+            </Pressable>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    hero: { paddingBottom: spacing.xl },
+    hero: { paddingBottom: spacing.lg, gap: 16 },
+    track: {
+        marginHorizontal: 16,
+        minHeight: 64,
+        padding: 14,
+        borderRadius: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border
+    },
     backdrop: { height: 156 },
     backdropImage: { ...StyleSheet.absoluteFill, width: "100%", height: "100%", borderRadius: 0 },
     fade: {

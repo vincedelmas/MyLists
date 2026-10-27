@@ -1,3 +1,4 @@
+import {COMMENT_MAX_LENGTH} from "@/lib/utils/constants";
 import {useState} from "react";
 import {View} from "react-native";
 import {Button, Field} from "../../components/ui";
@@ -42,7 +43,7 @@ export function TrackingField({
                         value={value}
                         editable={!pending}
                         multiline={multiline}
-                        maxLength={multiline ? 5000 : undefined}
+                        maxLength={multiline ? COMMENT_MAX_LENGTH : undefined}
                         keyboardType={numeric ? (allowDecimals ? "decimal-pad" : "number-pad") : "default"}
                         onChangeText={(text) => setValue(numeric ? text.replace(",", ".") : text)}
                     />

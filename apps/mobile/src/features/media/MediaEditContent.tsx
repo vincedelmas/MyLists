@@ -1,3 +1,4 @@
+import {DateField} from "../../components/date-field";
 import {useState} from "react";
 import {useIsFocused} from "expo-router";
 import {useQuery} from "@tanstack/react-query";
@@ -61,26 +62,28 @@ function MediaEditForm({ params, fields }: { params: MediaParams; fields: Awaite
                                     />
                                 </Row>
                             </NativeHost>
-                        ) : (
-                            <Field
-                                key={key}
-                                label={key.replace(/([A-Z])/g, " $1").replace(/^./, (value) => value.toUpperCase())}
-                                value={String(values[key])}
-                                editable={!mutation.isPending}
-                                multiline={key === "synopsis"}
-                                autoCapitalize="none"
-                                onChangeText={(value) => setValues({ ...values, [key]: value })}
-                                placeholder={
-                                    key === "genres" || key === "authors"
-                                        ? "Comma-separated names"
-                                        : key.toLowerCase().includes("date")
-                                            ? "YYYY-MM-DD"
-                                            : key === "imageCover"
-                                                ? "https://…"
-                                                : undefined
-                                }
-                            />
-                        ),
+                        ) : key.toLowerCase().endsWith("date") ?
+                            <DateField key={key} clearable label={key.replace(/([A-Z])/g, " $1")} value={String(values[key])} disabled={mutation.isPending}
+                                       onChange={value => setValues({ ...values, [key]: value })}/> : (
+                                <Field
+                                    key={key}
+                                    label={key.replace(/([A-Z])/g, " $1").replace(/^./, (value) => value.toUpperCase())}
+                                    value={String(values[key])}
+                                    editable={!mutation.isPending}
+                                    multiline={key === "synopsis"}
+                                    autoCapitalize="none"
+                                    onChangeText={(value) => setValues({ ...values, [key]: value })}
+                                    placeholder={
+                                        key === "genres" || key === "authors"
+                                            ? "Comma-separated names"
+                                            : key.toLowerCase().includes("date")
+                                                ? "YYYY-MM-DD"
+                                                : key === "imageCover"
+                                                    ? "https://…"
+                                                    : undefined
+                                    }
+                                />
+                            ),
                     )}
                 </View>
             </Section>

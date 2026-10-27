@@ -19,9 +19,15 @@ export const useTrackingMutation = (params: MediaParams) => {
         onSuccess: async (result) => {
             if (result.kind !== "saved") return;
 
-            await Promise.all(
-                ["media", "lists", "profile", "search"].map((key) => client.invalidateQueries({ queryKey: [key] })),
-            );
+            await Promise.all([
+                client.invalidateQueries({ queryKey: ["media", params.mediaType, params.mediaId], exact: true }),
+                client.invalidateQueries({ queryKey: ["media", params.mediaType, params.mediaId, "history"] }),
+                client.invalidateQueries({ queryKey: ["media", params.mediaType, params.mediaId, "community"], refetchType: "none" }),
+                client.invalidateQueries({ queryKey: ["lists", params.mediaType], refetchType: "none" }),
+                client.invalidateQueries({ queryKey: ["lists", "summary"], refetchType: "none" }),
+                client.invalidateQueries({ queryKey: ["lists", "library"], refetchType: "none" }),
+                ...["profile", "search", "monthly-activity", "media-job"].map(key => client.invalidateQueries({ queryKey: [key], refetchType: "none" })),
+            ]);
         },
     });
 };
@@ -47,8 +53,11 @@ export function useMediaEditMutation() {
     const client = useQueryClient();
     return useMutation({
         mutationFn: api.saveMediaEdit,
-        onSuccess: async () => {
-            await Promise.all(["media", "lists", "search"].map((key) => client.invalidateQueries({ queryKey: [key] })));
+        onSuccess: async (_result, params) => {
+            await Promise.all([
+                client.invalidateQueries({ queryKey: ["media", params.mediaType, params.mediaId] }),
+                ...["lists", "search", "media-job"].map(key => client.invalidateQueries({ queryKey: [key], refetchType: "none" })),
+            ]);
         },
     });
 }

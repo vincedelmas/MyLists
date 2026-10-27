@@ -1,16 +1,19 @@
 import {Trash2} from "lucide-react-native";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {api} from "../../lib/api-client";
+import {api, type MediaParams} from "../../lib/api-client";
 import {useConfirmation} from "../../hooks/use-confirmation";
 
-export function useFeedDeletion() {
+export function useFeedDeletion(media?: MediaParams) {
     const client = useQueryClient();
     const { confirmation, confirm, dismiss } = useConfirmation();
     const mutation = useMutation({
         mutationFn: api.deleteHistory,
         onSuccess: async () => {
             dismiss();
-            await client.invalidateQueries({ queryKey: ["profile"] });
+            await Promise.all([client.invalidateQueries({
+                queryKey: ["profile"],
+                refetchType: media ? "none" : "active"
+            }), ...(media ? [client.invalidateQueries({ queryKey: ["media", media.mediaType, media.mediaId, "history"] })] : [])]);
         },
     });
 

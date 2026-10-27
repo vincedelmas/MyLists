@@ -1,3 +1,4 @@
+import type * as MediaPersonal from "../../../../src/lib/server/mobile/media-personal";
 import type * as Community from "../../../../src/lib/server/mobile/community";
 import type {getMcpConnections} from "../../../../src/lib/server/domain/mcp/mcp.repository";
 import type {DeleteAccountForm} from "../../../../src/lib/schemas/user-settings.schema";
@@ -136,11 +137,16 @@ export const api = {
             `/lists/${mediaType}/filter-search?${queryString({ field, query, userId })}`,
             signal,
         ),
+    mediaJob: (input: Parameters<typeof MediaSections.getMobileJob>[1], signal?: AbortSignal) => request<Result<typeof MediaSections.getMobileJob>>(`/catalog-job?${queryString(input)}`, signal),
+    mediaHistory: (params: MediaParams, page: number, signal?: AbortSignal) => request<Result<typeof MediaPersonal.getMobileMediaHistory>>(`${mediaPath(params)}/history?page=${page}`, signal),
+    mediaTags: (params: MediaParams, signal?: AbortSignal) => request<Result<typeof MediaPersonal.getMobileMediaTags>>(`${mediaPath(params)}/tags`, signal),
+    mediaAction: (params: MediaParams, input: Parameters<typeof MediaPersonal.actOnMobileMedia>[2]) => request<Result<typeof MediaPersonal.actOnMobileMedia>>(`${mediaPath(params)}/personal`, undefined, "POST", input, 30_000),
+    gameHltb: (params: MediaParams, signal?: AbortSignal) => request<Result<typeof MediaSections.checkMobileGameHltb>>(`${mediaPath(params)}/hltb`, signal, "POST", {}, 30_000),
     mediaDetails: (params: MediaParams, signal?: AbortSignal) =>
         request<Result<typeof MediaSections.getMobileMediaDetails>>(`${mediaPath(params)}/details`, signal),
-    mediaCommunity: (params: MediaParams, page: number, signal?: AbortSignal) =>
+    mediaCommunity: (params: MediaParams, page: number, signal?: AbortSignal, search?: string) =>
         request<Result<typeof MediaSections.getMobileMediaCommunity>>(
-            `${mediaPath(params)}/community?page=${page}`,
+            `${mediaPath(params)}/community?${queryString({ page, search })}`,
             signal,
         ),
     mediaCollections: (params: MediaParams, signal?: AbortSignal) =>

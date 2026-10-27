@@ -1,3 +1,7 @@
+import {getBooksContinueProgress, getGamesContinueProgress, getMangaContinueProgress, getTvContinueProgress} from "@/lib/utils/media/continue";
+import {DateField} from "../../components/date-field";
+import {formatDate, toDateInputValue} from "@/lib/utils/formatting/date";
+import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {useState} from "react";
 import {Pressable, StyleSheet, View} from "react-native";
 import {ChevronRight, Heart, MessageSquare, Pencil, RotateCcw, Star} from "lucide-react-native";
@@ -94,16 +98,20 @@ function ProgressEditor({ data, pending, update }: { data: MobileMedia; pending:
 
 export function TrackingEditor({
                                    data,
-                                   update,
+                                   update: saveUpdate,
                                    pending,
                                    error,
+                                   correcting = false,
                                }: {
     data: MobileMedia;
     update: Update;
     pending: boolean;
     error?: string;
+    correcting?: boolean;
 }) {
     const tracking = data.tracking!;
+    const [loggedAt, setLoggedAt] = useState("");
+    const update: Update = (payload, onSaved) => saveUpdate({ ...payload, ...(["tv", "page", "chapter", "playtime", "redo", "status"].includes(payload.type) && loggedAt ? { loggedAt } : {}) }, onSaved);
     const [editor, setEditor] = useState<"progress" | "rating" | "notes" | "platform" | "season" | "repeats" | null>(
         null,
     );
@@ -118,7 +126,7 @@ export function TrackingEditor({
             ? "Watched"
             : "Not watched"
         : tv
-            ? `S${tracking.currentSeason} · E${tracking.currentEpisode}`
+            ? `S${String(tracking.currentSeason).padStart(2, "0")}.E${String(tracking.currentEpisode).padStart(2, "0")}`
             : "actualPage" in tracking
                 ? `${tracking.actualPage ?? 0}`
                 : "currentChapter" in tracking
@@ -139,39 +147,22 @@ export function TrackingEditor({
                 : "playtime" in tracking
                     ? "Time played"
                     : "Watch history";
-    const quick =
-        movie && tracking.status !== "Completed"
+    const progressInfo = tv && data.seasons?.some(season => season.season === tracking.currentSeason && season.episodes != null)
+        ? getTvContinueProgress({ ...tracking, epsPerSeason: data.seasons.map(season => ({ season: season.season, episodes: season.episodes ?? 0 })) })
+        : "actualPage" in tracking ? getBooksContinueProgress({ ...tracking, pages: data.media.totalProgress ?? 0 })
+            : "currentChapter" in tracking ? getMangaContinueProgress({ ...tracking, chapters: data.media.totalProgress })
+                : "playtime" in tracking ? getGamesContinueProgress(tracking) : null;
+    const quick = movie ? tracking.status !== "Completed"
             ? { label: "Mark watched", payload: { type: "status", status: "Completed" } as const }
-            : tv
-                ? {
-                    label: "+1 episode",
-                    payload: {
-                        type: "tv",
-                        currentSeason: tracking.currentSeason,
-                        currentEpisode: tracking.currentEpisode + 1,
-                    } as const,
-                }
-                : "actualPage" in tracking
-                    ? {
-                        label: "+10 pages",
-                        payload: { type: "page", actualPage: (tracking.actualPage ?? 0) + 10 } as const,
-                    }
-                    : "currentChapter" in tracking
-                        ? {
-                            label: "+1 chapter",
-                            payload: { type: "chapter", currentChapter: tracking.currentChapter + 1 } as const,
-                        }
-                        : "playtime" in tracking
-                            ? {
-                                label: "+30 minutes",
-                                payload: { type: "playtime", playtime: (tracking.playtime ?? 0) + 30 } as const,
-                            }
-                            : {
-                                label: "Log a rewatch",
-                                payload: { type: "redo", redo: "redo" in tracking ? tracking.redo + 1 : 1 } as const,
-                            };
+            : { label: "Log a rewatch", payload: { type: "redo", redo: "redo" in tracking ? tracking.redo + 1 : 1 } as const }
+        : progressInfo?.update ? { label: progressInfo.actionLabel, payload: progressInfo.update.payload } : null;
     return (
         <View style={styles.content}>
+            <View style={{ gap: 10 }}><DateField label={loggedAt ? "Log for · backlogging" : "Log for · today"} value={loggedAt || toDateInputValue(new Date())}
+                                                 minimum={MIN_ACTIVITY_DATE} maximum={toDateInputValue(new Date())} disabled={pending}
+                                                 onChange={value => setLoggedAt(value === toDateInputValue(new Date()) ? "" : value)}/>{loggedAt && <><AppText muted>Progress will
+                be logged for {formatDate(loggedAt)}. Progress and monthly activity will use this date.</AppText><Button secondary label="Back to today" disabled={pending}
+                                                                                                                         onPress={() => setLoggedAt("")}/></>}</View>
             <View style={styles.progress}>
                 <AppText muted style={styles.eyebrow}>
                     {unit}
@@ -182,8 +173,9 @@ export function TrackingEditor({
                         {tracking.redo} {tracking.redo === 1 ? "rewatch" : "rewatches"}
                     </AppText>
                 )}
+                {progressInfo?.total != null && <AppText muted>{progressInfo.value} / {progressInfo.total} {data.progress.unit.plural}</AppText>}
                 <View style={styles.progressActions}>
-                    <Button label={quick.label} disabled={pending} onPress={() => update(quick.payload)}/>
+                    {quick && <Button label={quick.label} disabled={pending} onPress={() => update(quick.payload)}/>}
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Edit progress"
@@ -226,7 +218,7 @@ export function TrackingEditor({
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Edit your rating"
-                    disabled={pending}
+                    disabled={pending || !!loggedAt}
                     onPress={() => setEditor("rating")}
                     style={({ pressed }) => [styles.action, pressed && styles.pressed]}
                 >
@@ -244,7 +236,7 @@ export function TrackingEditor({
                     accessibilityRole="button"
                     accessibilityLabel={tracking.favorite ? "Remove from favorites" : "Add to favorites"}
                     accessibilityState={{ selected: !!tracking.favorite, disabled: pending }}
-                    disabled={pending}
+                    disabled={pending || !!loggedAt}
                     onPress={() => update({ type: "favorite", favorite: !tracking.favorite })}
                     style={({ pressed }) => [styles.action, pressed && styles.pressed]}
                 >
@@ -262,6 +254,7 @@ export function TrackingEditor({
             <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Edit your comments"
+                disabled={pending || !!loggedAt}
                 onPress={() => setEditor("notes")}
                 style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             >
@@ -275,7 +268,7 @@ export function TrackingEditor({
                 <ChevronRight size={18} color={colors.muted}/>
             </Pressable>
             {"platform" in tracking && (
-                <Pressable accessibilityRole="button" onPress={() => setEditor("platform")} style={styles.row}>
+                <Pressable accessibilityRole="button" disabled={pending || !!loggedAt} onPress={() => setEditor("platform")} style={styles.row}>
                     <View style={styles.rowText}>
                         <AppText>Platform</AppText>
                         <AppText muted>{tracking.platform || "Choose a platform"}</AppText>
@@ -311,6 +304,7 @@ export function TrackingEditor({
                             repeats: "Repeats",
                         }[editor]
                     }
+                    suspended={correcting}
                     error={error}
                     dismiss={close}
                 >
@@ -377,7 +371,7 @@ export function TrackingEditor({
                                         label="Season rating"
                                         value={season.rating}
                                         system={data.ratingSystem}
-                                        pending={pending}
+                                        pending={pending || !!loggedAt}
                                         onChange={(rating) =>
                                             update({ type: "rating", seasonRating: { season: season.season, rating } })
                                         }

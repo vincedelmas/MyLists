@@ -85,8 +85,8 @@ export class UpdateHistoryRepository {
         return { total, items };
     }
 
-    static getUserMediaHistory(userId: number, mediaType: MediaType, mediaId: number) {
-        return getDbClient()
+    static getUserMediaHistory(userId: number, mediaType: MediaType, mediaId: number, pagination?: { limit: number; offset: number }) {
+        const query = getDbClient()
             .select()
             .from(userMediaUpdate)
             .where(and(
@@ -94,7 +94,8 @@ export class UpdateHistoryRepository {
                 eq(userMediaUpdate.mediaType, mediaType),
                 eq(userMediaUpdate.mediaId, mediaId),
             ))
-            .orderBy(desc(userMediaUpdate.timestamp), desc(userMediaUpdate.id)).all();
+            .orderBy(desc(userMediaUpdate.timestamp), desc(userMediaUpdate.id)).$dynamic();
+        return pagination ? query.limit(pagination.limit).offset(pagination.offset).all() : query.all();
     }
 
     static async getFollowsUpdates(profileOwnerId: number, actor: Actor, limit = 10) {

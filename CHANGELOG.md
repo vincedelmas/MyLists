@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.15.0](https://github.com/vincedelmas/MyLists/compare/v3.14.0...v3.15.0) (2026-10-27)
+
+
+### Features
+
+* refine mobile shortcuts and add dedicated mobile search ([45d913a](https://github.com/vincedelmas/MyLists/commit/45d913ab683df6973adbb05da39a78a7af518b2c))
+
+
+### Bug Fixes
+
+* **ui:** prevent calendar remounts and list view refetches ([645f401](https://github.com/vincedelmas/MyLists/commit/645f401df2ecc9fc483e96df0e8ed339134ab0c2))
+
+
+### Performance Improvements
+
+* apply saved media immediately and paginate social and continue lists ([a9c10c5](https://github.com/vincedelmas/MyLists/commit/a9c10c5574c098e1f1de2188e7787f72c874d353))
+* defer analytics loading until after rendering ([5635c59](https://github.com/vincedelmas/MyLists/commit/5635c59c24852252bc5876d09e9ebb5b9c0d2bdf))
+* fetch tracking header and list in parallel ([177f6ab](https://github.com/vincedelmas/MyLists/commit/177f6abf3e534d908486ecdd9a7039524cd2d409))
+* keep media UI out of global search controls ([a430d15](https://github.com/vincedelmas/MyLists/commit/a430d15a7354d1d1288f0798feae5a329b2dc158))
+* limit filtered dynamic-list covers to visible page ([bcaf360](https://github.com/vincedelmas/MyLists/commit/bcaf3609012d966ec41176844fa142977bc3776e))
+
 ## [3.14.0](https://github.com/vincedelmas/MyLists/compare/v3.13.1...v3.14.0) (2026-10-24)
 
 

@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {
     getMobileProfile,
+    getMobileHistory,
     deleteMobileHistory,
     getMobileProfileActivity,
     getMobileProfileExtras,
@@ -26,6 +27,7 @@ const mocks = vi.hoisted(() => ({
     lists: vi.fn(),
     highlights: vi.fn(),
     activity: vi.fn(),
+    history: vi.fn(),
 }));
 vi.mock("@/lib/server/domain/profile/profile-pins.queries", () => ({ getProfilePinnedItems: mocks.pins }));
 vi.mock("./activity", () => ({
@@ -54,7 +56,7 @@ vi.mock("@/lib/server/core/container", () => ({
                 userPerMediaSummaryStats: mocks.lists,
             },
             profile: { resolveHighlightedMedia: mocks.highlights },
-            updateHistory: { deleteUserUpdates: mocks.deleteUpdates, getUserUpdates: mocks.activity, getFollowsUpdates: mocks.feed },
+            updateHistory: { getUserUpdatesPaginated: mocks.history, deleteUserUpdates: mocks.deleteUpdates, getUserUpdates: mocks.activity, getFollowsUpdates: mocks.feed },
         },
     }),
 }));
@@ -245,4 +247,11 @@ describe("isolated mobile profile API", () => {
         expect(response.status).toBe(500);
         expect(await response.text()).not.toContain("private database details");
     });
+    it("searches a bounded feed page for only the selected authorized profile", async () => {
+        mocks.history.mockResolvedValue({ total: 61, items: [{ id: 7, mediaType: "movies", timestamp: "2026-10-21 14:00:00" }] });
+        const result = await getMobileHistory(10, 2, "Film");
+        expect(mocks.history).toHaveBeenCalledWith({ page: 2, perPage: 30, search: "Film" }, 10);
+        expect(result).toMatchObject({ page: 2, pages: 3, total: 61, ratingSystem: "score", items: [{ id: 7, timestamp: "2026-10-21T14:00:00.000Z" }] });
+    });
+
 });

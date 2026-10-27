@@ -3,7 +3,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {mobileRequest} from "@/lib/server/mobile/request";
 import {getMobileHistory, deleteMobileHistory} from "@/lib/server/mobile/profile";
 import {deleteUserUpdatesSchema} from "@/lib/schemas/user-media.schema";
-import {coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {coercedPositiveIntFieldSchema, optionalTrimmedSearchFieldSchema} from "@/lib/schemas/common.schema";
 
 export const Route = createFileRoute("/api/mobile/v1/profile/history")({
     server: {
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/api/mobile/v1/profile/history")({
                     getMobileHistory(
                         await resolveMobileProfileUser(request, userId),
                         coercedPositiveIntFieldSchema.parse(new URL(request.url).searchParams.get("page") ?? 1),
+                        optionalTrimmedSearchFieldSchema.parse(new URL(request.url).searchParams.get("search") ?? undefined),
                     ),
                 ),
         },

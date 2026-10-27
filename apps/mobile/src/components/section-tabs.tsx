@@ -3,21 +3,23 @@ import {colors} from "../theme";
 import type {LucideIcon} from "lucide-react-native";
 import {Pressable, StyleSheet, ScrollView, View, type ViewProps} from "react-native";
 
+
 export interface SectionTab<T extends string> {
     value: T;
     label: string;
-    icon: LucideIcon;
     count?: number;
+    icon: LucideIcon;
 }
+
 
 export interface SectionTabsProps<T extends string> {
     value: T;
-    onChange: (value: T) => void;
-    onLayout?: ViewProps["onLayout"];
     scrollable?: boolean;
     showIndicator?: boolean;
+    onChange: (value: T) => void;
     layout?: "stacked" | "inline";
     tabs: readonly SectionTab<T>[];
+    onLayout?: ViewProps["onLayout"];
     action?: {
         label: string;
         busy?: boolean;
@@ -27,31 +29,25 @@ export interface SectionTabsProps<T extends string> {
     };
 }
 
-export function SectionTabs<T extends string>({
-                                                  tabs,
-                                                  value,
-                                                  onChange,
-                                                  onLayout,
-                                                  action,
-                                                  scrollable = false,
-                                                  showIndicator = true,
-                                                  layout = "stacked",
-                                              }: SectionTabsProps<T>) {
+
+export function SectionTabs<T extends string>(props: SectionTabsProps<T>) {
+    const { tabs, value, onChange, onLayout, action, scrollable = false, showIndicator = true, layout = "stacked" } = props;
+
     const content = (
         <>
             {tabs.map(({ value: key, label, icon: Icon, count }) => (
                 <Pressable
                     key={key}
                     accessibilityRole="tab"
-                    accessibilityLabel={count === undefined ? label : `${label}, ${count}`}
                     onPress={() => onChange(key)}
                     accessibilityState={{ selected: value === key }}
+                    accessibilityLabel={count === undefined ? label : `${label}, ${count}`}
                     style={({ pressed }) => [
                         styles.tab,
+                        pressed && styles.pressed,
                         scrollable && styles.scrollTab,
                         layout === "inline" && styles.inlineTab,
                         showIndicator && value === key && styles.selected,
-                        pressed && styles.pressed,
                     ]}
                 >
                     <View style={styles.iconRow}>
@@ -76,37 +72,43 @@ export function SectionTabs<T extends string>({
                 <Pressable
                     onPress={action.onPress}
                     accessibilityRole="button"
+                    disabled={action.disabled}
                     accessibilityLabel={action.label}
                     accessibilityState={{ disabled: action.disabled, busy: action.busy }}
-                    disabled={action.disabled}
                     style={({ pressed }) => [
                         styles.tab,
                         scrollable && styles.scrollTab,
                         action.disabled ? styles.disabled : pressed && styles.pressed,
                     ]}
                 >
-                    <action.icon size={19} color={colors.muted}/>
-                    <AppText style={styles.actionLabel}>{action.busy ? "Refreshing" : action.label}</AppText>
+                    <action.icon
+                        size={19}
+                        color={colors.muted}
+                    />
+                    <AppText style={styles.actionLabel}>
+                        {action.busy ? "Refreshing" : action.label}
+                    </AppText>
                 </Pressable>
             )}
         </>
     );
-    return scrollable ? (
+
+    return scrollable ?
         <ScrollView
             horizontal
             onLayout={onLayout}
-            showsHorizontalScrollIndicator={false}
             style={styles.scroll}
+            showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.container}
         >
             {content}
         </ScrollView>
-    ) : (
+        :
         <View onLayout={onLayout} style={styles.container}>
             {content}
         </View>
-    );
 }
+
 
 const styles = StyleSheet.create({
     scroll: { flexGrow: 0 },
@@ -114,7 +116,7 @@ const styles = StyleSheet.create({
     inlineTab: { flexDirection: "row", gap: 7, paddingHorizontal: 14 },
     inlineLabel: { fontSize: 12, lineHeight: 18 },
     iconRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-    count: { fontSize: 11, lineHeight: 16, fontWeight: "700", color: colors.muted, fontVariant: ["tabular-nums"] },
+    count: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: colors.muted, fontVariant: ["tabular-nums"] },
     container: {
         flexDirection: "row",
         borderBottomWidth: 1,
@@ -124,7 +126,7 @@ const styles = StyleSheet.create({
     tab: {
         gap: 3,
         flex: 1,
-        minHeight: 52,
+        minHeight: 62,
         paddingVertical: 6,
         alignItems: "center",
         paddingHorizontal: 2,
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     selected: { borderBottomColor: colors.accent },
-    label: { fontSize: 10, lineHeight: 14, fontWeight: "600", color: colors.muted },
+    label: { fontSize: 11, lineHeight: 14, fontWeight: "600", color: colors.muted },
     selectedLabel: { color: colors.accent },
     actionLabel: { fontSize: 10, lineHeight: 14, color: colors.muted },
     pressed: { opacity: 0.6 },

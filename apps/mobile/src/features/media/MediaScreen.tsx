@@ -19,21 +19,32 @@ import {MediaEditContent} from "./MediaEditContent";
 import {MediaCorrectionSheet} from "./media-correction-sheet";
 import {MediaCoverSheet} from "./media-cover-sheet";
 
+
 type Correction = { payload: UpdateInput["payload"]; preview: ActivityCorrectionPreview; onSaved?: () => void };
+
 
 export function MediaScreen() {
     const focused = useIsFocused();
     const params = useLocalSearchParams<{ mediaType: MediaParams["mediaType"]; mediaId: string }>();
-    return <MediaContent key={`${params.mediaType}:${params.mediaId}`} media={{ mediaType: params.mediaType, mediaId: Number(params.mediaId) }} focused={focused}/>;
+
+    return (
+        <MediaContent
+            focused={focused}
+            key={`${params.mediaType}:${params.mediaId}`}
+            media={{ mediaType: params.mediaType, mediaId: Number(params.mediaId) }}
+        />
+    );
 }
 
+
 function MediaContent({ media, focused }: { media: MediaParams; focused: boolean }) {
-    const [saved, setSaved] = useState(false);
-    const [correction, setCorrection] = useState<Correction | null>(null);
-    const [cover, setCover] = useState(false);
     const mutation = useTrackingMutation(media);
     const refresh = useMediaRefreshMutation(media);
+    const [saved, setSaved] = useState(false);
+    const [cover, setCover] = useState(false);
     const query = useQuery({ ...mediaOptions(media), enabled: focused });
+    const [correction, setCorrection] = useState<Correction | null>(null);
+
     const update = (payload: UpdateInput["payload"], activityCorrection?: UpdateInput["activityCorrection"], onSaved?: () => void) => {
         setSaved(false);
         mutation.mutate({ action: "update", input: { payload, activityCorrection } }, {
@@ -43,58 +54,95 @@ function MediaContent({ media, focused }: { media: MediaParams; focused: boolean
                     setCorrection(null);
                     onSaved?.();
                 }
-                else setCorrection({ payload, preview: result.preview, onSaved });
+                else {
+                    setCorrection({ payload, preview: result.preview, onSaved });
+                }
             }
         });
     };
-    return <Page title={mediaLabels[media.mediaType] ?? "Media"} brand back action={<Pressable accessibilityRole="button" accessibilityLabel="Refresh metadata"
-                                                                                               accessibilityState={{
-                                                                                                   disabled: !query.data?.refresh.allowed || refresh.isPending,
-                                                                                                   busy: refresh.isPending
-                                                                                               }} disabled={!query.data?.refresh.allowed || refresh.isPending}
-                                                                                               onPress={() => refresh.mutate()} style={{
-        width: 48,
-        height: 48,
-        justifyContent: "center",
-        alignItems: "center",
-        opacity: query.data?.refresh.allowed ? 1 : 0.35
-    }}><RefreshCw size={20} color={colors.muted}/></Pressable>}>
-        {refresh.error && <AppText accessibilityRole="alert" style={{ padding: 12 }}>{refresh.error.message}</AppText>}
-        {refresh.isSuccess && <AppText accessibilityRole="alert" style={{ padding: 12 }}>Metadata refreshed.</AppText>}
-        <QueryPanel query={query}>{data => <>
-            <CollapsingTabs initialTab="details" tabLayout="stacked" scrollable={data.canEdit} tabs={[
-                { value: "details", label: "Overview", icon: Info }, { value: "tracking", label: "Your list", icon: BookmarkCheck }, {
-                    value: "community",
-                    label: "Community",
-                    icon: UsersRound
-                }, ...(data.canEdit ? [{ value: "edit", label: "Edit", icon: Pencil }] : []),
-            ]} header={selectTab => <MediaHero data={data} mediaType={media.mediaType} pending={mutation.isPending} onTrack={() => selectTab("tracking")}
-                                               onBookCover={() => setCover(true)}/>}
-            >
-                {tab => <>
-                    {tab === "details" && <MediaDetailsContent params={media} data={data} refetch={query.refetch} refreshing={query.isRefetching}/>}
-                    {tab === "community" && <MediaCommunityContent params={media}/>}
-                    {tab === "tracking" &&
-                        <MediaTrackingContent params={media} data={data} pending={mutation.isPending} correcting={!!correction} saved={saved} error={mutation.error?.message}
-                                              update={(payload, onSaved) => update(payload, undefined, onSaved)} add={() => {
-                            setSaved(false);
-                            mutation.mutate({ action: "add" });
-                        }} remove={onSaved => {
-                            setSaved(false);
-                            mutation.mutate({ action: "remove" }, {
-                                onSuccess: () => {
-                                    setSaved(true);
-                                    onSaved();
-                                }
-                            });
-                        }} refetch={query.refetch} refreshing={query.isRefetching}/>}
-                    {tab === "edit" && data.canEdit && <MediaEditContent params={media}/>}
-                </>}
-            </CollapsingTabs>
-            {cover && <MediaCoverSheet shared params={media} data={data} dismiss={() => setCover(false)}/>}
-        </>}</QueryPanel>
-        {correction &&
-            <MediaCorrectionSheet key={correction.preview.version} preview={correction.preview} media={media} pending={mutation.isPending} error={mutation.error?.message}
-                                  dismiss={() => setCorrection(null)} confirm={choice => update(correction.payload, choice, correction.onSaved)}/>}
-    </Page>;
+
+    return (
+        <Page
+            back={true}
+            brand={true}
+            title={mediaLabels[media.mediaType] ?? "Media"}
+            action={
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Refresh metadata"
+                    onPress={() => refresh.mutate()}
+                    disabled={!query.data?.refresh.allowed || refresh.isPending}
+                    accessibilityState={{ disabled: !query.data?.refresh.allowed || refresh.isPending, busy: refresh.isPending }}
+                    style={{
+                        width: 48,
+                        height: 48,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        opacity: query.data?.refresh.allowed ? 1 : 0.35
+                    }}
+                >
+                    <RefreshCw size={20} color={colors.muted}/>
+                </Pressable>
+            }
+        >
+            {refresh.error &&
+                <AppText accessibilityRole="alert" style={{ padding: 12 }}>
+                    {refresh.error.message}
+                </AppText>
+            }
+
+            {refresh.isSuccess &&
+                <AppText accessibilityRole="alert" style={{ padding: 12 }}>
+                    Metadata refreshed.
+                </AppText>
+            }
+
+            <QueryPanel query={query}>{data => <>
+                <CollapsingTabs
+                    tabLayout="stacked"
+                    initialTab="details"
+                    scrollable={data.canEdit}
+                    tabs={[
+                        { value: "details", label: "Overview", icon: Info },
+                        { value: "tracking", label: "Your list", icon: BookmarkCheck },
+                        { value: "community", label: "Community", icon: UsersRound },
+                        ...(data.canEdit ? [{ value: "edit", label: "Edit", icon: Pencil }] : []),
+                    ]}
+                    header={selectTab =>
+                        <MediaHero
+                            data={data}
+                            mediaType={media.mediaType}
+                            pending={mutation.isPending}
+                            onBookCover={() => setCover(true)}
+                            onTrack={() => selectTab("tracking")}
+                        />
+                    }
+                >
+                    {tab => <>
+                        {tab === "details" && <MediaDetailsContent params={media} data={data} refetch={query.refetch} refreshing={query.isRefetching}/>}
+                        {tab === "community" && <MediaCommunityContent params={media}/>}
+                        {tab === "tracking" &&
+                            <MediaTrackingContent params={media} data={data} pending={mutation.isPending} correcting={!!correction} saved={saved} error={mutation.error?.message}
+                                                  update={(payload, onSaved) => update(payload, undefined, onSaved)} add={() => {
+                                setSaved(false);
+                                mutation.mutate({ action: "add" });
+                            }} remove={onSaved => {
+                                setSaved(false);
+                                mutation.mutate({ action: "remove" }, {
+                                    onSuccess: () => {
+                                        setSaved(true);
+                                        onSaved();
+                                    }
+                                });
+                            }} refetch={query.refetch} refreshing={query.isRefetching}/>}
+                        {tab === "edit" && data.canEdit && <MediaEditContent params={media}/>}
+                    </>}
+                </CollapsingTabs>
+                {cover && <MediaCoverSheet shared params={media} data={data} dismiss={() => setCover(false)}/>}
+            </>}</QueryPanel>
+            {correction &&
+                <MediaCorrectionSheet key={correction.preview.version} preview={correction.preview} media={media} pending={mutation.isPending} error={mutation.error?.message}
+                                      dismiss={() => setCorrection(null)} confirm={choice => update(correction.payload, choice, correction.onSaved)}/>}
+        </Page>
+    );
 }

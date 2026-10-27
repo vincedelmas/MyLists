@@ -1,20 +1,22 @@
-import {useEffect, useRef, useState, type ComponentRef, type ReactNode} from "react";
-import {Animated, Keyboard, ScrollView, View} from "react-native";
-import {SectionTabs, type SectionTab} from "./section-tabs";
 import {colors} from "../theme";
+import {SectionTabs, type SectionTab} from "./section-tabs";
+import {Animated, Keyboard, ScrollView, View} from "react-native";
+import {useEffect, useRef, useState, type ComponentRef, type ReactNode} from "react";
+
 
 interface PagedTabsProps<T extends string> {
-    tabs: readonly SectionTab<T>[];
     value: T;
     onChange: (value: T) => void;
+    tabs: readonly SectionTab<T>[];
     children: (tab: T) => ReactNode;
 }
 
+
 export function PagedTabs<T extends string>({ tabs, value, onChange, children }: PagedTabsProps<T>) {
-    const pageIndex = useRef(tabs.findIndex((tab) => tab.value === value));
     const [width, setWidth] = useState(0);
     const pager = useRef<ComponentRef<typeof ScrollView>>(null);
     const [scrollX] = useState(() => new Animated.Value(0));
+    const pageIndex = useRef(tabs.findIndex((tab) => tab.value === value));
 
     useEffect(() => {
         const x = pageIndex.current * width;
@@ -40,24 +42,24 @@ export function PagedTabs<T extends string>({ tabs, value, onChange, children }:
                     pointerEvents="none"
                     style={{
                         position: "absolute", bottom: 0, left: 0,
-                        height: 2, width: width / tabs.length, backgroundColor: colors.accent,
                         transform: [{ translateX: Animated.divide(scrollX, tabs.length) }],
+                        height: 2, width: width / tabs.length, backgroundColor: colors.accent,
                     }}
                 />
             </View>
             {width > 0 && (
                 <Animated.ScrollView
-                    ref={pager}
                     horizontal
+                    ref={pager}
                     pagingEnabled
-                    directionalLockEnabled
-                    nestedScrollEnabled
                     bounces={false}
+                    nestedScrollEnabled
                     overScrollMode="never"
-                    showsHorizontalScrollIndicator={false}
+                    directionalLockEnabled
+                    scrollEventThrottle={16}
                     keyboardDismissMode="on-drag"
                     keyboardShouldPersistTaps="handled"
-                    scrollEventThrottle={16}
+                    showsHorizontalScrollIndicator={false}
                     onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true })}
                     onMomentumScrollEnd={({ nativeEvent }) => {
                         pageIndex.current = Math.round(nativeEvent.contentOffset.x / width);

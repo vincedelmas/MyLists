@@ -162,12 +162,12 @@ export const getMobileAchievements = async (userId: number) => {
         }));
 };
 
-export const getMobileHistory = async (userId: number, page: number) => {
+export const getMobileHistory = async (userId: number, page: number, search?: string) => {
     const { services } = await getContainer();
 
     const [user, result] = await Promise.all([
         services.account.getUserById(userId),
-        services.updateHistory.getUserUpdatesPaginated({ page, perPage: 30 }, userId),
+        services.updateHistory.getUserUpdatesPaginated({ page, perPage: 30, search }, userId),
     ]);
 
     return {

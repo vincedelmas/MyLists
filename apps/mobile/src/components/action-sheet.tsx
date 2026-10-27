@@ -26,7 +26,7 @@ export function ActionSheet({
     const Container = scrollable ? ScrollView : View;
     const { width, height } = useWindowDimensions();
     return (
-        <NativeHost>
+        <NativeHost style={styles.host} matchContents={false} pointerEvents="none">
             <BottomSheet
                 isPresented={!suspended}
                 onDismiss={() => {
@@ -58,6 +58,7 @@ export function ActionSheet({
 }
 
 const styles = StyleSheet.create({
+    host: { position: "absolute" },
     content: { padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
     error: { color: colors.error },
 });

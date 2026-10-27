@@ -12,7 +12,7 @@ import {useTabPush} from "../../hooks/use-tab-push";
 import {AppText, Cover, QueryPanel, Card} from "../../components/ui";
 import {ConfirmationSheet} from "../../components/confirmation-sheet";
 import {useFeedDeletion} from "./use-feed-deletion";
-import {formatActivity} from "./profile-formatting";
+import {formatActivityParts} from "./profile-formatting";
 import {profileActivityOptions, profileFollowsFeedOptions} from "../../lib/react-query/query-options/profile.options";
 
 type FeedItem = MobileProfileActivity[number] | Awaited<ReturnType<typeof api.profileExtras>>["followsFeed"][number];
@@ -70,6 +70,7 @@ export const FeedRows = memo(function FeedRows({
     return items.map((item) => {
         const Icon = mediaIcons[item.mediaType];
         const author = "avatar" in item ? item : null;
+        const payload = formatActivityParts(item, author?.ratingSystem ?? ratingSystem);
         return <View key={item.id} style={styles.row}>
             {author ? <Pressable accessibilityRole="button" accessibilityLabel={`View ${author.username}'s profile`} style={styles.author}
                                  onPress={() => push({ pathname: "/people/[userId]", params: { userId: String(author.userId) } })}>
@@ -85,7 +86,8 @@ export const FeedRows = memo(function FeedRows({
                        onPress={() => push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType: item.mediaType, mediaId: String(item.mediaId) } })}>
                 {author && <AppText numberOfLines={1} style={styles.username}>{author.username}</AppText>}
                 <View style={styles.heading}><Icon size={12} color={mediaColors[item.mediaType]}/><AppText numberOfLines={2} style={styles.title}>{item.mediaName}</AppText></View>
-                <AppText muted numberOfLines={2} style={styles.description}>{formatActivity(item, author?.ratingSystem ?? ratingSystem)}</AppText>
+                <AppText muted numberOfLines={2} style={styles.description}>{payload.prefix}{payload.before !== null && <>{payload.before}<AppText
+                    style={{ color: colors.accent }}> → </AppText></>}<AppText style={{ color: colors.text }}>{payload.after}</AppText></AppText>
                 <AppText muted style={styles.date}>{formatDate(item.timestamp)}</AppText>
             </Pressable>
         </View>;

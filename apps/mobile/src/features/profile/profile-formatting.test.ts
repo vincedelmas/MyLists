@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {formatActivity} from "./profile-formatting";
+import {formatActivity, formatActivityParts} from "./profile-formatting";
 
 describe("mobile activity payloads", () => {
     it.each([
@@ -44,4 +44,17 @@ describe("mobile activity payloads", () => {
             ),
         ).toBe("Rating: Awful → Loved");
     });
+    it("separates old and new values without splitting arrows inside comments", () => {
+        expect(formatActivityParts({
+            mediaType: "books",
+            updateType: "comment",
+            payload: { old_value: "Old → comment", new_value: "New → comment" }
+        }, "score")).toEqual({ prefix: "Comments: ", before: "Old → comment", after: "New → comment" });
+        expect(formatActivityParts({ mediaType: "series", updateType: "status", payload: { old_value: null, new_value: "Plan to Watch" } }, "score")).toEqual({
+            prefix: "",
+            before: null,
+            after: "Plan to Watch"
+        });
+    });
+
 });

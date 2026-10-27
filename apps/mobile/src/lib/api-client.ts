@@ -187,8 +187,8 @@ export const api = {
         request<Result<typeof Profile.deleteMobileHistory>>("/profile/history", undefined, "DELETE", { updateIds: [updateId] }),
     continueMedia: (input: Parameters<typeof Library.continueMobileMedia>[1]) =>
         request<Result<typeof Library.continueMobileMedia>>("/library/detail", undefined, "POST", input),
-    history: (page: number, signal?: AbortSignal, userId?: number) =>
-        request<Result<typeof Profile.getMobileHistory>>(`/profile/history?${queryString({ page, userId })}`, signal),
+    history: (page: number, signal?: AbortSignal, userId?: number, search?: string) =>
+        request<Result<typeof Profile.getMobileHistory>>(`/profile/history?${queryString({ page, userId, search })}`, signal),
     stats: (tab: Parameters<typeof Profile.getMobileStats>[1], signal?: AbortSignal, userId?: number) =>
         request<Result<typeof Profile.getMobileStats>>(`/profile/stats?${queryString({ tab, userId })}`, signal),
     profileExtras: (signal?: AbortSignal, userId?: number) =>

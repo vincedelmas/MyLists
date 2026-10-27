@@ -33,12 +33,19 @@ const activityValue = (value: unknown, update: Activity, ratingSystem: RatingSys
     }
 };
 
-export const formatActivity = (update: Activity, ratingSystem: RatingSystem) => {
-    if (!update.payload) return "Entry updated";
+export const formatActivityParts = (update: Activity, ratingSystem: RatingSystem) => {
+    if (!update.payload) return { prefix: "", before: null, after: "Entry updated" };
     const labels = { rating: "Rating", comment: "Comments", platform: "Platform", redo: "Repeats" } as const;
-    const label = update.updateType in labels ? `${labels[update.updateType as keyof typeof labels]}: ` : "";
-    if (update.payload.old_value === null || update.payload.old_value === undefined || update.payload.old_value === "") {
-        return `${label}${activityValue(update.payload.new_value, update, ratingSystem)}`;
-    }
-    return `${label}${activityValue(update.payload.old_value, update, ratingSystem)} → ${activityValue(update.payload.new_value, update, ratingSystem)}`;
+    const prefix = update.updateType in labels ? `${labels[update.updateType as keyof typeof labels]}: ` : "";
+    const oldValue = update.payload.old_value;
+    return {
+        prefix,
+        before: oldValue === null || oldValue === undefined || oldValue === "" ? null : activityValue(oldValue, update, ratingSystem),
+        after: activityValue(update.payload.new_value, update, ratingSystem)
+    };
+};
+
+export const formatActivity = (update: Activity, ratingSystem: RatingSystem) => {
+    const { prefix, before, after } = formatActivityParts(update, ratingSystem);
+    return `${prefix}${before === null ? "" : `${before} → `}${after}`;
 };

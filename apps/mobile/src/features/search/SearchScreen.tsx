@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.border
     },
     personResult: { minHeight: 88 },
-    cover: { width: 62, height: 93, borderRadius: 9 },
+    cover: { width: 74, height: 112, borderRadius: 9 },
     avatar: { width: 50, height: 50, borderRadius: 25 },
     coverFallback: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" },
     initial: { fontSize: 20, fontWeight: "700", color: colors.muted },

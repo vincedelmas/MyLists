@@ -68,10 +68,13 @@ const ContinueCards = memo(function ContinueCards({
                     const color = mediaColors[item.mediaType];
                     return <Pressable accessibilityRole="button"
                                       accessibilityLabel={`${readOnly ? "View" : "Continue"} ${item.name}, ${item.progress.label}`}
-                                      onPress={() => readOnly ? push({
-                                          pathname: "/media/[mediaType]/[mediaId]",
-                                          params: { mediaType: item.mediaType, mediaId: String(item.mediaId) }
-                                      }) : setSelectedId(`${item.mediaType}:${item.mediaId}`)}
+                                      accessibilityHint={readOnly ? undefined : "Long press to update progress"}
+                                      accessibilityActions={readOnly ? undefined : [{ name: "continue", label: "Update progress" }]}
+                                      onAccessibilityAction={event => {
+                                          if (!readOnly && event.nativeEvent.actionName === "continue") setSelectedId(`${item.mediaType}:${item.mediaId}`);
+                                      }}
+                                      onLongPress={readOnly ? undefined : () => setSelectedId(`${item.mediaType}:${item.mediaId}`)}
+                                      onPress={() => push({ pathname: "/media/[mediaType]/[mediaId]", params: { mediaType: item.mediaType, mediaId: String(item.mediaId) } })}
                                       style={({ pressed }) => [styles.card, { width: Math.min(320, width - 64) }, pressed && styles.pressed]}>
                         <Cover uri={item.cover} label={item.name} style={styles.cover}/>
                         <View style={styles.details}>

@@ -7,6 +7,7 @@ import {mediaColors, mediaLabels} from "../../lib/media";
 import {colors, spacing} from "../../theme";
 import {formatMinutes} from "@/lib/utils/formatting/number";
 
+
 export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
     data: MobileMedia;
     mediaType: keyof typeof mediaLabels;
@@ -20,6 +21,7 @@ export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
         : media.duration
             ? formatMinutes(media.duration, { compact: true })
             : null;
+
     return (
         <View pointerEvents="box-none" style={styles.hero}>
             {media.backdrop && (
@@ -28,8 +30,10 @@ export function MediaHero({ data, mediaType, pending, onTrack, onBookCover }: {
                     <View style={styles.fade}/>
                 </View>
             )}
+
             <View pointerEvents="box-none" style={[styles.identity, media.backdrop && styles.overlap]}>
-                <View style={{ gap: 4 }}><Cover pointerEvents="none" uri={media.cover} label={media.name} style={styles.poster}/>{media.needsCover &&
+                <View style={{ gap: 4 }}>
+                    <Cover pointerEvents="none" uri={media.cover} label={media.name} style={styles.poster}/>{media.needsCover &&
                     <Pressable accessibilityRole="button" onPress={onBookCover} style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}><AppText
                         style={{ fontSize: 12, color: colors.accent }}>Add cover</AppText></Pressable>}</View>
                 <View pointerEvents="none" style={[styles.info, media.backdrop && styles.overlapInfo]}>

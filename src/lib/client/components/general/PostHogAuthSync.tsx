@@ -1,11 +1,7 @@
-import {clientEnv} from "@/env/client";
-import type {PostHog} from "posthog-js";
 import {useEffect, useRef} from "react";
 import {useLocation} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-
-
-let posthog: PostHog | null = null;
+import {loadAnalytics} from "@/lib/client/analytics";
 
 
 export function PostHogAuthSync() {
@@ -18,27 +14,12 @@ export function PostHogAuthSync() {
     const isSensitiveRoute = location.pathname.startsWith("/reset-password");
 
     useEffect(() => {
-        const key = clientEnv.VITE_PUBLIC_POSTHOG_KEY;
-        if (isSensitiveRoute || !import.meta.env.PROD || !key) {
-            prevSync.current = null;
-            return;
-        }
+        if (isSensitiveRoute) return;
 
         let cancelled = false;
 
-        void import("posthog-js").then(({ default: posthogClient }) => {
-            if (cancelled) return;
-
-            posthog ??= posthogClient.init(key, {
-                autocapture: false,
-                disable_surveys: false,
-                capture_pageview: false,
-                capture_pageleave: false,
-                persistence: "localStorage",
-                disable_session_recording: true,
-                person_profiles: "identified_only",
-                api_host: clientEnv.VITE_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com",
-            });
+        void loadAnalytics().then(posthog => {
+            if (cancelled || !posthog) return;
 
             const prev = prevSync.current;
 
@@ -46,7 +27,7 @@ export function PostHogAuthSync() {
                 if (userId) {
                     posthog.identify(userId, username ? { username } : undefined);
                 }
-                else {
+                else if (prev?.userId) {
                     posthog.reset();
                 }
             }

@@ -160,7 +160,6 @@ function TrackingListPage() {
                         isCurrent={isCurrent}
                         mediaType={mediaType}
                         mediaItems={apiData.results.items}
-                        queryOption={mediaListQueryOptions}
                     />
                     :
                     <MediaTable
@@ -168,7 +167,6 @@ function TrackingListPage() {
                         mediaType={mediaType}
                         isCurrent={isCurrent}
                         results={apiData.results}
-                        queryOption={mediaListQueryOptions}
                         onChangePage={(filters) => handleFilterChange(filters)}
                     />
                 }

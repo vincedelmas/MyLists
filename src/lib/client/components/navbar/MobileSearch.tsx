@@ -1,10 +1,11 @@
 import {useRef, useState} from "react";
 import {Link} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
+import {captureEvent} from "@/lib/client/analytics";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {capitalize} from "@/lib/utils/formatting/text";
-import {SheetClose} from "@/lib/client/components/ui/sheet";
 import {Spinner} from "@/lib/client/components/ui/spinner";
+import {SheetClose} from "@/lib/client/components/ui/sheet";
 import {useDebounce} from "@/lib/client/hooks/use-debounce";
 import {displayContainerError} from "@/lib/client/error-display";
 import {supportsAdvancedSearch} from "@/lib/schemas/search.schema";
@@ -14,6 +15,7 @@ import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {ApiProviderType, MediaType, PrivacyType} from "@/lib/utils/enums";
+import {useSearchAnalytics} from "@/lib/client/hooks/use-search-analytics";
 import {MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
@@ -39,8 +41,17 @@ export const MobileSearch = () => {
 
     const waiting = isPending || query !== debouncedSearch;
     const hasResults = !!data?.data.length;
-    const showPagination = query.length >= 2 && !waiting && !error && (hasResults || page > 1);
     const destination = { page: 1, query, apiProvider: provider, advancedFilters: undefined };
+    const showPagination = query.length >= 2 && !waiting && !error && (hasResults || page > 1);
+
+    useSearchAnalytics(
+        searchOptions.queryKey,
+        "mobile",
+        provider,
+        page,
+        data?.data.length,
+        !waiting && !isFetching && !error && !!searchOptions.enabled
+    );
 
     return (
         <div className="flex min-h-0 flex-1 flex-col">
@@ -151,6 +162,7 @@ export const MobileSearch = () => {
                                                 <Link
                                                     replace
                                                     {...getSearchResultLink(item)}
+                                                    onClick={() => captureEvent("search_result_selected", { surface: "mobile", result_type: item.itemType })}
                                                     className="flex items-center gap-4 rounded-lg py-4 outline-none focus-visible:ring-3
                                                     focus-visible:ring-ring/50 active:bg-muted/50"
                                                 >

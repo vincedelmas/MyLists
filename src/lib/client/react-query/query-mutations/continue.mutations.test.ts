@@ -4,7 +4,8 @@ import {MediaType, Status} from "@/lib/utils/enums";
 import {ContinueItem, continueOptions} from "@/lib/client/react-query/query-options/continue.options";
 import {useContinueMediaMutation} from "./continue.mutations";
 
-const mocks = vi.hoisted(() => ({ save: vi.fn(), toast: vi.fn(), navigate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ capture: vi.fn(), save: vi.fn(), toast: vi.fn(), navigate: vi.fn() }));
+vi.mock("@/lib/client/analytics", () => ({ captureEvent: mocks.capture }));
 let queryClient: QueryClient;
 
 vi.mock("@tanstack/react-query", async (importOriginal) => ({
@@ -20,6 +21,9 @@ vi.mock("@/lib/client/hooks/use-auth", () => ({ useAuth: () => ({ currentUser: {
 vi.mock("@/lib/client/components/ui/toast", () => ({ toast: { add: mocks.toast } }));
 vi.mock("@/lib/server/functions/continue", () => ({ postContinueMedia: mocks.save, getContinueMedia: vi.fn() }));
 vi.mock("@/lib/server/functions/profile-pins", () => ({ getProfilePins: vi.fn(), getOwnProfilePins: vi.fn() }));
+vi.mock("@/lib/client/react-query/query-options/media.options", () => ({
+    mediaDetailsOptions: (type: MediaType, id: number) => ({ queryKey: ["details", type, id] }),
+}));
 vi.mock("@/lib/client/react-query/query-options", async () => ({
     ...await import("@/lib/client/react-query/query-options/continue.options"),
     mediaDetailsOptions: (type: MediaType, id: number) => ({ queryKey: ["details", type, id] }),
@@ -64,6 +68,8 @@ describe("Continue quick updates", () => {
             expect(queryClient.getQueryState(feedKey)?.fetchStatus).toBe("fetching");
         }
 
+        expect(mocks.capture).toHaveBeenCalledTimes(2);
+        expect(mocks.capture).toHaveBeenLastCalledWith("media_updated", { media_type: MediaType.MANGA, source: "continue" });
         expect(mocks.save).toHaveBeenCalledTimes(2);
         expect(mocks.save).toHaveBeenLastCalledWith({ data: { mediaType: MediaType.MANGA, mediaId: 1 } });
         expect(queryClient.getQueryState(["profile", "alice"])?.isInvalidated).toBe(false);
@@ -106,7 +112,23 @@ it("removes a completed card and offers its details without changing another use
     it("preserves saved progress when the request fails", async () => {
         mocks.save.mockRejectedValueOnce(new Error("Save failed"));
         await expect(useContinueMediaMutation(item).mutateAsync()).rejects.toThrow("Save failed");
+        expect(mocks.capture).not.toHaveBeenCalled();
         expect(queryClient.getQueryData(queryKey)).toEqual(initial);
         expect(mocks.toast).not.toHaveBeenCalled();
     });
+});
+
+it("identifies a pending quick update by its title", async () => {
+    const save = Promise.withResolvers<{ item: ContinueItem; completed: boolean }>();
+    mocks.save.mockReturnValueOnce(save.promise);
+    const saving = useContinueMediaMutation(item).mutateAsync();
+    try {
+        await vi.waitFor(() => expect(mocks.save).toHaveBeenCalled());
+        expect(queryClient.isMutating({ mutationKey: ["userMediaEdit", item.mediaType, item.mediaId] })).toBe(1);
+        expect(queryClient.isMutating({ mutationKey: ["userMediaEdit", item.mediaType, item.mediaId + 1] })).toBe(0);
+    }
+    finally {
+        save.resolve({ item, completed: false });
+        await saving;
+    }
 });

@@ -7,6 +7,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {Link, useNavigate} from "@tanstack/react-router";
 import {supportsAdvancedSearch} from "@/lib/schemas/search.schema";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
+import {useSearchAnalytics} from "@/lib/client/hooks/use-search-analytics";
 import {useNavbarSearch} from "@/lib/client/components/navbar/use-navbar-search";
 import {getSearchProviderItems} from "@/lib/client/components/navbar/navbar-search";
 import {NavbarSearchResults} from "@/lib/client/components/navbar/NavbarSearchResults";
@@ -24,6 +25,10 @@ export const SearchBar = () => {
     const { search, setSearch, setIsOpen, debouncedSearch, isOpen, reset, containerRef } = useNavbarSearch(() => setPage(1));
 
     const { data: searchResults, isFetching, error } = useQuery(navSearchOptions(debouncedSearch, page, selectDrop));
+
+    useSearchAnalytics([debouncedSearch.trim(), page, selectDrop], "navbar", selectDrop, page,
+        searchResults?.data.length, isOpen && !isFetching
+        && !error && search.trim() === debouncedSearch.trim() && debouncedSearch.trim().length >= 2);
 
     if (prevSelector !== currentUser?.searchSelector) {
         setPrevSelector(currentUser?.searchSelector);

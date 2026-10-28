@@ -2,45 +2,43 @@ import {formatRating} from "@/lib/client/ratings";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {ExtractListByType} from "@/lib/types/query.options.types";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 interface MediaListItemProps<T extends MediaType> {
-    rank?: number;
-    annotation?: string | null;
-    showMediaType?: boolean;
-    loadEditDetails?: boolean;
-    onEdited?: () => Promise<void>;
     mediaType: T;
+    rank?: number;
     isCurrent: boolean;
     isConnected: boolean;
+    showMediaType?: boolean;
+    annotation?: string | null;
     isMediaTypeActive: boolean;
+    onEdited?: () => Promise<void>;
     allStatuses: readonly Status[];
     userMedia: ExtractListByType<T>;
-    queryOption: ReturnType<typeof mediaListOptions>;
 }
 
 
 export const MediaListItem = <T extends MediaType>(props: MediaListItemProps<T>) => {
-    const { mediaType, queryOption, isCurrent, isConnected, isMediaTypeActive, allStatuses, userMedia, onEdited, loadEditDetails, showMediaType, rank, annotation } = props;
+    const {
+        mediaType, isCurrent, isConnected, isMediaTypeActive, allStatuses,
+        userMedia, onEdited, showMediaType, rank, annotation,
+    } = props;
 
     const MediaItemComponent = mediaConfig[mediaType].mediaListCard;
     const rating = formatRating(userMedia.ratingSystem, userMedia.rating);
 
     return (
         <MediaItemComponent
-            rating={rating}
             rank={rank}
-            annotation={annotation}
-            showMediaType={showMediaType}
+            rating={rating}
             onEdited={onEdited}
-            loadEditDetails={loadEditDetails}
             isCurrent={isCurrent}
             mediaType={mediaType}
             userMedia={userMedia}
-            queryOption={queryOption}
+            annotation={annotation}
             isConnected={isConnected}
             allStatuses={allStatuses}
+            showMediaType={showMediaType}
             isMediaTypeActive={isMediaTypeActive}
         />
     );

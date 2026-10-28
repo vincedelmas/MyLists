@@ -1,12 +1,11 @@
 import {MediaType} from "@/lib/utils/enums";
-import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {createFileRoute} from "@tanstack/react-router";
 import {Header} from "@/lib/client/components/media/base/Header";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
+import {onboardingListPagination, onboardingMovieFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
 import {AlertTriangle, Bookmark, Grid2X2, ListFilter, Play, Plus, PlusCircle, Search, Settings2, Star, Users} from "lucide-react";
-import {ONBOARDING_PROFILE_NAME, onboardingListPagination, onboardingMovieFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
 import {
     OnboardingContainer,
     OnboardingDemoBox,
@@ -24,8 +23,6 @@ export const Route = createFileRoute("/_main/_private/walkthrough/_layout/manage
 
 
 function ListsOnboarding() {
-    const onboardingQueryOption = mediaListOptions(MediaType.MOVIES, ONBOARDING_PROFILE_NAME, {});
-
     return (
         <OnboardingContainer>
             <OnboardingSection
@@ -47,11 +44,11 @@ function ListsOnboarding() {
                     <Header
                         filters={{}}
                         isGrid={true}
+                        pagination={onboardingListPagination}
                         onGridClick={() => undefined}
                         onSortChange={() => undefined}
                         onFilterClick={() => undefined}
                         onStatusChange={() => undefined}
-                        pagination={onboardingListPagination}
                         allStatuses={getMediaDefinition(MediaType.MOVIES).statuses}
                     />
                 </OnboardingDemoBox>
@@ -99,7 +96,6 @@ function ListsOnboarding() {
                             isMediaTypeActive={true}
                             mediaType={MediaType.MOVIES}
                             userMedia={onboardingMovieFixture}
-                            queryOption={onboardingQueryOption}
                             redoDisplay={!!onboardingMovieFixture.redo &&
                                 <DisplayRedoValue
                                     redoValue={onboardingMovieFixture.redo}

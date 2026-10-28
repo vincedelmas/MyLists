@@ -255,7 +255,7 @@ describe("collection media references", () => {
         await expect(service.getCollectionDetails(collectionId, "read", toActor(), { library: "in" })).rejects.toThrow("Sign in");
     });
 
-it("hydrates the viewer's full tracking rows for every media type without exposing another user's data", async () => {
+it("hydrates the viewer's display tracking rows for every media type without exposing another user's data", async () => {
         const collectionId = service.createCollection({
             ...collectionData,
             items: Object.values(MediaType).map(mediaType => ({ mediaType, mediaId: 1, annotation: `Note ${mediaType}` })),
@@ -290,12 +290,17 @@ it("hydrates the viewer's full tracking rows for every media type without exposi
         expect(byType.get(MediaType.BOOKS)).toMatchObject({
             actualPage: 123, pages: 200, redo: 2,
             imageCover: "https://mylists.example.invalid/static/books-covers/viewer-book.jpg",
-            tags: [{ name: "Viewer tag" }],
         });
         expect(byType.get(MediaType.GAMES)).toMatchObject({ playtime: 120 });
         expect(byType.get(MediaType.MANGA)).toMatchObject({ currentChapter: 7, chapters: 10 });
-        expect(byType.get(MediaType.SERIES)).toMatchObject({ currentEpisode: 4, epsPerSeason: [{ season: 1, episodes: 10 }] });
-        expect(byType.get(MediaType.ANIME)).toMatchObject({ currentEpisode: 5, epsPerSeason: [{ season: 1, episodes: 12 }] });
+        expect(byType.get(MediaType.SERIES)).toMatchObject({ currentEpisode: 4 });
+        expect(byType.get(MediaType.ANIME)).toMatchObject({ currentEpisode: 5 });
+
+        for (const item of viewer.items) {
+            for (const field of ["id", "addedAt", "lastUpdated", "total", "releaseNotificationsEnabled", "platform", "tags", "epsPerSeason"]) {
+                expect(item.userMedia).not.toHaveProperty(field);
+            }
+        }
 
         const anonymous = await service.getCollectionDetails(collectionId, "read", toActor());
         expect(anonymous.items.every(item => item.userMedia === null)).toBe(true);
@@ -305,7 +310,7 @@ it("hydrates the viewer's full tracking rows for every media type without exposi
         const owner = await service.getCollectionDetails(collectionId, "read", actor);
         expect(owner.items.filter(item => item.userMedia)).toHaveLength(1);
         expect(owner.items.find(item => item.mediaType === MediaType.BOOKS)!.userMedia).toMatchObject({
-            userId: 1, actualPage: 99, comment: "Owner private note", tags: [{ name: "Owner private tag" }],
+            userId: 1, actualPage: 99, comment: "Owner private note",
         });
     });
 

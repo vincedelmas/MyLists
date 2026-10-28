@@ -8,19 +8,19 @@ import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {historyOptions} from "@/lib/client/react-query/query-options";
 import {TagsLists} from "@/lib/client/components/media/base/TagsLists";
-import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
 import {Field, FieldLabel, FieldDescription} from "@/lib/client/components/ui/field";
 import {BacklogModeSystem} from "@/lib/client/components/media/base/BacklogModeSystem";
+import type {UserMedia} from "@/lib/types/query.options.types";
+import type {MediaUserDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {CustomCoverTabContent} from "@/lib/client/components/media/base/CustomCoverTab";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/lib/client/components/ui/tabs";
 import {UserMediaSpecificDetails} from "@/lib/client/components/media/base/UserMediaSpecificDetails";
 import {
     useRemoveMediaFromListMutation,
-    UserMediaQueryOption,
     useUpdateCustomCoverMutation,
     useUpdateUserMediaMutation,
     useUpdateUserMediaNotificationsMutation
@@ -28,25 +28,27 @@ import {
 
 
 interface UserMediaDetailsProps {
+    source?: "list_dialog" | "details";
     preview?: boolean;
     mediaType: MediaType;
-    queryOption: UserMediaQueryOption;
-    userMedia: UserMedia | UserMediaItem;
+    userMedia: UserMedia;
+    media: MediaUserDetailsProps<MediaType>["media"];
 }
 
 
-export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = false }: UserMediaDetailsProps) => {
+export const UserMediaDetails = ({ userMedia, mediaType, media, preview = false, source = "details" }: UserMediaDetailsProps) => {
     const confirm = useConfirm();
     const notificationId = useId();
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
     const [backlogDate, setBacklogDate] = useState("");
     const [backlogMode, setBacklogMode] = useState(false);
-    const removeMediaFromListMutation = useRemoveMediaFromListMutation(queryOption);
-    const notificationsMutation = useUpdateUserMediaNotificationsMutation(queryOption);
-    const updateCustomCoverMutation = useUpdateCustomCoverMutation(queryOption, { noErrorToast: true });
+    const removeMediaFromListMutation = useRemoveMediaFromListMutation(mediaType, userMedia.mediaId);
+    const notificationsMutation = useUpdateUserMediaNotificationsMutation(mediaType, userMedia.mediaId);
     const history = useQuery({ ...historyOptions(mediaType, userMedia.mediaId), enabled: !preview }).data;
-    const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, {
+    const updateCustomCoverMutation = useUpdateCustomCoverMutation(mediaType, userMedia.mediaId, { noErrorToast: true });
+    const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, {
+        source,
         backlogMode,
         loggedAt: backlogMode ? backlogDate : undefined,
     });
@@ -100,10 +102,10 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
 
                 <div className={(backlogMode && !backlogDate) ? "pointer-events-none opacity-40 space-y-2" : "space-y-2"}>
                     <UserMediaSpecificDetails
+                        media={media}
                         mediaType={mediaType}
                         userMedia={userMedia}
-                        queryOption={queryOption}
-                        mutationOptions={{ backlogMode, loggedAt: backlogMode ? backlogDate : undefined }}
+                        mutationOptions={{ source, backlogMode, loggedAt: backlogMode ? backlogDate : undefined }}
                     />
                 </div>
 
@@ -116,7 +118,6 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
                 <div className={backlogMode ? "pointer-events-none opacity-40" : ""}>
                     <TagsLists
                         mediaType={mediaType}
-                        queryOption={queryOption}
                         mediaId={userMedia.mediaId}
                         tags={userMedia?.tags ?? []}
                     />

@@ -1,9 +1,10 @@
 import {UploadCloud} from "lucide-react";
 import {useNavigate} from "@tanstack/react-router";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {type ReactNode, useId, useState} from "react";
+import {captureEvent} from "@/lib/client/analytics";
 import {Input} from "@/lib/client/components/ui/input";
 import {formatBytes} from "@/lib/utils/formatting/number";
+import {type ReactNode, useEffect, useId, useState} from "react";
 import {MAX_IMPORT_FILE_SIZE, MAX_IMPORT_ROWS} from "@/lib/utils/constants";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
@@ -14,10 +15,7 @@ import {type ImportSearch, ImportUploadFormValues, importUploadSchema} from "@/l
 
 interface ImportUploadFormProps {
     defaultValues: DefaultValues<ImportUploadFormValues>;
-    children?: (props: {
-        isSubmitting: boolean;
-        control: Control<ImportUploadFormValues>;
-    }) => ReactNode;
+    children?: (props: { isSubmitting: boolean; control: Control<ImportUploadFormValues> }) => ReactNode;
 }
 
 
@@ -30,6 +28,11 @@ export function ImportUploadForm({ defaultValues, children }: ImportUploadFormPr
 
     const { isSubmitting } = form.formState;
     const selectedFile = form.watch("file");
+    const source = form.watch("source");
+
+    useEffect(() => {
+        captureEvent("import_opened", { source });
+    }, [source]);
 
     const handleSubmit = async (values: ImportUploadFormValues) => {
         try {
@@ -38,7 +41,9 @@ export function ImportUploadForm({ defaultValues, children }: ImportUploadFormPr
                 formData.set(key, value);
             }
 
+            captureEvent("import_submitted", { source: values.source });
             const result = await createMutation.mutateAsync({ data: formData });
+
             await navigate({
                 to: ".",
                 resetScroll: false,

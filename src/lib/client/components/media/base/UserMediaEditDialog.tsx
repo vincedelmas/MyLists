@@ -1,71 +1,65 @@
+import {useEffect, useRef} from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {useQuery, useQueryClient} from "@tanstack/react-query";
-import {UserMediaItem} from "@/lib/types/query.options.types";
-import {mediaDetailsOptions, mediaListOptions} from "@/lib/client/react-query/query-options";
-import {Spinner} from "@/lib/client/components/ui/spinner";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {createUserMediaCache} from "@/lib/client/components/media/user-media-cache";
+import {historyOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
 interface UserMediaEditDialogProps {
-    loadDetails?: boolean;
-    onEdited?: () => Promise<void>;
+    mediaId: number;
+    mediaName: string;
     dialogOpen: boolean;
     mediaType: MediaType;
-    userMedia: UserMediaItem;
+    onEdited?: () => Promise<void>;
     onOpenChange: (open: boolean) => void;
-    queryOption: ReturnType<typeof mediaListOptions>;
 }
 
 
-export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOption, onOpenChange, onEdited, loadDetails = false }: UserMediaEditDialogProps) => {
+export const UserMediaEditDialog = ({ dialogOpen, mediaId, mediaName, mediaType, onOpenChange, onEdited }: UserMediaEditDialogProps) => {
+    const { currentUser } = useAuth();
     const queryClient = useQueryClient();
-    if (!userMedia) return null;
+    const session = useRef<ReturnType<ReturnType<typeof createUserMediaCache>["startEditing"]> | null>(null);
+
+    useEffect(() => {
+        if (!dialogOpen) return;
+
+        const editing = createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).startEditing();
+        session.current = editing;
+
+        return editing.stop;
+    }, [dialogOpen, queryClient, currentUser?.name, mediaType, mediaId]);
 
     const onDialogOpenChange = async (open: boolean) => {
         onOpenChange(open);
         if (open) return;
 
-        // A save outlive the dialog. Refresh only once those edits have settled
-        const mutationCache = queryClient.getMutationCache();
-        const pendingEdits = mutationCache.findAll({ mutationKey: ["userMediaEdit", mediaType], status: "pending" });
-        if (pendingEdits.length > 0) {
-            await new Promise<void>((resolve) => {
-                const unsubscribe = mutationCache.subscribe(() => {
-                    if (pendingEdits.every((mutation) => mutation.state.status !== "pending")) {
-                        unsubscribe();
-                        resolve();
-                    }
-                });
-            });
+        if (await session.current!.finish()) {
+            await onEdited?.();
         }
-
-        await queryClient.invalidateQueries({ queryKey: ["userList", mediaType, queryOption.queryKey[2]] });
-        await onEdited?.();
-    }
+    };
 
     return (
         <Dialog open={dialogOpen} onOpenChange={onDialogOpenChange}>
-            <DialogContent className="w-108 max-sm:w-full">
+            <DialogContent className="min-h-[min(20rem,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-108 grid-rows-[auto_1fr] overflow-y-auto max-sm:w-full">
                 <DialogHeader>
                     <DialogTitle>
-                        {userMedia.mediaName}
+                        {mediaName}
                     </DialogTitle>
                     <DialogDescription>
                         Here you can edit your media details
                     </DialogDescription>
                 </DialogHeader>
-                <div className="w-full flex items-center justify-center max-sm:mb-8 max-sm:px-2">
-                    {loadDetails ?
-                        <MediaDetailsEditor mediaType={mediaType} mediaId={userMedia.mediaId} enabled={dialogOpen}/>
-                        :
-                        <UserMediaDetails
-                            userMedia={userMedia}
-                            mediaType={mediaType}
-                            queryOption={queryOption}
-                        />
-                    }
+                <div className="flex w-full items-center justify-center">
+                    <MediaDetailsEditor
+                        mediaId={mediaId}
+                        enabled={dialogOpen}
+                        mediaType={mediaType}
+                    />
                 </div>
             </DialogContent>
         </Dialog>
@@ -76,7 +70,12 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
 const MediaDetailsEditor = ({ mediaType, mediaId, enabled }: { mediaType: MediaType; mediaId: number; enabled: boolean }) => {
     const queryOption = mediaDetailsOptions(mediaType, mediaId);
     const details = useQuery({ ...queryOption, enabled });
-    if (details.isPending) return <Spinner/>;
+    useQuery({ ...historyOptions(mediaType, mediaId), enabled });
+
+    if (details.isPending) {
+        return <Spinner aria-label="Loading media editor" className="size-10"/>;
+    }
+
     if (details.isError) {
         return (
             <div className="flex flex-col items-center gap-3">
@@ -87,7 +86,17 @@ const MediaDetailsEditor = ({ mediaType, mediaId, enabled }: { mediaType: MediaT
             </div>
         );
     }
-    if (!details.data.userMedia) return <p>This title is no longer in your list.</p>;
 
-    return <UserMediaDetails mediaType={mediaType} userMedia={details.data.userMedia} queryOption={queryOption}/>;
+    if (!details.data.userMedia) {
+        return <p>This title is no longer in your list.</p>;
+    }
+
+    return (
+        <UserMediaDetails
+            source="list_dialog"
+            mediaType={mediaType}
+            media={details.data.media}
+            userMedia={details.data.userMedia}
+        />
+    );
 };

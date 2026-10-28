@@ -9,8 +9,8 @@ import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutatio
 type MoviesUserDetailsProps<T extends MediaType> = MediaUserDetailsProps<T>;
 
 
-export const MoviesUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: MoviesUserDetailsProps<typeof MediaType.MOVIES>) => {
-    const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, mutationOptions);
+export const MoviesUserDetails = ({ userMedia, mediaType, mutationOptions }: MoviesUserDetailsProps<typeof MediaType.MOVIES>) => {
+    const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, mutationOptions);
 
     return (
         <>

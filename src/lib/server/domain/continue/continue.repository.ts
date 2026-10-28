@@ -2,7 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {ContinueSearch} from "@/lib/schemas/continue.schema";
 import {and, asc, count, desc, eq, inArray, not, sql} from "drizzle-orm";
-import {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
+import {MediaListDataByType, TListByType} from "@/lib/server/domain/media/media-list.types";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
@@ -13,8 +13,8 @@ export type ContinueMediaType = Exclude<MediaType, typeof MediaType.MOVIES>;
 
 
 type ContinueItem = {
-    [T in ContinueMediaType]: Omit<MediaListDataByType[T]["items"][number], "tags" | "common" | "ratingSystem">
-    & ContinueStateByType[T] & { mediaType: T };
+    [T in ContinueMediaType]: Omit<MediaListDataByType[T]["items"][number], "common" | "ratingSystem">
+    & TListByType[T] & ContinueStateByType[T] & { mediaType: T };
 }[ContinueMediaType];
 
 

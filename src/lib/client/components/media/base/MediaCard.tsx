@@ -18,6 +18,7 @@ interface MediaCardBaseProps {
     mediaType: MediaType;
     children: React.ReactNode;
     "aria-labelledby"?: string;
+    onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 
@@ -77,6 +78,7 @@ export const MediaCard = (props: MediaCardProps) => {
             <MediaCardFrame className={className} aria-labelledby={props["aria-labelledby"]}>
                 {props.external ?
                     <Link
+                        onClick={props.onClick}
                         to="/details/$mediaType/external/$apiId"
                         className="absolute inset-0 outline-none"
                         aria-label={`View ${props.item.mediaName}`}
@@ -88,6 +90,7 @@ export const MediaCard = (props: MediaCardProps) => {
                     </Link>
                     :
                     <Link
+                        onClick={props.onClick}
                         to="/details/$mediaType/$mediaId"
                         className="absolute inset-0 outline-none"
                         aria-label={`View ${props.item.mediaName}`}

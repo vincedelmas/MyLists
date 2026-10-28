@@ -1,11 +1,13 @@
 # MyLists
 
-[![Bun](https://img.shields.io/badge/Bun-v1.3.2-white?style=flat&logo=bun&logoColor=%23fbf0df)](https://bun.sh)
-[![React](https://img.shields.io/badge/React-19.2-%2361DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-%233178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![TanStack](https://img.shields.io/badge/TanStack-Start-%2306B6D4?style=flat&logo=tanstack&logoColor=white)](https://tanstack.com/)
-[![Drizzle](https://img.shields.io/badge/Drizzle-ORM-%23C5F74F?style=flat&logoColor=black)](https://orm.drizzle.team/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-%2338BDF8?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Bun](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvincedelmas%2FMyLists%2FHEAD%2Fpackage.json&query=%24.packageManager&label=Bun&color=white&style=flat&logo=bun&logoColor=%23fbf0df)](https://bun.sh)
+[![React](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvincedelmas%2FMyLists%2FHEAD%2Fpackage.json&query=%24.dependencies.react&label=React&color=%2361DAFB&style=flat&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvincedelmas%2FMyLists%2FHEAD%2Fpackage.json&query=%24.devDependencies.typescript&label=TypeScript&color=%233178C6&style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TanStack](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvincedelmas%2FMyLists%2FHEAD%2Fpackage.json&query=%24.dependencies%5B%22%40tanstack%2Freact-start%22%5D&label=TanStack&color=%2306B6D4&style=flat&logo=tanstack&logoColor=white)](https://tanstack.com/)
+[![Drizzle](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvincedelmas%2FMyLists%2FHEAD%2Fpackage.json&query=%24.dependencies%5B%22drizzle-orm%22%5D&label=Drizzle&color=%23C5F74F&style=flat&logoColor=black)](https://orm.drizzle.team/)
+[![Tailwind CSS](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvincedelmas%2FMyLists%2FHEAD%2Fpackage.json&query=%24.devDependencies.tailwindcss&label=Tailwind%20CSS&color=%2338BDF8&style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+
+<!-- Badges follow package.json on the default branch, subject to Shields.io/GitHub caching. -->
 
 **The all-in-one media tracking platform.**
 

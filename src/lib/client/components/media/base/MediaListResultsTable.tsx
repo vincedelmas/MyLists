@@ -6,7 +6,6 @@ import {formatDate} from "@/lib/utils/formatting/date";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {DataTable} from "@/lib/client/components/general/DataTable";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {flexRender, useTable, type ColumnDef} from "@tanstack/react-table";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
@@ -16,7 +15,7 @@ import type {MediaListResultsProps} from "@/lib/client/components/media/base/Med
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 
-export const MediaListResultsTable = ({ items, username, isCurrent, isConnected, onEdited, activeMediaTypes = ALL_MEDIA_TYPES }: MediaListResultsProps) => {
+export const MediaListResultsTable = ({ items, isCurrent, isConnected, onEdited, activeMediaTypes = ALL_MEDIA_TYPES }: MediaListResultsProps) => {
     const mediaTypes = [...new Set(items.map(item => item.mediaType))];
     const tableItems = items.map(item => ({ ...item, ...item.userMedia }));
 
@@ -28,7 +27,7 @@ export const MediaListResultsTable = ({ items, username, isCurrent, isConnected,
         isCurrent,
         isConnected,
         isMediaTypeActive: activeMediaTypes.includes(mediaType),
-        queryOption: mediaListOptions(mediaType, username, { page: 1, perPage: 25 }),
+        onAdded: onEdited,
         onEdit: mediaId => setEditingItem(items.find(item => item.mediaType === mediaType && item.mediaId === mediaId)!),
     }) as ColumnDef<typeof mediaTableFeatures, TableItem>[]]));
 
@@ -104,10 +103,10 @@ export const MediaListResultsTable = ({ items, username, isCurrent, isConnected,
                     return (
                         <QuickAddMedia
                             mediaId={item.mediaId}
+                            onAdded={onEdited}
                             mediaType={item.mediaType}
                             allStatuses={getMediaDefinition(item.mediaType).statuses}
                             isMediaTypeActive={activeMediaTypes.includes(item.mediaType)}
-                            queryOption={mediaListOptions(item.mediaType, username, { page: 1, perPage: 25 })}
                         />
                     );
                 }
@@ -148,12 +147,11 @@ export const MediaListResultsTable = ({ items, username, isCurrent, isConnected,
             {editingItem?.userMedia &&
                 <UserMediaEditDialog
                     dialogOpen={true}
-                    loadDetails={true}
                     onEdited={onEdited}
-                    userMedia={editingItem.userMedia}
+                    mediaId={editingItem.mediaId}
+                    mediaName={editingItem.mediaName}
                     mediaType={editingItem.mediaType}
                     onOpenChange={() => setEditingItem(null)}
-                    queryOption={mediaListOptions(editingItem.mediaType, username, { page: 1, perPage: 25 })}
                 />
             }
         </>

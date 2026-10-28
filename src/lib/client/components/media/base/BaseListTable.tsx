@@ -2,11 +2,10 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {ColumnDef} from "@tanstack/react-table";
 import {CircleCheck, Settings2} from "lucide-react";
-import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {Button} from "@/lib/client/components/ui/button";
 import {UserMediaItem} from "@/lib/types/query.options.types";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
 
 
@@ -15,13 +14,13 @@ export type ColumnConfigProps = {
     isConnected: boolean;
     mediaType: MediaType;
     isMediaTypeActive: boolean;
+    onAdded?: () => Promise<void>;
     onEdit: (mediaId: number) => void;
-    queryOption: ReturnType<typeof mediaListOptions>;
 }
 
 
 export const getBaseColumns = <T extends UserMediaItem>(props: ColumnConfigProps): ColumnDef<typeof mediaTableFeatures, T>[] => {
-    const { isCurrent, isConnected, isMediaTypeActive, mediaType, queryOption, onEdit } = props;
+    const { isCurrent, isConnected, isMediaTypeActive, mediaType, onEdit, onAdded } = props;
 
     return [
         {
@@ -64,8 +63,8 @@ export const getBaseColumns = <T extends UserMediaItem>(props: ColumnConfigProps
                     return (
                         <div className="flex items-center justify-center">
                             <QuickAddMedia
+                                onAdded={onAdded}
                                 mediaType={mediaType}
-                                queryOption={queryOption}
                                 mediaId={original.mediaId}
                                 isMediaTypeActive={isMediaTypeActive}
                                 allStatuses={getMediaDefinition(mediaType).statuses}

@@ -3,6 +3,7 @@ import type {HighlightedMediaResolvedSettings, ResolvedHighlightedMediaTabConfig
 import type {
     AchievementsType,
     ExtractListByType,
+    ExtractUserMediaByType,
     MediaGlobalSummaryType,
     PerMediaSummaryType,
     UserUpdateType
@@ -337,11 +338,11 @@ export const onboardingMovieFixture = {
     ratingSystem: RatingSystemType.SCORE,
     comment: "A favorite for the soundtrack and its sense of scale.",
     tags: [
-        { id: -1, name: "Sci-Fi" },
-        { id: -2, name: "Top 10" },
-        { id: -3, name: "Cinema" },
+        { name: "Sci-Fi" },
+        { name: "Top 10" },
+        { name: "Cinema" },
     ],
-} satisfies ExtractListByType<typeof MediaType.MOVIES>;
+} satisfies ExtractListByType<typeof MediaType.MOVIES> & ExtractUserMediaByType<typeof MediaType.MOVIES>;
 
 
 export const onboardingAddMediaFixture = {

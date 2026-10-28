@@ -3,15 +3,14 @@ import {MediaType, Status} from "@/lib/utils/enums";
 import {canShowProgress} from "@/lib/utils/media/status";
 import {Badge} from "@/lib/client/components/ui/badge";
 import type {UserMediaItem} from "@/lib/types/query.options.types";
-import type {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorite";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
 import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
-import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {
     MediaCard,
     MediaCardDetails,
@@ -32,7 +31,6 @@ interface BaseMediaListItemProps {
     showMediaType?: boolean;
     rating: React.ReactNode;
     userMedia: UserMediaItem;
-    loadEditDetails?: boolean;
     isMediaTypeActive: boolean;
     annotation?: string | null;
     redoDisplay?: React.ReactNode;
@@ -40,7 +38,6 @@ interface BaseMediaListItemProps {
     onEdited?: () => Promise<void>;
     ratingDisplay?: React.ReactNode;
     mediaDetailsDisplay?: React.ReactNode;
-    queryOption: ReturnType<typeof mediaListOptions>;
 }
 
 
@@ -48,22 +45,8 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const {
-        rank,
-        rating,
-        onEdited,
-        mediaType,
-        userMedia,
-        isCurrent,
-        annotation,
-        redoDisplay,
-        queryOption,
-        isConnected,
-        allStatuses,
-        showMediaType,
-        ratingDisplay,
-        loadEditDetails,
-        isMediaTypeActive,
-        mediaDetailsDisplay
+        rank, rating, onEdited, mediaType, userMedia, isCurrent, annotation, redoDisplay, isConnected,
+        allStatuses, showMediaType, ratingDisplay, isMediaTypeActive, mediaDetailsDisplay
     } = props;
 
     const isCommon = isMediaTypeActive && userMedia.common;
@@ -92,7 +75,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                                     :
                                     <QuickAddMedia
                                         mediaType={mediaType}
-                                        queryOption={queryOption}
+                                        onAdded={onEdited}
                                         allStatuses={allStatuses}
                                         mediaId={userMedia.mediaId}
                                         isMediaTypeActive={isMediaTypeActive}
@@ -147,10 +130,9 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
             <UserMediaEditDialog
                 onEdited={onEdited}
                 mediaType={mediaType}
-                userMedia={userMedia}
                 dialogOpen={dialogOpen}
-                queryOption={queryOption}
-                loadDetails={loadEditDetails}
+                mediaId={userMedia.mediaId}
+                mediaName={userMedia.mediaName}
                 onOpenChange={() => setDialogOpen(false)}
             />
         </>

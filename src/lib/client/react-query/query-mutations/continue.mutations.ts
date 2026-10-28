@@ -1,3 +1,4 @@
+import {captureEvent} from "@/lib/client/analytics";
 import {UpdateType} from "@/lib/utils/enums";
 import {useNavigate} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -8,6 +9,7 @@ import {getContinueMedia, postContinueMedia} from "@/lib/server/functions/contin
 import {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
 import {historyOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
+import {userMediaEditKey} from "@/lib/client/components/media/user-media-cache";
 
 
 export const useContinueMediaMutation = ({ mediaType, mediaId, mediaName }: ContinueItem) => {
@@ -16,12 +18,13 @@ export const useContinueMediaMutation = ({ mediaType, mediaId, mediaName }: Cont
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationKey: ["userMediaEdit", mediaType],
+        mutationKey: userMediaEditKey(mediaType, mediaId),
         mutationFn: () => postContinueMedia({ data: { mediaType, mediaId } }),
         onMutate: () => {
             return queryClient.cancelQueries({ queryKey: ["continue", currentUser!.name] });
         },
         onSuccess: async ({ item, completed }) => {
+            captureEvent("media_updated", { media_type: mediaType, source: "continue" });
             const queryKey = ["continue", currentUser!.name];
 
             // Refetching started during save must not overwrite result

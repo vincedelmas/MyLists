@@ -1,7 +1,6 @@
 import type {MediaType} from "@/lib/utils/enums";
 import {toItemKey} from "@/lib/utils/media/item-key";
 import type {UserMediaItem} from "@/lib/types/query.options.types";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 import {MediaListItem} from "@/lib/client/components/media/base/MediaListItem";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
@@ -46,7 +45,7 @@ export interface MediaListResultsProps {
 
 
 export const MediaListResults = (props: MediaListResultsProps) => {
-    const { items, display, username, isCurrent, isConnected, onEdited, activeMediaTypes = ALL_MEDIA_TYPES } = props;
+    const { items, display, isCurrent, isConnected, onEdited, activeMediaTypes = ALL_MEDIA_TYPES } = props;
 
     if (display === "table") {
         return (
@@ -65,14 +64,12 @@ export const MediaListResults = (props: MediaListResultsProps) => {
                     showMediaType={true}
                     key={toItemKey(item)}
                     isCurrent={isCurrent}
-                    loadEditDetails={true}
                     isConnected={isConnected}
                     mediaType={item.mediaType}
                     userMedia={item.userMedia}
                     annotation={item.annotation}
                     allStatuses={getMediaDefinition(item.mediaType).statuses}
                     isMediaTypeActive={activeMediaTypes.includes(item.mediaType)}
-                    queryOption={mediaListOptions(item.mediaType, username, { page: 1, perPage: 25 })}
                 />
                 :
                 <MediaCard key={toItemKey(item)} item={item} mediaType={item.mediaType}>
@@ -88,10 +85,10 @@ export const MediaListResults = (props: MediaListResultsProps) => {
                         <MediaCardRightCorner>
                             <QuickAddMedia
                                 mediaId={item.mediaId}
+                                onAdded={onEdited}
                                 mediaType={item.mediaType}
                                 allStatuses={getMediaDefinition(item.mediaType).statuses}
                                 isMediaTypeActive={activeMediaTypes.includes(item.mediaType)}
-                                queryOption={mediaListOptions(item.mediaType, username, { page: 1, perPage: 25 })}
                             />
                         </MediaCardRightCorner>
                     }

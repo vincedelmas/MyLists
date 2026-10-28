@@ -1,31 +1,35 @@
+import {captureEvent} from "@/lib/client/analytics";
+import React from "react";
 import {CirclePlus} from "lucide-react";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {DisabledMediaListNotice} from "@/lib/client/components/media/base/DisabledMediaListNotice";
 import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import React from "react";
 
 
 interface QuickAddMediaProps {
     mediaId: number;
     mediaType: MediaType;
-    allStatuses: readonly Status[];
     isMediaTypeActive: boolean;
-    queryOption: ReturnType<typeof mediaListOptions>;
+    onAdded?: () => Promise<void>;
+    allStatuses: readonly Status[];
 }
 
 
-export const QuickAddMedia = ({ mediaType, mediaId, isMediaTypeActive, allStatuses, queryOption }: QuickAddMediaProps) => {
-    const addToListMutation = useAddMediaToListMutation(queryOption);
+export const QuickAddMedia = ({ mediaType, mediaId, isMediaTypeActive, allStatuses, onAdded }: QuickAddMediaProps) => {
+    const addToListMutation = useAddMediaToListMutation("quick_add");
 
     const addMediaToUser = (status: Status) => {
-        addToListMutation.mutate({ data: { mediaType, status, mediaId } });
+        addToListMutation.mutate({ data: { mediaType, status, mediaId } }, { onSuccess: onAdded });
     };
 
     return (
-        <Popover>
+        <Popover onOpenChange={open => {
+            if (open) captureEvent("media_add_opened", {
+                media_type: mediaType, source: "quick_add", is_media_type_active: isMediaTypeActive,
+            });
+        }}>
             <PopoverTrigger
                 render={
                     <Button

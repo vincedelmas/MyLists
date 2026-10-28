@@ -5,7 +5,6 @@ import {useTable} from "@tanstack/react-table";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {DataTable} from "@/lib/client/components/general/DataTable";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
 import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {ListPagination, UserMediaItem} from "@/lib/types/query.options.types";
@@ -18,7 +17,6 @@ interface MediaTableProps {
     isCurrent: boolean;
     mediaType: MediaType;
     filters: MediaListArgs;
-    queryOption: ReturnType<typeof mediaListOptions>;
     onChangePage: (filters: Partial<MediaListArgs>) => void;
     results: {
         items: UserMediaItem[];
@@ -33,7 +31,7 @@ const columnWidths: Record<string, string> = {
 };
 
 
-const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onChangePage }: MediaTableProps) => {
+const MediaTable = ({ filters, isCurrent, mediaType, results, onChangePage }: MediaTableProps) => {
     const { currentUser } = useAuth();
     const isConnected = !!currentUser;
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -46,7 +44,7 @@ const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onCha
     });
 
     const listColumns = mediaConfig[mediaType]
-        .mediaListColumns({ isCurrent, isConnected, isMediaTypeActive, mediaType, queryOption, onEdit: setEditingId });
+        .mediaListColumns({ isCurrent, isConnected, isMediaTypeActive, mediaType, onEdit: setEditingId });
 
     const table = useTable({
         onPaginationChange,
@@ -73,8 +71,8 @@ const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onCha
                 <UserMediaEditDialog
                     dialogOpen={true}
                     mediaType={mediaType}
-                    userMedia={editingItem}
-                    queryOption={queryOption}
+                    mediaId={editingItem.mediaId}
+                    mediaName={editingItem.mediaName}
                     onOpenChange={() => setEditingId(null)}
                 />
             }

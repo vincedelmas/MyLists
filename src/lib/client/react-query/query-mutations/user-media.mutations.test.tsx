@@ -1,20 +1,20 @@
 import {beforeEach, afterEach, describe, expect, it, vi} from "vitest";
 import {MutationObserver, QueryClient, QueryObserver} from "@tanstack/react-query";
 import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
-import {UserMediaItem} from "@/lib/types/query.options.types";
-import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
+import {createUserMediaCache} from "@/lib/client/components/media/user-media-cache";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options/user-media.options";
 
 import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
-import {useEditTagMutation, useRemoveMediaFromListMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
+import {useAddMediaToListMutation, useEditTagMutation, useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation, useUpdateUserMediaNotificationsMutation} from "./user-media.mutations";
 
 
 const server = vi.hoisted(() => ({
+    capture: vi.fn(),
     add: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
     cover: vi.fn(),
+    notifications: vi.fn(),
     deleteUpdates: vi.fn(),
     activityStats: vi.fn(),
     listFilters: vi.fn(),
@@ -23,6 +23,8 @@ const server = vi.hoisted(() => ({
     correction: vi.fn(),
     toast: vi.fn(),
 }));
+
+vi.mock("@/lib/client/analytics", () => ({ captureEvent: server.capture }));
 
 let queryClient: QueryClient;
 
@@ -46,6 +48,7 @@ vi.mock("@/lib/server/functions/user-media", () => ({
     postUpdateUserMedia: server.update,
     postRemoveMediaFromList: server.remove,
     postUpdateUserCustomCover: server.cover,
+    postUpdateUserMediaNotifications: server.notifications,
     postDeleteUserUpdates: server.deleteUpdates,
     postEditUserTag: server.editTag,
     getUserTagNames: server.tagNames,
@@ -57,6 +60,9 @@ vi.mock("@/lib/server/functions/media-lists", () => ({
     getMediaListFilters: server.listFilters,
 }));
 vi.mock("@/lib/server/functions/profile-pins", () => ({ getProfilePins: vi.fn(), getOwnProfilePins: vi.fn() }));
+vi.mock("@/lib/client/react-query/query-options/media.options", () => ({
+    mediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["details", mediaType, mediaId] }),
+}));
 vi.mock("@/lib/client/react-query/query-options", () => ({
     mediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["details", mediaType, mediaId] }),
     historyOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["onOpenHistory", mediaType, mediaId] }),
@@ -77,8 +83,7 @@ vi.mock("@/lib/client/components/ui/dialog", () => ({
 }));
 
 const queryKey = ["userList", MediaType.SERIES, "alice", { status: [Status.WATCHING] as Status[] }] as const;
-const queryOption = { queryKey } as ReturnType<typeof mediaListOptions>;
-const item = { mediaId: 1, status: Status.WATCHING, rating: null, comment: "Review", customCover: null };
+const item = { currentEpisode: 0, mediaId: 1, status: Status.WATCHING, rating: null, comment: "Review", customCover: null };
 const initialList = {
     results: {
         items: [item],
@@ -94,23 +99,15 @@ const refreshedList = {
 let fetchList: ReturnType<typeof vi.fn<() => Promise<typeof refreshedList>>>;
 let unsubscribe: () => void;
 
-const closeDialog = () => {
-    const onOpenChange = vi.fn();
-    const dialog = UserMediaEditDialog({
-        dialogOpen: true,
-        mediaType: MediaType.SERIES,
-        userMedia: item as UserMediaItem,
-        queryOption,
-        onOpenChange,
-    });
-    const closing = dialog!.props.onOpenChange(false) as Promise<void>;
-    expect(onOpenChange).toHaveBeenCalledWith(false);
-    return closing;
+let editing: ReturnType<ReturnType<typeof createUserMediaCache>["startEditing"]>;
+const closeDialog = async (onEdited?: () => Promise<void>) => {
+    if (await editing.finish()) await onEdited?.();
 };
 
 beforeEach(() => {
     vi.clearAllMocks();
     queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
+    editing = createUserMediaCache(queryClient, "alice", MediaType.SERIES, 1).startEditing();
     queryClient.setQueryData(queryKey, initialList);
     fetchList = vi.fn().mockResolvedValue(refreshedList);
     const observer = new QueryObserver(queryClient, { queryKey, queryFn: fetchList });
@@ -118,12 +115,13 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    editing.stop();
     unsubscribe();
     queryClient.clear();
 });
 
 describe("list filter freshness", () => {
-    it.each(["details", "userList"] as const)("reloads tag names and counts after removing the last tagged title from %s", async source => {
+    it("reloads tag names and counts after removing the last tagged title", async () => {
         const namesOptions = tagNamesOptions(MediaType.MOVIES, true);
         const tagsKey = ["tagsView", MediaType.MOVIES, "alice"];
         const otherUserKey = ["tagsView", MediaType.MOVIES, "bob"];
@@ -134,15 +132,11 @@ describe("list filter freshness", () => {
         const fetchTags = vi.fn().mockResolvedValue([]);
         const observer = new QueryObserver(queryClient, { queryKey: tagsKey, queryFn: fetchTags });
         const unsubscribeTags = observer.subscribe(() => {});
-        const mutationKey = source === "details"
-            ? ["details", MediaType.MOVIES, 3] as const
-            : ["userList", MediaType.MOVIES, "alice", {}] as const;
-        const mutationOptions = { queryKey: mutationKey } as UserMediaQueryOption;
 
         try {
             server.remove.mockResolvedValueOnce(undefined);
             server.tagNames.mockResolvedValueOnce([]);
-            await useRemoveMediaFromListMutation(mutationOptions)
+            await useRemoveMediaFromListMutation(MediaType.MOVIES, 3)
                 .mutateAsync({ data: { mediaType: MediaType.MOVIES, mediaId: 3 } });
 
             expect(fetchTags).toHaveBeenCalledTimes(1);
@@ -218,7 +212,7 @@ it.each([Status.WATCHING, Status.COMPLETED])("marks secondary progress stale and
 
         try {
             server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, currentEpisode: 10, status } });
-            await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
+            await useUpdateUserMediaMutation(MediaType.SERIES, 1)
                 .mutateAsync({ payload: { type: UpdateType.TV, currentEpisode: 10 } });
 
             for (const query of queries.slice(0, progressKeys.length)) {
@@ -255,7 +249,7 @@ describe("activity correction choices", () => {
                 activityCorrection: { changes: [], unrecordedProgress: 0, unrecordedRedo: 0, keptHistory: false } });
         server.correction.mockResolvedValueOnce(choice);
 
-        await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption).mutateAsync({ payload });
+        await useUpdateUserMediaMutation(MediaType.SERIES, 1).mutateAsync({ payload });
 
         expect(server.update).toHaveBeenLastCalledWith({ data: { mediaType: MediaType.SERIES, mediaId: 1, payload, activityCorrection: choice } });
         expect(queryClient.getQueryState(activityKey)?.isInvalidated).toBe(true);
@@ -269,7 +263,7 @@ describe("activity correction choices", () => {
             .mockResolvedValueOnce({ kind: "correction-required", preview: changedPreview });
         server.correction.mockResolvedValueOnce({ version: preview.version }).mockResolvedValueOnce(null);
 
-        await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption).mutateAsync({ payload });
+        await useUpdateUserMediaMutation(MediaType.SERIES, 1).mutateAsync({ payload });
 
         expect(server.correction).toHaveBeenNthCalledWith(2, MediaType.SERIES, changedPreview);
         expect(queryClient.getQueryData(queryKey)).toEqual(initialList);
@@ -281,7 +275,7 @@ describe("activity correction choices", () => {
 describe("list editing refresh timing", () => {
 
     it("keeps a newly completed item in the Watching list for rating until the dialog closes", async () => {
-        const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption);
+        const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1);
         server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, status: Status.COMPLETED } });
         await mutation.mutateAsync({ payload: { type: UpdateType.STATUS, status: Status.COMPLETED } });
         server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, status: Status.COMPLETED, rating: 8 } });
@@ -311,7 +305,7 @@ describe("immediate saved media feedback", () => {
         fetchList.mockReturnValueOnce(staleList.promise);
         const staleFetch = queryClient.refetchQueries({ queryKey }).catch(() => {});
         try {
-            const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption);
+            const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1);
             for (const rating of [7, 8]) {
                 server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, rating } });
                 await mutation.mutateAsync({ payload: { type: UpdateType.RATING, rating } });
@@ -336,9 +330,177 @@ describe("immediate saved media feedback", () => {
         const summaryKey = ["profile", "summary", "alice"];
         queryClient.setQueryData(summaryKey, { average: 4 });
         server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, rating: 8 } });
-        await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
+        await useUpdateUserMediaMutation(MediaType.SERIES, 1)
             .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } });
         for (const key of stable) expect(queryClient.getQueryState(key)?.isInvalidated).toBe(false);
         expect(queryClient.getQueryState(summaryKey)?.isInvalidated).toBe(true);
+    });
+});
+
+
+describe("media identity cache synchronization", () => {
+    it("updates details and every cached own list without changing another user's tracking data", async () => {
+        const secondPage = ["userList", MediaType.SERIES, "alice", { page: 2 }];
+        const otherUser = ["userList", MediaType.SERIES, "bob", {}];
+        const otherMedia = ["userList", MediaType.BOOKS, "alice", {}];
+        const detailsKey = ["details", MediaType.SERIES, 1];
+        const details = { media: { name: "Title" }, userMedia: { ...item, tags: [{ name: "Keep" }] } };
+        for (const key of [secondPage, otherUser, otherMedia]) queryClient.setQueryData(key, initialList);
+        queryClient.setQueryData(detailsKey, details);
+        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, rating: 8 } });
+
+        await useUpdateUserMediaMutation(MediaType.SERIES, 1)
+            .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } });
+
+        for (const key of [queryKey, secondPage]) {
+            expect(queryClient.getQueryData<typeof initialList>(key)?.results.items[0].rating).toBe(8);
+        }
+        expect(queryClient.getQueryData<typeof details>(detailsKey)).toEqual({
+            ...details, userMedia: { ...details.userMedia, rating: 8 },
+        });
+        for (const key of [otherUser, otherMedia]) expect(queryClient.getQueryData(key)).toEqual(initialList);
+        expect(fetchList).not.toHaveBeenCalled();
+    });
+
+    it("waits for this title's save on close, but not another title of the same media type", async () => {
+        const selected = Promise.withResolvers<{ kind: "saved"; userMedia: typeof item }>();
+        const other = Promise.withResolvers<{ kind: "saved"; userMedia: typeof item }>();
+        server.update.mockReturnValueOnce(selected.promise).mockReturnValueOnce(other.promise);
+        const saving = useUpdateUserMediaMutation(MediaType.SERIES, 1)
+            .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } });
+        await vi.waitFor(() => expect(server.update).toHaveBeenCalledTimes(1));
+        const otherSaving = useUpdateUserMediaMutation(MediaType.SERIES, 2)
+            .mutateAsync({ payload: { type: UpdateType.RATING, rating: 6 } });
+        await vi.waitFor(() => expect(server.update).toHaveBeenCalledTimes(2));
+        const onEdited = vi.fn().mockResolvedValue(undefined);
+        const closing = closeDialog(onEdited);
+
+        try {
+            expect(fetchList).not.toHaveBeenCalled();
+            expect(onEdited).not.toHaveBeenCalled();
+            selected.resolve({ kind: "saved", userMedia: item });
+            await saving;
+            await vi.waitFor(() => expect(onEdited).toHaveBeenCalledTimes(1));
+            await closing;
+            expect(queryClient.isMutating({ mutationKey: ["userMediaEdit", MediaType.SERIES, 2] })).toBe(1);
+            expect(fetchList).toHaveBeenCalledTimes(1);
+        }
+        finally {
+            selected.resolve({ kind: "saved", userMedia: item });
+            other.resolve({ kind: "saved", userMedia: { ...item, mediaId: 2 } });
+            await Promise.all([saving, otherSaving, closing]);
+        }
+    });
+
+    it("adds by identity and updates membership without overwriting another user's rating", async () => {
+        const otherUser = ["userList", MediaType.SERIES, "bob", {}];
+        const otherList = { results: { ...initialList.results, items: [{ ...item, rating: 4, common: false }] } };
+        const detailsKey = ["details", MediaType.SERIES, 1];
+        queryClient.setQueryData(otherUser, otherList);
+        queryClient.setQueryData(detailsKey, { media: {}, userMedia: null });
+        server.add.mockResolvedValueOnce(item);
+
+        await useAddMediaToListMutation().mutateAsync({ data: { mediaType: MediaType.SERIES, mediaId: 1 } });
+
+        expect(queryClient.getQueryData<typeof otherList>(otherUser)?.results.items[0]).toMatchObject({ rating: 4, common: true });
+        expect(queryClient.getQueryState(detailsKey)?.isInvalidated).toBe(true);
+        expect(fetchList).toHaveBeenCalledTimes(1);
+    });
+
+    it("removes own entries and membership while preserving other users' entries", async () => {
+        // An inactive list exposes the immediate cache update before the next server read.
+        unsubscribe();
+        const otherUser = ["userList", MediaType.SERIES, "bob", {}];
+        const otherList = { results: { ...initialList.results, items: [{ ...item, rating: 4, common: true }] } };
+        const detailsKey = ["details", MediaType.SERIES, 1];
+        queryClient.setQueryData(otherUser, otherList);
+        queryClient.setQueryData(detailsKey, { media: {}, userMedia: item });
+        server.remove.mockResolvedValueOnce(undefined);
+
+        await useRemoveMediaFromListMutation(MediaType.SERIES, 1)
+            .mutateAsync({ data: { mediaType: MediaType.SERIES, mediaId: 1 } });
+
+        expect(queryClient.getQueryData<typeof initialList>(queryKey)?.results.items).toEqual([]);
+        expect(queryClient.getQueryData<typeof otherList>(otherUser)?.results.items).toEqual([{ ...item, rating: 4, common: false }]);
+        expect(queryClient.getQueryData(detailsKey)).toEqual({ media: {}, userMedia: null });
+    });
+
+    it.each([TagAction.ADD, TagAction.DELETE_ONE])("updates editor tags after %s and preserves list tag IDs until close", async action => {
+        const detailsKey = ["details", MediaType.SERIES, 1];
+        const tag = { name: "Favorites" };
+        const details = { media: {}, userMedia: { ...item, tags: action === TagAction.ADD ? [] : [tag] } };
+        const list = { results: { ...initialList.results, items: [{ ...item, tags: [{ id: 7, name: "Keep" }] }] } };
+        queryClient.setQueryData(detailsKey, details);
+        queryClient.setQueryData(queryKey, list);
+        server.editTag.mockResolvedValueOnce(tag);
+
+        await useEditTagMutation(MediaType.SERIES, 1).mutateAsync({ tag, action });
+
+        expect(queryClient.getQueryData<typeof details>(detailsKey)?.userMedia.tags).toEqual(action === TagAction.ADD ? [tag] : []);
+        expect(queryClient.getQueryData<typeof list>(queryKey)?.results.items[0].tags).toEqual([{ id: 7, name: "Keep" }]);
+        expect(fetchList).not.toHaveBeenCalled();
+        await closeDialog();
+        expect(fetchList).toHaveBeenCalledTimes(1);
+    });
+
+    it("updates custom cover and notification preferences in details and cached lists", async () => {
+        const detailsKey = ["details", MediaType.SERIES, 1];
+        const details = { media: {}, userMedia: { ...item, releaseNotificationsEnabled: true } };
+        queryClient.setQueryData(detailsKey, details);
+        server.cover.mockResolvedValueOnce({ mediaId: 1, customCover: "new-cover.jpg" });
+        server.notifications.mockResolvedValueOnce(undefined);
+
+        await useUpdateCustomCoverMutation(MediaType.SERIES, 1)
+            .mutateAsync({ data: { mediaType: MediaType.SERIES, mediaId: 1, imageUrl: "https://example.com/cover.jpg" } });
+        await useUpdateUserMediaNotificationsMutation(MediaType.SERIES, 1)
+            .mutateAsync({ data: { mediaType: MediaType.SERIES, mediaId: 1, releaseNotificationsEnabled: false } });
+
+        expect(queryClient.getQueryData<typeof details>(detailsKey)?.userMedia)
+            .toMatchObject({ customCover: "new-cover.jpg", releaseNotificationsEnabled: false });
+        const listItem = queryClient.getQueryData<typeof initialList>(queryKey)?.results.items[0];
+        expect(listItem).toMatchObject({ customCover: "new-cover.jpg" });
+        expect(listItem).not.toHaveProperty("releaseNotificationsEnabled");
+        expect(fetchList).not.toHaveBeenCalled();
+    });
+});
+
+
+describe("editor refresh decisions", () => {
+    it("does not refresh an untouched editor or call its completion callback", async () => {
+        const onEdited = vi.fn().mockResolvedValue(undefined);
+        await closeDialog(onEdited);
+        expect(fetchList).not.toHaveBeenCalled();
+        expect(onEdited).not.toHaveBeenCalled();
+    });
+
+    it("does not refresh after a failed save", async () => {
+        server.update.mockRejectedValueOnce(new Error("Save failed"));
+        await expect(useUpdateUserMediaMutation(MediaType.SERIES, 1)
+            .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } })).rejects.toThrow("Save failed");
+        expect(server.capture).not.toHaveBeenCalled();
+        await closeDialog();
+        expect(fetchList).not.toHaveBeenCalled();
+    });
+
+    it("does not refresh after a cancelled correction", async () => {
+        server.update.mockResolvedValueOnce({ kind: "correction-required", preview: { version: "a".repeat(64) } });
+        server.correction.mockResolvedValueOnce(null);
+        await useUpdateUserMediaMutation(MediaType.SERIES, 1)
+            .mutateAsync({ payload: { type: UpdateType.TV, currentEpisode: 3 } });
+        expect(server.capture).not.toHaveBeenCalled();
+        await closeDialog();
+        expect(fetchList).not.toHaveBeenCalled();
+    });
+});
+
+
+describe("media edit analytics", () => {
+    it.each([undefined, "details", "list_dialog"] as const)("records the successful edit source %s", async source => {
+        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, rating: 8 } });
+        await useUpdateUserMediaMutation(MediaType.SERIES, 1, { source })
+            .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } });
+        expect(server.capture).toHaveBeenCalledExactlyOnceWith("media_updated", {
+            media_type: MediaType.SERIES, source: source ?? "details",
+        });
     });
 });

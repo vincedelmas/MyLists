@@ -35,7 +35,10 @@ export const MembershipSearchInput = (props: MembershipSearchInputProps) => {
             <InputGroupAddon align="inline-end">
                 {canCreate ?
                     <InputGroupButton variant="default" disabled={disabled} onClick={onCreate}>
-                        {isCreating ? "Creating..." : "CREATE"}
+                        {isCreating
+                            ? "Creating..."
+                            : <span className="text-xs">CREATE</span>
+                        }
                     </InputGroupButton>
                     :
                     <InputGroupText>

@@ -144,7 +144,7 @@ export const getDynamicListResults = (userId: number, spec: DynamicListSpec, opt
 
         const mediaIds = rows.filter(row => row.mediaType === mediaType).map(row => row.mediaId);
 
-        // Reuse each media's list projection so progress, tags and rating presentation stay identical
+        // Reuse each media's list projection so progress and rating presentation stay identical
         const selected = db.select({
             ...getMediaListSelection(definition.repository),
             providerRating: sql<number | null>`${definition.repository.sortColumns.providerRating ?? sql`NULL`}`,

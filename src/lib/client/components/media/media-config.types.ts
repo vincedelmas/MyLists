@@ -2,15 +2,14 @@ import type {LucideIcon} from "lucide-react";
 import type {ComponentType, ReactNode} from "react";
 import type {ColumnDef} from "@tanstack/react-table";
 import type {MediaStatsFor} from "@/lib/types/stats.types";
-import type {MediaFilterKeyFor} from "@/lib/media-definitions/definition.registry";
-import type {mediaListOptions} from "@/lib/client/react-query/query-options";
 import type {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
+import type {MediaFilterKeyFor} from "@/lib/media-definitions/definition.registry";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {ContinueConfig} from "@/lib/client/components/continue/continue.types";
 import type {AdvancedSearchFilterDefinition} from "@/lib/types/advanced-search.types";
 import type {ColumnConfigProps} from "@/lib/client/components/media/base/BaseListTable";
 import type {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
-import type {UpdateUserMediaMutationOptions, UserMediaQueryOption} from "@/lib/client/react-query/query-mutations/user-media.mutations";
+import type {UpdateUserMediaMutationOptions} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import type {ExtractFollowByType, ExtractListByType, ExtractMediaDetailsByType, ExtractUserMediaByType} from "@/lib/types/query.options.types";
 
 
@@ -22,9 +21,11 @@ export interface MediaDetailsProps<T extends MediaType> {
 
 export interface MediaUserDetailsProps<T extends MediaType> {
     mediaType: T;
-    queryOption: UserMediaQueryOption;
     userMedia: ExtractUserMediaByType<T>;
     mutationOptions?: UpdateUserMediaMutationOptions;
+    media: T extends MediaType
+        ? Pick<ExtractMediaDetailsByType<T>, Extract<keyof ExtractMediaDetailsByType<T>, "pages" | "chapters" | "epsPerSeason">>
+        : never;
 }
 
 
@@ -37,19 +38,17 @@ export interface MediaFollowCardProps<T extends MediaType> {
 
 
 export interface MediaListCardProps<T extends MediaType> {
-    rank?: number;
-    annotation?: string | null;
-    showMediaType?: boolean;
-    loadEditDetails?: boolean;
-    onEdited?: () => Promise<void>;
     mediaType: T;
+    rank?: number;
     rating: ReactNode;
     isCurrent: boolean;
     isConnected: boolean;
-    allStatuses: readonly Status[];
+    showMediaType?: boolean;
+    annotation?: string | null;
     isMediaTypeActive: boolean;
+    allStatuses: readonly Status[];
+    onEdited?: () => Promise<void>;
     userMedia: ExtractListByType<T>;
-    queryOption: ReturnType<typeof mediaListOptions>;
 }
 
 
@@ -85,7 +84,6 @@ interface MediaFilterPresentation {
 export interface MediaClientConfig<T extends MediaType> {
     mediaType: T;
     advancedSearch?: AdvancedSearchConfig;
-    metadataFilters: Readonly<Record<MediaFilterKeyFor<T>, MediaFilterPresentation>>;
     infoGrid: ComponentType<MediaDetailsProps<T>>;
     overTitle: ComponentType<MediaDetailsProps<T>>;
     underTitle: ComponentType<MediaDetailsProps<T>>;
@@ -95,6 +93,7 @@ export interface MediaClientConfig<T extends MediaType> {
     jobs: Partial<Record<JobType, MediaJobPresentation>>;
     mediaFollowCard: ComponentType<MediaFollowCardProps<T>>;
     mediaUserDetails: ComponentType<MediaUserDetailsProps<T>>;
+    metadataFilters: Readonly<Record<MediaFilterKeyFor<T>, MediaFilterPresentation>>;
     continue: ContinueConfig<T> | (T extends typeof MediaType.MOVIES ? null : never);
     mediaListColumns: (props: ColumnConfigProps) => ColumnDef<typeof mediaTableFeatures, ExtractListByType<T>>[];
     communityActivity: {

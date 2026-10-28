@@ -57,7 +57,7 @@ export default defineConfig(({ mode }) => ({
                     }
 
                     if (
-                        id.includes("/node_modules/posthog-js/") ||
+                        id.includes("/node_modules/posthog-js-lite/") ||
                         id.includes("/node_modules/@posthog/core")
                     ) {
                         return "analytics";

@@ -1,5 +1,7 @@
 import {routeTree} from "@/routeTree.gen";
+import {captureEvent} from "@/lib/client/analytics";
 import {createRouter} from "@tanstack/react-router";
+import type {ApiProviderType} from "@/lib/utils/enums";
 import {toast} from "@/lib/client/components/ui/toast";
 import {ValidationError} from "@/lib/utils/error-classes";
 import {NotFound} from "@/lib/client/components/general/NotFound";
@@ -14,6 +16,11 @@ export function getRouter() {
     const queryClient = new QueryClient({
         queryCache: new QueryCache({
             onError: async (_error, query) => {
+                // QueryCache fires once per failed request, even with multiple search observers.
+                if (query.meta?.searchAnalytics) {
+                    captureEvent("search_failed", query.meta.searchAnalytics);
+                }
+
                 if (query?.meta?.errorToastMessage) {
                     toast.add({ title: query.meta.errorToastMessage, type: "error", priority: "high" });
                 }
@@ -91,6 +98,7 @@ declare module "@tanstack/react-router" {
 declare module "@tanstack/react-query" {
     interface Register {
         queryMeta: {
+            searchAnalytics?: { provider: ApiProviderType; page: number; advanced_filter_count: number },
             errorToastMessage?: string,
         },
         mutationMeta: {

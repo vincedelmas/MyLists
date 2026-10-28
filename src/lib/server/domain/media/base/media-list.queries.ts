@@ -1,5 +1,4 @@
-import {mediaTags, user} from "@/lib/server/database/schema";
-import type {IdNamePair} from "@/lib/types/media-common.types";
+import {user} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {MediaListArgs} from "@/lib/schemas/media-lists.schema";
 import {and, asc, count, eq, inArray, notInArray, sql} from "drizzle-orm";
@@ -18,16 +17,16 @@ import {
 
 
 export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
-    const { listQuery, tables: { listTable, tagTable } } = definition;
+    const { listQuery } = definition;
+
+    const {
+        id: _id, addedAt: _addedAt, lastUpdated: _lastUpdated, total: _total, releaseNotificationsEnabled: _notifications,
+        platform: _platform, epsPerSeason: _seasons, ...selection
+    } = listQuery.selection;
 
     return {
-        ...listQuery.selection,
+        ...selection,
         ratingSystem: user.ratingSystem,
-        tags: sql<IdNamePair[]>`COALESCE((
-            SELECT json_group_array(DISTINCT json_object('id', t.id, 'name', t.name))
-            FROM ${tagTable} l INNER JOIN ${mediaTags} t ON t.id = l.tag_id
-            WHERE l.media_id = ${listTable.mediaId} AND l.user_id = ${listTable.userId}
-        ), json_array())`.mapWith(JSON.parse),
     };
 };
 

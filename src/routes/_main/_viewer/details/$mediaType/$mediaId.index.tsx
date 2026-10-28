@@ -53,10 +53,10 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
 function MediaDetailsPage() {
     const { currentUser, isAnonymous } = useAuth();
     const { mediaType, mediaId } = Route.useParams();
+    const addMediaToListMutation = useAddMediaToListMutation();
     const { mediaDetailsQueryOptions, communityCollectionsQueryOptions, communityActivityQueryOptions } = Route.useRouteContext();
 
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
-    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsQueryOptions);
     const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsQueryOptions).data;
 
     const handleAddMediaToUser = () => {
@@ -143,9 +143,9 @@ function MediaDetailsPage() {
 
                             {userMedia && isMediaTypeActive ?
                                 <UserMediaDetails
+                                    media={media}
                                     mediaType={mediaType}
                                     userMedia={userMedia}
-                                    queryOption={mediaDetailsOptions(mediaType, mediaId)}
                                 />
                                 :
                                 isAnonymous ?

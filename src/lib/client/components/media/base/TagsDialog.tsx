@@ -21,11 +21,10 @@ interface TagsDialogProps {
     tags: Tag[];
     mediaId: number;
     mediaType: MediaType;
-    updateTag: (tags: Tag[]) => void;
 }
 
 
-export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogProps) => {
+export const TagsDialog = ({ mediaType, mediaId, tags }: TagsDialogProps) => {
     const fieldId = useId();
     const { currentUser } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
@@ -35,6 +34,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
 
     const query = searchQuery.trim().toLowerCase();
     const activeNames = new Set(tags.map(tag => tag.name));
+
     const filteredTags = allTags.filter(tag => tag.name.toLowerCase().includes(query));
     const showCreateButton = !error && !isLoading && query.length > 0 && !allTags.some(tag => tag.name.toLowerCase() === query);
 
@@ -42,11 +42,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
         mutation.mutate({ tag, action }, {
             onSuccess: () => {
                 if (action === TagAction.ADD) {
-                    updateTag([...tags, tag]);
                     setSearchQuery("");
-                }
-                else {
-                    updateTag(tags.filter(item => item.name !== tag.name));
                 }
             },
         });

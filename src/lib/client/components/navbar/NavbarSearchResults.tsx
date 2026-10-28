@@ -1,5 +1,6 @@
 import {ReactNode} from "react";
 import {Link} from "@tanstack/react-router";
+import {captureEvent} from "@/lib/client/analytics";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Button} from "@/lib/client/components/ui/button";
@@ -230,8 +231,11 @@ const ResultLink = ({ item, onNavigate, children }: ResultLinkProps) => {
     return (
         <Link
             {...getSearchResultLink(item)}
-            onClick={onNavigate}
             className="flex min-w-0 flex-1 items-center gap-3 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            onClick={() => {
+                captureEvent("search_result_selected", { surface: "navbar", result_type: item.itemType });
+                onNavigate();
+            }}
         >
             {children}
         </Link>

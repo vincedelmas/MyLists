@@ -2,6 +2,7 @@
     "name": "mylists",
     "private": true,
     "type": "module",
+    "packageManager": "bun@1.4.4",
     "browserslist": [
         ">0.3%, defaults, supports es6-module"
     ],
@@ -69,7 +70,7 @@
         "nodemailer": "^10.2.1",
         "nprogress": "^0.2.0",
         "pino": "^10.4.0",
-        "posthog-js": "^1.438.21",
+        "posthog-js-lite": "^4.13.2",
         "rate-limiter-flexible": "^11.2.3",
         "react": "19.3.0",
         "react-day-picker": "^10.0.2",

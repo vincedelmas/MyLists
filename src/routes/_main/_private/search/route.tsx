@@ -1,5 +1,6 @@
 import {useEffect} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {captureEvent} from "@/lib/client/analytics";
 import {formatDate} from "@/lib/utils/formatting/date";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
@@ -14,6 +15,7 @@ import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {AdvancedSearchFilters, globalSearchSchema} from "@/lib/schemas";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
+import {useSearchAnalytics} from "@/lib/client/hooks/use-search-analytics";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/media/advanced-search";
@@ -317,6 +319,10 @@ const SearchResultsQuery = (props: SearchResultsQueryProps) => {
     const { page, onPageChange } = props;
     const { searchQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(searchQueryOptions).data;
+    const { apiProvider = ApiProviderType.TMDB, advancedFilters } = Route.useSearch();
+
+    useSearchAnalytics(searchQueryOptions.queryKey, "search_page", apiProvider, page, apiData.data.length,
+        true, countAdvancedSearchFilters(advancedFilters));
 
     return (
         <SearchResults
@@ -394,6 +400,7 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
                 external={true}
                 mediaType={mediaType}
                 item={{ mediaId: item.id, mediaName: item.name, imageCover: item.image }}
+                onClick={() => captureEvent("search_result_selected", { surface: "search_page", result_type: item.itemType })}
             >
                 {item.inCurrentUserList &&
                     <MediaCardRightCorner>
@@ -425,6 +432,7 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
                 to="/profile/$username"
                 params={{ username: item.name }}
                 className="group relative block aspect-2/3 overflow-hidden rounded-lg outline-none"
+                onClick={() => captureEvent("search_result_selected", { surface: "search_page", result_type: item.itemType })}
             >
                 <img
                     loading="lazy"

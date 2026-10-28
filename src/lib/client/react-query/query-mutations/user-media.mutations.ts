@@ -1,5 +1,6 @@
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {captureEvent} from "@/lib/client/analytics";
 import {toast} from "@/lib/client/components/ui/toast";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {UpdatePayload} from "@/lib/types/user-media.types";
@@ -9,18 +10,11 @@ import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
-import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
 import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
+import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
+import {createUserMediaCache, userMediaEditKey} from "@/lib/client/components/media/user-media-cache";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
-import {
-    allUpdatesOptions,
-    historyOptions,
-    mediaDetailsOptions,
-    mediaListOptions,
-    profileOptions,
-    profileRecentFeedOptions,
-    tagNamesOptions
-} from "@/lib/client/react-query/query-options";
+import {allUpdatesOptions, historyOptions, profileOptions, profileRecentFeedOptions, tagNamesOptions} from "@/lib/client/react-query/query-options";
 import {
     postAddMediaToList,
     postDeleteUserUpdates,
@@ -32,9 +26,8 @@ import {
 } from "@/lib/server/functions/user-media";
 
 
-export type UserMediaQueryOption = ReturnType<typeof mediaDetailsOptions> | ReturnType<typeof mediaListOptions>;
-
 export type UpdateUserMediaMutationOptions = {
+    source?: "list_dialog" | "details";
     loggedAt?: string;
     backlogMode?: boolean;
 }
@@ -56,6 +49,7 @@ export const useDeleteProfileUpdateMutation = (username: string) => {
 
                 return userUpdates;
             });
+
             await queryClient.invalidateQueries({ queryKey: ["allUpdates", username] });
         },
     });
@@ -88,6 +82,7 @@ export const useDeleteHistoryUpdatesMutation = (mediaType: MediaType, mediaId: n
                 if (!oldData) return;
                 return [...oldData.filter((history) => history.id !== variables.data.updateIds[0])];
             });
+
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: profileRecentFeedOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["allUpdates", currentUser!.name] }),
@@ -97,35 +92,16 @@ export const useDeleteHistoryUpdatesMutation = (mediaType: MediaType, mediaId: n
 };
 
 
-export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => {
+export const useAddMediaToListMutation = (source: "details" | "quick_add" = "details") => {
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postAddMediaToList,
-        meta: {
-            successToastMessage: "Media added to your list!",
-        },
+        meta: { successToastMessage: "Media added to your list!" },
         onSuccess: async (data, variables) => {
-            if (queryOption.queryKey[0] === "details") {
-                queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                    if (!oldData || !data) return;
-                    return Object.assign({}, oldData, { userMedia: data });
-                });
-            }
-            else if (queryOption.queryKey[0] === "userList") {
-                queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                    if (!oldData) return;
-                    return {
-                        ...oldData,
-                        results: Object.assign({}, oldData.results, {
-                            items: oldData.results.items.map((m) =>
-                                m.mediaId === variables.data.mediaId ? Object.assign({}, m, { common: true }) : m
-                            )
-                        }),
-                    };
-                });
-            }
+            captureEvent("media_added", { media_type: variables.data.mediaType, source });
+            await createUserMediaCache(queryClient, currentUser!.name, variables.data.mediaType, data.mediaId).add();
 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
@@ -139,34 +115,18 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
 };
 
 
-export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption) => {
+export const useRemoveMediaFromListMutation = (mediaType: MediaType, mediaId: number) => {
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationKey: ["userMediaEdit", queryOption.queryKey[1]],
+        mutationKey: userMediaEditKey(mediaType, mediaId),
         mutationFn: postRemoveMediaFromList,
         meta: {
             successToastMessage: "Media removed from your list!",
         },
         onSuccess: async (_data, variables) => {
-            if (queryOption.queryKey[0] === "details") {
-                queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                    if (!oldData) return;
-                    return { ...oldData, userMedia: null };
-                });
-            }
-            else if (queryOption.queryKey[0] === "userList") {
-                queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                    if (!oldData) return;
-                    return {
-                        ...oldData,
-                        results: Object.assign({}, oldData.results, {
-                            items: [...oldData.results.items.filter((m) => m.mediaId !== variables.data.mediaId)]
-                        }),
-                    };
-                })
-            }
+            await createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).remove();
 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
@@ -184,18 +144,19 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
 };
 
 
-export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number, queryOption: UserMediaQueryOption, options: UpdateUserMediaMutationOptions = {}) => {
+export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number, options: UpdateUserMediaMutationOptions = {}) => {
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationKey: ["userMediaEdit", mediaType],
+        mutationKey: userMediaEditKey(mediaType, mediaId),
         mutationFn: async ({ payload }: UpdatePayload) => {
             const activityUpdate = loggedActivityUpdateTypes.has(payload.type);
 
             if (options.backlogMode && !activityUpdate) {
                 throw new FormattedError("Progress only can be edited in backlog mode.");
             }
+
             if (options.backlogMode && activityUpdate && !options.loggedAt) {
                 throw new FormattedError("Please choose a backlog date.");
             }
@@ -225,6 +186,7 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                     if (change.redoRemoved > 0) amounts.push(`−${change.redoRemoved} re-experiences`);
                     return `${formatMonthYear(change.monthBucket)}: ${amounts.join(", ")}`;
                 }).join("; ");
+
                 toast.add({
                     type: "success",
                     title: correction.keptHistory ? "Progress updated; activity unchanged." : "Progress and activity corrected.",
@@ -232,43 +194,19 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                         || "There was no matching recorded activity to reduce.",
                 });
             }
+
             return response.userMedia;
         },
         onMutate: () => {
-            return queryClient.cancelQueries({ queryKey: queryOption.queryKey, exact: true });
+            return createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).cancel();
         },
         onSuccess: async (data, variables) => {
             if (!data) return;
 
+            captureEvent("media_updated", { media_type: mediaType, source: options.source ?? "details" });
             const { payload } = variables;
             const activityUpdate = loggedActivityUpdateTypes.has(payload.type);
-
-            // Refetch started during save must not overwrite saved result
-            await queryClient.cancelQueries({ queryKey: queryOption.queryKey, exact: true });
-
-            if (queryOption.queryKey[0] === "details") {
-                queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                    if (!oldData) return;
-
-                    return {
-                        ...oldData,
-                        userMedia: { ...oldData.userMedia, ...data },
-                    };
-                });
-            }
-            else if (queryOption.queryKey[0] === "userList") {
-                queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                    if (!oldData) return;
-                    return {
-                        ...oldData,
-                        results: {
-                            ...oldData.results,
-                            items: oldData.results.items.map(userMedia =>
-                                userMedia.mediaId === mediaId ? { ...userMedia, ...data } : userMedia),
-                        },
-                    };
-                });
-            }
+            await createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).update(data);
 
             // Secondary screens refresh on next visit, visible feed updates in background
             void Promise.all([
@@ -287,56 +225,39 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                     ? [queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name], refetchType: "none" })] : []),
                 ...(activityUpdate
                     ? [queryClient.invalidateQueries({ queryKey: ["monthly-activity"], refetchType: "none" })] : []),
-                queryOption.queryKey[0] === "details"
-                    ? queryClient.invalidateQueries({ queryKey: ["userList", mediaType], refetchType: "none" })
-                    : queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey, refetchType: "none" }),
             ]);
         },
     });
 };
 
 
-export const useUpdateUserMediaNotificationsMutation = (queryOption: UserMediaQueryOption) => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationKey: ["userMediaEdit", queryOption.queryKey[1]],
-        mutationFn: postUpdateUserMediaNotifications,
-        onSuccess: async (_data, { data: { mediaType } }) => {
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ["details", mediaType] }),
-                queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
-            ]);
-        },
-    });
-};
-
-
-export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, meta?: MutationMeta) => {
+export const useUpdateUserMediaNotificationsMutation = (mediaType: MediaType, mediaId: number) => {
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationKey: ["userMediaEdit", queryOption.queryKey[1]],
+        mutationKey: userMediaEditKey(mediaType, mediaId),
+        mutationFn: postUpdateUserMediaNotifications,
+        onSuccess: async (_data, { data: { releaseNotificationsEnabled } }) => {
+            await createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).update({ releaseNotificationsEnabled });
+        },
+    });
+};
+
+
+export const useUpdateCustomCoverMutation = (mediaType: MediaType, mediaId: number, meta?: MutationMeta) => {
+    const { currentUser } = useAuth();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: userMediaEditKey(mediaType, mediaId),
         mutationFn: postUpdateUserCustomCover,
         meta: {
             successToastMessage: "Custom cover updated!",
             ...meta,
         },
         onSuccess: async (data) => {
-            if (queryOption.queryKey[0] === "userList") {
-                queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                    if (!oldData) return;
-                    return {
-                        ...oldData,
-                        results: Object.assign({}, oldData.results, {
-                            items: oldData.results.items.map((item) =>
-                                item.mediaId === data.mediaId ? { ...item, customCover: data.customCover } : item
-                            ),
-                        }),
-                    };
-                });
-            }
+            await createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).update({ customCover: data.customCover });
 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
@@ -345,7 +266,6 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, 
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
-                ...(queryOption.queryKey[0] === "details" ? [queryClient.invalidateQueries({ queryKey: queryOption.queryKey })] : []),
             ]);
         },
     });
@@ -357,12 +277,16 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationKey: ["userMediaEdit", mediaType],
+        mutationKey: userMediaEditKey(mediaType, mediaId),
         mutationFn: ({ tag, action }: { tag: Tag, action: TagAction }) => {
             return postEditUserTag({ data: { mediaType, mediaId, tag, action } });
         },
         meta: { ...meta },
-        onSuccess: async (_data, { action }) => {
+        onSuccess: async (_data, { action, tag }) => {
+            if (mediaId !== undefined && (action === TagAction.ADD || action === TagAction.DELETE_ONE)) {
+                await createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).editTag(tag, action);
+            }
+
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: tagNamesOptions(mediaType, false).queryKey }),
@@ -376,7 +300,8 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
                     queryKey: ["userList", mediaType, currentUser!.name],
                     refetchType: action === TagAction.ADD || action === TagAction.DELETE_ONE ? "none" : "active",
                 }),
-                queryClient.invalidateQueries({ queryKey: ["details", mediaType] }),
+
+                queryClient.invalidateQueries({ queryKey: ["details", mediaType], refetchType: mediaId === undefined ? "active" : "none" }),
             ]);
         }
     })

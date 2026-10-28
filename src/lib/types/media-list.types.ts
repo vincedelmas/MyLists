@@ -1,5 +1,5 @@
 import {MediaType, RatingSystemType} from "@/lib/utils/enums";
-import {IdNamePair, NameObj} from "@/lib/types/media-common.types";
+import {NameObj} from "@/lib/types/media-common.types";
 import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 
 
@@ -18,15 +18,13 @@ export type MediaFilterSearchSource =
 
 
 export type MediaListData<TList> = {
-    items: (TList & {
+    items: (Omit<TList, "id" | "addedAt" | "lastUpdated" | "total" | "releaseNotificationsEnabled" | "platform"> & {
         pages?: number;
         common: boolean;
         mediaName: string;
         imageCover: string;
-        tags: IdNamePair[];
         chapters?: number | null;
         ratingSystem: RatingSystemType;
-        epsPerSeason?: EpsPerSeasonType[];
     })[];
     pagination: {
         page: number;

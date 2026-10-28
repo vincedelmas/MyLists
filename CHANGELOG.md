@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.15.1](https://github.com/vincedelmas/MyLists/compare/v3.15.0...v3.15.1) (2026-10-28)
+
+
+### Performance Improvements
+
+* **analytics:** re-used posthog-lite ([6ccb3a1](https://github.com/vincedelmas/MyLists/commit/6ccb3a11086718eb16bfaa68f247c85b4ac206b5))
+
+
+### Code Refactoring
+
+* **media:** centralize identity-based cache synchronization ([6ccb3a1](https://github.com/vincedelmas/MyLists/commit/6ccb3a11086718eb16bfaa68f247c85b4ac206b5))
+
 ## [3.15.0](https://github.com/vincedelmas/MyLists/compare/v3.14.0...v3.15.0) (2026-10-27)
 
 

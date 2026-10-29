@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.16.1](https://github.com/vincedelmas/MyLists/compare/v3.16.0...v3.16.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* toggle hidden ratings on tap and widen hit areas ([a7105e0](https://github.com/vincedelmas/MyLists/commit/a7105e04cd1228284c890acd128dacd7aa3344d5))
+
 ## [3.16.0](https://github.com/vincedelmas/MyLists/compare/v3.15.1...v3.16.0) (2026-10-29)
 
 

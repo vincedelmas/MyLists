@@ -77,6 +77,7 @@ export const postMediaListSettings = createServerFn({ method: "POST" })
             ratingSystem: data.ratingSystem,
             gridListView: data.gridListView,
             searchSelector: data.searchSelector,
+            hideAggregateRatings: data.hideAggregateRatings,
             autoMoveCompletedTvToOnHold: data.autoMoveCompletedTvToOnHold,
         }
 

@@ -3,13 +3,14 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
-import {ArrowUpRight, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ExtractFollowByType} from "@/lib/types/query.options.types";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
 import {formatMinutes, formatNumber} from "@/lib/utils/formatting/number";
+import {ArrowUpRight, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
+import {AggregateRating} from "@/lib/client/components/media/base/AggregateRating";
 import {MediaFollowCard} from "@/lib/client/components/media/base/MediaFollowCard";
 import {mediaCommunityActivityOptions} from "@/lib/client/react-query/query-options";
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
@@ -97,7 +98,11 @@ export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivitySt
             icon: Star,
             label: "community avg.",
             iconColor: "text-rating fill-rating",
-            value: formatNumber(stats.averageRating, { locale: "en", fractionDigits: 1 }),
+            value: (
+                <AggregateRating label="community rating">
+                    {formatNumber(stats.averageRating, { locale: "en", fractionDigits: 1 })}
+                </AggregateRating>
+            ),
         },
         {
             icon: Eye,

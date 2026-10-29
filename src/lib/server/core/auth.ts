@@ -214,6 +214,12 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
                 type: "boolean",
                 defaultValue: true,
             },
+            hideAggregateRatings: {
+                input: false,
+                returned: true,
+                type: "boolean",
+                defaultValue: false,
+            },
             gridListView: {
                 input: false,
                 returned: true,

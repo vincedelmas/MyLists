@@ -14,6 +14,7 @@ export const user = sqliteTable("user", {
     role: text("role").$type<RoleType>().default(RoleType.USER).notNull(),
     emailVerified: integer("email_verified", { mode: "boolean" }).notNull(),
     privacy: text("privacy").$type<PrivacyType>().default(PrivacyType.RESTRICTED).notNull(),
+    hideAggregateRatings: integer("hide_aggregate_ratings", { mode: "boolean" }).default(false).notNull(),
     gridListView: integer("grid_list_view", { mode: "boolean" }).default(true).notNull(),
     showOnboarding: integer("show_onboarding", { mode: "boolean" }).default(true).notNull(),
     showUpdateModal: integer("show_update_modal", { mode: "boolean" }).default(true).notNull(),

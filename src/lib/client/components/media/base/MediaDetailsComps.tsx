@@ -2,6 +2,7 @@ import React from "react";
 import {cn} from "@/lib/utils/classnames";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {Calendar, Clock, LucideIcon, Star} from "lucide-react";
+import {AggregateRating} from "@/lib/client/components/media/base/AggregateRating";
 import {extractDate, formatCalendarRelativeDate, formatMonth} from "@/lib/utils/formatting/date";
 
 
@@ -99,17 +100,18 @@ export const MediaUnderRating = ({ voteAverage, voteCount, divisor = 1 }: MediaU
     return (
         <div className="flex items-center gap-1.5">
             <Star className="size-4 fill-rating text-rating"/>
-            <span className="text-lg text-foreground">
-                {formatNumber(voteAverage / divisor, {
-                    fractionDigits: 1,
-                    locale: "en",
-                })}
-            </span>
-            {!!voteCount &&
-                <span className="text-xs text-muted-foreground">
-                    ({formatNumber(voteCount)})
+            <AggregateRating label="external rating and vote count">
+                <span className="inline-flex items-center gap-1.5">
+                    <span className="text-lg text-foreground">
+                        {formatNumber(voteAverage / divisor, { fractionDigits: 1, locale: "en" })}
+                    </span>
+                    {!!voteCount &&
+                        <span className="text-xs text-muted-foreground">
+                            ({formatNumber(voteCount)})
+                        </span>
+                    }
                 </span>
-            }
+            </AggregateRating>
         </div>
     );
 };

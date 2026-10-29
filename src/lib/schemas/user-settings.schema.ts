@@ -85,6 +85,7 @@ export const mediaListSettingsSchema = z.object({
     manga: z.boolean(),
     books: z.boolean(),
     gridListView: z.boolean(),
+    hideAggregateRatings: z.boolean(),
     ratingSystem: z.enum(RatingSystemType),
     searchSelector: z.enum(ApiProviderType),
     autoMoveCompletedTvToOnHold: z.boolean(),

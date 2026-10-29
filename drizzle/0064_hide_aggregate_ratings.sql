@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `hide_aggregate_ratings` integer DEFAULT false NOT NULL;

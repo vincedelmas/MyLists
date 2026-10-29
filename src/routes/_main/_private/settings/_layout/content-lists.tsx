@@ -23,7 +23,7 @@ import {createMediaSelectItems} from "@/lib/client/components/general/media-type
 import {ALL_MEDIA_TYPES, RELEASE_NOTIFICATION_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
+import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/content-lists")({
@@ -64,6 +64,7 @@ function MediaListFormPage() {
         resolver: zodResolver(mediaListSettingsSchema),
         values: {
             gridListView: currentUser?.gridListView ?? true,
+            hideAggregateRatings: currentUser?.hideAggregateRatings ?? false,
             ratingSystem: currentUser?.ratingSystem ?? RatingSystemType.SCORE,
             searchSelector: currentUser?.searchSelector ?? ApiProviderType.TMDB,
             autoMoveCompletedTvToOnHold: currentUser?.autoMoveCompletedTvToOnHold ?? true,
@@ -343,11 +344,46 @@ function MediaListFormPage() {
                                 )}
                             />
                             <Controller
+                                control={form.control}
+                                name="hideAggregateRatings"
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation="horizontal"
+                                        data-invalid={fieldState.invalid}
+                                        data-disabled={listSettingsMutation.isPending}
+                                        className="justify-between rounded-lg border p-2 md:col-span-2"
+                                    >
+                                        <FieldContent>
+                                            <FieldLabel htmlFor={`${fieldId}-hide-ratings`}>
+                                                Hide external and community ratings
+                                            </FieldLabel>
+                                            <FieldDescription id={`${fieldId}-hide-ratings-desc`}>
+                                                Hide external ratings (TMDB, IGDB etc.) and the MyLists community ratings.
+                                                Hover (press and hold on mobile) to reveal.
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Switch
+                                            ref={field.ref}
+                                            name={field.name}
+                                            onBlur={field.onBlur}
+                                            checked={field.value}
+                                            id={`${fieldId}-hide-ratings`}
+                                            onCheckedChange={field.onChange}
+                                            aria-invalid={fieldState.invalid}
+                                            disabled={listSettingsMutation.isPending}
+                                            aria-describedby={`${fieldId}-hide-ratings-desc`}
+                                        />
+                                    </Field>
+                                )}
+                            />
+                            <Controller
                                 name="gridListView"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
-                                        <FieldLabel htmlFor={`${fieldId}-grid-list-view`}>Default List View Mode</FieldLabel>
+                                        <FieldLabel htmlFor={`${fieldId}-grid-list-view`}>
+                                            Default List View Mode
+                                        </FieldLabel>
                                         <Select
                                             items={viewModeItems}
                                             value={field.value ? "grid" : "table"}

@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.16.0](https://github.com/vincedelmas/MyLists/compare/v3.15.1...v3.16.0) (2026-10-29)
+
+
+### Features
+
+* add optional hiding of aggregate ratings and vote counts ([621ddda](https://github.com/vincedelmas/MyLists/commit/621ddda8baabdaa224d782b4406667b4c03d7317))
+
 ## [3.15.1](https://github.com/vincedelmas/MyLists/compare/v3.15.0...v3.15.1) (2026-10-28)
 
 

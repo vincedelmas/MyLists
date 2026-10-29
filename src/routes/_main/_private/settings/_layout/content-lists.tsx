@@ -359,7 +359,7 @@ function MediaListFormPage() {
                                             </FieldLabel>
                                             <FieldDescription id={`${fieldId}-hide-ratings-desc`}>
                                                 Hide external ratings (TMDB, IGDB etc.) and the MyLists community ratings.
-                                                Hover (press and hold on mobile) to reveal.
+                                                Hover to reveal, or tap on mobile to show and tap again to hide.
                                             </FieldDescription>
                                         </FieldContent>
                                         <Switch

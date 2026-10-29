@@ -1,7 +1,7 @@
 import {cn} from "@/lib/utils/classnames";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Button} from "@/lib/client/components/ui/button";
-import {useEffect, useId, useRef, useState, type ReactNode} from "react";
+import {useId, useRef, useState, type ReactNode} from "react";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
 
 
@@ -14,26 +14,11 @@ interface AggregateRatingProps {
 export const AggregateRating = ({ children, label }: AggregateRatingProps) => {
     const scoreId = useId();
     const { currentUser } = useAuth();
-    const [revealed, setRevealed] = useState(false);
-    const pressOrigin = useRef<{ x: number; y: number } | null>(null);
-    const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [hovered, setHovered] = useState(false);
+    const [expanded, setExpanded] = useState(false);
+    const pointerType = useRef<string | null>(null);
 
-    const reset = () => {
-        if (pressTimer.current !== null) {
-            clearTimeout(pressTimer.current);
-        }
-
-        pressTimer.current = null;
-        pressOrigin.current = null;
-
-        setRevealed(false);
-    };
-
-    useEffect(() => () => {
-        if (pressTimer.current !== null) {
-            clearTimeout(pressTimer.current);
-        }
-    }, []);
+    const revealed = hovered || expanded;
 
     if (!currentUser?.hideAggregateRatings) {
         return children;
@@ -46,38 +31,24 @@ export const AggregateRating = ({ children, label }: AggregateRatingProps) => {
                     <Button
                         size="bare"
                         type="button"
-                        onBlur={reset}
                         variant="ghost"
-                        onPointerLeave={reset}
-                        onPointerCancel={reset}
-                        onLostPointerCapture={reset}
-                        className="cursor-help touch-pan-y"
-                        onContextMenu={(ev) => ev.preventDefault()}
+                        aria-expanded={revealed}
+                        onBlur={() => setExpanded(false)}
                         aria-describedby={revealed ? scoreId : undefined}
-                        aria-label={revealed ? label : `Hidden ${label}. Hover or press and hold to reveal. With a keyboard, hold Enter or Space.`}
+                        aria-label={revealed ? label : `Hidden ${label}. Hover or tap to reveal. Tap again to hide.`}
+                        className="relative cursor-help touch-manipulation after:absolute after:-inset-x-4 after:-inset-y-2"
                         onPointerEnter={(ev) => {
-                            if (ev.pointerType === "mouse") setRevealed(true);
+                            if (ev.pointerType === "mouse") setHovered(true);
                         }}
-                        onPointerUp={(ev) => {
-                            if (ev.pointerType !== "mouse") reset();
-                        }}
-                        onKeyUp={(ev) => {
-                            if (ev.key === "Enter" || ev.key === " ") reset();
-                        }}
-                        onPointerMove={(ev) => {
-                            const origin = pressOrigin.current;
-                            if (origin && Math.hypot(ev.clientX - origin.x, ev.clientY - origin.y) > 10) reset();
+                        onPointerLeave={(ev) => {
+                            if (ev.pointerType === "mouse") setHovered(false);
                         }}
                         onPointerDown={(ev) => {
-                            if (ev.pointerType === "mouse" || ev.button !== 0) return;
-                            ev.currentTarget.setPointerCapture(ev.pointerId);
-                            pressOrigin.current = { x: ev.clientX, y: ev.clientY };
-                            pressTimer.current = setTimeout(() => setRevealed(true), 450);
+                            pointerType.current = ev.pointerType;
                         }}
-                        onKeyDown={(ev) => {
-                            if (ev.key === "Enter" || ev.key === " ") {
-                                ev.preventDefault();
-                                setRevealed(true);
+                        onClick={(ev) => {
+                            if (ev.detail === 0 || pointerType.current !== "mouse") {
+                                setExpanded(value => !value);
                             }
                         }}
                     />
@@ -99,7 +70,7 @@ export const AggregateRating = ({ children, label }: AggregateRatingProps) => {
                 </span>
             </TooltipTrigger>
             <TooltipContent>
-                Hover or hold to reveal rating. With a keyboard, hold Enter or Space.
+                Hover or tap to reveal rating. Tap again to hide. With a keyboard, press Enter or Space.
             </TooltipContent>
         </Tooltip>
     );

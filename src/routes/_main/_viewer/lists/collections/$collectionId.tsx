@@ -2,7 +2,6 @@ import {useEffect, useRef, useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
@@ -14,6 +13,7 @@ import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {postRecordCollectionView} from "@/lib/server/functions/collections";
 import {collectionBrowseSearchSchema, collectionIdSchema} from "@/lib/schemas";
 import {CollectionStats} from "@/lib/client/components/collections/CollectionStats";
@@ -98,7 +98,7 @@ function CollectionViewer() {
     const sortingOptions = getMediaSortOptions(selectedMediaTypes, showTrackingControls);
 
     const handleFilterChange = (patch: Partial<typeof filters>) => {
-        searchInput.updateFilters({ ...patch, page: 1 });
+        return searchInput.updateFilters({ ...patch, page: 1 });
     };
 
     const handleRemoveFilter = (key: MediaBrowseFilterKey, value?: string, scope?: MediaBrowseFilterScope) => {
@@ -299,26 +299,38 @@ function CollectionViewer() {
                     {hasActions &&
                         <div className="flex h-6 items-center gap-3 border-l pl-4">
                             {capabilities.like &&
-                                <Button variant="ghost" size="bare" className="gap-1.5 text-xs text-muted-foreground" onClick={handleLikeCollection}
-                                        disabled={toggleLikeMutation.isPending}>
-                                    <Heart className={`size-3.5 ${isLiked ? "fill-favorite text-favorite" : "text-brand"}`}/>
+                                <LoadingButton
+                                    size="bare"
+                                    variant="ghost"
+                                    onClick={handleLikeCollection}
+                                    isLoading={toggleLikeMutation.isPending}
+                                    className="gap-1.5 text-xs text-muted-foreground"
+                                    icon={<Heart className={`size-3.5 ${isLiked ? "fill-favorite text-favorite" : "text-brand"}`}/>}
+                                >
                                     {isLiked ? "Liked" : "Like"}
-                                </Button>
+                                </LoadingButton>
                             }
-
                             {capabilities.copy &&
-                                <Button variant="ghost" size="bare" className="gap-1.5 text-xs text-muted-foreground" onClick={handleCopyCollection}
-                                        disabled={copyMutation.isPending}>
-                                    <Copy className="size-3.5 text-brand"/> Copy
-                                </Button>
+                                <LoadingButton
+                                    size="bare"
+                                    variant="ghost"
+                                    onClick={handleCopyCollection}
+                                    isLoading={copyMutation.isPending}
+                                    icon={<Copy data-icon="inline-start"/>}
+                                    className="gap-1.5 text-xs text-muted-foreground"
+                                >
+                                    Copy
+                                </LoadingButton>
                             }
-
                         </div>
                     }
                 </div>
 
                 {collection.description &&
-                    <p className="w-full whitespace-pre-line rounded-r-lg border-l-2 border-brand/30 bg-muted/30 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+                    <p
+                        className="w-full whitespace-pre-line rounded-r-lg border-l-2 border-brand/30 bg-muted/30 px-4 py-3
+                        text-sm leading-relaxed text-muted-foreground"
+                    >
                         {collection.description}
                     </p>
                 }

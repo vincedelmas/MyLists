@@ -11,7 +11,9 @@ import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {Dialog, DialogTrigger} from "@/lib/client/components/ui/dialog";
+import {useMutationFeedback} from "@/lib/client/hooks/use-mutation-feedback";
 import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
+import {SaveFeedbackIndicator} from "@/lib/client/components/general/SaveFeedbackIndicator";
 import {MembershipSearchInput} from "@/lib/client/components/media/base/MembershipSearchInput";
 import {MembershipDialogContent} from "@/lib/client/components/media/base/MembershipDialogContent";
 import {useAddMediaToCollectionMutation, useCreateCollectionMutation, useRemoveMediaFromCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
@@ -32,10 +34,15 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
     const addMutation = useAddMediaToCollectionMutation({ noErrorToast: true });
     const removeMutation = useRemoveMediaFromCollectionMutation({ noErrorToast: true });
 
-    const isPending = addMutation.isPending || removeMutation.isPending || createMutation.isPending;
+    const latestMutation = [addMutation, removeMutation, createMutation]
+        .reduce((latest, mutation) => mutation.submittedAt > latest.submittedAt ? mutation : latest);
+
+    const feedback = useMutationFeedback(latestMutation, true);
+    const isPending = feedback.pending;
     const { data: collections = [], isLoading, error: collectionsError } = useQuery(userCollectionMembershipsOptions(mediaId, mediaType, isOpen));
 
     const query = searchQuery.trim().toLowerCase();
+    const waiting = isPending && !feedback.loading && !collectionsError;
     const filteredCollections = collections.filter(collection => collection.title.toLowerCase().includes(query));
 
     const showCreateButton = !collectionsError && !isLoading && query.length >= 3
@@ -88,15 +95,17 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                         ? `Click 'create' to create '${searchQuery.trim()}'.`
                         : "Start typing to create your first collection."}
                 search={
-                    <MembershipSearchInput
-                        value={searchQuery}
-                        onCreate={handleCreate}
-                        onChange={setSearchQuery}
-                        canCreate={showCreateButton}
-                        disabled={isLoading || isPending || !!collectionsError}
-                        isCreating={createMutation.isPending}
-                        placeholder="Find or create a collection..."
-                    />
+                    <div data-save-feedback={waiting ? "waiting" : undefined}>
+                        <MembershipSearchInput
+                            value={searchQuery}
+                            onCreate={handleCreate}
+                            onChange={setSearchQuery}
+                            canCreate={showCreateButton}
+                            placeholder="Find or create a collection..."
+                            disabled={isLoading || isPending || !!collectionsError}
+                            isCreating={feedback.loading && latestMutation === createMutation}
+                        />
+                    </div>
                 }
                 footer={
                     <>
@@ -110,9 +119,12 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                             Open Collections
                             <ChevronRight className="size-3 mt-0.5"/>
                         </Link>
-                        <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
-                            Done
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <SaveFeedbackIndicator {...feedback}/>
+                            <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
+                                Done
+                            </Button>
+                        </div>
                     </>
                 }
             >
@@ -124,7 +136,8 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                         <Field
                             key={collection.id}
                             orientation="horizontal"
-                            data-disabled={isPending || !!collectionsError}
+                            data-save-feedback={waiting ? "waiting" : undefined}
+                            data-disabled={feedback.loading || !!collectionsError}
                             className={cn("rounded-lg p-3", isActive ? "bg-brand/4 text-brand" : "hover:bg-popover")}
                         >
                             <Checkbox

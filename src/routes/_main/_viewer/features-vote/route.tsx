@@ -8,6 +8,7 @@ import {handleServerFormErrors} from "@/lib/client/forms";
 import {formatDateTime} from "@/lib/utils/formatting/date";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Textarea} from "@/lib/client/components/ui/textarea";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
@@ -15,10 +16,10 @@ import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {TabNav, TabItem} from "@/lib/client/components/general/TabNav";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {FormTextField} from "@/lib/client/components/forms/FormTextField";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
@@ -29,8 +30,12 @@ import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/l
 
 export const Route = createFileRoute("/_main/_viewer/features-vote")({
     validateSearch: featureVotesSearchSchema,
-    context: () => ({ featureVotesQueryOptions: featureVotesOptions }),
-    loader: ({ context }) => context.queryClient.query({ ...context.featureVotesQueryOptions, staleTime: "static" }),
+    context: () => ({
+        featureVotesQueryOptions: featureVotesOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.query({ ...context.featureVotesQueryOptions, staleTime: "static" });
+    },
     component: FeatureVotesPage,
     head: () => ({ meta: [{ title: "Feature Voting Hub - MyLists" }] }),
 });
@@ -57,9 +62,9 @@ function FeatureVotesPage() {
     const { activeTab } = Route.useSearch();
     const { currentUser, isAnonymous } = useAuth();
     const toggleVoteMutation = useToggleFeatureVoteMutation();
+    const [searchQuery, setSearchQuery] = useState("");
     const { featureVotesQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(featureVotesQueryOptions).data;
-    const [searchQuery, setSearchQuery] = useState("");
     const isAdmin = currentUser?.capabilities.manageFeatureRequests ?? false;
     const createFeatureMutation = useCreateFeatureRequestMutation({ noErrorToast: true });
     const form = useForm<PostFeatureRequest>({
@@ -322,16 +327,20 @@ function FeatureVotesPage() {
                                     className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-5 rounded-xl border p-5 shadow-xs max-sm:grid-cols-[3.75rem_minmax(0,1fr)] max-sm:gap-3 max-sm:p-4"
                                 >
                                     <div className="flex flex-col items-center border-r pr-5 max-sm:pr-3">
-                                        <Button
+                                        <LoadingButton
                                             size="icon-sm"
+                                            icon={<ChevronUp/>}
                                             onClick={() => handleVote(req.id)}
-                                            variant={req.hasUserVote ? "selected" : "outline"}
-                                            disabled={toggleVoteMutation.isPending || isLocked || isAnonymous}
                                             aria-label={`${voteLabel} for ${req.title}`}
+                                            variant={req.hasUserVote ? "selected" : "outline"}
                                             title={isAnonymous ? "Sign in to vote" : isLocked ? "Voting is closed" : voteLabel}
-                                        >
-                                            <ChevronUp/>
-                                        </Button>
+                                            isLoading={toggleVoteMutation.isPending && toggleVoteMutation.variables?.data.featureId === req.id}
+                                            disabled={
+                                                isLocked ||
+                                                isAnonymous ||
+                                                (toggleVoteMutation.isPending && toggleVoteMutation.variables?.data.featureId !== req.id)
+                                            }
+                                        />
                                         <strong className="mt-2 text-lg leading-none tabular-nums text-foreground">
                                             {req.totalVotes}
                                         </strong>

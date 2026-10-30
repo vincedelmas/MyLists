@@ -9,6 +9,7 @@ import {toActivityDisplayValue} from "@/lib/utils/media/activity";
 import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
+import {tvSeasonsOptions} from "@/lib/client/react-query/query-options/tv-seasons.options";
 import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
 import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
 import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
@@ -195,18 +196,33 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                 });
             }
 
-            return response.userMedia;
+            return response;
         },
-        onMutate: () => {
-            return createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).cancel();
-        },
+        onMutate: () => Promise.all([
+            createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).cancel(),
+            queryClient.cancelQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey }),
+            queryClient.cancelQueries({ queryKey: ["tvSeasons", mediaType, mediaId, currentUser!.id] }),
+        ]),
         onSuccess: async (data, variables) => {
             if (!data) return;
 
             captureEvent("media_updated", { media_type: mediaType, source: options.source ?? "details" });
+
             const { payload } = variables;
             const activityUpdate = loggedActivityUpdateTypes.has(payload.type);
-            await createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).update(data);
+
+            // Cancel reads started during the save before installing the authoritative response.
+            await Promise.all([
+                createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).update(data.userMedia),
+                queryClient.cancelQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey }),
+                queryClient.cancelQueries({ queryKey: ["tvSeasons", mediaType, mediaId, currentUser!.id] }),
+            ]);
+
+            queryClient.setQueryData(historyOptions(mediaType, mediaId).queryKey, data.history);
+
+            if ((mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) && data.seasons) {
+                queryClient.setQueryData(tvSeasonsOptions(mediaType, mediaId, currentUser!.id).queryKey, data.seasons);
+            }
 
             // Secondary screens refresh on next visit, visible feed updates in background
             void Promise.all([
@@ -216,9 +232,6 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                     progressChanged: activityUpdate,
                 }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"], refetchType: "none" }),
-                queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey }),
-                ...(activityUpdate || (payload.type === UpdateType.RATING && "seasonRating" in payload)
-                    ? [queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId], refetchType: "none" })] : []),
                 ...(payload.type === UpdateType.FAVORITE
                     ? [queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey, refetchType: "none" })] : []),
                 ...(payload.type === UpdateType.PLATFORM
@@ -282,18 +295,24 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
             return postEditUserTag({ data: { mediaType, mediaId, tag, action } });
         },
         meta: { ...meta },
-        onSuccess: async (_data, { action, tag }) => {
+        onMutate: () => queryClient.cancelQueries({ queryKey: tagNamesOptions(mediaType, false).queryKey }),
+        onSuccess: async (data, { action, tag }) => {
+            await queryClient.cancelQueries({ queryKey: tagNamesOptions(mediaType, false).queryKey });
+            queryClient.setQueryData(tagNamesOptions(mediaType, false).queryKey, data.tagNames);
+
             if (mediaId !== undefined && (action === TagAction.ADD || action === TagAction.DELETE_ONE)) {
                 await createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).editTag(tag, action);
             }
 
+            // Membership changes update the editor locally; other screens refresh on their next visit.
+            const refetchType = mediaId !== undefined ? "none" : "active";
+
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name] }),
-                queryClient.invalidateQueries({ queryKey: tagNamesOptions(mediaType, false).queryKey }),
+                queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name], refetchType }),
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists"], refetchType: "none" }),
-                queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
-                queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
-                queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name], refetchType }),
+                queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey, refetchType }),
+                queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name], refetchType }),
 
                 // Per-entry edits refresh when the media dialog closes, keeping the item available to edit.
                 queryClient.invalidateQueries({
@@ -301,7 +320,7 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
                     refetchType: action === TagAction.ADD || action === TagAction.DELETE_ONE ? "none" : "active",
                 }),
 
-                queryClient.invalidateQueries({ queryKey: ["details", mediaType], refetchType: mediaId === undefined ? "active" : "none" }),
+                queryClient.invalidateQueries({ queryKey: ["details", mediaType], refetchType }),
             ]);
         }
     })

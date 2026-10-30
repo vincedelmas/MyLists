@@ -2,6 +2,7 @@ import {Input} from "@/lib/client/components/ui/input";
 import React, {MouseEvent, useId, useRef} from "react";
 import {useConfirmState} from "@/lib/client/hooks/use-confirm";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,7 +18,7 @@ import {
 export function ConfirmDialogHost() {
     const inputId = useId();
     const inputRef = useRef<HTMLInputElement>(null);
-    const { open, options, inputValue, setInputValue, cancel, confirm } = useConfirmState();
+    const { open, pending, options, inputValue, setInputValue, cancel, confirm } = useConfirmState();
 
     if (!options) return null;
 
@@ -30,11 +31,9 @@ export function ConfirmDialogHost() {
     }
 
     const handleOnConfirm = (ev: MouseEvent<HTMLButtonElement>) => {
-        if (confirmDisabled) {
-            ev.preventDefault();
-            return;
-        }
-        confirm();
+        ev.preventDefault();
+        if (confirmDisabled || pending) return;
+        void confirm();
     }
 
     return (
@@ -61,6 +60,7 @@ export function ConfirmDialogHost() {
                             data-bwignore
                             ref={inputRef}
                             autoCorrect="off"
+                            disabled={pending}
                             autoComplete="off"
                             value={inputValue}
                             spellCheck={false}
@@ -71,13 +71,14 @@ export function ConfirmDialogHost() {
                 }
 
                 <AlertDialogFooter>
-                    <AlertDialogCancel type="button" variant="secondary">
+                    <AlertDialogCancel type="button" variant="secondary" disabled={pending}>
                         {options.cancelLabel}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         type="button"
                         onClick={handleOnConfirm}
                         disabled={confirmDisabled}
+                        render={<LoadingButton isLoading={pending}/>}
                         variant={isDestructive ? "destructive" : "default"}
                     >
                         {options.confirmLabel}

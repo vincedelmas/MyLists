@@ -11,6 +11,7 @@ import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {Bell, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/lib/client/components/ui/tabs";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
@@ -25,9 +26,9 @@ type NotificationUnion = Awaited<ReturnType<NonNullable<ReturnType<typeof notifi
 
 
 export const Notifications = () => {
-    const mutation = useMarkAllNotifAsRead();
     const isBelowLg = useBreakpoint("lg");
     const [open, setOpen] = useState(false);
+    const mutation = useMarkAllNotifAsRead();
     const { data: counts } = useQuery(notificationsCountOptions);
     const [activeTab, setActiveTab] = useState<NotifTab>("media");
     const { data: notifications, isLoading } = useQuery(notificationsOptions(open, activeTab));
@@ -250,33 +251,47 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
                 {isUnread &&
                     <div className="size-2 shrink-0 rounded-full bg-brand"/>
                 }
-                <button
+                <LoadingButton
+                    size="bare"
+                    variant="ghost"
+                    icon={<X className="size-3.5"/>}
                     className="opacity-70 hover:opacity-100"
-                    disabled={deleteMutation.isPending || respondMutation.isPending}
+                    aria-label={isFollowRequest ? "Decline follow request" : "Dismiss notification"}
                     onClick={isFollowRequest ? () => respond("decline") : deleteNotif}
-                >
-                    <X className="size-3.5"/>
-                </button>
+                    disabled={respondMutation.isPending && respondMutation.variables?.data.action === "accept"}
+                    isLoading={
+                        deleteMutation.isPending ||
+                        (respondMutation.isPending && respondMutation.variables?.data.action === "decline")
+                    }
+                />
             </div>
 
             {isFollowRequest &&
                 <div className="ml-13 flex gap-2">
-                    <Button
+                    <LoadingButton
                         size="xs"
                         variant="default"
                         onClick={() => respond("accept")}
-                        disabled={deleteMutation.isPending || respondMutation.isPending}
+                        isLoading={respondMutation.isPending && respondMutation.variables?.data.action === "accept"}
+                        disabled={
+                            deleteMutation.isPending ||
+                            (respondMutation.isPending && respondMutation.variables?.data.action !== "accept")
+                        }
                     >
                         Accept
-                    </Button>
-                    <Button
+                    </LoadingButton>
+                    <LoadingButton
                         size="xs"
                         variant="outline"
                         onClick={() => respond("decline")}
-                        disabled={deleteMutation.isPending || respondMutation.isPending}
+                        isLoading={respondMutation.isPending && respondMutation.variables?.data.action === "decline"}
+                        disabled={
+                            deleteMutation.isPending ||
+                            (respondMutation.isPending && respondMutation.variables?.data.action !== "decline")
+                        }
                     >
                         Decline
-                    </Button>
+                    </LoadingButton>
                 </div>
             }
         </div>

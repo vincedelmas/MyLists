@@ -33,13 +33,14 @@ interface FiltersSideSheetProps {
     onOpenChange: (open: boolean) => void;
     onTabChange: (tab: MediaFiltersTab) => void;
     onTagChange: (change: MediaTagChange) => void;
-    onFilterApply: (filters: Partial<MediaListArgs>) => void;
+    onFilterApply: (filters: Partial<MediaListArgs>) => void | Promise<void>;
 }
 
 
 export const FiltersSideSheet = (props: FiltersSideSheetProps) => {
     const { open, filters, username, mediaType, isCurrent, activeTab, onTabChange, onTagChange, onOpenChange, onFilterApply } = props;
 
+    const [applying, setApplying] = useState(false);
     const [draft, setDraft] = useState<Partial<AdvancedListFilters>>({});
     const isEditingTags = useIsMutating({ mutationKey: ["userMediaEdit", mediaType] }) > 0;
     const metadataFields = getMediaFilterDefinitions(mediaType).filter(filter => filter.type === "checkbox").map(filter => filter.key);
@@ -61,9 +62,10 @@ export const FiltersSideSheet = (props: FiltersSideSheetProps) => {
         setDraft(current => ({ ...current, [filterType]: value }));
     };
 
-    const handleOnSubmit = (ev: React.SubmitEvent<HTMLFormElement>) => {
+    const handleOnSubmit = async (ev: React.SubmitEvent<HTMLFormElement>) => {
         ev.preventDefault();
-        if (isEditingTags) return;
+        if (isEditingTags || applying) return;
+
         const advancedFilters = { ...draft };
 
         for (const key of Object.keys(advancedFilters) as (keyof AdvancedListFilters)[]) {
@@ -73,46 +75,58 @@ export const FiltersSideSheet = (props: FiltersSideSheetProps) => {
             }
         }
 
-        handleSheetOpenChange(false);
-        onFilterApply(advancedFilters);
+        setApplying(true);
+        try {
+            await onFilterApply(advancedFilters);
+            handleSheetOpenChange(false);
+        }
+        finally {
+            setApplying(false);
+        }
     };
 
     return (
         <MediaFiltersSheet
             open={open}
-            onSubmit={handleOnSubmit}
-            title="Additional Filters"
             activeTab={activeTab}
+            onSubmit={handleOnSubmit}
             onTabChange={onTabChange}
+            title="Additional Filters"
             onOpenChange={handleSheetOpenChange}
             description={<>How filters work <FilterInfoPopover/></>}
             footer={
-                <FormSubmitButton className="w-full" disabled={activeTab === "filters" && !!error} isLoading={isEditingTags || (activeTab === "filters" && isPending)}>
+                <FormSubmitButton
+                    className="w-full"
+                    disabled={activeTab === "filters" && !!error}
+                    isLoading={applying || isEditingTags || (activeTab === "filters" && isPending)}
+                >
                     Apply Filters
                 </FormSubmitButton>
             }
             tags={availableFilters.has("tags") ?
                 <MediaFilterTags
                     username={username}
-                    mediaType={mediaType}
                     isOwner={isCurrent}
+                    mediaType={mediaType}
                     selected={currentFilters.tags ?? []}
+                    enabled={open && activeTab === "tags"}
+                    onChange={tags => handleRegisterChange("tags", tags)}
                     onTagChange={change => {
                         setDraft(current => {
                             if (!current.tags?.includes(change.oldName)) return current;
                             return {
                                 ...current,
-                                tags: current.tags.flatMap(name => name === change.oldName ? change.newName ? [change.newName] : [] : [name]),
+                                tags: current.tags.flatMap(n => n === change.oldName ? change.newName ? [change.newName] : [] : [n]),
                             };
                         });
                         onTagChange(change);
                     }}
-                    enabled={open && activeTab === "tags"}
-                    onChange={tags => handleRegisterChange("tags", tags)}
-                /> : undefined
+                />
+                :
+                undefined
             }
         >
-            <FieldSet disabled={isPending}>
+            <FieldSet disabled={isPending || applying}>
                 {error ?
                     <div className="flex items-center justify-center h-[70vh]">
                         <EmptyState

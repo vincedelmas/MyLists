@@ -5,6 +5,7 @@ import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {PrivacyType, RoleType} from "@/lib/utils/enums";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {MAX_PROFILE_PINS, profilePinSchema} from "@/lib/schemas/profile-pins.schema";
 import * as schema from "@/lib/server/database/schema";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
@@ -56,7 +57,7 @@ describe("shared profile pins", () => {
         profilePinsRepository.set(1, { kind: "dynamic", id: 1 }, true);
         for (const kind of ["dynamic", "collection"] as const) {
             for (const id of [10, 999]) {
-                for (const pinned of [true, false]) expect(() => profilePinsRepository.set(1, { kind, id }, pinned)).toThrow("you own");
+                for (const pinned of [true, false]) expect(() => profilePinsRepository.set(1, { kind, id }, pinned)).toThrow(FormattedError);
             }
         }
         expect(profilePinsRepository.getOwn(1)).toEqual([{ kind: "dynamic", id: 1, position: 1 }]);

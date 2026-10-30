@@ -1,13 +1,13 @@
 import {RefreshCw, Trash2} from "lucide-react";
 import {ImportJobStatus} from "@/lib/utils/enums";
 import {useNavigate} from "@tanstack/react-router";
-import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {formatDateTime} from "@/lib/utils/formatting/date";
 import type {ImportSearch} from "@/lib/schemas/imports.schema";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {ImportJobProgress} from "@/lib/client/components/imports/ImportJobProgress";
 import {ImportStatusBadge} from "@/lib/client/components/imports/ImportStatusBadge";
 import {ImportJobIssuesTable} from "@/lib/client/components/imports/ImportJobIssuesTable";
@@ -110,15 +110,25 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                 </div>
 
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={onRefreshClick} disabled={isFetching}>
-                        <RefreshCw className="size-4"/>
+                    <LoadingButton
+                        size="sm"
+                        variant="outline"
+                        isLoading={isFetching}
+                        onClick={onRefreshClick}
+                        icon={<RefreshCw className="size-4"/>}
+                    >
                         Refresh
-                    </Button>
+                    </LoadingButton>
                     {(isTerminal || job.status === ImportJobStatus.QUEUED) &&
-                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleteMutation.isPending}>
-                            <Trash2 data-icon="inline-start"/>
+                        <LoadingButton
+                            size="sm"
+                            variant="destructive"
+                            onClick={handleDelete}
+                            isLoading={deleteMutation.isPending}
+                            icon={<Trash2 data-icon="inline-start"/>}
+                        >
                             Delete
-                        </Button>
+                        </LoadingButton>
                     }
                 </div>
             </div>

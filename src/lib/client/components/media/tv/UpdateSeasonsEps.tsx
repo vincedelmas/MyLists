@@ -1,4 +1,5 @@
 import {UpdateType} from "@/lib/utils/enums";
+import {MediaSaveFeedback} from "@/lib/client/components/media/base/MediaSaveFeedback";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
@@ -45,39 +46,47 @@ export const UpdateSeasonsEps = ({ onUpdateMutation, epsPerSeason, currentSeason
         <>
             <div className="flex justify-between items-center">
                 <div>Season</div>
-                <Select items={seasonItems} value={currentSeason.toString()} onValueChange={handleSeasonUpdate}
-                        disabled={onUpdateMutation.isPending}>
-                    <SelectTrigger size="sm" className="w-34" aria-label="Current season">
-                        <SelectValue/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            {seasonItems.map((item) =>
-                                <SelectItem key={item.value} value={item.value}>
-                                    {item.label}
-                                </SelectItem>
-                            )}
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
+                <MediaSaveFeedback mutation={onUpdateMutation} field="currentSeason">
+                    {saveDisabled => (
+                        <Select items={seasonItems} value={currentSeason.toString()} onValueChange={handleSeasonUpdate}
+                                disabled={saveDisabled}>
+                            <SelectTrigger size="sm" className="w-34" aria-label="Current season">
+                                <SelectValue/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    {seasonItems.map((item) =>
+                                        <SelectItem key={item.value} value={item.value}>
+                                            {item.label}
+                                        </SelectItem>
+                                    )}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    )}
+                </MediaSaveFeedback>
             </div>
             <div className="flex justify-between items-center">
                 <div>Episode</div>
-                <Select items={episodeItems} value={currentEpisode.toString()} onValueChange={handleEpisodeUpdate}
-                        disabled={onUpdateMutation.isPending}>
-                    <SelectTrigger size="sm" className="w-34" aria-label="Current episode">
-                        <SelectValue/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            {episodeItems.map((item) =>
-                                <SelectItem key={item.value} value={item.value}>
-                                    {item.label}
-                                </SelectItem>
-                            )}
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
+                <MediaSaveFeedback mutation={onUpdateMutation} field="currentEpisode">
+                    {saveDisabled => (
+                        <Select items={episodeItems} value={currentEpisode.toString()} onValueChange={handleEpisodeUpdate}
+                                disabled={saveDisabled}>
+                            <SelectTrigger size="sm" className="w-34" aria-label="Current episode">
+                                <SelectValue/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    {episodeItems.map((item) =>
+                                        <SelectItem key={item.value} value={item.value}>
+                                            {item.label}
+                                        </SelectItem>
+                                    )}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    )}
+                </MediaSaveFeedback>
             </div>
         </>
     );

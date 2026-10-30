@@ -12,6 +12,8 @@ import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options";
 import {Dialog, DialogTrigger} from "@/lib/client/components/ui/dialog";
+import {useMutationFeedback} from "@/lib/client/hooks/use-mutation-feedback";
+import {SaveFeedbackIndicator} from "@/lib/client/components/general/SaveFeedbackIndicator";
 import {MembershipSearchInput} from "@/lib/client/components/media/base/MembershipSearchInput";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {MembershipDialogContent} from "@/lib/client/components/media/base/MembershipDialogContent";
@@ -30,8 +32,11 @@ export const TagsDialog = ({ mediaType, mediaId, tags }: TagsDialogProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const mutation = useEditTagMutation(mediaType, mediaId, { noErrorToast: true });
+
+    const feedback = useMutationFeedback(mutation, true);
     const { data: allTags = [], isLoading, error } = useQuery(tagNamesOptions(mediaType, isOpen));
 
+    const waiting = !error && feedback.pending && !feedback.loading;
     const query = searchQuery.trim().toLowerCase();
     const activeNames = new Set(tags.map(tag => tag.name));
 
@@ -72,15 +77,17 @@ export const TagsDialog = ({ mediaType, mediaId, tags }: TagsDialogProps) => {
                     ? `Click 'create' to create '${searchQuery.trim()}' tag.`
                     : "Start typing to create your first tag."}
                 search={
-                    <MembershipSearchInput
-                        value={searchQuery}
-                        onChange={setSearchQuery}
-                        canCreate={showCreateButton}
-                        isCreating={mutation.isPending}
-                        placeholder="Find or create a tag..."
-                        disabled={isLoading || !!error || mutation.isPending}
-                        onCreate={() => handleAction({ name: searchQuery.trim() }, TagAction.ADD)}
-                    />
+                    <div data-save-feedback={waiting ? "waiting" : undefined}>
+                        <MembershipSearchInput
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            canCreate={showCreateButton}
+                            placeholder="Find or create a tag..."
+                            disabled={isLoading || !!error || feedback.pending}
+                            isCreating={feedback.loading && mutation.variables?.action === TagAction.ADD}
+                            onCreate={() => handleAction({ name: searchQuery.trim() }, TagAction.ADD)}
+                        />
+                    </div>
                 }
                 footer={
                     <>
@@ -94,9 +101,12 @@ export const TagsDialog = ({ mediaType, mediaId, tags }: TagsDialogProps) => {
                             Open Tags
                             <ChevronRight className="size-3 -ml-1"/>
                         </Link>
-                        <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
-                            Done
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <SaveFeedbackIndicator {...feedback}/>
+                            <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
+                                Done
+                            </Button>
+                        </div>
                     </>
                 }
             >
@@ -108,13 +118,14 @@ export const TagsDialog = ({ mediaType, mediaId, tags }: TagsDialogProps) => {
                         <Field
                             key={tag.name}
                             orientation="horizontal"
-                            data-disabled={!!error || mutation.isPending}
+                            data-disabled={!!error || feedback.loading}
+                            data-save-feedback={waiting ? "waiting" : undefined}
                             className={cn("p-3 rounded-lg", isActive ? "bg-brand/4 text-brand" : "hover:bg-popover")}
                         >
                             <Checkbox
                                 id={checkboxId}
                                 checked={isActive}
-                                disabled={!!error || mutation.isPending}
+                                disabled={!!error || feedback.pending}
                                 onCheckedChange={() => handleAction(tag, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
                             />
                             <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">

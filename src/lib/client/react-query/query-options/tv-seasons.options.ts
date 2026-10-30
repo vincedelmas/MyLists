@@ -7,6 +7,6 @@ export const tvSeasonsOptions = (mediaType: TvMediaType, mediaId: number, userId
     return queryOptions({
         queryKey: ["tvSeasons", mediaType, mediaId, userId] as const,
         queryFn: () => getTvSeasons({ data: { mediaType, mediaId, userId } }),
-        staleTime: 0,
+        staleTime: 30 * 1000,
     });
 }

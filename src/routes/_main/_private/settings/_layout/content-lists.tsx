@@ -7,7 +7,6 @@ import {saveAsFile} from "@/lib/client/file-download";
 import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {Switch} from "@/lib/client/components/ui/switch";
-import {Button} from "@/lib/client/components/ui/button";
 import {handleServerFormErrors} from "@/lib/client/forms";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {FormError} from "@/lib/client/components/forms/FormError";
@@ -24,6 +23,7 @@ import {ALL_MEDIA_TYPES, RELEASE_NOTIFICATION_MEDIA_TYPES} from "@/lib/media-def
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/content-lists")({
@@ -447,9 +447,16 @@ function MediaListFormPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button variant="outline" onClick={handleDownloadCSV} disabled={!selectedListForExport || downloadListAsCSVMutation.isPending}>
-                        <Download className="size-4"/> Download
-                    </Button>
+                    <LoadingButton
+                        variant="outline"
+                        onClick={handleDownloadCSV}
+                        disabled={!selectedListForExport}
+                        icon={<Download className="size-4"/>}
+                        isLoading={downloadListAsCSVMutation.isPending}
+                    >
+                        {" "}
+                        Download
+                    </LoadingButton>
                 </div>
                 {downloadListAsCSVMutation.isError &&
                     <InlineErrorContainer onDismiss={downloadListAsCSVMutation.reset}>

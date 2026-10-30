@@ -1,12 +1,12 @@
-import {FormProvider, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
+import {FormProvider, useForm} from "react-hook-form";
 import {FieldSet} from "@/lib/client/components/ui/field";
-import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
-import {toDateInputValue} from "@/lib/utils/formatting/date";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {toDateInputValue} from "@/lib/utils/formatting/date";
 import {MonthlyActivityEditor} from "@/lib/types/activity.types";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {toActivityDisplayValue, toActivityStoredValue} from "@/lib/utils/media/activity";
 import {MonthlyActivityFormFields} from "@/lib/client/components/activity/MonthlyActivityFormFields";
@@ -90,14 +90,15 @@ export const MonthlyActivityEditDialog = ({ open, activity, onOpenChange }: Mont
                         </FieldSet>
                         <FormError/>
                         <DialogFooter className="gap-3">
-                            <Button
+                            <LoadingButton
                                 type="button"
                                 variant="destructive"
                                 onClick={handleOnRemove}
-                                disabled={updateMutation.isPending || removeMutation.isPending}
+                                disabled={updateMutation.isPending}
+                                isLoading={removeMutation.isPending}
                             >
                                 Remove From Month
-                            </Button>
+                            </LoadingButton>
                             <FormSubmitButton disabled={removeMutation.isPending} isLoading={updateMutation.isPending}>
                                 Save Monthly Activity
                             </FormSubmitButton>

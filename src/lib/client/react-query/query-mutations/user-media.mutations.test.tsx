@@ -37,7 +37,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => ({
     },
 }));
 
-vi.mock("@/lib/client/hooks/use-auth", () => ({ useAuth: () => ({ currentUser: { name: "alice" } }) }));
+vi.mock("@/lib/client/hooks/use-auth", () => ({ useAuth: () => ({ currentUser: { id: 1, name: "alice" } }) }));
 vi.mock("@/lib/client/components/ui/toast", () => ({ toast: { add: server.toast } }));
 vi.mock("@/lib/client/components/activity/MonthlyActivityCorrection", () => ({
     requestActivityCorrection: server.correction,
@@ -53,6 +53,7 @@ vi.mock("@/lib/server/functions/user-media", () => ({
     postEditUserTag: server.editTag,
     getUserTagNames: server.tagNames,
 }));
+vi.mock("@/lib/server/functions/tv-seasons", () => ({ getTvSeasons: vi.fn() }));
 vi.mock("@/lib/server/functions/user-monthly-activity", () => ({
     getMonthlyActivityStats: server.activityStats,
 }));
@@ -162,16 +163,15 @@ describe("list filter freshness", () => {
         queryClient.setQueryData(namesKey, previous);
         for (const key of [pinsKey, otherPinsKey]) queryClient.setQueryData(key, { items: [], activeMediaTypes: [] });
         for (const key of [listKey, detailsKey, otherUserKey, otherMediaKey]) queryClient.setQueryData(key, { tags: previous });
-        server.editTag.mockResolvedValueOnce(action === TagAction.RENAME ? { name: "New name" } : undefined);
+        server.editTag.mockResolvedValueOnce({ tagNames: tags });
 
         await useEditTagMutation(MediaType.MOVIES).mutateAsync({
             action,
             tag: action === TagAction.RENAME ? { name: "New name", oldName: "Old name" } : { name: "Old name" },
         });
 
-        expect(queryClient.getQueryState(namesKey)?.isInvalidated).toBe(true);
-        server.tagNames.mockResolvedValueOnce(tags);
-        expect(await queryClient.query(tagNamesOptions(MediaType.MOVIES, true))).toEqual(tags);
+        expect(queryClient.getQueryData(namesKey)).toEqual(tags);
+        expect(server.tagNames).not.toHaveBeenCalled();
         expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
         expect(queryClient.getQueryState(detailsKey)?.isInvalidated).toBe(true);
         expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);
@@ -432,7 +432,7 @@ describe("media identity cache synchronization", () => {
         const list = { results: { ...initialList.results, items: [{ ...item, tags: [{ id: 7, name: "Keep" }] }] } };
         queryClient.setQueryData(detailsKey, details);
         queryClient.setQueryData(queryKey, list);
-        server.editTag.mockResolvedValueOnce(tag);
+        server.editTag.mockResolvedValueOnce({ tag, tagNames: action === TagAction.ADD ? [tag] : [] });
 
         await useEditTagMutation(MediaType.SERIES, 1).mutateAsync({ tag, action });
 
@@ -502,5 +502,81 @@ describe("media edit analytics", () => {
         expect(server.capture).toHaveBeenCalledExactlyOnceWith("media_updated", {
             media_type: MediaType.SERIES, source: source ?? "details",
         });
+    });
+});
+
+
+describe("authoritative editor caches", () => {
+    it.each([
+        { type: UpdateType.RATING, seasonRating: { season: 1, rating: 8.5 } },
+        { type: UpdateType.RATING, rating: 8.5 },
+        { type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 2 }] },
+        { type: UpdateType.STATUS, status: Status.PLAN_TO_WATCH },
+    ])("applies saved seasons and history without a follow-up request ($type)", async payload => {
+        const seasonsKey = ["tvSeasons", MediaType.SERIES, 1, 1];
+        const historyKey = ["onOpenHistory", MediaType.SERIES, 1];
+        const otherUserKey = ["tvSeasons", MediaType.SERIES, 1, 2];
+        const oldSeasons = [{ season: 1, rating: 2.5, redo: 0, episodes: 8 }];
+        const savedSeasons = [{ season: 1, rating: 8.5, redo: 2, episodes: 8 }];
+        const history = [{ id: 7 }];
+        for (const key of [seasonsKey, otherUserKey]) queryClient.setQueryData(key, oldSeasons);
+        queryClient.setQueryData(historyKey, []);
+        const fetchSeasons = vi.fn();
+        const fetchHistory = vi.fn();
+        const stopSeasons = new QueryObserver(queryClient, { queryKey: seasonsKey, queryFn: fetchSeasons }).subscribe(() => {});
+        const stopHistory = new QueryObserver(queryClient, { queryKey: historyKey, queryFn: fetchHistory }).subscribe(() => {});
+        try {
+            server.update.mockResolvedValueOnce({ kind: "saved", userMedia: item, seasons: savedSeasons, history });
+            await useUpdateUserMediaMutation(MediaType.SERIES, 1).mutateAsync({ payload });
+            expect(queryClient.getQueryData(seasonsKey)).toEqual(savedSeasons);
+            expect(queryClient.getQueryData(historyKey)).toEqual(history);
+            expect(queryClient.getQueryData(otherUserKey)).toEqual(oldSeasons);
+            expect(fetchSeasons).not.toHaveBeenCalled();
+            expect(fetchHistory).not.toHaveBeenCalled();
+        }
+        finally { stopSeasons(); stopHistory(); }
+    });
+
+    it("cancels an older season read before applying a confirmed save", async () => {
+        const key = ["tvSeasons", MediaType.SERIES, 1, 1];
+        const before = [{ season: 1, rating: 2.5, redo: 0, episodes: 8 }];
+        const after = [{ ...before[0], rating: 8.5 }];
+        const oldRead = Promise.withResolvers<typeof before>();
+        queryClient.setQueryData(key, before);
+        const stop = new QueryObserver(queryClient, { queryKey: key, queryFn: () => oldRead.promise }).subscribe(() => {});
+        const fetching = queryClient.refetchQueries({ queryKey: key });
+        try {
+            server.update.mockResolvedValueOnce({ kind: "saved", userMedia: item, seasons: after, history: [] });
+            await useUpdateUserMediaMutation(MediaType.SERIES, 1)
+                .mutateAsync({ payload: { type: UpdateType.RATING, seasonRating: { season: 1, rating: 8.5 } } });
+            oldRead.resolve(before);
+            await fetching;
+            expect(queryClient.getQueryData(key)).toEqual(after);
+        }
+        finally { oldRead.resolve(before); stop(); }
+    });
+
+    it("finishes a tag edit without refetching the editor or unrelated active queries", async () => {
+        const namesKey = ["tagNames", MediaType.SERIES];
+        const tagsKey = ["tagsView", MediaType.SERIES, "alice"];
+        const detailsKey = ["details", MediaType.SERIES, 1];
+        const tag = { name: "Favorites" };
+        queryClient.setQueryData(namesKey, [tag]);
+        queryClient.setQueryData(tagsKey, [{ tagName: tag.name, totalCount: 1 }]);
+        queryClient.setQueryData(detailsKey, { media: {}, userMedia: { ...item, tags: [tag] } });
+        const fetchNames = vi.fn();
+        const fetchTags = vi.fn();
+        const stopNames = new QueryObserver(queryClient, { queryKey: namesKey, queryFn: fetchNames }).subscribe(() => {});
+        const stopTags = new QueryObserver(queryClient, { queryKey: tagsKey, queryFn: fetchTags }).subscribe(() => {});
+        try {
+            server.editTag.mockResolvedValueOnce({ tagNames: [] });
+            await useEditTagMutation(MediaType.SERIES, 1).mutateAsync({ tag, action: TagAction.DELETE_ONE });
+            expect(queryClient.getQueryData(namesKey)).toEqual([]);
+            expect(queryClient.getQueryData<{ userMedia: { tags: unknown[] } }>(detailsKey)?.userMedia.tags).toEqual([]);
+            expect(queryClient.getQueryState(tagsKey)?.isInvalidated).toBe(true);
+            expect(fetchNames).not.toHaveBeenCalled();
+            expect(fetchTags).not.toHaveBeenCalled();
+        }
+        finally { stopNames(); stopTags(); }
     });
 });

@@ -1,10 +1,11 @@
 import {useState} from "react";
-import {UpdateType} from "@/lib/utils/enums";
 import {Maximize2} from "lucide-react";
+import {UpdateType} from "@/lib/utils/enums";
 import {COMMENT_MAX_LENGTH} from "@/lib/utils/constants";
 import {Button} from "@/lib/client/components/ui/button";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {StructuredComment} from "@/lib/client/components/media/base/StructuredComment";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
@@ -27,6 +28,7 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
 
     const currentLength = comment?.length ?? 0;
     const isOverLimit = currentLength > maxChars;
+    const savingComment = updateComment.isPending && updateComment.variables?.payload.type === UpdateType.COMMENT;
 
     const handleEditToggle = () => {
         if (disabled) return;
@@ -111,13 +113,14 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
                             >
                                 Cancel
                             </Button>
-                            <Button
+                            <LoadingButton
                                 size="sm"
+                                isLoading={savingComment}
                                 onClick={() => handleSave()}
-                                disabled={content === comment || updateComment.isPending || isOverLimit}
+                                disabled={content === comment || isOverLimit || (updateComment.isPending && !savingComment)}
                             >
                                 Save
-                            </Button>
+                            </LoadingButton>
                         </div>
                     </div>
                 </div>
@@ -167,13 +170,14 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
                                     >
                                         Cancel
                                     </Button>
-                                    <Button
+                                    <LoadingButton
                                         size="sm"
+                                        isLoading={savingComment}
                                         onClick={() => handleSave()}
-                                        disabled={content === comment || updateComment.isPending || isOverLimit}
+                                        disabled={content === comment || isOverLimit || (updateComment.isPending && !savingComment)}
                                     >
                                         Save
-                                    </Button>
+                                    </LoadingButton>
                                 </div>
                             </div>
                         </div>

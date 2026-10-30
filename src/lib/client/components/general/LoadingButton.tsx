@@ -11,7 +11,7 @@ type LoadingButtonProps = React.ComponentProps<typeof Button> & {
 };
 
 
-export function LoadingButton({ children, disabled, icon, isLoading = false, delayLoading = false, ...props }: LoadingButtonProps) {
+export function LoadingButton({ children, disabled, icon, isLoading = false, delayLoading = true, ...props }: LoadingButtonProps) {
     const delayedLoading = useDelayedLoading(isLoading && delayLoading);
     const showLoading = delayLoading ? delayedLoading : isLoading;
 
@@ -20,6 +20,7 @@ export function LoadingButton({ children, disabled, icon, isLoading = false, del
             {...props}
             aria-busy={isLoading || showLoading}
             disabled={disabled || isLoading || showLoading}
+            data-save-feedback={isLoading && !showLoading && !disabled ? "waiting" : undefined}
         >
             {showLoading
                 ? <Spinner data-icon="inline-start" aria-hidden="true" className="text-current"/>

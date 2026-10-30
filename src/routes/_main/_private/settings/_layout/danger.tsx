@@ -10,6 +10,7 @@ import {handleServerFormErrors} from "@/lib/client/forms";
 import {FieldGroup} from "@/lib/client/components/ui/field";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {FormTextField} from "@/lib/client/components/forms/FormTextField";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {accountSecurityOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteAccountMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
@@ -141,9 +142,9 @@ function DangerForm() {
                                 >
                                     Cancel
                                 </Button>
-                                <Button type="submit" variant="destructive" disabled={deleteAccountMutation.isPending}>
+                                <LoadingButton isLoading={deleteAccountMutation.isPending} type="submit" variant="destructive">
                                     Delete Account
-                                </Button>
+                                </LoadingButton>
                             </DialogFooter>
                         </form>
                     </FormProvider>

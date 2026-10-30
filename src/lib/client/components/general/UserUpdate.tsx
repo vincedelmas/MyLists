@@ -1,12 +1,11 @@
 import {Trash} from "lucide-react";
-import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
-import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {UserUpdateType} from "@/lib/types/query.options.types";
 import {Payload} from "@/lib/client/components/general/Payload";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 
 
 interface UserUpdateProps {
@@ -34,8 +33,7 @@ export function UserUpdate({ update, username, onDelete, canDelete, isPending, m
     };
 
     return (
-        <div className={cn("relative group flex gap-3 py-3 px-2 border-b hover:bg-muted/30 rounded-lg",
-            (mediaIdBeingDeleted === update.id && isPending) && "opacity-30")}>
+        <div className="relative group flex gap-3 py-3 px-2 border-b hover:bg-muted/30 rounded-lg">
             <div className="mt-1">
                 <div className="flex items-center justify-center">
                     <MainThemeIcon
@@ -70,15 +68,16 @@ export function UserUpdate({ update, username, onDelete, canDelete, isPending, m
                 </div>
             </div>
             {canDelete &&
-                <Button
+                <LoadingButton
                     size="icon"
                     variant="ghost"
-                    disabled={isPending}
+                    aria-label="Delete update"
+                    icon={<Trash className="size-4"/>}
                     onClick={() => handleDeleteUpdate(update.id)}
-                    className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-80 disabled:pointer-events-none"
-                >
-                    <Trash className="size-4"/>
-                </Button>
+                    disabled={isPending && mediaIdBeingDeleted !== update.id}
+                    isLoading={isPending && mediaIdBeingDeleted === update.id}
+                    className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-80 aria-busy:opacity-100"
+                />
             }
         </div>
     );

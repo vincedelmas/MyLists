@@ -2,14 +2,18 @@ import {useEffect, useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
 import {WCF_MAX_ROUNDS, WCF_MEDIA_TYPES} from "@/lib/schemas/wcf.schema";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 import {dateFromUTCInput, extractDate, formatDate} from "@/lib/utils/formatting/date";
@@ -59,7 +63,9 @@ function WhichCameFirstPage() {
     const answerMutation = useAnswerWCFRoundMutation();
     const abandonMutation = useAbandonWCFRunMutation();
     const { whichCameFirstQueryOptions } = Route.useRouteContext();
+
     const [showGameOver, setShowGameOver] = useState(false);
+    const [returningToMenu, setReturningToMenu] = useState(false);
     const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
     const { activeRun, leaderboard, stats } = useSuspenseQuery(whichCameFirstQueryOptions).data;
     const [selectedTypes, setSelectedTypes] = useState<MediaType[]>(activeRun?.selectedMediaTypes ?? [...WCF_MEDIA_TYPES]);
@@ -73,9 +79,18 @@ function WhichCameFirstPage() {
     };
 
     const continueGame = async () => {
-        await queryClient.invalidateQueries({ queryKey: whichCameFirstQueryOptions.queryKey });
-        setAnswerResult(null);
-        setShowGameOver(false);
+        setReturningToMenu(true);
+        try {
+            await queryClient.refetchQueries({ queryKey: whichCameFirstQueryOptions.queryKey }, { throwOnError: true });
+            setAnswerResult(null);
+            setShowGameOver(false);
+        }
+        catch {
+            toast.add({ title: "Could not load the main menu. Please try again.", type: "error", priority: "high" });
+        }
+        finally {
+            setReturningToMenu(false);
+        }
     };
 
     const startGame = () => {
@@ -132,6 +147,7 @@ function WhichCameFirstPage() {
                             onPlayAgain={playAgain}
                             onMainMenu={continueGame}
                             isStarting={startMutation.isPending}
+                            isReturningToMenu={returningToMenu}
                         />
                         : activeRun ?
                             <GameBoard
@@ -139,6 +155,7 @@ function WhichCameFirstPage() {
                                 result={answerResult}
                                 onAnswer={submitAnswer}
                                 isPending={answerMutation.isPending}
+                                isAbandoning={abandonMutation.isPending}
                                 onAbandon={() => abandonMutation.mutate({ data: { runId: activeRun.id } })}
                             />
                             :
@@ -241,15 +258,16 @@ function GameSetup({ selectedTypes, onSelectionChange, isPending, onStart }: Gam
                     >
                         {selectedTypes.length === WCF_MEDIA_TYPES.length ? "Clear" : "Select all"}
                     </Button>
-                    <Button
+                    <LoadingButton
                         size="lg"
                         onClick={onStart}
-                        disabled={selectedTypes.length === 0 || isPending}
+                        isLoading={isPending}
                         className="max-sm:flex-1"
+                        disabled={selectedTypes.length === 0}
                     >
                         Start the run
                         <ArrowRight data-icon="inline-end"/>
-                    </Button>
+                    </LoadingButton>
                 </div>
             </div>
         </section>
@@ -261,12 +279,14 @@ interface GameBoardProps {
     isPending: boolean;
     run: ActiveRunData;
     onAbandon: () => void;
+    isAbandoning: boolean;
     result: AnswerResult | null;
     onAnswer: (side: "left" | "right") => void;
 }
 
 
-function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardProps) {
+function GameBoard({ run, result, isPending, isAbandoning, onAnswer, onAbandon }: GameBoardProps) {
+    const loading = useDelayedLoading(isPending);
     const displayedScore = result?.score ?? run.score;
 
     return (
@@ -294,15 +314,17 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                     </Badge>
                 </div>
                 {!result &&
-                    <Button
-                        aria-label="End run"
-                        className="max-sm:self-end"
-                        variant="destructiveGhost"
+                    <LoadingButton
                         onClick={onAbandon}
+                        disabled={isPending}
+                        aria-label="End run"
+                        isLoading={isAbandoning}
+                        variant="destructiveGhost"
+                        className="max-sm:self-end"
                     >
                         <X data-icon="inline-start"/>
                         <span className="max-sm:hidden">End run</span>
-                    </Button>
+                    </LoadingButton>
                 }
             </div>
 
@@ -312,20 +334,23 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                     result={result}
                     onSelect={onAnswer}
                     card={run.round.left}
-                    disabled={isPending || !!result}
+                    disabled={isPending || loading || isAbandoning || !!result}
                 />
                 <div className="absolute left-1/2 top-1/2 z-20 flex size-10 -translate-x-1/2 -translate-y-1/2
                     items-center justify-center rounded-full border-2 border-background bg-primary font-mono text-[10px]
                     font-semibold tracking-[0.12em] text-primary-foreground shadow-lg max-sm:size-8"
                 >
-                    VS
+                    {loading
+                        ? <Spinner aria-label="Checking answer" className="text-current"/>
+                        : "VS"
+                    }
                 </div>
                 <MediaCard
                     side="right"
                     result={result}
                     onSelect={onAnswer}
                     card={run.round.right}
-                    disabled={isPending || !!result}
+                    disabled={isPending || loading || isAbandoning || !!result}
                 />
             </div>
 
@@ -369,10 +394,11 @@ interface GameOverScreenProps {
     result: AnswerResult;
     onMainMenu: () => void;
     onPlayAgain: () => void;
+    isReturningToMenu: boolean;
 }
 
 
-function GameOverScreen({ run, result, isStarting, onMainMenu, onPlayAgain }: GameOverScreenProps) {
+function GameOverScreen({ run, result, isStarting, isReturningToMenu, onMainMenu, onPlayAgain }: GameOverScreenProps) {
     const completedWithoutLoss = result.won || result.poolExhausted;
     const roundsAnswered = result.correct ? result.score : result.score + 1;
     const verdict = result.poolExhausted
@@ -440,14 +466,23 @@ function GameOverScreen({ run, result, isStarting, onMainMenu, onPlayAgain }: Ga
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                    <Button variant="outline" disabled={isStarting} onClick={onMainMenu}>
-                        <House data-icon="inline-start"/>
+                    <LoadingButton
+                        variant="outline"
+                        onClick={onMainMenu}
+                        disabled={isStarting}
+                        isLoading={isReturningToMenu}
+                        icon={<House data-icon="inline-start"/>}
+                    >
                         Main menu
-                    </Button>
-                    <Button disabled={isStarting} onClick={onPlayAgain}>
-                        <RotateCcw data-icon="inline-start"/>
+                    </LoadingButton>
+                    <LoadingButton
+                        onClick={onPlayAgain}
+                        isLoading={isStarting}
+                        disabled={isReturningToMenu}
+                        icon={<RotateCcw data-icon="inline-start"/>}
+                    >
                         Play again
-                    </Button>
+                    </LoadingButton>
                 </div>
             </div>
         </section>
@@ -686,10 +721,14 @@ function Stats({ stats, canReset }: StatsProps) {
                         <Button variant="outline" disabled={resetStatsMutation.isPending} onClick={() => setResetDialogOpen(false)}>
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={resetStats} disabled={resetStatsMutation.isPending}>
-                            <Trash2 data-icon="inline-start"/>
+                        <LoadingButton
+                            variant="destructive"
+                            onClick={resetStats}
+                            isLoading={resetStatsMutation.isPending}
+                            icon={<Trash2 data-icon="inline-start"/>}
+                        >
                             Reset statistics
-                        </Button>
+                        </LoadingButton>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

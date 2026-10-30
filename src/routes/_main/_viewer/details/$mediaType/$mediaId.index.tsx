@@ -9,6 +9,7 @@ import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {SimilarMedia} from "@/lib/client/components/media/base/SimilarMedia";
 import {MediaSynopsis} from "@/lib/client/components/media/base/MediaSynopsis";
 import {MediaComponent} from "@/lib/client/components/media/base/MediaComponent";
@@ -173,9 +174,14 @@ function MediaDetailsPage() {
                                                         Add this {mediaType} to your list to track your progress.
                                                     </p>
                                                 </div>
-                                                <Button className="w-full" onClick={handleAddMediaToUser}>
-                                                    <Plus/> Add to List
-                                                </Button>
+                                                <LoadingButton
+                                                    className="w-full"
+                                                    onClick={handleAddMediaToUser}
+                                                    icon={<Plus data-icon="inline-start"/>}
+                                                    isLoading={addMediaToListMutation.isPending}
+                                                >
+                                                    Add to List
+                                                </LoadingButton>
                                             </CardContent>
                                         </Card>
                             }

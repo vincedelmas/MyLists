@@ -5,6 +5,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {type MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
 import {MediaTagBrowser} from "@/lib/client/components/media/browse/MediaTagBrowser";
 import {MediaTagFilters} from "@/lib/client/components/media/browse/MediaTagFilters";
@@ -31,8 +32,8 @@ interface MediaBrowseFiltersSheetProps {
     allowHideCommon?: boolean;
     onOpenChange: (open: boolean) => void;
     searchSource: MediaFilterSearchSource;
-    onApply: (filters: AdvancedFilters) => void;
     filters: MediaBrowseFilters & { hideCommon?: boolean };
+    onApply: (filters: AdvancedFilters) => void | Promise<void>;
     options: {
         tags: string[];
         genres: string[];
@@ -44,22 +45,13 @@ interface MediaBrowseFiltersSheetProps {
 
 export const MediaBrowseFiltersSheet = (props: MediaBrowseFiltersSheetProps) => {
     const {
-        open,
-        error,
-        filters,
-        onRetry,
-        onApply,
-        options,
-        personal,
-        searchSource,
-        onOpenChange,
-        isPending = false,
-        allowHideCommon = false,
-        personalLabel = "Tracking filters",
+        open, error, filters, onRetry, onApply, options, personal, searchSource, onOpenChange,
+        isPending = false, allowHideCommon = false, personalLabel = "Tracking filters",
     } = props;
 
     const fieldId = useId();
     const [activeTab, setActiveTab] = useState<MediaFiltersTab>("filters");
+    const [applying, setApplying] = useState<"apply" | "clear" | null>(null);
     const mediaTypes = options.mediaTypes ?? Object.keys(options.mediaFilters ?? {}) as MediaType[];
 
     const availableFilters = getMediaCommonFilterKeys(mediaTypes);
@@ -81,11 +73,17 @@ export const MediaBrowseFiltersSheet = (props: MediaBrowseFiltersSheetProps) => 
             onTabChange={setActiveTab}
             onOpenChange={onOpenChange}
             description="Narrow the titles shown here. Your saved list and views stay as they are."
-            onSubmit={ev => {
+            onSubmit={async (ev) => {
                 ev.preventDefault();
-                if (isPending || error) return;
-                onApply(draft);
-                onOpenChange(false);
+                if (isPending || error || applying) return;
+                setApplying("apply");
+                try {
+                    await onApply(draft);
+                    onOpenChange(false);
+                }
+                finally {
+                    setApplying(null);
+                }
             }}
             tags={mediaTypes.length < 2 && personal && availableFilters.has("tags") ?
                 error ?
@@ -108,7 +106,7 @@ export const MediaBrowseFiltersSheet = (props: MediaBrowseFiltersSheetProps) => 
                         <MediaTagFilters
                             filters={draft.mediaFilters?.[mediaTypes[0]] ?? {}}
                             options={options.mediaFilters?.[mediaTypes[0]]?.tags?.map(item => item.name) ?? []}
-                            onChange={next => setDraft(curr => ({
+                            onChange={(next) => setDraft(curr => ({
                                 ...curr, mediaFilters: {
                                     ...curr.mediaFilters,
                                     [mediaTypes[0]]: { ...curr.mediaFilters?.[mediaTypes[0]], ...next },
@@ -120,27 +118,35 @@ export const MediaBrowseFiltersSheet = (props: MediaBrowseFiltersSheetProps) => 
             }
             footer={
                 <>
-                    <Button type="submit" disabled={isPending || !!error}>
+                    <LoadingButton type="submit" isLoading={applying === "apply"} disabled={isPending || !!error || applying === "clear"}>
                         Apply filters
-                    </Button>
-                    <Button
+                    </LoadingButton>
+                    <LoadingButton
                         type="button"
                         variant="outline"
-                        onClick={() => {
-                            onApply({
-                                tags: undefined,
-                                genres: undefined,
-                                comment: undefined,
-                                favorite: undefined,
-                                minRating: undefined,
-                                hideCommon: undefined,
-                                mediaFilters: undefined,
-                            });
-                            onOpenChange(false);
+                        disabled={applying === "apply"}
+                        isLoading={applying === "clear"}
+                        onClick={async () => {
+                            setApplying("clear");
+                            try {
+                                await onApply({
+                                    tags: undefined,
+                                    genres: undefined,
+                                    comment: undefined,
+                                    favorite: undefined,
+                                    minRating: undefined,
+                                    hideCommon: undefined,
+                                    mediaFilters: undefined,
+                                });
+                                onOpenChange(false);
+                            }
+                            finally {
+                                setApplying(null);
+                            }
                         }}
                     >
                         Clear advanced filters
-                    </Button>
+                    </LoadingButton>
                 </>
             }
         >
@@ -148,7 +154,11 @@ export const MediaBrowseFiltersSheet = (props: MediaBrowseFiltersSheetProps) => 
                 <Alert variant="destructive">
                     <AlertDescription>
                         We couldn’t load filter options.
-                        {onRetry && <Button type="button" variant="ghost" size="sm" onClick={onRetry}>Try again</Button>}
+                        {onRetry &&
+                            <Button type="button" variant="ghost" size="sm" onClick={onRetry}>
+                                Try again
+                            </Button>
+                        }
                     </AlertDescription>
                 </Alert>
                 :
@@ -269,11 +279,11 @@ export const MediaBrowseFiltersSheet = (props: MediaBrowseFiltersSheetProps) => 
                                         onChange={genres => update({ genres: genres.length ? genres : undefined })}
                                     />
                                     <MediaSpecificFilters
-                                        searchSource={searchSource}
                                         filters={scoped}
                                         onChange={update}
                                         mediaType={mediaType}
                                         options={typeOptions}
+                                        searchSource={searchSource}
                                         maxSelected={MAX_MEDIA_FILTER_VALUES}
                                     />
                                     {personal && multiple &&

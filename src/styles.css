@@ -459,3 +459,10 @@ input[type="search"]::-webkit-search-cancel-button:hover {
         scrollbar-color: color-mix(in oklch, var(--foreground) 24%, transparent) transparent;
     }
 }
+
+/* Keep immediately blocked controls visually unchanged until loading is shown. */
+[data-save-feedback="waiting"]:disabled,
+[data-save-feedback="waiting"] :is(:disabled, [data-disabled]):not([data-save-permanent]),
+[data-save-feedback="waiting"] [data-slot="input-group"]:has(:disabled) {
+    opacity: 1;
+}

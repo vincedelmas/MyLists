@@ -1,15 +1,16 @@
 import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {GamesPlatformsEnum, UpdateType} from "@/lib/utils/enums";
 import {gameCompatiblePlatformsOptions} from "@/lib/client/react-query/query-options";
+import {MediaSaveFeedback} from "@/lib/client/components/media/base/MediaSaveFeedback";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 interface UpdatePlatformProps {
-    disabled?: boolean;
     mediaId: number;
+    disabled?: boolean;
     platform: GamesPlatformsEnum | null;
     updatePlatform: ReturnType<typeof useUpdateUserMediaMutation>;
 }
@@ -38,27 +39,31 @@ export const UpdatePlatform = ({ platform, mediaId, updatePlatform, disabled = f
     return (
         <div className="flex justify-between items-center">
             <div>Platform</div>
-            <Select
-                items={platformItems}
-                open={open}
-                onOpenChange={setOpen}
-                onValueChange={handleSelect}
-                disabled={updatePlatform.isPending || disabled}
-                value={platform?.toString() ?? DEFAULT_DASH_FALLBACK}
-            >
-                <SelectTrigger size="sm" className="w-34">
-                    <SelectValue/>
-                </SelectTrigger>
-                <SelectContent className="max-h-73 overflow-y-auto scrollbar-thin">
-                    <SelectGroup>
-                        {platformItems.map((item) =>
-                            <SelectItem key={item.value} value={item.value} disabled={item.value === "__loading"}>
-                                {item.label}
-                            </SelectItem>
-                        )}
-                    </SelectGroup>
-                </SelectContent>
-            </Select>
+            <MediaSaveFeedback mutation={updatePlatform} field="platform" disabled={disabled}>
+                {saveDisabled => (
+                    <Select
+                        open={open}
+                        items={platformItems}
+                        onOpenChange={setOpen}
+                        disabled={saveDisabled}
+                        onValueChange={handleSelect}
+                        value={platform?.toString() ?? DEFAULT_DASH_FALLBACK}
+                    >
+                        <SelectTrigger size="sm" className="w-34">
+                            <SelectValue/>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-73 overflow-y-auto scrollbar-thin">
+                            <SelectGroup>
+                                {platformItems.map((item) =>
+                                    <SelectItem key={item.value} value={item.value} disabled={item.value === "__loading"}>
+                                        {item.label}
+                                    </SelectItem>
+                                )}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                )}
+            </MediaSaveFeedback>
         </div>
     );
 };

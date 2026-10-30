@@ -4,40 +4,51 @@ import type {CommunitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {Spinner} from "@/lib/client/components/ui/spinner";
+import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
+import type {CollectionSummaryData} from "@/lib/client/react-query/query-options";
 import {ProfilePinMenuItem} from "@/lib/client/components/lists/ProfilePinMenuItem";
 import {DropdownMenuGroup, DropdownMenuItem} from "@/lib/client/components/ui/dropdown-menu";
-import type {CollectionSummaryData} from "@/lib/client/react-query/query-options";
 import {useDeleteCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 
 interface CollectionActionsProps {
-    fromCommunity?: CommunitySearch;
     onDeleted?: () => void;
-    collection: Pick<CollectionSummaryData, "id" | "title" | "ownerId" | "ownerName">;
+    fromCommunity?: CommunitySearch;
     capabilities: CollectionSummaryData["capabilities"];
+    collection: Pick<CollectionSummaryData, "id" | "title" | "ownerId" | "ownerName">;
 }
 
 
 export const CollectionActions = ({ collection, capabilities, fromCommunity, onDeleted }: CollectionActionsProps) => {
-    const { currentUser } = useAuth();
     const confirm = useConfirm();
+    const { currentUser } = useAuth();
     const deleteMutation = useDeleteCollectionMutation(collection.id);
-    const isOwner = currentUser?.id === collection.ownerId;
 
-    if (!isOwner && !capabilities.edit && !capabilities.delete) return null;
+    const isOwner = currentUser?.id === collection.ownerId;
+    const loading = useDelayedLoading(deleteMutation.isPending);
+
+    if (!isOwner && !capabilities.edit && !capabilities.delete) {
+        return null;
+    }
 
     return (
         <DropdownMenuGroup>
             {isOwner &&
-                <ProfilePinMenuItem item={{ kind: "collection", id: collection.id, title: collection.title }}/>
+                <ProfilePinMenuItem
+                    item={{
+                        id: collection.id,
+                        kind: "collection",
+                        title: collection.title,
+                    }}
+                />
             }
             {capabilities.edit &&
                 <DropdownMenuItem
                     render={
                         <Link
-                            to="/lists/collections/$collectionId/edit"
-                            params={{ collectionId: collection.id }}
                             search={{ fromCommunity }}
+                            params={{ collectionId: collection.id }}
+                            to="/lists/collections/$collectionId/edit"
                         />
                     }
                 >
@@ -47,25 +58,27 @@ export const CollectionActions = ({ collection, capabilities, fromCommunity, onD
             }
             {capabilities.delete &&
                 <DropdownMenuItem
+                    closeOnClick={false}
                     variant="destructive"
-                    disabled={deleteMutation.isPending}
+                    disabled={deleteMutation.isPending || loading}
+                    aria-busy={deleteMutation.isPending || loading}
                     onClick={async () => {
                         if (!await confirm({
                             variant: "destructive",
                             title: "Delete this collection?",
                             confirmLabel: "Delete collection",
                             description: "This collection will be permanently deleted.",
-                        })) return;
-
-                        try {
-                            await deleteMutation.mutateAsync({ data: { collectionId: collection.id } });
-                        } catch {
+                            onConfirm: () => {
+                                return deleteMutation.mutateAsync({ data: { collectionId: collection.id } });
+                            },
+                        })) {
                             return;
                         }
+
                         onDeleted?.();
                     }}
                 >
-                    {deleteMutation.isPending ? <Spinner/> : <Trash2/>}
+                    {loading ? <Spinner/> : <Trash2/>}
                     <span>Delete collection</span>
                 </DropdownMenuItem>
             }

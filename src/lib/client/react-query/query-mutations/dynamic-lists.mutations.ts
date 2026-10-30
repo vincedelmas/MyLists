@@ -13,7 +13,7 @@ export const useSaveDynamicListMutation = (listId?: number) => {
         meta: { successToastMessage: listId === undefined ? "Dynamic list created!" : "Dynamic list updated!" },
         onSuccess: () => {
             return Promise.all([
-                queryClient.invalidateQueries({ queryKey: ["profile-pins"] }),
+                queryClient.invalidateQueries({ queryKey: ["profile-pins", "profile"] }),
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists"] }),
             ])
         },
@@ -27,14 +27,11 @@ export const useDeleteDynamicListMutation = () => {
     return useMutation({
         mutationFn: (listId: number) => postDeleteDynamicList({ data: { id: listId } }),
         meta: { successToastMessage: "Dynamic list deleted." },
-        onSuccess: (_data, listId) => {
-            return Promise.all([
-                queryClient.invalidateQueries({ queryKey: ["profile-pins"] }),
-                queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user"] }),
-                queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "details", listId], refetchType: "none" }),
-            ])
-        },
+        onSuccess: (_data, listId) => Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["profile-pins"] }),
+            queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user"] }),
+            queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "details", listId], refetchType: "none" }),
+            queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "editor", listId], refetchType: "none" }),
+        ]),
     });
 };
-
-

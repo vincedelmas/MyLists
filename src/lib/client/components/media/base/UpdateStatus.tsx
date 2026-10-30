@@ -1,5 +1,6 @@
-import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {MediaSaveFeedback} from "@/lib/client/components/media/base/MediaSaveFeedback";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
@@ -23,20 +24,24 @@ export const UpdateStatus = ({ status, mediaType, updateStatus }: StatusDropProp
     return (
         <div className="flex justify-between items-center">
             <div>Status</div>
-            <Select items={statusItems} value={status} onValueChange={handleStatus} disabled={updateStatus.isPending}>
-                <SelectTrigger size="sm" className="w-34">
-                    <SelectValue/>
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectGroup>
-                        {statusItems.map((item) =>
-                            <SelectItem key={item.value} value={item.value}>
-                                {item.label}
-                            </SelectItem>
-                        )}
-                    </SelectGroup>
-                </SelectContent>
-            </Select>
+            <MediaSaveFeedback mutation={updateStatus} field="status">
+                {saveDisabled => (
+                    <Select items={statusItems} value={status} onValueChange={handleStatus} disabled={saveDisabled}>
+                        <SelectTrigger size="sm" className="w-34">
+                            <SelectValue/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                {statusItems.map((item) =>
+                                    <SelectItem key={item.value} value={item.value}>
+                                        {item.label}
+                                    </SelectItem>
+                                )}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                )}
+            </MediaSaveFeedback>
         </div>
     );
 };

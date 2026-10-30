@@ -9,6 +9,7 @@ import {formatNumber} from "@/lib/utils/formatting/number";
 import {getTvSeasonTotals} from "@/lib/utils/media/tv-seasons";
 import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {RatingSelect} from "@/lib/client/components/media/base/RatingSelect";
+import {MediaSaveFeedback} from "@/lib/client/components/media/base/MediaSaveFeedback";
 import {tvSeasonsOptions} from "@/lib/client/react-query/query-options/tv-seasons.options";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
@@ -31,7 +32,8 @@ export const TvSeasonEditor = ({ open, onOpenChange, mode, mediaType, mediaId, u
     const query = useQuery({ ...tvSeasonsOptions(mediaType, mediaId, userId), enabled: open });
 
     const seasons = query.data ?? [];
-    const pending = mutation.isPending || query.isFetching || query.isError;
+    const unavailable = query.isPending || query.isError;
+    const payload = mutation.variables?.payload;
 
     const active = seasons.filter(s => s.episodes !== null);
     const { rating: average } = getTvSeasonTotals(seasons);
@@ -113,32 +115,38 @@ export const TvSeasonEditor = ({ open, onOpenChange, mode, mediaType, mediaId, u
                 {mode === "redo" && active.length > 0 &&
                     <div className="flex items-center justify-between pr-1">
                         <span>All Current Seasons</span>
-                        <ButtonGroup aria-label="Adjust all season rewatches">
-                            <Button
-                                size="icon"
-                                variant="outline"
-                                aria-label="Decrease all season rewatches"
-                                onClick={() => changeAll(-1)}
-                                disabled={pending || active.every(s => s.redo === 0)}
-                            >
-                                <Minus/>
-                            </Button>
-                            <Button
-                                size="icon"
-                                variant="outline"
-                                onClick={() => changeAll(1)}
-                                aria-label="Increase all season rewatches"
-                                disabled={pending || active.every(s => s.redo === REDO_MAX)}
-                            >
-                                <Plus/>
-                            </Button>
-                        </ButtonGroup>
+                        <MediaSaveFeedback mutation={mutation} field="seasonRedos" disabled={unavailable}>
+                            {saveDisabled => (
+                                <ButtonGroup aria-label="Adjust all season rewatches">
+                                    <Button
+                                        size="icon"
+                                        variant="outline"
+                                        aria-label="Decrease all season rewatches"
+                                        onClick={() => changeAll(-1)}
+                                        disabled={saveDisabled || active.every(s => s.redo === 0)}
+                                        data-save-permanent={active.every(s => s.redo === 0) || undefined}
+                                    >
+                                        <Minus/>
+                                    </Button>
+                                    <Button
+                                        size="icon"
+                                        variant="outline"
+                                        onClick={() => changeAll(1)}
+                                        aria-label="Increase all season rewatches"
+                                        disabled={saveDisabled || active.every(s => s.redo === REDO_MAX)}
+                                        data-save-permanent={active.every(s => s.redo === REDO_MAX) || undefined}
+                                    >
+                                        <Plus/>
+                                    </Button>
+                                </ButtonGroup>
+                            )}
+                        </MediaSaveFeedback>
                     </div>
                 }
 
                 <FieldGroup className="max-h-80 gap-3 overflow-y-auto scrollbar-thin pr-1">
                     {seasons.map(s =>
-                        <Field key={s.season} orientation="horizontal" className="justify-between" data-disabled={pending}>
+                        <Field key={s.season} orientation="horizontal" className="justify-between" data-disabled={unavailable}>
                             <FieldContent>
                                 <FieldLabel htmlFor={mode === "rating" ? `${fieldId}-${s.season}` : undefined}>
                                     Season {s.season}
@@ -151,64 +159,72 @@ export const TvSeasonEditor = ({ open, onOpenChange, mode, mediaType, mediaId, u
                                 </FieldDescription>
                             </FieldContent>
 
-                            {s.episodes === null ?
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    id={`${fieldId}-${s.season}`}
-                                    disabled={pending || (mode === "rating" ? s.rating === null : s.redo === 0)}
-                                    onClick={() => mode === "rating"
-                                        ? changeRating(s.season, null)
-                                        : changeRedos([{ season: s.season, redo: 0 }])
-                                    }
-                                >
-                                    Clear{" "}
-                                    {mode === "rating" ? s.rating ?? "rating" : `${s.redo}x`}
-                                </Button>
-                                :
-                                mode === "rating" ?
-                                    <RatingSelect
-                                        rating={s.rating}
-                                        disabled={pending}
-                                        className="rounded-r-md!"
-                                        id={`${fieldId}-${s.season}`}
-                                        onChange={rating => changeRating(s.season, rating)}
-                                    />
-                                    :
-                                    <div className="flex items-center gap-3">
-                                        <span className="tabular-nums">
-                                            {s.redo}x
-                                        </span>
-                                        <ButtonGroup aria-label={`Season ${s.season} rewatches`}>
-                                            <Button
-                                                size="icon"
-                                                variant="outline"
-                                                disabled={pending || s.redo === 0}
-                                                onClick={() => changeRedos([{ season: s.season, redo: s.redo - 1 }])}
-                                            >
-                                                <Minus/>
-                                            </Button>
-                                            <Button
-                                                size="icon"
-                                                variant="outline"
-                                                disabled={pending || s.redo === REDO_MAX}
-                                                onClick={() => changeRedos([{ season: s.season, redo: s.redo + 1 }])}
-                                            >
-                                                <Plus/>
-                                            </Button>
-                                        </ButtonGroup>
-                                    </div>
-                            }
+                            <MediaSaveFeedback
+                                mutation={mutation}
+                                disabled={unavailable}
+                                field={mode === "rating" ? "seasonRating" : "seasonRedos"}
+                                active={payload !== undefined && ("seasonRating" in payload
+                                    ? payload.seasonRating.season === s.season
+                                    : "seasonRedos" in payload && payload.seasonRedos.some(item => item.season === s.season))}
+                            >
+                                {saveDisabled => (
+                                    s.episodes === null ?
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            id={`${fieldId}-${s.season}`}
+                                            disabled={saveDisabled || (mode === "rating" ? s.rating === null : s.redo === 0)}
+                                            data-save-permanent={(mode === "rating" ? s.rating === null : s.redo === 0) || undefined}
+                                            onClick={() => mode === "rating"
+                                                ? changeRating(s.season, null)
+                                                : changeRedos([{ season: s.season, redo: 0 }])
+                                            }
+                                        >
+                                            Clear{" "}
+                                            {mode === "rating" ? s.rating ?? "rating" : `${s.redo}x`}
+                                        </Button>
+                                        :
+                                        mode === "rating" ?
+                                            <RatingSelect
+                                                rating={s.rating}
+                                                disabled={saveDisabled}
+                                                className="rounded-r-md!"
+                                                id={`${fieldId}-${s.season}`}
+                                                onChange={rating => changeRating(s.season, rating)}
+                                            />
+                                            :
+                                            <div className="flex items-center gap-3">
+                                                <span className="tabular-nums">
+                                                    {s.redo}x
+                                                </span>
+                                                <ButtonGroup aria-label={`Season ${s.season} rewatches`}>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="outline"
+                                                        disabled={saveDisabled || s.redo === 0}
+                                                        data-save-permanent={s.redo === 0 || undefined}
+                                                        onClick={() => changeRedos([{ season: s.season, redo: s.redo - 1 }])}
+                                                    >
+                                                        <Minus/>
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="outline"
+                                                        disabled={saveDisabled || s.redo === REDO_MAX}
+                                                        data-save-permanent={s.redo === REDO_MAX || undefined}
+                                                        onClick={() => changeRedos([{ season: s.season, redo: s.redo + 1 }])}
+                                                    >
+                                                        <Plus/>
+                                                    </Button>
+                                                </ButtonGroup>
+                                            </div>
+                                )}
+                            </MediaSaveFeedback>
                         </Field>
                     )}
                 </FieldGroup>
 
                 <DialogFooter>
-                    {mutation.isPending &&
-                        <Spinner
-                            aria-label="Saving season changes"
-                        />
-                    }
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Done
                     </Button>

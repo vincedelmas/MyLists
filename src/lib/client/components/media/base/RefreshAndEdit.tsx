@@ -1,12 +1,12 @@
-import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {Pencil, RefreshCw} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useNow} from "@/lib/client/hooks/use-dates";
 import {Link, useRouter} from "@tanstack/react-router";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
-import {Button, buttonVariants} from "@/lib/client/components/ui/button";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {useRefreshMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 
 
@@ -40,7 +40,7 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate, isManual = fals
     const isRefreshCooldown = !isManagerOrAbove && !!nextRefreshAt && now < nextRefreshAt.getTime();
 
     // Check availability of refresh
-    const refreshDisabled = refreshMutation.isPending || !currentUser || isRefreshCooldown;
+    const refreshDisabled = !currentUser || isRefreshCooldown;
 
     const handleRefresh = () => {
         refreshMutation.mutate({ data: { mediaId, mediaType } }, {
@@ -51,10 +51,16 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate, isManual = fals
     return (
         <div className="flex items-center justify-center gap-4 rounded-lg border p-1 shadow-sm max-sm:gap-2">
             {canRefreshThisType &&
-                <Button size="sm" variant="hover" onClick={handleRefresh} disabled={refreshDisabled}>
-                    <RefreshCw className={cn(refreshMutation.isPending && "animate-spin")}/>
+                <LoadingButton
+                    size="sm"
+                    variant="hover"
+                    onClick={handleRefresh}
+                    disabled={refreshDisabled}
+                    isLoading={refreshMutation.isPending}
+                    icon={<RefreshCw data-icon="inline-start"/>}
+                >
                     Refresh
-                </Button>
+                </LoadingButton>
             }
 
             {canRefreshThisType && isManagerOrAbove &&

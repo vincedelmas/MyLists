@@ -8,6 +8,7 @@ import {MediaType, Status, TvMediaType, UpdateType} from "@/lib/utils/enums";
 import {RatingSelect} from "@/lib/client/components/media/base/RatingSelect";
 import {TvSeasonEditor} from "@/lib/client/components/media/tv/TvSeasonEditor";
 import {UpdateSeasonsEps} from "@/lib/client/components/media/tv/UpdateSeasonsEps";
+import {MediaSaveFeedback} from "@/lib/client/components/media/base/MediaSaveFeedback";
 import {MediaUserDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
@@ -40,23 +41,31 @@ export const TvUserDetails = ({ userMedia, mediaType, media, mutationOptions }: 
                 <div className="flex justify-between items-center">
                     <div>Rating</div>
 
-                    <ButtonGroup className="w-34">
-                        <RatingSelect
-                            bulk={true}
-                            rating={userMedia.rating}
-                            disabled={mutationOptions?.backlogMode || updateUserMediaMutation.isPending}
-                            onChange={rating => updateUserMediaMutation.mutate({ payload: { type: UpdateType.RATING, rating } })}
-                        />
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className="bg-input/30"
-                            onClick={() => setRatingsOpen(true)}
-                            disabled={mutationOptions?.backlogMode || updateUserMediaMutation.isPending}
-                        >
-                            <Pencil/>
-                        </Button>
-                    </ButtonGroup>
+                    <MediaSaveFeedback
+                        mutation={updateUserMediaMutation}
+                        field={["rating", "seasonRating"]}
+                        disabled={mutationOptions?.backlogMode}
+                    >
+                        {saveDisabled =>
+                            <ButtonGroup className="w-34">
+                                <RatingSelect
+                                    bulk={true}
+                                    disabled={saveDisabled}
+                                    rating={userMedia.rating}
+                                    onChange={rating => updateUserMediaMutation.mutate({ payload: { type: UpdateType.RATING, rating } })}
+                                />
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="bg-input/30"
+                                    disabled={saveDisabled}
+                                    onClick={() => setRatingsOpen(true)}
+                                >
+                                    <Pencil/>
+                                </Button>
+                            </ButtonGroup>
+                        }
+                    </MediaSaveFeedback>
 
                     <TvSeasonEditor
                         mode="rating"

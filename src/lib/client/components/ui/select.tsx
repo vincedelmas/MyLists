@@ -39,7 +39,7 @@ const selectTriggerVariants = cva("flex w-fit items-center justify-between gap-1
             default: "rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 focus-visible:border-ring " +
                 "focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 " +
                 "aria-invalid:ring-destructive/20 data-[size=default]:h-8 data-[size=sm]:h-7 " +
-                "data-[size=sm]:rounded-[min(var(--radius-md),10px)] dark:bg-input/30 dark:hover:bg-input/50 " +
+                "data-[size=sm]:rounded-[min(var(--radius-md),10px)] dark:bg-input/30 dark:enabled:hover:bg-input/50 " +
                 "dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
             inputGroup: "rounded-r-lg rounded-l-none border-0 border-l border-input bg-transparent px-2.5 py-0 " +
                 "shadow-none hover:bg-accent/50 focus-visible:ring-0 aria-invalid:border-destructive " +

@@ -1,8 +1,9 @@
 import {useId} from "react";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {formatDate} from "@/lib/utils/formatting/date";
-import {Spinner} from "@/lib/client/components/ui/spinner";
+import {useMutationFeedback} from "@/lib/client/hooks/use-mutation-feedback";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
+import {SaveFeedbackIndicator} from "@/lib/client/components/general/SaveFeedbackIndicator";
 import type {YearRecapReleaseMode, YearRecapReleaseStatus} from "@/lib/types/year-recap.types";
 import {useAdminUpdateYearRecapReleaseMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
@@ -31,6 +32,7 @@ const releaseModes: { value: YearRecapReleaseMode; label: string; description: s
 export function YearRecapReleaseCard({ release }: { release: YearRecapReleaseStatus }) {
     const fieldId = useId();
     const mutation = useAdminUpdateYearRecapReleaseMutation();
+    const feedback = useMutationFeedback(mutation, true);
     const selectedMode = mutation.isPending ? mutation.variables.data.mode : release.mode;
 
     return (
@@ -49,30 +51,29 @@ export function YearRecapReleaseCard({ release }: { release: YearRecapReleaseSta
                 </CardAction>
             </CardHeader>
             <CardContent>
-                <FieldSet disabled={mutation.isPending} aria-busy={mutation.isPending}>
+                <FieldSet
+                    disabled={feedback.pending}
+                    aria-busy={feedback.pending}
+                    data-save-feedback={feedback.pending && !feedback.loading ? "waiting" : undefined}
+                >
                     <FieldLegend id={`${fieldId}-mode`} variant="label">
                         Release mode
                     </FieldLegend>
                     <RadioGroup
                         value={selectedMode}
-                        disabled={mutation.isPending}
+                        disabled={feedback.pending}
                         aria-labelledby={`${fieldId}-mode`}
-                        aria-describedby={`${fieldId}-save-status`}
                         className="grid gap-3 sm:grid-cols-3"
-                        onValueChange={mode => mutation.mutate({
-                            data: {
-                                year: release.year,
-                                mode: mode as YearRecapReleaseMode,
-                            },
-                        })}
+                        aria-describedby={`${fieldId}-save-status`}
+                        onValueChange={mode => mutation.mutate({ data: { year: release.year, mode: mode as YearRecapReleaseMode } })}
                     >
                         {releaseModes.map(mode =>
                             <Field
                                 key={mode.value}
                                 orientation="horizontal"
-                                data-disabled={mutation.isPending}
-                                className="items-start rounded-xl border p-3 transition-colors
-                                has-data-checked:border-brand/40 has-data-checked:bg-brand/5"
+                                data-disabled={feedback.loading}
+                                className="items-start rounded-xl border p-3 transition-colors has-data-checked:border-brand/40
+                                has-data-checked:bg-brand/5"
                             >
                                 <RadioGroupItem
                                     value={mode.value}
@@ -91,12 +92,13 @@ export function YearRecapReleaseCard({ release }: { release: YearRecapReleaseSta
                             </Field>
                         )}
                     </RadioGroup>
-                    <p role="status" id={`${fieldId}-save-status`} className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {mutation.isPending
-                            ? <>
-                                <Spinner aria-hidden="true"/>
-                                Saving release mode…
-                            </>
+                    <p
+                        id={`${fieldId}-save-status`}
+                        className="flex items-center gap-2 text-xs text-muted-foreground"
+                    >
+                        <SaveFeedbackIndicator {...feedback}/>
+                        {feedback.loading
+                            ? "Saving release mode…"
                             : "Changes save automatically and apply to all accounts."
                         }
                     </p>

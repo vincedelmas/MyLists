@@ -1,5 +1,10 @@
 import {DenialReason, RoleType} from "@/lib/utils/enums";
 
+
+export type Actor = AnonymousActor | AuthenticatedActor;
+export type AccessDecision = { allowed: true } | { allowed: false; reason: DenialReason };
+
+
 type ActorSource = {
     id: number;
     role?: string | null;
@@ -16,10 +21,6 @@ export type AuthenticatedActor = {
     kind: "user";
     role: RoleType;
 };
-
-
-export type Actor = AnonymousActor | AuthenticatedActor;
-export type AccessDecision = { allowed: true } | { allowed: false; reason: DenialReason };
 
 
 const RoleWeight: Record<RoleType, number> = {

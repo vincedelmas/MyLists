@@ -9,12 +9,14 @@ export interface ConfirmOptions {
     cancelLabel?: ReactNode;
     description?: ReactNode;
     confirmLabel?: ReactNode;
+    onConfirm?: () => Promise<unknown>;
     variant?: "default" | "destructive";
 }
 
 
 interface ConfirmState {
     open: boolean;
+    pending: boolean;
     inputValue: string;
     options: ConfirmOptions | null;
 }
@@ -23,6 +25,7 @@ interface ConfirmState {
 const initialState: ConfirmState = {
     open: false,
     options: null,
+    pending: false,
     inputValue: "",
 };
 
@@ -42,7 +45,8 @@ const settleConfirm = (confirmed: boolean) => {
     pendingResolve = null;
 
     // Preserve options and input during closing animation
-    confirmStore.setState((state) => ({ ...state, open: false }));
+    confirmStore.setState((state) => ({ ...state, open: false, pending: false }));
+
     resolve(confirmed);
 };
 
@@ -55,6 +59,7 @@ export const requestConfirm = (options: ConfirmOptions) => {
 
         confirmStore.setState(() => ({
             open: true,
+            pending: false,
             inputValue: "",
             options: {
                 variant: "default",
@@ -69,9 +74,34 @@ export const requestConfirm = (options: ConfirmOptions) => {
 
 const confirmActions = {
     request: requestConfirm,
-    confirm: () => settleConfirm(true),
-    cancel: () => settleConfirm(false),
-    setInputValue: (inputValue: string) => confirmStore.setState(state => ({ ...state, inputValue })),
+
+    confirm: async () => {
+        const { pending, options } = confirmStore.state;
+
+        if (pending) return;
+        if (!options?.onConfirm) return settleConfirm(true);
+
+        confirmStore.setState(state => ({ ...state, pending: true }));
+
+        try {
+            await options.onConfirm();
+            settleConfirm(true);
+        }
+        catch {
+            // Mutation error feedback owned by caller, leave dialog open for retry
+            confirmStore.setState(state => ({ ...state, pending: false }));
+        }
+    },
+
+    cancel: () => {
+        if (!confirmStore.state.pending) {
+            settleConfirm(false);
+        }
+    },
+
+    setInputValue: (inputValue: string) => {
+        return confirmStore.setState(state => ({ ...state, inputValue }));
+    },
 };
 
 

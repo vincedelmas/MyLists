@@ -2,7 +2,6 @@ import {useState} from "react";
 import {simpleSearchSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Payload} from "@/lib/client/components/general/Payload";
@@ -13,6 +12,7 @@ import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {allUpdatesOptions} from "@/lib/client/react-query/query-options";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
 import {useDeleteAllUpdatesMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {ColumnDef, rowPaginationFeature, rowSelectionFeature, RowSelectionState, tableFeatures, useTable} from "@tanstack/react-table";
@@ -151,12 +151,13 @@ function AllUpdates() {
                             />
                         </div>
                         {(isCurrent && Object.keys(rowSelected).length !== 0) &&
-                            <Button
+                            <LoadingButton
                                 onClick={deleteSelectedRows}
-                                disabled={Object.keys(rowSelected).length === 0 || deleteUpdateMutation.isPending}
+                                isLoading={deleteUpdateMutation.isPending}
+                                disabled={Object.keys(rowSelected).length === 0}
                             >
                                 Delete Selected
-                            </Button>
+                            </LoadingButton>
                         }
                     </div>
                     <DataTable

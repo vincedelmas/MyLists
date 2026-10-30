@@ -1,3 +1,4 @@
+import {MediaType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
@@ -37,12 +38,19 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
     .middleware([requiredMediaWriteMiddleware])
     .validator(updateUserMediaSchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const mediaTrackingService = await getContainer().then(c => c.services.mediaTracking);
+        const container = await getContainer();
 
         try {
+            const saved = container.services.mediaTracking.updateUserMedia({ ...data, userId: currentUser.id });
+            const seasons = data.mediaType === MediaType.SERIES || data.mediaType === MediaType.ANIME
+                ? container.registries.mediaService.get(data.mediaType).getUserSeasons(currentUser.id, data.mediaId)
+                : undefined;
+
             return {
                 kind: "saved" as const,
-                ...mediaTrackingService.updateUserMedia({ ...data, userId: currentUser.id }),
+                ...saved,
+                seasons,
+                history: container.services.updateHistory.getUserMediaHistory(currentUser.id, data.mediaType, data.mediaId),
             };
         }
         catch (error) {
@@ -118,5 +126,6 @@ export const postEditUserTag = createServerFn({ method: "POST" })
         const container = await getContainer();
         const mediaService = container.registries.mediaService.get(mediaType);
 
-        return mediaService.editUserTag(currentUser.id, tag, action, mediaId);
+        const savedTag = mediaService.editUserTag(currentUser.id, tag, action, mediaId);
+        return { tag: savedTag, tagNames: await mediaService.getTagNames(currentUser.id) };
     });

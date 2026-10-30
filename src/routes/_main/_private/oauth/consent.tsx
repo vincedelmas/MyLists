@@ -1,5 +1,4 @@
 import {useState} from "react";
-import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {Link, createFileRoute} from "@tanstack/react-router";
 import {BookOpen, Pencil, Plug, ShieldCheck} from "lucide-react";
@@ -108,10 +107,19 @@ function McpConsentPage() {
                 </CardContent>
 
                 <CardFooter className="justify-end gap-3">
-                    <Button variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate(false)}>
+                    <LoadingButton
+                        variant="outline"
+                        disabled={mutation.isPending && mutation.variables}
+                        onClick={() => mutation.mutate(false)}
+                        isLoading={mutation.isPending && !mutation.variables}
+                    >
                         Cancel
-                    </Button>
-                    <LoadingButton isLoading={mutation.isPending} onClick={() => mutation.mutate(true)}>
+                    </LoadingButton>
+                    <LoadingButton
+                        onClick={() => mutation.mutate(true)}
+                        isLoading={mutation.isPending && mutation.variables}
+                        disabled={mutation.isPending && !mutation.variables}
+                    >
                         Allow connection
                     </LoadingButton>
                 </CardFooter>

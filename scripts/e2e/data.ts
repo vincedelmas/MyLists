@@ -63,3 +63,9 @@ export const privateImport = {
     name: "Private import row sentinel",
     reason: "Private import reason sentinel",
 };
+
+
+export const series = {
+    id: 201,
+    name: "Browser test series",
+} as const;

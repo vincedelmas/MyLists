@@ -1,5 +1,6 @@
 import {UpdateType} from "@/lib/utils/enums";
 import {useNumericEdit} from "@/lib/client/components/media/base/use-numeric-edit";
+import {MediaSaveFeedback} from "@/lib/client/components/media/base/MediaSaveFeedback";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
@@ -25,16 +26,20 @@ export const UpdateInput = ({ total, initValue, updateInput, payloadName, update
     });
 
     return (
-        <InputGroup className="w-34 h-7 rounded-md">
-            <InputGroupInput
-                {...input}
-                inputMode="numeric"
-                disabled={updateInput.isPending}
-                aria-label={payloadName === "actualPage" ? "Current page" : "Current chapter"}
-            />
-            <InputGroupAddon align="inline-end">
-                {" "}/{" "}{total ?? "?"}
-            </InputGroupAddon>
-        </InputGroup>
+        <MediaSaveFeedback mutation={updateInput} field={payloadName}>
+            {saveDisabled => (
+                <InputGroup className="w-34 h-7 rounded-md">
+                    <InputGroupInput
+                        {...input}
+                        inputMode="numeric"
+                        disabled={saveDisabled}
+                        aria-label={payloadName === "actualPage" ? "Current page" : "Current chapter"}
+                    />
+                    <InputGroupAddon align="inline-end">
+                        {" "}/{" "}{total ?? "?"}
+                    </InputGroupAddon>
+                </InputGroup>
+            )}
+        </MediaSaveFeedback>
     );
 };

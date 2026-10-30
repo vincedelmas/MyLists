@@ -1,5 +1,6 @@
 import {UpdateType} from "@/lib/utils/enums";
 import {RatingSelect} from "@/lib/client/components/media/base/RatingSelect";
+import {MediaSaveFeedback} from "@/lib/client/components/media/base/MediaSaveFeedback";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 interface RatingComponentProps {
@@ -9,10 +10,14 @@ interface RatingComponentProps {
 }
 
 export const UpdateRating = ({ rating, onUpdateMutation, disabled = false }: RatingComponentProps) => (
-    <RatingSelect
-        rating={rating}
-        className="w-34 rounded-r-md!"
-        disabled={disabled || onUpdateMutation.isPending}
-        onChange={rating => onUpdateMutation.mutate({ payload: { rating, type: UpdateType.RATING } })}
-    />
+    <MediaSaveFeedback mutation={onUpdateMutation} field="rating" disabled={disabled}>
+        {saveDisabled => (
+            <RatingSelect
+                rating={rating}
+                disabled={saveDisabled}
+                className="w-34 rounded-r-md!"
+                onChange={rating => onUpdateMutation.mutate({ payload: { rating, type: UpdateType.RATING } })}
+            />
+        )}
+    </MediaSaveFeedback>
 );

@@ -7,7 +7,7 @@ import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {movies, password, privateCollection, privateImport, publicCollection, users} from "./data";
+import {movies, password, privateCollection, privateImport, publicCollection, series, users} from "./data";
 
 
 // This script can reset data only in test runner temp dir
@@ -84,6 +84,16 @@ db.transaction(() => {
             followedId: users.owner.id,
             followerId: users.follower.id,
         }).run();
+
+    db.insert(schema.series).values({
+        ...series,
+        apiId: series.id,
+        duration: 30,
+        totalSeasons: 2,
+        totalEpisodes: 16,
+        imageCover: "series.jpg",
+    }).run();
+    db.insert(schema.seriesEpisodesPerSeason).values([1, 2].map(season => ({ mediaId: series.id, season, episodes: 8 }))).run();
 
     db.insert(schema.movies)
         .values(Object.values(movies).map(movie => ({

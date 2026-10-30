@@ -1,9 +1,9 @@
 import {useEffect, useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Header} from "@/lib/client/components/media/base/Header";
+import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {MediaLevel} from "@/lib/client/components/general/MediaLevel";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/_main/_viewer/lists/tracking/$mediaType/$
             context.queryClient.query({ ...context.userListHeaderQueryOptions, staleTime: "static" }),
             context.queryClient.query({ ...context.mediaListQueryOptions, staleTime: "static" }),
         ]);
-        
+
         return mediaList;
     },
     component: TrackingListPage,
@@ -48,6 +48,7 @@ export const Route = createFileRoute("/_main/_viewer/lists/tracking/$mediaType/$
 
 
 function TrackingListPage() {
+    const router = useRouter();
     const filters = Route.useSearch();
     const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
@@ -197,7 +198,7 @@ function TrackingListPage() {
                 }}
                 onOpenChange={open => {
                     setFiltersPanelOpen(open);
-                    if (!open && filters.filtersTab) {
+                    if (!open && router.state.location.search.filtersTab) {
                         void navigate({ search: prev => ({ ...prev, filtersTab: undefined }), replace: true, resetScroll: false });
                     }
                 }}
@@ -211,7 +212,7 @@ function TrackingListPage() {
                         },
                     });
                 }}
-                onFilterApply={advancedFilters => void navigate({
+                onFilterApply={advancedFilters => navigate({
                     resetScroll: false,
                     search: prev => ({ ...prev, ...advancedFilters, filtersTab: undefined, page: 1 }),
                 })}

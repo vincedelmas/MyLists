@@ -45,7 +45,7 @@ export const useSearchNavigate = <T extends BaseSearchParams>(filters: T, { dela
             setInput(curr => ({ ...curr, value, navigatedSearch: value }));
         }
 
-        void navigate({ search: prev => ({ ...prev, ...updater }), replace: true, ...options });
+        return navigate({ search: prev => ({ ...prev, ...updater }), replace: true, ...options });
     };
 
     const handleInputChange = (ev: ChangeEvent<HTMLInputElement>) => {

@@ -2,22 +2,23 @@ import {useId, useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Card} from "@/lib/client/components/ui/card";
-import {Button} from "@/lib/client/components/ui/button";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
+import type {UserMedia} from "@/lib/types/query.options.types";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {historyOptions} from "@/lib/client/react-query/query-options";
 import {TagsLists} from "@/lib/client/components/media/base/TagsLists";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
+import {AutoSaveFeedback} from "@/lib/client/components/general/AutoSaveFeedback";
 import {Field, FieldLabel, FieldDescription} from "@/lib/client/components/ui/field";
 import {BacklogModeSystem} from "@/lib/client/components/media/base/BacklogModeSystem";
-import type {UserMedia} from "@/lib/types/query.options.types";
-import type {MediaUserDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {CustomCoverTabContent} from "@/lib/client/components/media/base/CustomCoverTab";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/lib/client/components/ui/tabs";
+import type {MediaUserDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {UserMediaSpecificDetails} from "@/lib/client/components/media/base/UserMediaSpecificDetails";
 import {
     useRemoveMediaFromListMutation,
@@ -28,10 +29,10 @@ import {
 
 
 interface UserMediaDetailsProps {
-    source?: "list_dialog" | "details";
     preview?: boolean;
     mediaType: MediaType;
     userMedia: UserMedia;
+    source?: "list_dialog" | "details";
     media: MediaUserDetailsProps<MediaType>["media"];
 }
 
@@ -43,6 +44,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, media, preview = false,
     const queryClient = useQueryClient();
     const [backlogDate, setBacklogDate] = useState("");
     const [backlogMode, setBacklogMode] = useState(false);
+
     const removeMediaFromListMutation = useRemoveMediaFromListMutation(mediaType, userMedia.mediaId);
     const notificationsMutation = useUpdateUserMediaNotificationsMutation(mediaType, userMedia.mediaId);
     const history = useQuery({ ...historyOptions(mediaType, userMedia.mediaId), enabled: !preview }).data;
@@ -126,7 +128,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, media, preview = false,
 
             <TabsContent value="custom" className="flex flex-col gap-4">
                 {getMediaDefinition(mediaType).releaseNotifications &&
-                    <Field orientation="horizontal" data-disabled={notificationsMutation.isPending || preview}>
+                    <Field orientation="horizontal" data-disabled={preview}>
                         <div className="flex flex-col gap-1">
                             <FieldLabel htmlFor={notificationId}>
                                 Release notifications
@@ -137,14 +139,18 @@ export const UserMediaDetails = ({ userMedia, mediaType, media, preview = false,
                                     : "Notify me about upcoming releases for this title."}
                             </FieldDescription>
                         </div>
-                        <Switch
-                            id={notificationId}
-                            checked={userMedia.releaseNotificationsEnabled}
-                            disabled={notificationsMutation.isPending || preview}
-                            onCheckedChange={(releaseNotificationsEnabled) => notificationsMutation.mutate({
-                                data: { mediaType, mediaId: userMedia.mediaId, releaseNotificationsEnabled },
-                            })}
-                        />
+                        <AutoSaveFeedback mutation={notificationsMutation} acknowledged={true} disabled={preview}>
+                            {saveDisabled => (
+                                <Switch
+                                    id={notificationId}
+                                    disabled={saveDisabled}
+                                    checked={userMedia.releaseNotificationsEnabled}
+                                    onCheckedChange={(releaseNotificationsEnabled) => notificationsMutation.mutate({
+                                        data: { mediaType, mediaId: userMedia.mediaId, releaseNotificationsEnabled },
+                                    })}
+                                />
+                            )}
+                        </AutoSaveFeedback>
                     </Field>
                 }
 
@@ -163,9 +169,14 @@ export const UserMediaDetails = ({ userMedia, mediaType, media, preview = false,
                 />
             </TabsContent>
 
-            <Button variant="destructive" className="w-full mt-4" onClick={handleRemoveMediaFromList}>
+            <LoadingButton
+                variant="destructive"
+                className="w-full mt-4"
+                onClick={handleRemoveMediaFromList}
+                isLoading={removeMediaFromListMutation.isPending}
+            >
                 Remove from your list
-            </Button>
+            </LoadingButton>
         </Tabs>
     );
 };

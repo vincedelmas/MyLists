@@ -2,7 +2,6 @@ import {useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useDebounce} from "@/lib/client/hooks/use-debounce";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -11,7 +10,9 @@ import {displayContainerError} from "@/lib/client/error-display";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
+import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CountdownTimer} from "@/lib/client/components/moviedle/CountdownTimer";
 import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
@@ -48,15 +49,21 @@ function MediadlePage() {
     const makeGuessMutation = useMoviedleGuessMutation();
     const debouncedSearch = useDebounce(search, 400);
     const [searchOpen, setSearchOpen] = useState(false);
+    const saving = useDelayedLoading(makeGuessMutation.isPending);
+
     const leaderboard = useSuspenseQuery(mediadleLeaderboardQueryOptions).data;
     const { userData, ...mediadleData } = useSuspenseQuery(dailyMediadleQueryOptions).data;
     const { data: suggestions = [], isFetching, error } = useQuery(mediadleSuggestionsOptions(debouncedSearch));
+
+    const pending = makeGuessMutation.isPending || saving;
+    const skipping = makeGuessMutation.variables?.data.guess === SKIP_VAL;
 
     const isSearching = search.trim() !== debouncedSearch.trim() || isFetching;
     const availableSuggestions = isSearching || error ? [] : suggestions;
     const coverSrc = mediadleData.result?.nonPixelatedCover ?? `data:image/png;base64,${mediadleData.pixelatedCover}`;
 
     const handleMutation = (guessValue: string) => {
+        if (pending) return;
         makeGuessMutation.mutate({ data: { guess: guessValue } }, {
             onSuccess: () => {
                 setSearch("");
@@ -184,6 +191,7 @@ function MediadlePage() {
                                         <Combobox<typeof suggestions[number]>
                                             value={null}
                                             filter={null}
+                                            disabled={pending}
                                             inputValue={search}
                                             autoHighlight={true}
                                             items={availableSuggestions}
@@ -249,21 +257,30 @@ function MediadlePage() {
                                             </ComboboxContent>
                                         </Combobox>
                                         <div className="flex gap-2">
-                                            <Button className="flex-1" variant="secondary" onClick={onSkipClick}>
-                                                <SkipForward className="size-3.5" data-icon="inline-start"/>
+                                            <LoadingButton
+                                                onClick={onSkipClick}
+                                                disabled={pending && !skipping}
+                                                className="flex-1" variant="secondary"
+                                                icon={<SkipForward data-icon="inline-start"/>}
+                                                isLoading={makeGuessMutation.isPending && skipping}
+                                            >
                                                 Skip
-                                            </Button>
-                                            <Button className="flex-2" onClick={onGuessClick} disabled={!search.trim()}>
-                                                <Check data-icon="inline-start"/>
+                                            </LoadingButton>
+                                            <LoadingButton
+                                                className="flex-2"
+                                                onClick={onGuessClick}
+                                                icon={<Check data-icon="inline-start"/>}
+                                                disabled={!search.trim() || (pending && skipping)}
+                                                isLoading={makeGuessMutation.isPending && !skipping}
+                                            >
                                                 Submit guess
-                                            </Button>
+                                            </LoadingButton>
                                         </div>
                                     </div>
                             }
                         </div>
                     </div>
                 </div>
-
                 <UserStats
                     userData={userData}
                     isAnonymous={isAnonymous}

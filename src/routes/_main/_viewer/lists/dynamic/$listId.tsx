@@ -81,7 +81,7 @@ function DynamicListPage() {
             next.sorting = undefined;
         }
 
-        void navigate({ search: previous => ({ ...previous, ...next, page: 1 }), resetScroll: false });
+        return navigate({ search: previous => ({ ...previous, ...next, page: 1 }), resetScroll: false });
     };
 
     const handleFiltersReset = () => {

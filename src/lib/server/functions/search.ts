@@ -47,7 +47,9 @@ export const getSearchResults = createServerFn({ method: "GET" })
         }
 
         if (!currentUser) {
-            throw new FormattedError("Log-in or register to search for media.");
+            throw new FormattedError("Log-in or register to search for media.", {
+                statusCode: 401, code: "authentication_required",
+            });
         }
 
         let searchResults: ProviderSearchResults;

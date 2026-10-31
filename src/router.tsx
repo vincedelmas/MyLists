@@ -3,9 +3,9 @@ import {captureEvent} from "@/lib/client/analytics";
 import {createRouter} from "@tanstack/react-router";
 import type {ApiProviderType} from "@/lib/utils/enums";
 import {toast} from "@/lib/client/components/ui/toast";
-import {ValidationError} from "@/lib/utils/error-classes";
 import {NotFound} from "@/lib/client/components/general/NotFound";
 import {NavLoader} from "./lib/client/components/general/NavLoader";
+import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
 import {setupCoreRouterSsrQueryIntegration} from "@tanstack/router-ssr-query-core";
 import {ErrorCatchBoundary} from "@/lib/client/components/general/ErrorCatchBoundary";
 import {DEFAULT_ERROR_MESSAGE, DEFAULT_NOT_FOUND_MESSAGE} from "@/lib/utils/constants";
@@ -15,9 +15,9 @@ import {MutationCache, QueryCache, QueryClient, QueryClientProvider} from "@tans
 export function getRouter() {
     const queryClient = new QueryClient({
         queryCache: new QueryCache({
-            onError: async (_error, query) => {
+            onError: async (error, query) => {
                 // QueryCache fires once per failed request, even with multiple search observers.
-                if (query.meta?.searchAnalytics) {
+                if (query.meta?.searchAnalytics && !(error instanceof FormattedError && error.args?.code === "authentication_required")) {
                     captureEvent("search_failed", query.meta.searchAnalytics);
                 }
 

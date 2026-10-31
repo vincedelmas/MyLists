@@ -4,6 +4,7 @@ import {createSerializationAdapter} from "@tanstack/react-router";
 
 type FormattedErrorArgs = {
     statusCode: number,
+    code?: "authentication_required",
 };
 
 
@@ -26,8 +27,8 @@ export class FormattedError extends Error {
 export const formattedErrorAdapter = createSerializationAdapter({
     key: "formatted-error",
     test: (v) => v instanceof FormattedError,
-    toSerializable: ({ message }) => ({ message }),
-    fromSerializable: ({ message }) => new FormattedError(message),
+    toSerializable: ({ message, args }) => ({ message, args }),
+    fromSerializable: ({ message, args }) => new FormattedError(message, args),
 });
 
 

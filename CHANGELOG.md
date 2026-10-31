@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.17.0](https://github.com/vincedelmas/MyLists/compare/v3.16.1...v3.17.0) (2026-10-31)
+
+
+### Features
+
+* **ui:** add consistent action loading and autosave feedback ([8b22d4b](https://github.com/vincedelmas/MyLists/commit/8b22d4bf130fb6339b356b16c5367a121e82d1a6))
+
+
+### Bug Fixes
+
+* exclude login-required searches from failure ([6e4ab3b](https://github.com/vincedelmas/MyLists/commit/6e4ab3b451cafdb2cee6d02c3acf411b1a4415cf))
+
 ## [3.16.1](https://github.com/vincedelmas/MyLists/compare/v3.16.0...v3.16.1) (2026-10-29)
 
 

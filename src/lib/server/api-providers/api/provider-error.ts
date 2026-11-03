@@ -70,7 +70,9 @@ export const readProviderError = async (provider: string, response: Response, re
     else if (statusCode >= 500 && statusCode < 600) {
         kind = "unavailable";
         retryAt = now + Math.max(retryAfterMs ?? 0, 300_000);
-        message = "Provider temporarily unavailable. Requests will resume later.";
+        message = provider === "gBooks-API"
+            ? "Google Books servers are having issues. This is on Google, not MyLists! Please try again in a few minutes."
+            : "Provider temporarily unavailable. Requests will resume later.";
     }
     else {
         kind = "item";

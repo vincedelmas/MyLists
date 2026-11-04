@@ -2,26 +2,22 @@ import z from "zod";
 import {TagAction} from "@/lib/utils/enums";
 import {navbarSearchSchema} from "@/lib/schemas/search.schema";
 import {tvSeasonsQuerySchema} from "@/lib/schemas/tv-seasons.schema";
+import {mediaListSchema} from "@/lib/schemas/media-lists.schema";
 import {editUserTagSchema} from "@/lib/schemas/user-media.schema";
-import {mediaListSchema, mediaListFiltersSchema, mediaListSearchFiltersSchema} from "@/lib/schemas/media-lists.schema";
 import {MAX_QUERY_SQL_LENGTH, QUERY_LIMITS} from "@/lib/server/domain/mcp/sql-query/query.service";
 
 
-export const mediaListFiltersInputSchema = mediaListFiltersSchema.strict();
-
-export const mediaListSearchFiltersInputSchema = mediaListSearchFiltersSchema.strict();
-
-export const tvSeasonsInputSchema = tvSeasonsQuerySchema.omit({ userId: true }).strict();
+export const tvSeasonsInputSchema = tvSeasonsQuerySchema.omit({ userId: true });
 
 
 export const mediaListInputSchema = mediaListSchema.omit({ username: true }).extend({
     args: mediaListSchema.shape.args.omit({ userId: true, currentUserId: true }).strict(),
-}).strict();
+});
 
 
 export const mediaSearchInputSchema = navbarSearchSchema.safeExtend({
     apiProvider: navbarSearchSchema.shape.apiProvider.exclude(["USERS"]),
-}).strict();
+});
 
 
 // Limit tag edits to one list entry, global rename/deletion remain website operations.
@@ -29,7 +25,7 @@ export const editMediaTagInputSchema = editUserTagSchema.safeExtend({
     mediaId: editUserTagSchema.shape.mediaId.unwrap(),
     action: z.enum([TagAction.ADD, TagAction.DELETE_ONE]),
     tag: editUserTagSchema.shape.tag.omit({ oldName: true }).strict(),
-}).strict();
+});
 
 
 export const myListsQueryInputSchema = z.object({

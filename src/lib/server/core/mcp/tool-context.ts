@@ -100,8 +100,8 @@ export const createToolContext = (server: McpServer, access: McpAccess) => {
             };
 
             server.registerTool<z.ZodObject, z.ZodObject>(name, {
-                inputSchema,
                 description,
+                inputSchema: inputSchema.strict(),
                 annotations: {
                     readOnlyHint: !write,
                     idempotentHint: true,

@@ -9,7 +9,7 @@ import {createQueryTestSource} from "@/lib/server/domain/mcp/sql-query/query-sna
 
 const { env } = vi.hoisted(() => ({ env: { DATABASE_URL: "" } }));
 vi.mock("@/env/server", () => ({ serverEnv: env }));
-vi.mock("./query-executor", () => ({ executeSnapshotQuery: vi.fn() }));
+vi.mock("@/lib/server/domain/mcp/sql-query/query-executor", () => ({ executeSnapshotQuery: vi.fn() }));
 
 
 const result: QueryResult = { columns: ["count"], rows: [[0]], truncated: false, queryMs: 1 };

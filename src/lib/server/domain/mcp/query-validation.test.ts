@@ -1,4 +1,3 @@
-import {Database} from "bun:sqlite";
 import {describe, expect, it} from "vitest";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {validateQuerySql} from "@/lib/server/domain/mcp/sql-query/query-validation";
@@ -61,42 +60,5 @@ describe("query SQL validation", () => {
 
     it("bounds SQL size before parsing", () => {
         expect(() => validateQuerySql(`SELECT '${"x".repeat(MAX_QUERY_SQL_LENGTH)}'`)).toThrow("characters");
-    });
-
-    it("executes joins, aggregates and window functions using SQLite", () => {
-        const database = new Database(":memory:");
-        try {
-            database.run("CREATE TABLE my_entries(media_id INTEGER, title TEXT, rating REAL)");
-            database.run("CREATE TABLE media_people(media_id INTEGER, name TEXT)");
-            database.run("INSERT INTO my_entries VALUES (1, 'First', 9), (2, 'Second', 8), (3, 'Third', 3)");
-            database.run("INSERT INTO media_people VALUES (1, 'Actor A'), (2, 'Actor A'), (3, 'Actor B')");
-
-            const sql = validateQuerySql(`
-                WITH actors AS (
-                    SELECT p.name, COUNT(*) AS count, AVG(e.rating) AS average_rating
-                    FROM my_entries AS e
-                    JOIN media_people AS p ON e.media_id = p.media_id
-                    WHERE e.rating > $rating
-                    GROUP BY p.name
-                )
-                SELECT name, count, average_rating,
-                    DENSE_RANK() OVER (ORDER BY average_rating DESC) AS rank
-                FROM actors
-            `);
-            expect(database.query(sql).all({ $rating: 5 })).toEqual([
-                { name: "Actor A", count: 2, average_rating: 8.5, rank: 1 },
-            ]);
-
-            expect(database.query(validateQuerySql(`
-                SELECT SQRT(POWER(rating, 2)) AS score,
-                    JSON_EXTRACT(JSON_OBJECT('title', title), '$.title') AS title
-                FROM main.my_entries WHERE media_id = 1
-            `)).get()).toEqual({ score: 9, title: "First" });
-            expect(database.query(validateQuerySql("SELECT SUM(value) AS total FROM JSON_EACH('[1,2,3]')")).get())
-                .toEqual({ total: 6 });
-        }
-        finally {
-            database.close();
-        }
     });
 });

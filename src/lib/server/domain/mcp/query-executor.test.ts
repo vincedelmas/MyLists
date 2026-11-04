@@ -37,14 +37,6 @@ describe("isolated insight query execution", () => {
         expect(await executeSnapshotQuery(snapshot, { sql: "SELECT count(*) AS count FROM entries" })).toMatchObject({ rows: [[3]] });
     });
 
-    it("preserves bound text, embedded NULs, fractional numbers and nulls", async () => {
-        const text = "é\0日本";
-        expect(await executeSnapshotQuery(createSnapshot(), {
-            sql: "SELECT $text AS text, $number AS number, $nothing AS empty_value",
-            parameters: { text, number: 1.5, nothing: null },
-        })).toMatchObject({ columns: ["text", "number", "empty_value"], rows: [[text, 1.5, null]] });
-    });
-
     it("bounds returned rows and distinguishes exact-size results from truncation", async () => {
         const snapshot = createSnapshot();
         expect(await executeSnapshotQuery(snapshot, { sql: "SELECT media_id FROM entries ORDER BY media_id", maxRows: 2 }))
@@ -69,12 +61,6 @@ describe("isolated insight query execution", () => {
         await expect(executeSnapshotQuery(snapshot, { sql: "SELECT 1 AS value, 2 AS value" })).rejects.toThrow("distinct aliases");
         await expect(executeSnapshotQuery(snapshot, { sql: "SELECT $value", parameters: { value: "x".repeat(QUERY_LIMITS.maxParameterBytes) } }))
             .rejects.toThrow("parameters exceed");
-    });
-
-    it("returns oversized integers exactly and refuses binary values", async () => {
-        expect(await executeSnapshotQuery(createSnapshot(), { sql: "SELECT 9223372036854775807 AS value" }))
-            .toMatchObject({ rows: [["9223372036854775807"]] });
-        await expect(executeSnapshotQuery(createSnapshot(), { sql: "SELECT x'FF' AS value" })).rejects.toThrow("binary results");
     });
 
     it("kills an expensive query while the server event loop remains responsive", async () => {

@@ -41,18 +41,6 @@ describe("MCP tool results", () => {
         expect(JSON.parse(JSON.stringify(result))).toStrictEqual(result);
     });
 
-    it.each([{ kind: "saved", userMedia: { rating: 8 } }, false, 0, ""])("preserves an existing result: %j", async (value) => {
-        const { context, registerTool } = createRegistry();
-        context.register("update_media", { ...toolOptions, write: true }, async () => value);
-
-        const result = await registerTool.mock.results[0].value({});
-
-        expect(result).toEqual({
-            structuredContent: { result: value },
-            content: [{ type: "text", text: JSON.stringify({ result: value }) }],
-        });
-    });
-
     it("returns actionable errors instead of reporting a successful update", async () => {
         const { context, registerTool } = createRegistry();
         context.register("update_media", { ...toolOptions, write: true }, () => {

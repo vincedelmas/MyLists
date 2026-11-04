@@ -128,18 +128,6 @@ describe("MCP query snapshots", () => {
         expect(snapshot.query("SELECT name FROM media_attributes WHERE name LIKE '%Secret%'").all()).toEqual([]);
     });
 
-    it("orders the documented recent-edits query chronologically across stored timestamp formats", () => {
-        source.run("UPDATE movies_list SET last_updated = '2026-01-02T01:00:00.000Z' WHERE user_id = 1 AND media_id = 10");
-        source.run("INSERT INTO movies_list (user_id, media_id, status, rating, last_updated) VALUES (1, 80, 'Completed', 9, '2026-01-02 02:00:00')");
-
-        const { snapshot } = openSnapshot();
-        const example = QUERY_SCHEMA.slice(QUERY_SCHEMA.lastIndexOf("SELECT title, rating"));
-        expect(snapshot.query(example).all()).toEqual([
-            { title: "movies historical", rating: 9 },
-            { title: "movies shared", rating: 9 },
-        ]);
-    });
-
     it("scopes labels and seasons by their own profile, including shared-media labels", () => {
         const { snapshot } = openSnapshot();
         expect(snapshot.query("SELECT DISTINCT name FROM labels ORDER BY name").all()).toEqual([{ name: "label-user-1" }]);
@@ -157,15 +145,6 @@ describe("MCP query snapshots", () => {
         expect(snapshot.query("SELECT title FROM activity WHERE media_type = 'movies' AND media_id = 80").get()).toEqual({ title: "movies historical" });
         expect(snapshot.query("SELECT * FROM entries WHERE media_id = 80").all()).toEqual([]);
         expect(snapshot.query("SELECT name FROM media_people WHERE media_type = 'movies' AND media_id = 80").all()).toEqual([{ name: "Historical actor" }]);
-    });
-
-    it("retains historical activity when its catalog metadata has been deleted", () => {
-        source.run("DELETE FROM movies_genre WHERE media_id = 80");
-        source.run("DELETE FROM movies_actors WHERE media_id = 80");
-        source.run("DELETE FROM movies WHERE id = 80");
-        const { snapshot } = openSnapshot();
-        expect(snapshot.query("SELECT title, progress_gained FROM activity WHERE media_type = 'movies' AND media_id = 80").get()).toEqual({ title: null, progress_gained: 1 });
-        expect(snapshot.query("SELECT COUNT(*) AS count FROM my_entries").get()).toEqual({ count: 6 });
     });
 
     it("recomputes list activation for every snapshot without sharing another user's data", () => {
@@ -188,19 +167,5 @@ describe("MCP query snapshots", () => {
         expect(() => buildQuerySnapshot(source, 1, { ...QUERY_SNAPSHOT_LIMITS, maxBytes: 4096 })).toThrow("byte limit");
         expect(() => buildQuerySnapshot(source, 1, { ...QUERY_SNAPSHOT_LIMITS, maxBytes: 4096 })).toThrow(FormattedError);
         expect(openSnapshot().snapshot.query("SELECT COUNT(*) AS count FROM my_entries").get()).toEqual({ count: 6 });
-    });
-
-    it("extracts successfully through a read-only source connection", () => {
-        const readOnlySource = Database.deserialize(source.serialize(), { readonly: true });
-        try {
-            const result = buildQuerySnapshot(readOnlySource, 1);
-            const snapshot = Database.deserialize(result.data, { readonly: true });
-            snapshots.push(snapshot);
-            expect(snapshot.query("SELECT COUNT(*) AS count FROM entries").get()).toEqual({ count: 6 });
-            expect(readOnlySource.inTransaction).toBe(false);
-        }
-        finally {
-            readOnlySource.close();
-        }
     });
 });

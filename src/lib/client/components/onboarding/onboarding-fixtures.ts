@@ -10,7 +10,7 @@ import type {
 } from "@/lib/types/query.options.types";
 
 
-export const ONBOARDING_MOVIE_ID = -101;
+const ONBOARDING_MOVIE_ID = -101;
 
 export const ONBOARDING_PROFILE_NAME = "Alex";
 

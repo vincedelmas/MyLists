@@ -53,10 +53,11 @@ export const createToolContext = (server: McpServer, access: McpAccess) => {
     return {
         userId: access.userId,
         username: access.username,
-
         register<T extends z.ZodObject>(name: string, options: RegisterOptions<T>, action: (input: z.output<T>) => unknown) {
-            const { write = false, annotations, ...config } = options;
-            if (!access.scopes.has(write ? MCP_WRITE_SCOPE : MCP_READ_SCOPE)) return;
+            const { write = false, annotations, inputSchema, description } = options;
+            if (!access.scopes.has(write ? MCP_WRITE_SCOPE : MCP_READ_SCOPE)) {
+                return;
+            }
 
             const callTool = async (input: Record<string, unknown>): Promise<CallToolResult> => {
                 try {
@@ -93,13 +94,14 @@ export const createToolContext = (server: McpServer, access: McpAccess) => {
 
                     return {
                         isError: true,
-                        content: [{ type: "text", text: message ?? "MyLists could not complete this operation. Please try again." }],
+                        content: [{ type: "text", text: message ?? "MyLists could not complete this operation. Please try again later." }],
                     };
                 }
             };
 
             server.registerTool<z.ZodObject, z.ZodObject>(name, {
-                ...config,
+                inputSchema,
+                description,
                 annotations: {
                     readOnlyHint: !write,
                     idempotentHint: true,

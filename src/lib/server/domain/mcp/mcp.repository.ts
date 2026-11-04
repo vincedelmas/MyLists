@@ -5,61 +5,55 @@ import {getDbClient, withTransaction} from "@/lib/server/database/async-storage"
 import {mcpRevocation, oauthAccessToken, oauthClient, oauthConsent, oauthRefreshToken, session, user, verification} from "@/lib/server/database/schema";
 
 
-// Signature, issuer, audience and expiry are checked by requireMcpAuth first.
-// Live grants and sessions also prevent disconnected clients from reusing JWTs.
-export const getMcpAccess = (claims: JWTPayload) => {
-    const userId = Number(claims.sub);
-    const clientId = claims.client_id;
-    const sessionId = Number(claims.sid);
+// Signature, issuer, audience and expiry are checked by better-auth first
+export const getMcpAccess = (accessTokenClaims: JWTPayload) => {
+    const userId = Number(accessTokenClaims.sub);
+    const clientId = accessTokenClaims.client_id;
+    const sessionId = Number(accessTokenClaims.sid);
 
     if (!Number.isSafeInteger(userId)
         || userId <= 0
         || typeof clientId !== "string"
         || !Number.isSafeInteger(sessionId) || sessionId <= 0
-        || typeof claims.mylistsIssuedAt !== "number" || typeof claims.scope !== "string"
+        || typeof accessTokenClaims.mylistsIssuedAt !== "number" || typeof accessTokenClaims.scope !== "string"
     ) return null;
 
-    const db = getDbClient();
-
-    const grant = db
+    const grant = getDbClient()
         .select({
             username: user.name,
             scopes: oauthConsent.scopes,
             disabled: oauthClient.disabled,
             resources: oauthConsent.resources,
+            revokedAt: mcpRevocation.revokedAt,
         })
         .from(oauthConsent)
         .innerJoin(oauthClient, eq(oauthClient.clientId, oauthConsent.clientId))
         .innerJoin(user, eq(user.id, oauthConsent.userId))
-        .where(and(eq(oauthConsent.userId, userId), eq(oauthConsent.clientId, clientId)))
-        .get();
-
-    const liveSession = db
-        .select({ id: session.id })
-        .from(session)
-        .where(and(
+        .innerJoin(session, and(
             eq(session.id, sessionId),
-            eq(session.userId, userId),
             gt(session.expiresAt, new Date()),
-        )).get();
-
-    const revoked = db
-        .select()
-        .from(mcpRevocation)
-        .where(and(eq(mcpRevocation.userId, userId), eq(mcpRevocation.clientId, clientId)))
+            eq(session.userId, oauthConsent.userId),
+        ))
+        .leftJoin(mcpRevocation, and(
+            eq(mcpRevocation.userId, oauthConsent.userId),
+            eq(mcpRevocation.clientId, oauthConsent.clientId),
+        )).where(and(eq(oauthConsent.userId, userId), eq(oauthConsent.clientId, clientId)))
         .get();
 
     if (!grant
         || grant.disabled
         || !grant.resources?.includes(MCP_RESOURCE)
-        || !liveSession
-        || (revoked && claims.mylistsIssuedAt <= revoked.revokedAt)
+        || (grant.revokedAt !== null && accessTokenClaims.mylistsIssuedAt <= grant.revokedAt)
     ) return null;
 
     const consentedScopes = new Set(grant.scopes);
-    const scopes = new Set(claims.scope.split(" ").filter(scope => consentedScopes.has(scope)));
+    const scopes = new Set(accessTokenClaims.scope.split(" ").filter(scope => consentedScopes.has(scope)));
 
-    return { userId, username: grant.username, scopes };
+    return {
+        userId,
+        scopes,
+        username: grant.username,
+    };
 };
 
 

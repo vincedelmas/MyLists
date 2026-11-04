@@ -2,9 +2,9 @@ import z from "zod";
 import {TagAction} from "@/lib/utils/enums";
 import {navbarSearchSchema} from "@/lib/schemas/search.schema";
 import {tvSeasonsQuerySchema} from "@/lib/schemas/tv-seasons.schema";
-import {MAX_QUERY_SQL_LENGTH, QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
 import {editUserTagSchema} from "@/lib/schemas/user-media.schema";
 import {mediaListSchema, mediaListFiltersSchema, mediaListSearchFiltersSchema} from "@/lib/schemas/media-lists.schema";
+import {MAX_QUERY_SQL_LENGTH, QUERY_LIMITS} from "@/lib/server/domain/mcp/sql-query/query.service";
 
 
 export const mediaListFiltersInputSchema = mediaListFiltersSchema.strict();

@@ -1,10 +1,10 @@
 import Database from "bun:sqlite";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {createQueryTestSource} from "@/lib/server/domain/mcp/query-snapshot.fixture";
-import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/domain/mcp/query.config";
-import {QUERY_SCHEMA} from "@/lib/server/domain/mcp/query-schema";
-import {buildQuerySnapshot} from "@/lib/server/domain/mcp/query-snapshot";
+import {createQueryTestSource} from "@/lib/server/domain/mcp/sql-query/query-snapshot.fixture";
+import {QUERY_SCHEMA} from "@/lib/server/domain/mcp/sql-query/query-schema";
+import {buildQuerySnapshot} from "@/lib/server/domain/mcp/sql-query/query-snapshot";
+import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/domain/mcp/sql-query/query.service";
 
 
 const mediaTypes = ["movies", "series", "anime", "games", "books", "manga"];
@@ -38,9 +38,13 @@ describe("MCP query snapshots", () => {
                 const position = type === "series" || type === "anime" ? ", 1, 3" : type === "manga" ? ", 10" : "";
                 for (const id of [1, 2, 3, 4, 5, 6]) {
                     source.run(`INSERT INTO ${type}_list (id, user_id, media_id, status, rating, comment${progress}) VALUES (?, ?, ?, 'Completed', ?, ?${position})`, [id * 100, id, id === 1 || id === 2 ? 10 : 90, id === 1 ? 9 : 7, `comment-user-${id}`]);
-                    const tag = source.query<{ id: number }, [number, string, string]>("INSERT INTO media_tags (user_id, media_type, name) VALUES (?, ?, ?) RETURNING id").get(id, type, `label-user-${id}`)!;
+                    const tag = source.query<{
+                        id: number
+                    }, [number, string, string]>("INSERT INTO media_tags (user_id, media_type, name) VALUES (?, ?, ?) RETURNING id").get(id, type, `label-user-${id}`)!;
                     source.run(`INSERT INTO ${type}_tags (user_id, media_id, tag_id) VALUES (?, 10, ?)`, [id, tag.id]);
-                    const emptyTag = source.query<{ id: number }, [number, string, string]>("INSERT INTO media_tags (user_id, media_type, name) VALUES (?, ?, ?) RETURNING id").get(id, type, `unattached-user-${id}`)!;
+                    const emptyTag = source.query<{
+                        id: number
+                    }, [number, string, string]>("INSERT INTO media_tags (user_id, media_type, name) VALUES (?, ?, ?) RETURNING id").get(id, type, `unattached-user-${id}`)!;
                     source.run(`INSERT INTO ${type}_tags (user_id, tag_id) VALUES (?, ?)`, [id, emptyTag.id]);
                     source.run("INSERT INTO user_media_monthly_activity (user_id, media_type, media_id, month_bucket, progress_gained, redo_gained) VALUES (?, ?, ?, '2026-01', 10, 0)", [id, type, id === 1 || id === 2 ? 10 : 90]);
                 }
@@ -81,10 +85,27 @@ describe("MCP query snapshots", () => {
         const { snapshot, result } = openSnapshot();
         expect(snapshot.query("SELECT media_type FROM my_entries ORDER BY media_type").all()).toEqual([...mediaTypes].sort().map(media_type => ({ media_type })));
         expect(snapshot.query("SELECT * FROM profiles").all()).toEqual([{ profile_id: 1, username: "user-1", rating_system: "score" }]);
-        expect(snapshot.query("SELECT title, rating, duration_minutes, language, budget FROM my_entries WHERE media_type = 'movies'").get()).toEqual({ title: "movies shared", rating: 9, duration_minutes: 120, language: "fr", budget: 1000 });
-        expect(snapshot.query("SELECT chapter_count, volume_count, current_chapter, duration_minutes FROM my_entries WHERE media_type = 'manga'").get()).toEqual({ chapter_count: 100, volume_count: 10, current_chapter: 10, duration_minutes: null });
-        expect(snapshot.query("SELECT role, name FROM media_people WHERE media_type = 'games' ORDER BY role").all()).toEqual([{ role: "developer", name: "Known company" }, { role: "publisher", name: "Known company" }]);
-        expect(snapshot.query("SELECT kind, name FROM media_attributes WHERE media_type = 'series' ORDER BY kind").all()).toEqual([{ kind: "country", name: "FR" }, { kind: "network", name: "Known network" }, { kind: "production_status", name: "Ended" }]);
+        expect(snapshot.query("SELECT title, rating, duration_minutes, language, budget FROM my_entries WHERE media_type = 'movies'").get()).toEqual({
+            title: "movies shared",
+            rating: 9,
+            duration_minutes: 120,
+            language: "fr",
+            budget: 1000
+        });
+        expect(snapshot.query("SELECT chapter_count, volume_count, current_chapter, duration_minutes FROM my_entries WHERE media_type = 'manga'").get()).toEqual({
+            chapter_count: 100,
+            volume_count: 10,
+            current_chapter: 10,
+            duration_minutes: null
+        });
+        expect(snapshot.query("SELECT role, name FROM media_people WHERE media_type = 'games' ORDER BY role").all()).toEqual([{
+            role: "developer",
+            name: "Known company"
+        }, { role: "publisher", name: "Known company" }]);
+        expect(snapshot.query("SELECT kind, name FROM media_attributes WHERE media_type = 'series' ORDER BY kind").all()).toEqual([{
+            kind: "country",
+            name: "FR"
+        }, { kind: "network", name: "Known network" }, { kind: "production_status", name: "Ended" }]);
         expect(snapshot.query("SELECT name FROM sqlite_schema WHERE type = 'view'").all()).toEqual([{ name: "my_entries" }]);
         const tables = snapshot.query<{ name: string }, []>("SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name").all().map(row => row.name);
         expect(tables).toEqual(["activity", "entries", "labels", "media_attributes", "media_genres", "media_people", "profiles", "seasons"]);
@@ -122,7 +143,11 @@ describe("MCP query snapshots", () => {
     it("scopes labels and seasons by their own profile, including shared-media labels", () => {
         const { snapshot } = openSnapshot();
         expect(snapshot.query("SELECT DISTINCT name FROM labels ORDER BY name").all()).toEqual([{ name: "label-user-1" }]);
-        expect(snapshot.query("SELECT profile_id, season, episode_count FROM seasons WHERE media_type = 'series' ORDER BY profile_id").all()).toEqual([{ profile_id: 1, season: 1, episode_count: 12 }]);
+        expect(snapshot.query("SELECT profile_id, season, episode_count FROM seasons WHERE media_type = 'series' ORDER BY profile_id").all()).toEqual([{
+            profile_id: 1,
+            season: 1,
+            episode_count: 12
+        }]);
     });
 
     it("excludes hidden activity while retaining visible history and catalog facets for removed entries", () => {

@@ -1,9 +1,9 @@
 import Database from "bun:sqlite";
 import {describe, expect, it} from "vitest";
-import {QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
-import {validateQuerySql} from "./query-validation";
-import {executeSnapshotQuery} from "./query-executor";
-import queryProcessSource from "./query-process.js?raw";
+import {validateQuerySql} from "@/lib/server/domain/mcp/sql-query/query-validation";
+import {executeSnapshotQuery} from "@/lib/server/domain/mcp/sql-query/query-executor";
+import queryProcessSource from "@/lib/server/domain/mcp/sql-query/query-process.js?raw";
+import {QUERY_LIMITS} from "@/lib/server/domain/mcp/sql-query/query.service";
 
 
 const createSnapshot = (count = 3, title = "Movie") => {
@@ -80,7 +80,9 @@ describe("isolated insight query execution", () => {
     it("kills an expensive query while the server event loop remains responsive", async () => {
         const startedAt = performance.now();
         let responsive = false;
-        const heartbeat = setTimeout(() => { responsive = true; }, 25);
+        const heartbeat = setTimeout(() => {
+            responsive = true;
+        }, 25);
         try {
             await expect(executeSnapshotQuery(createSnapshot(), {
                 sql: validateQuerySql("WITH RECURSIVE numbers(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM numbers) SELECT sum(n) FROM numbers"),

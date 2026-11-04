@@ -1,6 +1,7 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import {parseStmt, traverse, type ParseStmtResult} from "sqlite3-parser";
-import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/query.config";
+
+import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/sql-query/query.service";
 
 
 const blockedFunctions = new Set(["load_extension", "readfile", "writefile"]);

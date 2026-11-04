@@ -6,10 +6,10 @@ import {createMiddleware} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
 import {notFound, redirect} from "@tanstack/react-router";
+import {getSafeRedirectPath} from "@/lib/utils/redirects";
 import {isAdminAuthenticated} from "@/lib/server/core/admin-auth";
 import {hasRequiredRole, toActor} from "@/lib/server/authorization";
 import {getAuthState, isAuthenticatedAuthState} from "@/lib/utils/auth";
-import {getSafeRedirectPath} from "@/lib/utils/redirects";
 
 
 export const publicAuthMiddleware = createMiddleware({ type: "function" })

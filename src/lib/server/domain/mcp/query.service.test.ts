@@ -2,10 +2,9 @@ import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {mkdtemp, rm} from "node:fs/promises";
 import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
-import {runMyListsQuery} from "./query.service";
-import {QUERY_LIMITS} from "@/lib/server/domain/mcp/query.config";
-import {executeSnapshotQuery, type QueryResult} from "./query-executor";
-import {createQueryTestSource} from "./query-snapshot.fixture";
+import {QUERY_LIMITS, runMyListsQuery} from "@/lib/server/domain/mcp/sql-query/query.service";
+import {executeSnapshotQuery, type QueryResult} from "@/lib/server/domain/mcp/sql-query/query-executor";
+import {createQueryTestSource} from "@/lib/server/domain/mcp/sql-query/query-snapshot.fixture";
 
 
 const { env } = vi.hoisted(() => ({ env: { DATABASE_URL: "" } }));
@@ -33,7 +32,9 @@ describe("MCP insight query service", () => {
         vi.mocked(executeSnapshotQuery).mockReset().mockResolvedValue(result);
     });
 
-    afterAll(async () => { await rm(directory, { recursive: true, force: true }); });
+    afterAll(async () => {
+        await rm(directory, { recursive: true, force: true });
+    });
 
     it("validates SQL before opening the source and returns snapshot timings", async () => {
         env.DATABASE_URL = join(directory, "absent.db");
@@ -49,7 +50,9 @@ describe("MCP insight query service", () => {
 
     it("prevents overlapping queries for one user and releases the slot afterward", async () => {
         let finish!: (value: QueryResult) => void;
-        vi.mocked(executeSnapshotQuery).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+        vi.mocked(executeSnapshotQuery).mockImplementationOnce(() => new Promise(resolve => {
+            finish = resolve;
+        }));
         const pending = runMyListsQuery(input);
         try {
             await expect(runMyListsQuery(input)).rejects.toThrow("already running");

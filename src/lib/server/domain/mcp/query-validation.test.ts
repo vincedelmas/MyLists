@@ -1,8 +1,8 @@
 import {Database} from "bun:sqlite";
 import {describe, expect, it} from "vitest";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/query.config";
-import {validateQuerySql} from "@/lib/server/domain/mcp/query-validation";
+import {validateQuerySql} from "@/lib/server/domain/mcp/sql-query/query-validation";
+import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/sql-query/query.service";
 
 
 describe("query SQL validation", () => {

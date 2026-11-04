@@ -15,7 +15,7 @@ import {
     tvSeasonsInputSchema,
     mediaSearchInputSchema,
     editMediaTagInputSchema
-} from "@/lib/server/domain/mcp/tool-schemas";
+} from "@/lib/schemas/tool-schemas";
 
 
 export const registerMediaTools = ({ register, userId, username }: ToolContext) => {

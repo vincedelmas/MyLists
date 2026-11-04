@@ -1,7 +1,8 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import Database, {SQLiteError, type SQLQueryBindings} from "bun:sqlite";
-import {querySnapshotTables} from "@/lib/server/domain/mcp/query-schema";
-import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/domain/mcp/query.config";
+import {querySnapshotTables} from "@/lib/server/domain/mcp/sql-query/query-schema";
+
+import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/domain/mcp/sql-query/query.service";
 
 
 type EntryColumn = keyof typeof querySnapshotTables.entries.columns;

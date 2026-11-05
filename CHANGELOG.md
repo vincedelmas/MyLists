@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.18.0](https://github.com/vincedelmas/MyLists/compare/v3.17.0...v3.18.0) (2026-11-05)
+
+
+### Features
+
+* **logging:** persist rotating logs and unify auth logging ([c1e8aeb](https://github.com/vincedelmas/MyLists/commit/c1e8aeb6dd9e6bea8baed993c3e203e8ec4d5d46))
+
+
+### Bug Fixes
+
+* clarify Google Books server outage messages ([1a27305](https://github.com/vincedelmas/MyLists/commit/1a27305d658f366789a5c3c9c2b9c058be1bdfd2))
+
+
+### Code Refactoring
+
+* **mcp:** centralize strict schemas & simplify dynamic list instructions ([3716a93](https://github.com/vincedelmas/MyLists/commit/3716a936cd17a0b310efb582513d7eeae07a397c))
+* **mcp:** consolidate live access checks into one query ([6f3e683](https://github.com/vincedelmas/MyLists/commit/6f3e68351915e0c3a0c11fe3e7faa75a72a9a6c2))
+* **mcp:** extract query limits into shared module ([12d8c18](https://github.com/vincedelmas/MyLists/commit/12d8c187289b89a122881d074bf212c74863f318))
+* **mcp:** refactor folders ([2334c0f](https://github.com/vincedelmas/MyLists/commit/2334c0f76eea93fe41bd2e508efb962194ce1415))
+
 ## [3.17.0](https://github.com/vincedelmas/MyLists/compare/v3.16.1...v3.17.0) (2026-10-31)
 
 

@@ -64,6 +64,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
             defaultSort: getMediaSortLabel(animeDefinition, animeDefinition.sorting.default),
             selection: {
                 mediaName: anime.name,
+                duration: anime.duration,
                 imageCover: anime.imageCover,
                 epsPerSeason: sql<{ season: number; episodes: number }[]>`(
                     SELECT

@@ -7,15 +7,18 @@ type ContinueItemsByType = {
     [T in MediaType]: Extract<ContinueItem, { mediaType: T }>;
 };
 
+
 export type ContinueItemFor<T extends MediaType> = ContinueItemsByType[T];
+
 
 export type ContinueProgress = {
     value: number;
     label: string;
-    total: number | null;
     actionLabel: string;
+    total: number | null;
     update: UpdatePayload | null;
 };
+
 
 export type ContinueConfig<T extends MediaType> = {
     getProgress: (item: ContinueItemFor<T>) => ContinueProgress;

@@ -71,6 +71,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
         listQuery: {
             selection: {
                 mediaName: series.name,
+                duration: series.duration,
                 imageCover: series.imageCover,
                 epsPerSeason: sql<{ season: number; episodes: number }[]>`(
                     SELECT

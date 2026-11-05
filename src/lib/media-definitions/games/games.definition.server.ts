@@ -50,6 +50,7 @@ export const gamesServerDefinition = defineServerMediaDefinition({
             selection: {
                 mediaName: games.name,
                 imageCover: games.imageCover,
+                hltbMainTime: games.hltbMainTime,
                 ...getTableColumns(gamesList),
             },
             defaultSort: getMediaSortLabel(gamesDefinition, gamesDefinition.sorting.default),

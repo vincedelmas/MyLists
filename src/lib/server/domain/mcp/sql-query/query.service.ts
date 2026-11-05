@@ -1,6 +1,7 @@
 import Database from "bun:sqlite";
 import {serverEnv} from "@/env/server";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {QUERY_LIMITS} from "@/lib/utils/mcp/query-limits";
 import {validateQuerySql} from "@/lib/server/domain/mcp/sql-query/query-validation";
 import {buildQuerySnapshot} from "@/lib/server/domain/mcp/sql-query/query-snapshot";
 import {executeSnapshotQuery, type QueryParameters} from "@/lib/server/domain/mcp/sql-query/query-executor";
@@ -15,26 +16,6 @@ type QueryInput = {
 
 
 const activeQueries = new Set<number>();
-
-
-export const MAX_QUERY_SQL_LENGTH = 20_000;
-
-
-export const QUERY_LIMITS = {
-    maxRows: 1_000,
-    defaultRows: 200,
-    timeoutMs: 5_000,
-    maxConcurrentQueries: 4,
-    maxResponseBytes: 256 * 1024,
-    maxParameterBytes: 64 * 1024,
-    sqliteHeapBytes: 128 * 1024 * 1024,
-} as const;
-
-
-export const QUERY_SNAPSHOT_LIMITS = {
-    maxRows: 100_000,
-    maxBytes: 32 * 1024 * 1024,
-};
 
 
 export const runMyListsQuery = async (input: QueryInput) => {

@@ -1,10 +1,10 @@
 import z from "zod";
 import {TagAction} from "@/lib/utils/enums";
 import {navbarSearchSchema} from "@/lib/schemas/search.schema";
-import {tvSeasonsQuerySchema} from "@/lib/schemas/tv-seasons.schema";
 import {mediaListSchema} from "@/lib/schemas/media-lists.schema";
 import {editUserTagSchema} from "@/lib/schemas/user-media.schema";
-import {MAX_QUERY_SQL_LENGTH, QUERY_LIMITS} from "@/lib/server/domain/mcp/sql-query/query.service";
+import {tvSeasonsQuerySchema} from "@/lib/schemas/tv-seasons.schema";
+import {MAX_QUERY_SQL_LENGTH, QUERY_LIMITS} from "@/lib/utils/mcp/query-limits";
 
 
 export const tvSeasonsInputSchema = tvSeasonsQuerySchema.omit({ userId: true });

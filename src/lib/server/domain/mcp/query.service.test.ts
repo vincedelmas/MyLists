@@ -2,7 +2,8 @@ import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {mkdtemp, rm} from "node:fs/promises";
 import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
-import {QUERY_LIMITS, runMyListsQuery} from "@/lib/server/domain/mcp/sql-query/query.service";
+import {QUERY_LIMITS} from "@/lib/utils/mcp/query-limits";
+import {runMyListsQuery} from "@/lib/server/domain/mcp/sql-query/query.service";
 import {executeSnapshotQuery, type QueryResult} from "@/lib/server/domain/mcp/sql-query/query-executor";
 import {createQueryTestSource} from "@/lib/server/domain/mcp/sql-query/query-snapshot.fixture";
 

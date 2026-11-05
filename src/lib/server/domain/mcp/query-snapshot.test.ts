@@ -4,7 +4,7 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {createQueryTestSource} from "@/lib/server/domain/mcp/sql-query/query-snapshot.fixture";
 import {QUERY_SCHEMA} from "@/lib/server/domain/mcp/sql-query/query-schema";
 import {buildQuerySnapshot} from "@/lib/server/domain/mcp/sql-query/query-snapshot";
-import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/domain/mcp/sql-query/query.service";
+import {QUERY_SNAPSHOT_LIMITS} from "@/lib/utils/mcp/query-limits";
 
 
 const mediaTypes = ["movies", "series", "anime", "games", "books", "manga"];

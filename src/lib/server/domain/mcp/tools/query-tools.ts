@@ -1,7 +1,8 @@
+import {QUERY_LIMITS} from "@/lib/utils/mcp/query-limits";
 import {myListsQueryInputSchema} from "@/lib/schemas/tool-schemas";
 import type {ToolContext} from "@/lib/server/core/mcp/tool-context";
 import {QUERY_SCHEMA} from "@/lib/server/domain/mcp/sql-query/query-schema";
-import {QUERY_LIMITS, runMyListsQuery} from "@/lib/server/domain/mcp/sql-query/query.service";
+import {runMyListsQuery} from "@/lib/server/domain/mcp/sql-query/query.service";
 
 
 export const registerQueryTools = ({ register, userId }: ToolContext) => {

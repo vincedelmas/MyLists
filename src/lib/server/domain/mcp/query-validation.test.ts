@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {validateQuerySql} from "@/lib/server/domain/mcp/sql-query/query-validation";
-import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/sql-query/query.service";
+import {MAX_QUERY_SQL_LENGTH} from "@/lib/utils/mcp/query-limits";
 
 
 describe("query SQL validation", () => {

@@ -3,7 +3,7 @@ import {describe, expect, it} from "vitest";
 import {validateQuerySql} from "@/lib/server/domain/mcp/sql-query/query-validation";
 import {executeSnapshotQuery} from "@/lib/server/domain/mcp/sql-query/query-executor";
 import queryProcessSource from "@/lib/server/domain/mcp/sql-query/query-process.js?raw";
-import {QUERY_LIMITS} from "@/lib/server/domain/mcp/sql-query/query.service";
+import {QUERY_LIMITS} from "@/lib/utils/mcp/query-limits";
 
 
 const createSnapshot = (count = 3, title = "Movie") => {

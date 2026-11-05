@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.19.0](https://github.com/vincedelmas/MyLists/compare/v3.18.0...v3.19.0) (2026-11-05)
+
+
+### Features
+
+* **continue:** show remaining progress and time estimates ([14dffe3](https://github.com/vincedelmas/MyLists/commit/14dffe32320ae984e36cf7b63d63baf977bfb6e9))
+
 ## [3.18.0](https://github.com/vincedelmas/MyLists/compare/v3.17.0...v3.18.0) (2026-11-05)
 
 

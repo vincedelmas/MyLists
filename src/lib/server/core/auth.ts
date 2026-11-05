@@ -59,6 +59,16 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
             "/send-verification-email": { max: 3, window: 5 * 60 },
         },
     },
+    logger: {
+        level: "debug",
+        log: (level, message, ...args) => {
+            logger[level]({
+                source: "better-auth",
+                err: args.find((arg) => arg instanceof Error),
+                details: args.filter((arg) => !(arg instanceof Error)),
+            }, message);
+        },
+    },
     hooks: {
         before: createAuthMiddleware(async (ctx) => {
             if (ctx.path === "/change-email") {

@@ -33,13 +33,11 @@ describe("CLI entry point", () => {
         return Bun.spawn([process.execPath, "--no-env-file", ...bunArgs, resolve(import.meta.dirname, "index.ts"), ...args], {
             cwd: directory,
             env: {
-                PATH: process.env.PATH,
-                NODE_ENV: "production",
-                LOG_LEVEL: "silent",
+                NODE_ENV: "test",
                 REDIS_ENABLED: "false",
+                PATH: process.env.PATH,
                 DATABASE_URL: databasePath,
                 BASE_UPLOADS_LOCATION: join(directory, "uploads"),
-                ADMIN_LOG_DIR: join(directory, "logs"),
                 ...(fullEnvironment ? {
                     ADMIN_PASSWORD: "ImportCliTest123!",
                     ADMIN_TOKEN_SECRET: "import-cli-test-admin-token-secret",
@@ -87,7 +85,7 @@ describe("CLI entry point", () => {
             .toEqual([{ user_id: 1, media_id: 100, rating: 8, comment: "CLI test" }]);
     });
 
-it("fails without flock instead of recovering jobs without exclusive ownership", async () => {
+    it("fails without flock instead of recovering jobs without exclusive ownership", async () => {
         sqlite.run("INSERT INTO import_jobs (user_id, source, status) VALUES (1, 'mylists', 'processing')");
         const result = await runCli(["import-drain"], false, { PATH: directory });
         expect(result.exitCode).toBe(1);
@@ -95,12 +93,12 @@ it("fails without flock instead of recovering jobs without exclusive ownership",
         expect(sqlite.query("SELECT status FROM import_jobs").get()).toEqual({ status: "processing" });
     });
 
-it("keeps a live owner exclusive and recovers immediately after SIGKILL without duplicating its insert", async () => {
+    it("keeps a live owner exclusive and recovers immediately after SIGKILL without duplicating its insert", async () => {
         sqlite.run("INSERT INTO movies (id, api_id, name, image_cover, duration) VALUES (100, 100, 'Crash test movie', 'test.jpg', 100)");
         sqlite.run("INSERT INTO import_jobs (id, user_id, source, status, total_count) VALUES (1, 1, 'mylists', 'queued', 1)");
         sqlite.run(`INSERT INTO import_items (job_id, row_number, name, media_type, external_api_id, external_api_source, status, payload_json)
             VALUES (1, 2, 'Crash test movie', 'movies', '100', 'tmdb', 'queued', ?)`,
-        [JSON.stringify({ status: "Completed", redo: 0, total: 1, rating: 8, favorite: true, comment: "Preserve after crash" })]);
+            [JSON.stringify({ status: "Completed", redo: 0, total: 1, rating: 8, favorite: true, comment: "Preserve after crash" })]);
 
         const preload = join(directory, "pause-after-insert.ts");
         writeFileSync(preload, `

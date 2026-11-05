@@ -130,7 +130,7 @@ function formatDetail(key: string, value: unknown) {
 
 
 function formatDetailValue(key: string, value: unknown) {
-    if (key === "err" && value && typeof value === "object" && "stack" in value && typeof value.stack === "string") {
+    if (key === "err" && value && typeof value === "object" && "stack" in value && typeof value.stack === "string" && value.stack.length > 0) {
         return value.stack;
     }
 

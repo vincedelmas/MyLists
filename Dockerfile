@@ -48,7 +48,7 @@ COPY --chown=bun:bun package.json bun.lock drizzle.config.ts tsconfig.json ./
 COPY --chown=bun:bun src ./src
 COPY --chown=bun:bun drizzle ./drizzle
 COPY --chown=bun:bun public ./public
-RUN mkdir -p /data/database /data/images && chown -R bun:bun /data
+RUN mkdir -p /data/database /data/images /data/logs && chown -R bun:bun /data
 USER bun
 EXPOSE 3000
 

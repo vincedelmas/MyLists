@@ -3,7 +3,7 @@ import {ProviderRequestError} from "./provider-error";
 import {checkProviderCooldown, setProviderCooldown} from "./provider-cooldown";
 
 
-vi.mock("@/env/server", () => ({ serverEnv: { REDIS_ENABLED: false, LOG_LEVEL: "silent" } }));
+vi.mock("@/env/server", () => ({ serverEnv: { REDIS_ENABLED: false } }));
 
 
 describe("provider cooldowns", () => {

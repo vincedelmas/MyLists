@@ -4,7 +4,6 @@ import {ApiProviderType} from "@/lib/utils/enums";
 
 const envMocks = vi.hoisted(() => ({
     serverEnv: {
-        LOG_LEVEL: "silent",
         GOOGLE_BOOKS_API_KEY: "books-key" as string | undefined,
         IGDB_CLIENT_ID: "igdb-client" as string | undefined,
         IGDB_CLIENT_SECRET: "igdb-secret",

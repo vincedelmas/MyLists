@@ -1,6 +1,4 @@
 import * as z from "zod";
-import path from "node:path";
-import {homedir} from "node:os";
 import {createEnv} from "@t3-oss/env-core";
 
 
@@ -19,12 +17,6 @@ export const serverEnv = createEnv({
         ADMIN_TOKEN_SECRET: z.string().min(20),
         ADMIN_MAIL_PASSWORD: z.string().min(8).optional(),
         ADMIN_TTL_COOKIE_MIN: z.coerce.number().int().default(10),
-
-        // Logging
-        LOG_LEVEL: z.string().trim().default("info"),
-        ADMIN_LOG_PREFIX: z.string().trim().default("mylists-"),
-        ADMIN_LOG_MAX_BYTES: z.coerce.number().default(10 * 1024 * 1024),
-        ADMIN_LOG_DIR: z.string().default(path.join(homedir(), ".pm2", "logs")),
 
         // Redis
         CACHE_TTL_MIN: z.coerce.number().int().default(5),

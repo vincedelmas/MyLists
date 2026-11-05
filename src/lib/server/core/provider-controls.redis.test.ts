@@ -8,7 +8,7 @@ import {createApiHttpClient} from "../api-providers/api/http.base";
 
 
 vi.mock("@/env/server", () => ({ serverEnv: {
-    REDIS_ENABLED: true, REDIS_URL: process.env.MYLISTS_TEST_REDIS_URL, LOG_LEVEL: "silent",
+    REDIS_ENABLED: true, REDIS_URL: process.env.MYLISTS_TEST_REDIS_URL,
 } }));
 
 
@@ -23,7 +23,7 @@ describe.skipIf(!process.env.MYLISTS_TEST_REDIS_URL)("shared Redis provider cont
     `], {
         cwd: process.cwd(), stdin: "pipe", stdout: "pipe", stderr: "pipe",
         env: {
-            PATH: process.env.PATH, SKIP_ENV_VALIDATION: "true", LOG_LEVEL: "silent",
+            PATH: process.env.PATH, NODE_ENV: "test", SKIP_ENV_VALIDATION: "true",
             REDIS_ENABLED: "true", REDIS_URL: process.env.MYLISTS_TEST_REDIS_URL,
         },
     });

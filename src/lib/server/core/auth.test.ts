@@ -31,7 +31,6 @@ vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3
 vi.mock("@/env/server", () => ({
     serverEnv: {
         get BASE_UPLOADS_LOCATION() { return imageMocks.env.BASE_UPLOADS_LOCATION; },
-        LOG_LEVEL: "silent",
         ADMIN_MAIL_USERNAME: "mail@example.com",
         ADMIN_MAIL_PASSWORD: "test-mail-password",
         UPLOADS_DIR_NAME: "static",

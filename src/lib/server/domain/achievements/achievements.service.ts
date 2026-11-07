@@ -87,10 +87,14 @@ export class AchievementsService {
     async getUserAchievements(userId: number) {
         const results = await this.repository.getUserAchievements(userId);
 
-        const uniqueAchIds = [...new Set(results.map((r) => r.achievement.id))];
+        const rowsByAchievement = new Map<number, typeof results>();
+        for (const row of results) {
+            const rows = rowsByAchievement.get(row.achievement.id) ?? [];
+            rows.push(row);
+            rowsByAchievement.set(row.achievement.id, rows);
+        }
 
-        return uniqueAchIds.map((id) => {
-            const rows = results.filter((r) => r.achievement.id === id);
+        return [...rowsByAchievement.values()].map((rows) => {
             return {
                 ...rows[0].achievement,
                 tiers: rows.map(({ tier, userProgress }) => ({

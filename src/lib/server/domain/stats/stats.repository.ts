@@ -69,29 +69,30 @@ export class StatsRepository {
             setUpdates.timeSpent = sql`MAX(0, ${userMediaSettings.timeSpent} + ${delta.timeSpent})`;
         }
 
-        if (delta.statusCounts && Object.keys(delta.statusCounts).length > 0) {
+        const statusChanges = Object.entries(delta.statusCounts ?? {}).filter(([, change]) => change !== 0);
+        if (statusChanges.length > 0) {
             let jsonUpdateSql = sql`${userMediaSettings.statusCounts}`;
-            for (const [status, change] of Object.entries(delta.statusCounts)) {
-                if (change !== 0) {
-                    jsonUpdateSql = sql`json_set(
-                        COALESCE(${jsonUpdateSql}, '{}'),
-                        '$.${sql.raw(status)}',
-                        COALESCE(json_extract(COALESCE(${jsonUpdateSql}, '{}'), '$.${sql.raw(status)}'), 0) + ${change}
-                    )`;
-                }
+            for (const [status, change] of statusChanges) {
+                jsonUpdateSql = sql`json_set(
+                    COALESCE(${jsonUpdateSql}, '{}'),
+                    '$.${sql.raw(status)}',
+                    COALESCE(json_extract(COALESCE(${jsonUpdateSql}, '{}'), '$.${sql.raw(status)}'), 0) + ${change}
+                )`;
             }
             setUpdates.statusCounts = jsonUpdateSql;
         }
 
         const deltaEntriesRated = delta.entriesRated ?? 0;
         const deltaSumEntriesRated = delta.sumEntriesRated ?? 0;
-        setUpdates.averageRating = sql<number | null>`
-            CASE
-                WHEN COALESCE(${userMediaSettings.entriesRated}, 0) + ${deltaEntriesRated} <= 0 
-                THEN NULL
-                ELSE (ROUND(COALESCE(${userMediaSettings.sumEntriesRated}, 0) + ${deltaSumEntriesRated}, 10) /
-                (COALESCE(${userMediaSettings.entriesRated}, 0) + ${deltaEntriesRated}))
-            END`;
+        if (deltaEntriesRated !== 0 || deltaSumEntriesRated !== 0) {
+            setUpdates.averageRating = sql<number | null>`
+                CASE
+                    WHEN COALESCE(${userMediaSettings.entriesRated}, 0) + ${deltaEntriesRated} <= 0
+                    THEN NULL
+                    ELSE (ROUND(COALESCE(${userMediaSettings.sumEntriesRated}, 0) + ${deltaSumEntriesRated}, 10) /
+                    (COALESCE(${userMediaSettings.entriesRated}, 0) + ${deltaEntriesRated}))
+                END`;
+        }
 
         if (Object.keys(setUpdates).length === 0) {
             return;

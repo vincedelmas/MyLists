@@ -167,6 +167,33 @@ it("clamps time until maintenance without changing other users or media types", 
         expect(await statsService.userPreComputedStatsSummary(1)).toMatchObject({ totalEntriesNoPlan: 0, percentRated: null });
     });
 
+    it("does not write statistics snapshots when changing existing comment text", () => {
+        tracking.addMediaToList({ ...action, status: Status.COMPLETED });
+        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.COMMENT, comment: "First comment" } });
+        const before = snapshot();
+
+        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.COMMENT, comment: "Edited comment" } });
+
+        expect(repository.findUserMedia(1, 1)?.comment).toBe("Edited comment");
+        expect(snapshot().settings).toEqual(before.settings);
+        expect(snapshot().statsHistory).toEqual(before.statsHistory);
+
+        withTransaction(() => StatsRepository.updateUserPreComputedStatsWithDelta(1, MediaType.MOVIES, 1, {
+            entriesRated: 0, sumEntriesRated: 0, statusCounts: { [Status.COMPLETED]: 0 },
+        }));
+        expect(snapshot().statsHistory).toEqual(before.statsHistory);
+    });
+
+    it("returns finite status percentages after removing the last list entry", async () => {
+        tracking.addMediaToList({ ...action, status: Status.COMPLETED });
+        tracking.removeMediaFromList(action);
+
+        expect((await statsService.userPerMediaSummaryStats(1))[0]).toMatchObject({
+            noData: true, totalEntries: 0,
+            statusList: [{ status: Status.COMPLETED, count: 0, percent: 0 }],
+        });
+    });
+
     it("clamps time for other media types while keeping nonnegative constraints on other counters", () => {
         dbContext.db.insert(schema.userMediaSettings).values({
             userId: 1, mediaType: MediaType.BOOKS, active: true,

@@ -117,6 +117,19 @@ describe("tmdbTransformer", () => {
         ]);
     });
 
+    it("ranks distinct writers using their first credit before applying the writer limit", async () => {
+        const details = createTvDetails();
+        details.credits.crew = [
+            { name: "First", popularity: 5 },
+            { name: "First", popularity: 100 },
+            { name: "Second", popularity: 10 },
+            { name: "Third", popularity: 1 },
+        ].map(writer => ({ ...writer, department: "Writing", known_for_department: "Writing" })) as TmdbTvDetails["credits"]["crew"];
+
+        const result = await tmdbTransformer.transformTvDetailsResults(details, { ...seriesTransformOptions, maxWriters: 2 });
+        expect(result.mediaData.createdBy).toBe("Second, First");
+    });
+
     it("uses the episode-weighted average when TMDB has no global TV runtime", async () => {
         const details = createTvDetails();
         details.episode_run_time = [];

@@ -19,6 +19,17 @@ const CALENDAR_DATE = /^(\d{4})-(\d{2})-(\d{2})$/; // YYYY-MM-DD
 
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 const relativeTimeFormatters = new Map<string, Intl.RelativeTimeFormat>();
+
+const RELATIVE_TIME_THRESHOLDS: { max: number; divisor: number; unit: Intl.RelativeTimeFormatUnit }[] = [
+    { max: 60, divisor: 1, unit: "second" },
+    { max: 3600, divisor: 60, unit: "minute" },
+    { max: 86400, divisor: 3600, unit: "hour" },
+    { max: 604800, divisor: 86400, unit: "day" },
+    { max: 2592000, divisor: 604800, unit: "week" },
+    { max: 31536000, divisor: 2592000, unit: "month" },
+    { max: Infinity, divisor: 31536000, unit: "year" },
+];
+
 const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
     day: "numeric",
     month: "short",
@@ -105,19 +116,9 @@ export const formatRelativeTime = (input: string | number | null | undefined, op
 
     const diffSeconds = Math.round((utcDate.getTime() - Date.now()) / 1000);
 
-    const THRESHOLDS: { max: number; divisor: number; unit: Intl.RelativeTimeFormatUnit }[] = [
-        { max: 60, divisor: 1, unit: "second" },
-        { max: 3600, divisor: 60, unit: "minute" },
-        { max: 86400, divisor: 3600, unit: "hour" },
-        { max: 604800, divisor: 86400, unit: "day" },
-        { max: 2592000, divisor: 604800, unit: "week" },
-        { max: 31536000, divisor: 2592000, unit: "month" },
-        { max: Infinity, divisor: 31536000, unit: "year" },
-    ];
-
     const absDiff = Math.abs(diffSeconds);
     const rtf = getRelativeTimeFormatter(opts);
-    const rule = THRESHOLDS.find((threshold) => absDiff < threshold.max)!;
+    const rule = RELATIVE_TIME_THRESHOLDS.find((threshold) => absDiff < threshold.max)!;
 
     return rtf.format(Math.round(diffSeconds / rule.divisor), rule.unit);
 };
@@ -147,7 +148,7 @@ export const formatMonth = (month: string | number, opts: Intl.DateTimeFormatOpt
     const value = Number(month);
     if (!Number.isInteger(value) || value < 1 || value > 12) return String(month);
 
-    return new Intl.DateTimeFormat("en-US", { month: "long", ...opts, timeZone: "UTC" })
+    return getDateTimeFormatter({ month: "long", ...opts, timeZone: "UTC" })
         .format(new Date(Date.UTC(2000, value - 1, 1, 12)));
 };
 
@@ -158,7 +159,7 @@ export const formatMonthYear = (value: string, opts: Intl.DateTimeFormatOptions 
     if (!readCalendarDate(`${year}-${month}-01`)) return value;
 
     const date = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
-    return date.toLocaleDateString("en-US", { month: "short", timeZone: "UTC", year: "numeric", ...opts });
+    return getDateTimeFormatter({ month: "short", timeZone: "UTC", year: "numeric", ...opts }).format(date);
 };
 
 
@@ -204,22 +205,16 @@ export const formatDateTime = (value: string | number | null | undefined, opts: 
     if (isNaN(date.getTime())) return DEFAULT_DASH_FALLBACK;
 
     const { seconds = false } = opts;
-    let formatter = dateTimeFormatters.get(`${seconds}`);
 
-    if (!formatter) {
-        formatter = new Intl.DateTimeFormat("en-US", {
-            hour12: false,
-            year: "numeric",
-            day: "numeric",
-            month: "short",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: seconds ? "numeric" : undefined,
-        });
-        dateTimeFormatters.set(`${seconds}`, formatter);
-    }
-
-    return formatter.format(date);
+    return getDateTimeFormatter({
+        hour12: false,
+        year: "numeric",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: seconds ? "numeric" : undefined,
+    }).format(date);
 };
 
 
@@ -304,6 +299,19 @@ function readCalendarDate(input: string) {
     }
 
     return { day, epochDay: Math.floor(utcMs / MS_PER_DAY), month, utcMs, year };
+}
+
+
+function getDateTimeFormatter(opts: Intl.DateTimeFormatOptions) {
+    const cacheKey = JSON.stringify(opts);
+    let formatter = dateTimeFormatters.get(cacheKey);
+
+    if (!formatter) {
+        formatter = new Intl.DateTimeFormat("en-US", opts);
+        dateTimeFormatters.set(cacheKey, formatter);
+    }
+
+    return formatter;
 }
 
 

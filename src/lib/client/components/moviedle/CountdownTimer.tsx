@@ -1,34 +1,21 @@
-import {useEffect, useState} from "react";
-
-
-const calculateTimeLeft = () => {
-    const now = new Date();
-    const nextMidnight = new Date().setUTCHours(24, 0, 0, 0);
-    const difference = (nextMidnight - now.getTime());
-
-    const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((difference / 1000 / 60) % 60);
-    const seconds = Math.floor((difference / 1000) % 60);
-
-    return { hours, minutes, seconds };
-};
+import {useNow} from "@/lib/client/hooks/use-dates";
+import {zeroPad} from "@/lib/utils/formatting/number";
 
 
 export const CountdownTimer = () => {
-    const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft());
+    const now = useNow();
+    const nextMidnight = new Date(now).setUTCHours(24, 0, 0, 0);
+    const difference = nextMidnight - now;
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft(calculateTimeLeft());
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
+    const hours = Math.floor(difference / 3_600_000);
+    const minutes = Math.floor(difference / 60_000) % 60;
+    const seconds = Math.floor(difference / 1000) % 60;
 
     return (
         <span className="font-mono font-medium tabular-nums text-brand mt-0.5">
-            {timeLeft.hours.toString().padStart(2, "0")}:
-            {timeLeft.minutes.toString().padStart(2, "0")}:
-            {timeLeft.seconds.toString().padStart(2, "0")}
+            {zeroPad(hours)}:
+            {zeroPad(minutes)}:
+            {zeroPad(seconds)}
         </span>
     );
 };

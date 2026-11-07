@@ -102,7 +102,7 @@ export class StatsService {
 
             const statusList = Object.entries(setting.statusCounts)
                 .map(([status, count]) =>
-                    ({ status: status as Status, count, percent: (count / setting.totalEntries) * 100 })
+                    ({ status: status as Status, count, percent: setting.totalEntries === 0 ? 0 : (count / setting.totalEntries) * 100 })
                 );
 
             const summary = {

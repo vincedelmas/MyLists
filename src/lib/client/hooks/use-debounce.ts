@@ -1,30 +1,13 @@
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useEffectEvent, useState} from "react";
 
 
 export const useDebounceCallback = (value: unknown, delay: number, callback: () => void) => {
-    const callbackRef = useRef(callback);
-    const timerRef = useRef<NodeJS.Timeout>(null);
+    const onDebounced = useEffectEvent(callback);
 
     useEffect(() => {
-        callbackRef.current = callback;
-    }, [callback]);
-
-    useEffect(() => {
-        if (timerRef.current) {
-            clearTimeout(timerRef.current);
-        }
-
-        if (value !== undefined && value !== null && value !== "") {
-            timerRef.current = setTimeout(() => {
-                callbackRef.current();
-            }, delay);
-        }
-
-        return () => {
-            if (timerRef.current) {
-                clearTimeout(timerRef.current);
-            }
-        };
+        if (value === undefined || value === null || value === "") return;
+        const timer = setTimeout(() => onDebounced(), delay);
+        return () => clearTimeout(timer);
     }, [value, delay]);
 };
 

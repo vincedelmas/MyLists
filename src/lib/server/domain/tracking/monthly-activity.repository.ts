@@ -1,4 +1,5 @@
 import {alias} from "drizzle-orm/sqlite-core";
+import {toItemKey} from "@/lib/utils/media/item-key";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
@@ -428,10 +429,16 @@ export class MonthlyActivityRepository {
             .where(and(...conditions, or(...groupConditions)))
             .orderBy(sql`JULIANDAY(${userMediaMonthlyActivity.lastActivityAt}) DESC`, desc(userMediaMonthlyActivity.id));
 
+        const occurrencesByMedia = new Map<string, typeof occurrences>();
+        for (const occurrence of occurrences) {
+            const key = toItemKey(occurrence);
+            const rows = occurrencesByMedia.get(key) ?? [];
+            rows.push(occurrence);
+            occurrencesByMedia.set(key, rows);
+        }
+
         const items = groups.flatMap((group) => {
-            const groupedOccurrences = occurrences.filter((occurrence) =>
-                occurrence.mediaId === group.mediaId && occurrence.mediaType === group.mediaType
-            );
+            const groupedOccurrences = occurrencesByMedia.get(toItemKey(group)) ?? [];
 
             const latestOccurrence = groupedOccurrences[0];
             if (!latestOccurrence) return [];

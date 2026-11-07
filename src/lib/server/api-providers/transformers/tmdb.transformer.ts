@@ -85,15 +85,11 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: TmdbTv
         const writers = rawData?.credits?.crew?.filter((m) => m.department === "Writing" && m.known_for_department === "Writing");
         if (!writers?.length) return;
 
-        const uniqueWriterNames = Array.from(new Set(writers.map((writer) => writer.name)));
-        const topWriters = uniqueWriterNames
-            .sort((nameA, nameB) => {
-                const popularityA = writers.find((w) => w.name === nameA)?.popularity || 0;
-                const popularityB = writers.find((w) => w.name === nameB)?.popularity || 0;
-                return popularityB - popularityA;
-            }).slice(0, maxWriters);
-
-        return topWriters.join(", ");
+        return uniqueBy(writers, writer => writer.name)
+            .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+            .slice(0, maxWriters)
+            .map(writer => writer.name)
+            .join(", ");
     };
 
     const mediaData = {

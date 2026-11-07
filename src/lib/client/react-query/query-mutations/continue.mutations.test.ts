@@ -34,7 +34,7 @@ vi.mock("@/lib/client/react-query/query-options", async () => ({
 }));
 
 const item = {
-    mediaType: MediaType.MANGA, mediaId: 1, mediaName: "Manga", status: Status.READING, currentChapter: 7, chapters: 100,
+    mediaType: MediaType.MANGA, mediaId: 1, mediaName: "Manga", status: Status.IN_PROGRESS, currentChapter: 7, chapters: 100,
 } as ContinueItem;
 const initial = { mediaTypes: [MediaType.MANGA], items: [item], counts: { [MediaType.MANGA]: 1 },
     pagination: { page: 1, perPage: 12, totalItems: 1, totalPages: 1 } };

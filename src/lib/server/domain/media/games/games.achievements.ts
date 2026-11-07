@@ -25,7 +25,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
 
         return queries.applyConditionsAndGroup(query, [
             like(games.gameModes, `%${achievement.value}%`),
-            notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY]),
+            notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED]),
         ]);
     };
 
@@ -50,7 +50,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
 
         return queries.applyConditionsAndGroup(
             query,
-            [notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY])],
+            [notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED])],
         );
     };
 
@@ -64,7 +64,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
 
         return queries.applyConditionsAndGroup(query, [
             eq(gamesList.platform, achievement.value as GamesPlatformsEnum),
-            notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY]),
+            notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED]),
         ]);
     };
 
@@ -82,7 +82,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
 
         return queries.applyConditionsAndGroup(query, [
             isLong ? gte(gamesList.playtime, value) : lte(gamesList.playtime, value),
-            inArray(gamesList.status, [Status.PLAYING, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER]),
+            inArray(gamesList.status, [Status.IN_PROGRESS, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER]),
         ]);
     };
 
@@ -97,7 +97,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
             .from(gamesList)
             .innerJoin(gamesCompanies, eq(gamesList.mediaId, gamesCompanies.mediaId))
             .where(and(
-                notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY]),
+                notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED]),
                 isDeveloper ? eq(gamesCompanies.developer, true) : eq(gamesCompanies.publisher, true),
             ))
             .groupBy(gamesList.userId, gamesCompanies.name)
@@ -124,7 +124,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
 
         return queries.applyConditionsAndGroup(query, [
             eq(games.playerPerspective, achievement.value as string),
-            notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY]),
+            notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED]),
         ]);
     };
 

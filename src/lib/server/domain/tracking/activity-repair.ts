@@ -290,8 +290,7 @@ export function auditActivityRepair(db: Database, filters: RepairFilters = {}): 
                 snapshotGaps = true;
                 reasons.add("Snapshots include removal, re-addition, imports, or changes to the list baseline.");
             }
-            if (!isRapidCompletionUndo && entriesDelta === 0 && [Status.PLAN_TO_PLAY, Status.PLAN_TO_READ, Status.PLAN_TO_WATCH]
-                .some(status => (statusDeltas[status] ?? 0) > 0)) {
+            if (!isRapidCompletionUndo && entriesDelta === 0 && (statusDeltas[Status.PLANNED] ?? 0) > 0) {
                 reasons.add("A planning-status reset is not a proven quick undo; use the list ceiling.");
             }
             if (!isRapidCompletionUndo && (progressDelta < 0 || redoDelta < 0) && statusChanges.length > 0) {

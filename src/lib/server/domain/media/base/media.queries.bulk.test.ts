@@ -71,7 +71,7 @@ describe("Shared media persistence and list queries", () => {
                 total: 0,
                 userId: 42,
                 mediaId: 101,
-                status: Status.PLAN_TO_WATCH,
+                status: Status.PLANNED,
             },
         ];
 

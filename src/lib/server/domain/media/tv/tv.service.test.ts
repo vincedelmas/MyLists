@@ -109,11 +109,11 @@ describe("TvService", () => {
 
         describe("updateHandlers", () => {
             it.each([
-                { currentSeason: 2, currentEpisode: 12, status: Status.WATCHING },
-                { currentSeason: 3, currentEpisode: 7, status: Status.WATCHING },
+                { currentSeason: 2, currentEpisode: 12, status: Status.IN_PROGRESS },
+                { currentSeason: 3, currentEpisode: 7, status: Status.IN_PROGRESS },
                 { currentSeason: 3, currentEpisode: 24, status: Status.COMPLETED },
             ])("completes only the final listed season and episode: $currentSeason/$currentEpisode", ({ currentSeason, currentEpisode, status }) => {
-                const current = makeState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 4, total: 4 });
+                const current = makeState({ status: Status.IN_PROGRESS, currentSeason: 1, currentEpisode: 4, total: 4 });
                 const [next, log] = tvService.updateEpsSeasonsHandler(current, { currentSeason, currentEpisode }, { ...baseTv, prodStatus: "Returning Series" });
 
                 expect(next).toMatchObject({ currentSeason, currentEpisode, status });

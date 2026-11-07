@@ -153,16 +153,14 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         return tagQueries.getTagsView(userId);
     }
 
-    function addMediaToUserList(userId: number, mediaId: number, status?: Status) {
-        const newStatus = status ?? servicePolicy.defaultStatus;
-
+    function addMediaToUserList(userId: number, mediaId: number, status: Status = Status.PLANNED) {
         const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         const oldState = repository.findUserMedia(userId, mediaId);
         if (oldState) throw new FormattedError("Media already in your list");
 
-        const newState = repository.addMediaToUserList(userId, media, newStatus);
+        const newState = repository.addMediaToUserList(userId, media, status);
         const delta = calculateDeltaStats(null, newState, media);
 
         const logPayload = { oldValue: null, newValue: newState.status };

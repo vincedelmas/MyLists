@@ -28,7 +28,7 @@ export const TvUserDetails = ({ userMedia, mediaType, media, mutationOptions }: 
                 updateStatus={updateUserMediaMutation}
             />
 
-            {(userMedia.status !== Status.PLAN_TO_WATCH && userMedia.status !== Status.RANDOM) &&
+            {(userMedia.status !== Status.PLANNED && userMedia.status !== Status.RANDOM) &&
                 <UpdateSeasonsEps
                     epsPerSeason={media.epsPerSeason!}
                     currentSeason={userMedia.currentSeason}
@@ -37,7 +37,7 @@ export const TvUserDetails = ({ userMedia, mediaType, media, mutationOptions }: 
                 />
             }
 
-            {userMedia.status !== Status.PLAN_TO_WATCH &&
+            {userMedia.status !== Status.PLANNED &&
                 <div className="flex justify-between items-center">
                     <div>Rating</div>
 
@@ -78,7 +78,7 @@ export const TvUserDetails = ({ userMedia, mediaType, media, mutationOptions }: 
                     />
                 </div>
             }
-            {!(userMedia.status === Status.PLAN_TO_WATCH || userMedia.status === Status.RANDOM) &&
+            {!(userMedia.status === Status.PLANNED || userMedia.status === Status.RANDOM) &&
                 <div className="flex justify-between items-center">
                     <div>Re-watched</div>
                     <UpdateTvRedo

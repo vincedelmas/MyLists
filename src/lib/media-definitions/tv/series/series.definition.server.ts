@@ -133,14 +133,14 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                 mediaLinkCol: seriesList.mediaId,
                 metricNameCol: seriesNetwork.name,
                 metricIdCol: seriesNetwork.mediaId,
-                filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+                filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLANNED])],
             },
             countriesStats: {
                 metricTable: series,
                 metricIdCol: series.id,
                 mediaLinkCol: seriesList.mediaId,
                 metricNameCol: series.originCountry,
-                filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+                filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLANNED])],
             },
             actorsStats: {
                 minRatingCount: 3,
@@ -148,12 +148,11 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                 metricNameCol: seriesActors.name,
                 metricIdCol: seriesActors.mediaId,
                 mediaLinkCol: seriesList.mediaId,
-                filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+                filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLANNED])],
             },
         }),
     },
     service: {
-        defaultStatus: Status.PLAN_TO_WATCH,
         editableFields: [
             "name", "originalName", "releaseDate", "lastAirDate", "homepage", "createdBy",
             "duration", "originCountry", "prodStatus", "synopsis", "lockStatus", "imageCover",

@@ -120,7 +120,7 @@ export class MediaTrackingService {
             const definition = getMediaDefinition(mediaType).continue;
 
             // Stale card must not restart title that was completed, paused, or removed elsewhere
-            if (!item || item.status !== definition.status) {
+            if (!item || item.status !== Status.IN_PROGRESS) {
                 return { item: null, completed: false };
             }
 

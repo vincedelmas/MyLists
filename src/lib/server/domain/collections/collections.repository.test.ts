@@ -274,7 +274,7 @@ it("hydrates the viewer's display tracking rows for every media type without exp
             { userId: 2, mediaId: 1, name: "Viewer tag" },
             { userId: 1, mediaId: 1, name: "Owner private tag" },
         ]);
-        dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.READING, actualPage: 99, comment: "Owner private note" }).run();
+        dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.IN_PROGRESS, actualPage: 99, comment: "Owner private note" }).run();
 
         const viewer = await service.getCollectionDetails(collectionId, "read", toActor({ id: 2, role: RoleType.USER }));
         expect(viewer.items).toHaveLength(6);
@@ -323,7 +323,7 @@ it("hydrates the viewer's display tracking rows for every media type without exp
             { userId: 2, mediaId: 1, status: Status.COMPLETED, favorite: true, rating: 9 },
             { userId: 2, mediaId: 2, status: Status.COMPLETED },
         ]).run();
-        dbContext.db.insert(schema.booksList).values({ userId: 2, mediaId: 1, status: Status.READING, favorite: false, rating: 5 }).run();
+        dbContext.db.insert(schema.booksList).values({ userId: 2, mediaId: 1, status: Status.IN_PROGRESS, favorite: false, rating: 5 }).run();
         dbContext.db.insert(schema.gamesList).values({ userId: 1, mediaId: 1, status: Status.COMPLETED }).run();
         dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 2, name: "Outside collection" }]).run();
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 1, name: "Fantasy" }).run();

@@ -93,7 +93,7 @@ it("clamps time until maintenance without changing other users or media types", 
         tracking.addMediaToList({ ...action, mediaId: 2, status: Status.COMPLETED });
         tracking.updateUserMedia({ ...action, mediaId: 2, payload: { type: UpdateType.REDO, redo: 2 } });
         tracking.addMediaToList({ ...action, userId: 2, status: Status.COMPLETED });
-        tracking.addMediaToList({ ...action, userId: 3, status: Status.PLAN_TO_WATCH });
+        tracking.addMediaToList({ ...action, userId: 3, status: Status.PLANNED });
         dbContext.db.insert(schema.userMediaSettings).values({
             userId: 1, mediaType: MediaType.BOOKS, active: true, timeSpent: 170,
         }).run();

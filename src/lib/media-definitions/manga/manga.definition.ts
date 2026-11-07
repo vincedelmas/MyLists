@@ -18,7 +18,6 @@ export const mangaDefinition = defineMediaDefinition({
         },
     },
     continue: {
-        status: Status.READING,
         getUpdate: (state: ContinueStateByType[typeof MediaType.MANGA]) => {
             const nextChapter = Math.min(state.currentChapter + 1, state.chapters || PROGRESS_MAX, PROGRESS_MAX);
             if (nextChapter > state.currentChapter) {
@@ -29,7 +28,7 @@ export const mangaDefinition = defineMediaDefinition({
                 : null;
         },
     },
-    statuses: [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ],
+    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLANNED],
     sorting: {
         default: "title_asc",
         options: [

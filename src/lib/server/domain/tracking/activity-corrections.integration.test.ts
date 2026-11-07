@@ -81,7 +81,7 @@ describe("progress corrections", () => {
             new NotificationsService(NotificationsRepository),
             { get: type => services[type as keyof typeof services] } as MediaServiceRegistry,
         );
-        tracking.addMediaToList({ ...action, status: Status.READING });
+        tracking.addMediaToList({ ...action, status: Status.IN_PROGRESS });
     });
 
     afterEach(() => { sqlite.close(); vi.useRealTimers(); });
@@ -141,7 +141,7 @@ describe("progress corrections", () => {
     it("uses minutes for game corrections and keeps other media untouched", () => {
         progress(120);
         const game = { ...action, mediaType: MediaType.GAMES };
-        tracking.addMediaToList({ ...game, status: Status.PLAYING });
+        tracking.addMediaToList({ ...game, status: Status.IN_PROGRESS });
         tracking.updateUserMedia({ ...game, payload: { type: UpdateType.PLAYTIME, playtime: 120 } });
         tracking.updateUserMedia({ ...game, payload: { type: UpdateType.PLAYTIME, playtime: 100 } });
         expect(activities().map(row => [row.mediaType, row.progressGained])).toEqual([[MediaType.BOOKS, 120], [MediaType.GAMES, 100]]);

@@ -108,7 +108,7 @@ describe("movies import processing", () => {
         });
         expect(await db.select().from(moviesList).where(eq(moviesList.userId, 42)).orderBy(moviesList.mediaId)).toMatchObject([
             { mediaId: 100, rating: 7, status: Status.COMPLETED, total: 1, redo: 0 },
-            { mediaId: 101, rating: null, status: Status.PLAN_TO_WATCH, total: 0, redo: 0 },
+            { mediaId: 101, rating: null, status: Status.PLANNED, total: 0, redo: 0 },
         ]);
         expect(search).not.toHaveBeenCalled();
         expect(provider.findMovieIdsByImdbId.mock.calls).toEqual([["tt0137523"], ["tt0137523"], ["tt0110912"]]);
@@ -149,7 +149,7 @@ describe("movies import processing", () => {
         expect(list).toMatchObject([
             { mediaId: 100, status: Status.COMPLETED, rating: 7, redo: 0, total: 1 },
             { mediaId: 101, status: Status.COMPLETED, rating: null, redo: 0, total: 1 },
-            { mediaId: 102, status: Status.PLAN_TO_WATCH, rating: null, redo: 0, total: 0 },
+            { mediaId: 102, status: Status.PLANNED, rating: null, redo: 0, total: 0 },
         ]);
     });
 

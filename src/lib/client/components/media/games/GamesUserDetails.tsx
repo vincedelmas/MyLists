@@ -27,7 +27,7 @@ export const GamesUserDetails = ({ userMedia, mediaType, mutationOptions }: Game
                 disabled={mutationOptions?.backlogMode}
                 updatePlatform={updateUserMediaMutation}
             />
-            {userMedia.status !== Status.PLAN_TO_PLAY &&
+            {userMedia.status !== Status.PLANNED &&
                 <>
                     <UpdatePlaytime
                         playtimeInMin={userMedia.playtime ?? 0}

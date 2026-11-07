@@ -54,7 +54,7 @@ describe("user media schemas", () => {
     it("rejects incompatible statuses when adding media to a list", () => {
         const result = addMediaToListSchema.safeParse({
             mediaId: 1,
-            status: Status.PLAYING,
+            status: Status.IN_PROGRESS,
             mediaType: MediaType.MOVIES,
         });
 
@@ -70,7 +70,7 @@ describe("user media schemas", () => {
             mediaId: 1,
             mediaType: MediaType.MOVIES,
             payload: {
-                status: Status.PLAYING,
+                status: Status.IN_PROGRESS,
                 type: UpdateType.STATUS,
             },
         });

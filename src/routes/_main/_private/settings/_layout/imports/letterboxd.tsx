@@ -48,7 +48,7 @@ function LetterboxdImportPage() {
                 <li>
                     Ratings become Completed with a score out of 10 (3.5 stars → 7/10);
                     watched films become Completed;
-                    watchlist films become Plan to Watch.
+                    watchlist films become Planned.
                 </li>
                 <li>Only movies are supported. Diary entries, rewatches, reviews, likes, and custom lists are not imported.</li>
             </ImportInstructions>

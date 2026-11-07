@@ -124,14 +124,14 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 mediaLinkCol: animeList.mediaId,
                 metricNameCol: animeNetwork.name,
                 metricIdCol: animeNetwork.mediaId,
-                filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+                filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLANNED])],
             },
             countriesStats: {
                 metricTable: anime,
                 metricIdCol: anime.id,
                 mediaLinkCol: animeList.mediaId,
                 metricNameCol: anime.originCountry,
-                filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+                filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLANNED])],
             },
             actorsStats: {
                 minRatingCount: 3,
@@ -139,12 +139,11 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 metricNameCol: animeActors.name,
                 metricIdCol: animeActors.mediaId,
                 mediaLinkCol: animeList.mediaId,
-                filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+                filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLANNED])],
             },
         }),
     },
     service: {
-        defaultStatus: Status.PLAN_TO_WATCH,
         editableFields: [
             "name", "originalName", "releaseDate", "lastAirDate", "homepage", "createdBy",
             "duration", "originCountry", "prodStatus", "synopsis", "lockStatus", "imageCover",

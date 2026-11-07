@@ -78,7 +78,7 @@ export function createMangaService(repository: MangaRepository, definition: Mang
                 newState.currentChapter = media.chapters;
             }
         }
-        else if (payload.status === Status.PLAN_TO_READ) {
+        else if (payload.status === Status.PLANNED) {
             newState.redo = 0;
             newState.total = 0;
             newState.currentChapter = 0;

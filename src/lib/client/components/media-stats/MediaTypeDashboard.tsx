@@ -1,6 +1,5 @@
 import {MediaType, Status} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/client/theme";
-import {getPlanningStatuses} from "@/lib/utils/media/status";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {ExtractStatsByType} from "@/lib/types/stats.types";
 import {formatAvgRating} from "@/lib/client/ratings";
@@ -36,10 +35,9 @@ export function MediaTypeDashboard({ stats, showHero = true }: MediaTypeDashboar
     const mediaStatsDefinition = mediaDefinition.statistics;
 
     const comparison = mediaStatsDefinition.timeComparison;
-    const noPlanStatuses: Status[] = getPlanningStatuses();
 
     const experiencedEntries = stats.statusesCounts.reduce((sum, status) => {
-        return noPlanStatuses.includes(status.name as Status) ? sum : sum + status.value;
+        return status.name === Status.PLANNED ? sum : sum + status.value;
     }, 0);
 
     const plannedEntries = stats.totalEntries - experiencedEntries;

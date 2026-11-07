@@ -19,7 +19,7 @@ export const MoviesUserDetails = ({ userMedia, mediaType, mutationOptions }: Mov
                 status={userMedia.status}
                 updateStatus={updateUserMediaMutation}
             />
-            {userMedia.status !== Status.PLAN_TO_WATCH &&
+            {userMedia.status !== Status.PLANNED &&
                 <>
                     <div className="flex justify-between items-center">
                         <div>Rating</div>

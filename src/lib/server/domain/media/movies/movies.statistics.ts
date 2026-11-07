@@ -18,7 +18,7 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_WATCH), isNotNull(mediaTable.duration)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(mediaTable.duration)))
             .get();
 
         return result?.average ?? null;
@@ -35,7 +35,7 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_WATCH), isNotNull(mediaTable.duration)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(mediaTable.duration)))
             .groupBy(durationBucket)
             .orderBy(asc(durationBucket));
 
@@ -52,7 +52,7 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_WATCH)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED)))
             .get();
 
         return {

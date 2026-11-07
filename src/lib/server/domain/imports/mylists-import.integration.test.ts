@@ -228,7 +228,7 @@ it("shows row issues for the selected admin job across users without mixing jobs
             const firstIssues = await imports.imports.getIssuesForAdmin(first.id);
             const secondIssues = await imports.imports.getIssuesForAdmin(second.id);
             expect(firstIssues).toMatchObject({ total: 1, pages: 1 });
-            expect(firstIssues.items[0]).toMatchObject({ rowNumber: 2, statusReason: expect.stringContaining("Allowed statuses: Completed, Plan to Watch") });
+            expect(firstIssues.items[0]).toMatchObject({ rowNumber: 2, statusReason: expect.stringContaining("Allowed statuses: Completed, Planned") });
             expect(firstIssues.items[0].id).not.toBe(secondIssues.items[0].id);
         });
 

@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, Status} from "@/lib/utils/enums";
 import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 
 
@@ -9,7 +9,7 @@ export const DYNAMIC_LIST_PRESETS = [
         mediaTypes: "all",
         title: "Plans older than six months",
         sort: { field: "addedAt", direction: "asc" },
-        filters: { statusGroup: "planned", addedBefore: { monthsAgo: 6 } },
+        filters: { statuses: [Status.PLANNED], addedBefore: { monthsAgo: 6 } },
     },
     {
         version: 2,
@@ -25,14 +25,14 @@ export const DYNAMIC_LIST_PRESETS = [
         mediaTypes: "all",
         title: "Finished and loved",
         sort: { field: "rating", direction: "desc" },
-        filters: { statusGroup: "completed", minRating: 8 },
+        filters: { statuses: [Status.COMPLETED], minRating: 8 },
     },
     {
         version: 2,
         display: "grid",
         mediaTypes: "all",
         title: "In progress",
-        filters: { statusGroup: "in_progress" },
+        filters: { statuses: [Status.IN_PROGRESS] },
         sort: { field: "lastUpdated", direction: "desc" },
     },
     {
@@ -49,7 +49,7 @@ export const DYNAMIC_LIST_PRESETS = [
         mediaTypes: "all",
         title: "Waiting for your rating",
         sort: { field: "lastUpdated", direction: "desc" },
-        filters: { statusGroup: "completed", rated: false },
+        filters: { statuses: [Status.COMPLETED], rated: false },
     },
     {
         version: 2,
@@ -57,13 +57,13 @@ export const DYNAMIC_LIST_PRESETS = [
         mediaTypes: "all",
         title: "Paused for a while",
         sort: { field: "lastUpdated", direction: "asc" },
-        filters: { statusGroup: "on_hold", updatedBefore: { monthsAgo: 3 } },
+        filters: { statuses: [Status.ON_HOLD], updatedBefore: { monthsAgo: 3 } },
     },
     {
         version: 2,
         display: "grid",
         title: "Your reading queue",
-        filters: { statusGroup: "planned" },
+        filters: { statuses: [Status.PLANNED] },
         sort: { field: "addedAt", direction: "asc" },
         mediaTypes: [MediaType.BOOKS, MediaType.MANGA],
     },

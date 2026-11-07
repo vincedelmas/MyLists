@@ -92,14 +92,14 @@ describe("MangaService", () => {
 
     describe("updateHandlers", () => {
         it.each([null, 0, 100])("completes the final chapter only when the total is known: %s", (chapters) => {
-            const current = makeState({ status: Status.READING, currentChapter: 99, total: 99 });
+            const current = makeState({ status: Status.IN_PROGRESS, currentChapter: 99, total: 99 });
             const [next, log] = mangaService.updateChapterHandler(current, { currentChapter: 100 }, { ...baseManga, chapters });
-            expect(next.status).toBe(chapters ? Status.COMPLETED : Status.READING);
+            expect(next.status).toBe(chapters ? Status.COMPLETED : Status.IN_PROGRESS);
             expect(log).toEqual({ oldValue: 99, newValue: 100 });
         });
 
         it("updateStatusHandler: preserves entered chapters when a publishing manga has no chapter total", () => {
-            const current = makeState({ status: Status.READING, currentChapter: 1, total: 1 });
+            const current = makeState({ status: Status.IN_PROGRESS, currentChapter: 1, total: 1 });
             const media = { ...baseManga, chapters: null, prodStatus: "Publishing" };
             const [next] = mangaService.updateStatusHandler(current, { status: Status.COMPLETED }, media);
 
@@ -108,24 +108,24 @@ describe("MangaService", () => {
             expect(next.status).toBe(Status.COMPLETED);
         });
 
-        it("updateStatusHandler: COMPLETED -> PTR set total, redo and currentChapter = 0", () => {
+        it("updateStatusHandler: COMPLETED -> PLANNED set total, redo and currentChapter = 0", () => {
             const current = makeState({ status: Status.COMPLETED, redo: 4, total: 500, currentChapter: 100 });
-            const [next, log] = mangaService.updateStatusHandler(current, { status: Status.PLAN_TO_READ }, baseManga);
+            const [next, log] = mangaService.updateStatusHandler(current, { status: Status.PLANNED }, baseManga);
 
             expect(next.redo).toBe(0);
             expect(next.total).toBe(0);
             expect(next.currentChapter).toBe(0);
-            expect(next.status).toBe(Status.PLAN_TO_READ);
+            expect(next.status).toBe(Status.PLANNED);
             expect(log?.oldValue).toBe(Status.COMPLETED);
-            expect(log?.newValue).toBe(Status.PLAN_TO_READ);
+            expect(log?.newValue).toBe(Status.PLANNED);
         });
 
         it.each([{ redo: 0, total: 50 }, { redo: 2, total: 250 }])(
             "preserves partial progress when changing rereads to $redo", ({ redo, total }) => {
-                const current = makeState({ status: Status.READING, currentChapter: 50, redo: 1, total: 150 });
+                const current = makeState({ status: Status.IN_PROGRESS, currentChapter: 50, redo: 1, total: 150 });
                 const [reread, log] = mangaService.updateRedoHandler(current, { redo }, baseManga);
 
-                expect(reread).toMatchObject({ status: Status.READING, currentChapter: 50, redo, total });
+                expect(reread).toMatchObject({ status: Status.IN_PROGRESS, currentChapter: 50, redo, total });
                 expect(log).toEqual({ oldValue: 1, newValue: redo });
 
                 const [nextChapter] = mangaService.updateChapterHandler(reread, { currentChapter: 51 }, baseManga);

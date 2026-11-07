@@ -52,7 +52,7 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
         ]).run();
 
         db.insert(listTable).values({
-            userId: 1, mediaId: 1, status: Status.WATCHING, currentSeason: 1, currentEpisode: 1,
+            userId: 1, mediaId: 1, status: Status.IN_PROGRESS, currentSeason: 1, currentEpisode: 1,
         }).run();
     });
 

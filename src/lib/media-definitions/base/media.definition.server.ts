@@ -147,7 +147,6 @@ interface MediaServicePolicy<
     TTables extends BaseMediaTables = BaseMediaTables,
     TMediaType extends MediaType = MediaType,
 > {
-    readonly defaultStatus: Status;
     readonly editableFields: readonly MediaEditFieldByType[TMediaType][];
     readonly progressTotals: (state: TTables["listTable"]["$inferSelect"] | null, media: TTables["mediaTable"]["$inferSelect"]) => ProgressTotals;
 }
@@ -237,7 +236,6 @@ export type AnyServerMediaDefinition = {
     readonly repository: AnyMediaRepositoryDefinition;
     readonly statistics: AnyMediaStatisticsDefinition;
     readonly service: {
-        readonly defaultStatus: Status;
         readonly editableFields: readonly MediaEditFieldByType[MediaType][];
         readonly progressTotals: (state: any | null, media: any) => ProgressTotals;
     };

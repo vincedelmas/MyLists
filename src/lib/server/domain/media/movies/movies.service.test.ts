@@ -102,15 +102,15 @@ describe("MoviesService", () => {
     describe("updateHandlers", () => {
 
 
-        it("updateStatusHandler: COMPLETED -> PTW set total and redo = 0", () => {
+        it("updateStatusHandler: COMPLETED -> PLANNED set total and redo = 0", () => {
             const current = makeState({ status: Status.COMPLETED, redo: 4, total: 5 });
-            const [next, log] = moviesService.updateStatusHandler(current, { status: Status.PLAN_TO_WATCH }, baseMovie);
+            const [next, log] = moviesService.updateStatusHandler(current, { status: Status.PLANNED }, baseMovie);
 
             expect(next.redo).toBe(0);
             expect(next.total).toBe(0);
-            expect(next.status).toBe(Status.PLAN_TO_WATCH);
+            expect(next.status).toBe(Status.PLANNED);
             expect(log?.oldValue).toBe(Status.COMPLETED);
-            expect(log?.newValue).toBe(Status.PLAN_TO_WATCH);
+            expect(log?.newValue).toBe(Status.PLANNED);
         });
 
 

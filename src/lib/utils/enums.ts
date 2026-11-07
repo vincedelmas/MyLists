@@ -64,18 +64,14 @@ export type ActivityKind = (typeof ActivityKind)[keyof typeof ActivityKind];
 
 
 export const Status = {
-    READING: "Reading",
-    PLAYING: "Playing",
-    WATCHING: "Watching",
+    PLANNED: "Planned",
+    IN_PROGRESS: "In Progress",
     COMPLETED: "Completed",
     MULTIPLAYER: "Multiplayer",
     ENDLESS: "Endless",
     ON_HOLD: "On Hold",
     RANDOM: "Random",
     DROPPED: "Dropped",
-    PLAN_TO_WATCH: "Plan to Watch",
-    PLAN_TO_PLAY: "Plan to Play",
-    PLAN_TO_READ: "Plan to Read",
 } as const;
 export type Status = (typeof Status)[keyof typeof Status];
 

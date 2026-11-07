@@ -95,7 +95,7 @@ function RouteComponent() {
                         title="Status"
                         description={dedent`
                             Set the current status of the media. 
-                            For example for movies the options are '${Status.COMPLETED}' or '${Status.PLAN_TO_WATCH}'
+                            For example for movies the options are '${Status.COMPLETED}' or '${Status.PLANNED}'
                         `}
                     />
                     <OnboardingFeatureCard

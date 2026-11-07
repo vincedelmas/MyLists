@@ -21,7 +21,7 @@ export const createTvStatistics = (definition: TvDefinition) => {
                 totalSeasons: sql<number>`coalesce(sum(${listTable.currentSeason}), 0)`,
             })
             .from(listTable)
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_WATCH)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED)))
             .get();
 
         return result?.totalSeasons ?? 0;
@@ -36,7 +36,7 @@ export const createTvStatistics = (definition: TvDefinition) => {
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, notInArray(listTable.status, [Status.RANDOM, Status.PLAN_TO_WATCH])))
+            .where(and(forUser, notInArray(listTable.status, [Status.RANDOM, Status.PLANNED])))
             .get();
 
         return result?.average ?? null;
@@ -53,7 +53,7 @@ export const createTvStatistics = (definition: TvDefinition) => {
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, notInArray(listTable.status, [Status.RANDOM, Status.PLAN_TO_WATCH])))
+            .where(and(forUser, notInArray(listTable.status, [Status.RANDOM, Status.PLANNED])))
             .groupBy(durationBucket)
             .orderBy(asc(durationBucket));
 

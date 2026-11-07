@@ -13,7 +13,7 @@ db.transaction(() => {
         id: 500 + i, apiId: 500 + i, name: `Page game ${String(i + 1).padStart(2, "0")}`, imageCover: "default.jpg", lockStatus: true,
     }))).run();
     db.insert(schema.gamesList).values(Array.from({ length: 25 }, (_, i) => ({
-        userId: 1, mediaId: 500 + i, status: Status.PLAYING, playtime: 120,
+        userId: 1, mediaId: 500 + i, status: Status.IN_PROGRESS, playtime: 120,
     }))).run();
     db.insert(schema.user).values(Array.from({ length: 25 }, (_, i) => ({
         id: 500 + i, name: `pageperson${String(i + 1).padStart(2, "0")}`, email: `person${i}@example.invalid`,

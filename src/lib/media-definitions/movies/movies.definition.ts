@@ -17,7 +17,7 @@ export const moviesDefinition = defineMediaDefinition({
         },
     },
     continue: null,
-    statuses: [Status.COMPLETED, Status.PLAN_TO_WATCH],
+    statuses: [Status.COMPLETED, Status.PLANNED],
     sorting: {
         default: "title_asc",
         options: [

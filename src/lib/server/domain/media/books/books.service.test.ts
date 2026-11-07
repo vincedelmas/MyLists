@@ -81,34 +81,34 @@ describe("BooksService", () => {
 
     describe("updateHandlers", () => {
         it("completes the last page while counting a reread only once", () => {
-            const current = makeUserState({ status: Status.READING, actualPage: 95, total: 195, redo: 1 });
+            const current = makeUserState({ status: Status.IN_PROGRESS, actualPage: 95, total: 195, redo: 1 });
             const [next, log] = booksService.updatePageHandler(current, { actualPage: 100 }, baseBook);
             expect(next).toMatchObject({ status: Status.COMPLETED, actualPage: 100, total: 200, redo: 1 });
             expect(log).toEqual({ oldValue: 95, newValue: 100 });
             expect(booksService.calculateDeltaStats(current, next, baseBook)).toMatchObject({
                 totalSpecific: 5,
-                statusCounts: { [Status.READING]: -1, [Status.COMPLETED]: 1 },
+                statusCounts: { [Status.IN_PROGRESS]: -1, [Status.COMPLETED]: 1 },
             });
         });
 
-        it("updateStatusHandler: COMPLETED -> PTR set total, redo and actualPage = 0", () => {
+        it("updateStatusHandler: COMPLETED -> PLANNED set total, redo and actualPage = 0", () => {
             const current = makeState({ status: Status.COMPLETED, redo: 4, total: 500, actualPage: 100 });
-            const [next, log] = booksService.updateStatusHandler(current, { status: Status.PLAN_TO_READ }, baseBook);
+            const [next, log] = booksService.updateStatusHandler(current, { status: Status.PLANNED }, baseBook);
 
             expect(next.redo).toBe(0);
             expect(next.total).toBe(0);
             expect(next.actualPage).toBe(0);
-            expect(next.status).toBe(Status.PLAN_TO_READ);
+            expect(next.status).toBe(Status.PLANNED);
             expect(log?.oldValue).toBe(Status.COMPLETED);
-            expect(log?.newValue).toBe(Status.PLAN_TO_READ);
+            expect(log?.newValue).toBe(Status.PLANNED);
         });
 
         it.each([{ redo: 0, total: 50 }, { redo: 2, total: 250 }])(
             "preserves partial progress when changing rereads to $redo", ({ redo, total }) => {
-                const current = makeState({ status: Status.READING, actualPage: 50, redo: 1, total: 150 });
+                const current = makeState({ status: Status.IN_PROGRESS, actualPage: 50, redo: 1, total: 150 });
                 const [reread, log] = booksService.updateRedoHandler(current, { redo }, baseBook);
 
-                expect(reread).toMatchObject({ status: Status.READING, actualPage: 50, redo, total });
+                expect(reread).toMatchObject({ status: Status.IN_PROGRESS, actualPage: 50, redo, total });
                 expect(log).toEqual({ oldValue: 1, newValue: redo });
 
                 const [nextPage] = booksService.updatePageHandler(reread, { actualPage: 51 }, baseBook);

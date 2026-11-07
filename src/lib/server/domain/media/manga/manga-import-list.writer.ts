@@ -50,7 +50,7 @@ export class MangaImportListWriter implements ImportListWriter {
             return media.chapters ?? 0;
         }
 
-        if (status === Status.PLAN_TO_READ) return 0;
+        if (status === Status.PLANNED) return 0;
 
         return 0;
     }
@@ -61,7 +61,7 @@ export class MangaImportListWriter implements ImportListWriter {
             return chaptersPerRead + (redo * chaptersPerRead);
         }
 
-        if (status === Status.PLAN_TO_READ) return 0;
+        if (status === Status.PLANNED) return 0;
 
         return currentChapter + (redo * (media.chapters ?? 0));
     }

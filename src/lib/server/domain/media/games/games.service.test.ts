@@ -98,14 +98,14 @@ describe("GamesService", () => {
     });
 
     describe("updateHandlers", () => {
-        it("updateStatusHandler: PLAYING -> PTP should reset playtime", () => {
-            const current = makeState({ status: Status.PLAYING, playtime: 50 });
-            const [next, log] = gamesService.updateStatusHandler(current, { status: Status.PLAN_TO_PLAY }, baseGame);
+        it("updateStatusHandler: IN_PROGRESS -> PLANNED should reset playtime", () => {
+            const current = makeState({ status: Status.IN_PROGRESS, playtime: 50 });
+            const [next, log] = gamesService.updateStatusHandler(current, { status: Status.PLANNED }, baseGame);
 
             expect(next.playtime).toBe(0);
-            expect(next.status).toBe(Status.PLAN_TO_PLAY);
-            expect(log?.oldValue).toBe(Status.PLAYING);
-            expect(log?.newValue).toBe(Status.PLAN_TO_PLAY);
+            expect(next.status).toBe(Status.PLANNED);
+            expect(log?.oldValue).toBe(Status.IN_PROGRESS);
+            expect(log?.newValue).toBe(Status.PLANNED);
         });
 
     });

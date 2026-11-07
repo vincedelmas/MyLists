@@ -156,7 +156,7 @@ description: ${book.synopsis}
             newState.total = media.pages + (currentState.redo * media.pages);
             newState.actualPage = media.pages;
         }
-        else if (payload.status === Status.PLAN_TO_READ) {
+        else if (payload.status === Status.PLANNED) {
             newState.redo = 0;
             newState.total = 0;
             newState.actualPage = 0;

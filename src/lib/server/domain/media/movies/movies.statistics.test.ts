@@ -100,7 +100,7 @@ it("computes the pre-computed totals owned by the statistics component", async (
             userId: 2, active: false, views: 12, timeSpent: 0, totalEntries: 0, totalRedo: 0,
             totalSpecific: 0, entriesRated: 0, sumEntriesRated: 0, averageRating: 0,
             entriesFavorites: 0, entriesCommented: 0,
-            statusCounts: { [Status.COMPLETED]: 0, [Status.PLAN_TO_WATCH]: 0 },
+            statusCounts: { [Status.COMPLETED]: 0, [Status.PLANNED]: 0 },
         });
         expect(db.select().from(userMediaSettings).where(eq(userMediaSettings.mediaType, MediaType.BOOKS)).get()).toEqual(beforeBooks);
     });

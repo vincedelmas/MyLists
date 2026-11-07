@@ -1,8 +1,7 @@
-import {MediaType, type TvMediaType} from "@/lib/utils/enums";
+import {MediaType, Status, type TvMediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {ContinueSearch} from "@/lib/schemas/continue.schema";
 import {and, asc, count, desc, eq, inArray, not, sql} from "drizzle-orm";
-import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {MediaListDataByType, TListByType} from "@/lib/server/domain/media/media-list.types";
@@ -49,7 +48,7 @@ export const getContinueItems = async (
 
     const candidates = mediaTypes.map(mediaType => {
         const { repository: { tables: { listTable, mediaTable } } } = getServerMediaDefinition(mediaType);
-        const conditions = [eq(listTable.userId, userId), eq(listTable.status, getMediaDefinition(mediaType).continue.status)];
+        const conditions = [eq(listTable.userId, userId), eq(listTable.status, Status.IN_PROGRESS)];
 
         // The preview excludes cards whose next action only marks them completed
         // Keep this SQL in sync with shared continue definitions (covered by repo tests)

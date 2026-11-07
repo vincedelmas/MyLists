@@ -101,7 +101,7 @@ export const parseImdbCsv = (csv: string, fileType?: ImportCsvType): ParsedImpor
             payload: {
                 imdbId: row.Const,
                 rating: row["Your Rating"] ?? null,
-                status: fileType === "ratings" ? Status.COMPLETED : Status.PLAN_TO_WATCH,
+                status: fileType === "ratings" ? Status.COMPLETED : Status.PLANNED,
             },
         };
     });

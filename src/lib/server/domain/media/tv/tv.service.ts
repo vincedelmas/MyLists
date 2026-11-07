@@ -137,7 +137,7 @@ export function createTvService(repository: TvRepository, definition: TvDefiniti
 
     function updateStatusHandler(currentState: TvList, payload: StatusPayload, media: TvType): [TvListUpdate, LogPayload] {
         const newState: TvListUpdate = { ...currentState, status: payload.status };
-        const specialStatuses: Status[] = [Status.RANDOM, Status.PLAN_TO_WATCH];
+        const specialStatuses: Status[] = [Status.RANDOM, Status.PLANNED];
 
         const epsPerSeason = repository.getMediaEpsPerSeason(media.id);
         const logPayload = { oldValue: currentState.status, newValue: payload.status };

@@ -7,7 +7,6 @@ import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
 import {getMediaCommonFilterKeys} from "@/lib/client/components/media/browse/media-filter.utils";
-import {DYNAMIC_LIST_STATUS_OPTIONS} from "@/lib/client/components/dynamic-lists/dynamic-list.config";
 import {MediaFilterCheckboxGroup} from "@/lib/client/components/media/browse/MediaFilterCheckboxGroup";
 import {createMediaBrowseStatusOptions} from "@/lib/client/components/media/browse/media-browse.config";
 import {DynamicListEditorSection, DynamicListEditorSelect} from "@/lib/client/components/dynamic-lists/DynamicListEditorFields";
@@ -42,29 +41,13 @@ export const DynamicListCommonFilters = (props: DynamicListCommonFiltersProps) =
             ? [...(filters.statuses ?? []), status]
             : filters.statuses?.filter(value => value !== status);
 
-        onChange({ statuses: statuses?.length ? statuses : undefined, statusGroup: undefined });
+        onChange({ statuses: statuses?.length ? statuses : undefined });
     };
 
     return (
         <FieldGroup>
             <DynamicListEditorSection number="02" title="Progress & rating" description="Bring together your plans, ongoing titles or finished favorites.">
                 <FieldGroup className="grid sm:grid-cols-2">
-                    {availableFilters.has("status") &&
-                        <Field>
-                            <FieldLabel htmlFor={`${fieldId}-status`}>
-                                Status
-                            </FieldLabel>
-                            <DynamicListEditorSelect
-                                id={`${fieldId}-status`}
-                                value={filters.statusGroup ?? "any"}
-                                options={DYNAMIC_LIST_STATUS_OPTIONS}
-                                onChange={value => onChange({
-                                    statuses: undefined,
-                                    statusGroup: value === "any" ? undefined : value as DynamicListSpec["filters"]["statusGroup"]
-                                })}
-                            />
-                        </Field>
-                    }
                     {(["favorite", "rated", "hasComment"] as const)
                         .filter(key => availableFilters.has(key === "rated" ? "minRating" : key === "hasComment" ? "comment" : key))
                         .map(key =>
@@ -113,34 +96,31 @@ export const DynamicListCommonFilters = (props: DynamicListCommonFiltersProps) =
                     )}
                 </FieldGroup>
                 {availableFilters.has("status") &&
-                    <details className="rounded-lg border px-4 py-3" open={!!filters.statuses?.length}>
-                        <summary className="cursor-pointer text-sm font-medium">
-                            Choose specific statuses
-                        </summary>
-                        <FieldSet className="pt-4">
-                            <FieldLegend className="sr-only">
-                                Specific statuses
-                            </FieldLegend>
-                            <FieldDescription>
-                                Match any selected status. Selecting one replaces the status group above.
-                            </FieldDescription>
-                            <FieldGroup className="grid grid-cols-2 gap-3">
-                                {statuses.map((status, index) =>
-                                    <Field key={status} orientation="horizontal">
-                                        <Checkbox
-                                            id={`${fieldId}-status-${index}`}
-                                            checked={filters.statuses?.includes(status) ?? false}
-                                            onCheckedChange={checked => handleStatusChange(status, checked)}
-                                        />
-                                        <FieldLabel htmlFor={`${fieldId}-status-${index}`}>
-                                            {status}
-                                        </FieldLabel>
-                                    </Field>
-                                )}
-                            </FieldGroup>
-                            <FieldError>{errors["filters.statuses"]}</FieldError>
-                        </FieldSet>
-                    </details>
+                    <FieldSet>
+                        <FieldLegend variant="label">
+                            Statuses
+                        </FieldLegend>
+                        <FieldDescription>
+                            {filters.statuses?.length === 0
+                                ? "No statuses match these saved rules. Select a status to include titles."
+                                : "Match any selected status. Leave all unchecked to include any status."}
+                        </FieldDescription>
+                        <FieldGroup className="grid grid-cols-2 gap-3">
+                            {statuses.map((status, index) =>
+                                <Field key={status} orientation="horizontal">
+                                    <Checkbox
+                                        id={`${fieldId}-status-${index}`}
+                                        checked={filters.statuses?.includes(status) ?? false}
+                                        onCheckedChange={checked => handleStatusChange(status, checked)}
+                                    />
+                                    <FieldLabel htmlFor={`${fieldId}-status-${index}`}>
+                                        {status}
+                                    </FieldLabel>
+                                </Field>
+                            )}
+                        </FieldGroup>
+                        <FieldError>{errors["filters.statuses"]}</FieldError>
+                    </FieldSet>
                 }
             </DynamicListEditorSection>
 

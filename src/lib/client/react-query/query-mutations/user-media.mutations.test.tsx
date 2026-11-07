@@ -83,8 +83,8 @@ vi.mock("@/lib/client/components/ui/dialog", () => ({
     DialogTitle: () => null,
 }));
 
-const queryKey = ["userList", MediaType.SERIES, "alice", { status: [Status.WATCHING] as Status[] }] as const;
-const item = { currentEpisode: 0, mediaId: 1, status: Status.WATCHING, rating: null, comment: "Review", customCover: null };
+const queryKey = ["userList", MediaType.SERIES, "alice", { status: [Status.IN_PROGRESS] as Status[] }] as const;
+const item = { currentEpisode: 0, mediaId: 1, status: Status.IN_PROGRESS, rating: null, comment: "Review", customCover: null };
 const initialList = {
     results: {
         items: [item],
@@ -183,7 +183,7 @@ describe("list filter freshness", () => {
 });
 
 describe("profile progress refresh", () => {
-it.each([Status.WATCHING, Status.COMPLETED])("marks secondary progress stale and refreshes only the feed (%s)", async status => {
+it.each([Status.IN_PROGRESS, Status.COMPLETED])("marks secondary progress stale and refreshes only the feed (%s)", async status => {
         const progressKeys = [
             ["continue", "alice"],
             ["profile", "recent-feed", "alice"],
@@ -274,7 +274,7 @@ describe("activity correction choices", () => {
 
 describe("list editing refresh timing", () => {
 
-    it("keeps a newly completed item in the Watching list for rating until the dialog closes", async () => {
+    it("keeps a newly completed item in the In Progress list for rating until the dialog closes", async () => {
         const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1);
         server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, status: Status.COMPLETED } });
         await mutation.mutateAsync({ payload: { type: UpdateType.STATUS, status: Status.COMPLETED } });
@@ -511,7 +511,7 @@ describe("authoritative editor caches", () => {
         { type: UpdateType.RATING, seasonRating: { season: 1, rating: 8.5 } },
         { type: UpdateType.RATING, rating: 8.5 },
         { type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 2 }] },
-        { type: UpdateType.STATUS, status: Status.PLAN_TO_WATCH },
+        { type: UpdateType.STATUS, status: Status.PLANNED },
     ])("applies saved seasons and history without a follow-up request ($type)", async payload => {
         const seasonsKey = ["tvSeasons", MediaType.SERIES, 1, 1];
         const historyKey = ["onOpenHistory", MediaType.SERIES, 1];

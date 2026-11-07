@@ -87,19 +87,18 @@ export const mangaServerDefinition = defineServerMediaDefinition({
                 metricNameCol: manga.publishers,
                 metricIdCol: manga.id,
                 mediaLinkCol: mangaList.mediaId,
-                filters: [ne(mangaList.status, Status.PLAN_TO_READ)],
+                filters: [ne(mangaList.status, Status.PLANNED)],
             },
             authorsStats: {
                 metricTable: mangaAuthors,
                 metricNameCol: mangaAuthors.name,
                 metricIdCol: mangaAuthors.mediaId,
                 mediaLinkCol: mangaList.mediaId,
-                filters: [ne(mangaList.status, Status.PLAN_TO_READ)],
+                filters: [ne(mangaList.status, Status.PLANNED)],
             },
         }),
     },
     service: {
-        defaultStatus: Status.PLAN_TO_READ,
         editableFields: [
             "name", "releaseDate", "chapters", "publishers", "synopsis", "lockStatus",
             "imageCover", "genres",

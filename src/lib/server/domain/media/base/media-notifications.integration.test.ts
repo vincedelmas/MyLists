@@ -54,11 +54,11 @@ describe.each([MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GA
         const date = sql<string>`date('now', '+1 day')`;
         if (mediaType === MediaType.GAMES) {
             context.db.insert(schema.games).values({ id: 1, apiId: 1, name: "Game", imageCover: "game.jpg", releaseDate: date }).run();
-            context.db.insert(schema.gamesList).values([1, 2].map(userId => ({ userId, mediaId: 1, status: Status.PLAN_TO_PLAY }))).run();
+            context.db.insert(schema.gamesList).values([1, 2].map(userId => ({ userId, mediaId: 1, status: Status.PLANNED }))).run();
         }
         else if (mediaType === MediaType.MOVIES) {
             context.db.insert(schema.movies).values({ id: 1, apiId: 1, name: "Movie", imageCover: "movie.jpg", duration: 90, releaseDate: date }).run();
-            context.db.insert(schema.moviesList).values([1, 2].map(userId => ({ userId, mediaId: 1, status: Status.PLAN_TO_WATCH }))).run();
+            context.db.insert(schema.moviesList).values([1, 2].map(userId => ({ userId, mediaId: 1, status: Status.PLANNED }))).run();
         }
         else {
             context.db.insert(definition.repository.tables.mediaTable).values({
@@ -66,7 +66,7 @@ describe.each([MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GA
                 totalSeasons: 1, totalEpisodes: 10, seasonToAir: 1, episodeToAir: 1, nextEpisodeToAir: date,
             }).run();
             context.db.insert(definition.repository.tables.listTable).values([1, 2].map(userId => ({
-                userId, mediaId: 1, status: Status.PLAN_TO_WATCH, currentSeason: 1, currentEpisode: 0,
+                userId, mediaId: 1, status: Status.PLANNED, currentSeason: 1, currentEpisode: 0,
             }))).run();
         }
     });

@@ -12,7 +12,7 @@ db.transaction(() => {
     db.insert(moviesList).values({
         userId: users.owner.id,
         mediaId: movies.editable.id,
-        status: Status.PLAN_TO_WATCH,
+        status: Status.PLANNED,
         addedAt: new Date().toISOString(),
     }).run();
     db.insert(books).values({
@@ -25,7 +25,7 @@ db.transaction(() => {
     db.insert(booksList).values({
         userId: users.owner.id,
         mediaId: 906,
-        status: Status.PLAN_TO_READ,
+        status: Status.PLANNED,
         addedAt: "2000-01-02T00:00:00.000Z",
     }).run();
     db.update(userMediaSettings).set({ active: true }).where(eq(userMediaSettings.mediaType, MediaType.BOOKS)).run();

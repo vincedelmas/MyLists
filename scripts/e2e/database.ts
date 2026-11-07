@@ -72,7 +72,7 @@ db.transaction(() => {
                     totalEntries: seededList ? 1 : 0,
                     active: mediaType === MediaType.MOVIES || mediaType === MediaType.SERIES,
                     statusCounts: Object.fromEntries(statuses.map(status => [
-                        status, seededList && status === Status.PLAN_TO_WATCH ? 1 : 0,
+                        status, seededList && status === Status.PLANNED ? 1 : 0,
                     ])) as Record<Status, number>,
                 }).run();
         }
@@ -109,7 +109,7 @@ db.transaction(() => {
         .values([users.owner, users.restricted].map(user => ({
             userId: user.id,
             mediaId: movies.private.id,
-            status: Status.PLAN_TO_WATCH,
+            status: Status.PLANNED,
         }))).run();
 
     db.insert(schema.collections)

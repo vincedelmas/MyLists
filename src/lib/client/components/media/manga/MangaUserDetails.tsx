@@ -21,7 +21,7 @@ export const MangaUserDetails = ({ userMedia, mediaType, media, mutationOptions 
                 status={userMedia.status}
                 updateStatus={updateUserMediaMutation}
             />
-            {userMedia.status !== Status.PLAN_TO_READ &&
+            {userMedia.status !== Status.PLANNED &&
                 <>
                     <div className="flex justify-between items-center">
                         <div>Chapters</div>
@@ -43,7 +43,7 @@ export const MangaUserDetails = ({ userMedia, mediaType, media, mutationOptions 
                     </div>
                 </>
             }
-            {(userMedia.status !== Status.PLAN_TO_READ && media.chapters) &&
+            {(userMedia.status !== Status.PLANNED && media.chapters) &&
                 <UpdateRedo
                     name={"Re-read"}
                     redo={userMedia.redo}

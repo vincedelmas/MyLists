@@ -47,13 +47,13 @@ export class BooksImportListWriter implements ImportListWriter {
 
     private _defaultActualPage(status: Status, media: Book) {
         if (status === Status.COMPLETED) return media.pages;
-        if (status === Status.PLAN_TO_READ) return 0;
+        if (status === Status.PLANNED) return 0;
         return 0;
     }
 
     private _calculateTotal(status: Status, actualPage: number | null, redo: number, media: Book) {
         if (status === Status.COMPLETED) return media.pages + (redo * media.pages);
-        if (status === Status.PLAN_TO_READ) return 0;
+        if (status === Status.PLANNED) return 0;
         return (actualPage ?? 0) + (redo * media.pages);
     }
 }

@@ -2,7 +2,7 @@ import * as z from "zod";
 import {parse} from "csv-parse/sync";
 import {MAX_IMPORT_ROWS} from "@/lib/utils/constants";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
-import {ApiProviderType, ImportItemStatus, MediaType,} from "@/lib/utils/enums";
+import {ApiProviderType, ImportItemStatus, MediaType, Status,} from "@/lib/utils/enums";
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
 import {booksMyListsCSVRowSchema} from "@/lib/server/domain/media/books/books.types";
 import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/manga.types";
@@ -34,6 +34,17 @@ const mediaRowValidatorMap = {
     [MediaType.BOOKS]: booksMyListsCSVRowSchema,
     [MediaType.MANGA]: mangaMyListsCSVRowSchema,
 } satisfies Record<MediaType, z.ZodType>;
+
+
+// Normalize legacy export labels only at the import boundary.
+const legacyStatuses: Record<string, Status> = {
+    "Plan to Watch": Status.PLANNED,
+    "Plan to Play": Status.PLANNED,
+    "Plan to Read": Status.PLANNED,
+    Watching: Status.IN_PROGRESS,
+    Reading: Status.IN_PROGRESS,
+    Playing: Status.IN_PROGRESS,
+};
 
 
 const parseApiProvider = (value: string | undefined) => {
@@ -93,7 +104,7 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
             throw new Error(`The CSV file contains mixed media types. ${MYLISTS_FORMAT_ERROR}`);
         }
 
-        const parsedRow = mediaZodValidator.safeParse(rawRow);
+        const parsedRow = mediaZodValidator.safeParse({ ...rawRow, status: legacyStatuses[rawRow.status] ?? rawRow.status });
 
         if (!parsedRow.success) {
             return {

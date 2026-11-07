@@ -16,7 +16,7 @@ export const createBooksStatistics = (definition: BookServerDefinition = booksSe
             .select({ average: sql<number | null>`avg(${mediaTable.pages})` })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(mediaTable.pages)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(mediaTable.pages)))
             .get();
 
         return result?.average ?? null;
@@ -33,7 +33,7 @@ export const createBooksStatistics = (definition: BookServerDefinition = booksSe
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(mediaTable.pages)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(mediaTable.pages)))
             .groupBy(durationBucket)
             .orderBy(asc(durationBucket));
 

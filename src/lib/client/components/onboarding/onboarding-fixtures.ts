@@ -96,8 +96,8 @@ const perMediaSummary = [
         percentRated: (15 / 17) * 100,
         statusList: [
             { status: Status.COMPLETED, count: 14, percent: 56 },
-            { status: Status.WATCHING, count: 3, percent: 12 },
-            { status: Status.PLAN_TO_WATCH, count: 8, percent: 32 },
+            { status: Status.IN_PROGRESS, count: 3, percent: 12 },
+            { status: Status.PLANNED, count: 8, percent: 32 },
         ],
     },
     {
@@ -114,7 +114,7 @@ const perMediaSummary = [
         percentRated: (31 / 35) * 100,
         statusList: [
             { status: Status.COMPLETED, count: 35, percent: 72.92 },
-            { status: Status.PLAN_TO_WATCH, count: 13, percent: 27.08 },
+            { status: Status.PLANNED, count: 13, percent: 27.08 },
         ],
     },
     {
@@ -131,8 +131,8 @@ const perMediaSummary = [
         percentRated: (10 / 11) * 100,
         statusList: [
             { status: Status.COMPLETED, count: 9, percent: 60 },
-            { status: Status.READING, count: 2, percent: 13.33 },
-            { status: Status.PLAN_TO_READ, count: 4, percent: 26.67 },
+            { status: Status.IN_PROGRESS, count: 2, percent: 13.33 },
+            { status: Status.PLANNED, count: 4, percent: 26.67 },
         ],
     },
 ] satisfies PerMediaSummaryType;
@@ -169,7 +169,7 @@ const userUpdates = [
         mediaType: MediaType.MOVIES,
         updateType: UpdateType.STATUS,
         timestamp: "2026-06-18 20:30:00",
-        payload: { old_value: Status.PLAN_TO_WATCH, new_value: Status.COMPLETED },
+        payload: { old_value: Status.PLANNED, new_value: Status.COMPLETED },
     },
     {
         id: -202,
@@ -246,7 +246,7 @@ const followsUpdates = [
         mediaType: MediaType.MOVIES,
         updateType: UpdateType.STATUS,
         timestamp: "2026-06-18 15:05:00",
-        payload: { old_value: Status.PLAN_TO_WATCH, new_value: Status.COMPLETED },
+        payload: { old_value: Status.PLANNED, new_value: Status.COMPLETED },
     },
     {
         id: -209,

@@ -31,18 +31,14 @@ const THEME_COLOR_MAP = {
     [MediaType.GAMES]: "var(--games)",
     [MediaType.MANGA]: "var(--manga)",
 
-    [Status.PLAYING]: "var(--playing)",
-    [Status.READING]: "var(--reading)",
-    [Status.WATCHING]: "var(--watching)",
+    [Status.IN_PROGRESS]: "var(--in_progress)",
+    [Status.PLANNED]: "var(--planned)",
     [Status.COMPLETED]: "var(--completed)",
     [Status.ON_HOLD]: "var(--on_hold)",
     [Status.MULTIPLAYER]: "var(--multiplayer)",
     [Status.RANDOM]: "var(--random)",
     [Status.DROPPED]: "var(--dropped)",
     [Status.ENDLESS]: "var(--endless)",
-    [Status.PLAN_TO_WATCH]: "var(--plan_to_watch)",
-    [Status.PLAN_TO_READ]: "var(--plan_to_read)",
-    [Status.PLAN_TO_PLAY]: "var(--plan_to_play)",
 } satisfies Record<ThemeColorKey, string>;
 
 

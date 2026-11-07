@@ -19,7 +19,16 @@ const toCsv = (rows: Record<string, string>[]) => {
 
 describe("parseMyListsCsv", () => {
 
-    it("parses MyLists series rows into a TV import payload", () => {
+    it.each([
+        [Status.IN_PROGRESS, Status.IN_PROGRESS],
+        [Status.PLANNED, Status.PLANNED],
+        ["Watching", Status.IN_PROGRESS],
+        ["Reading", Status.IN_PROGRESS],
+        ["Playing", Status.IN_PROGRESS],
+        ["Plan to Watch", Status.PLANNED],
+        ["Plan to Read", Status.PLANNED],
+        ["Plan to Play", Status.PLANNED],
+    ])("parses MyLists series rows into a TV import payload (%s)", (status, expectedStatus) => {
         const parsed = parseMyListsCsv(toCsv([{
             id: "1",
             userId: "42",
@@ -30,7 +39,7 @@ describe("parseMyListsCsv", () => {
             externalApiId: "136315",
             externalApiSource: ApiProviderType.TMDB,
             releaseDate: "2022-06-23",
-            status: Status.WATCHING,
+            status,
             rating: "8",
             favorite: "false",
             comment: "Sharp.",
@@ -57,7 +66,7 @@ describe("parseMyListsCsv", () => {
                 externalApiSource: ApiProviderType.TMDB,
                 status: ImportItemStatus.QUEUED,
                 payload: {
-                    status: Status.WATCHING,
+                    status: expectedStatus,
                     favorite: false,
                     comment: "Sharp.",
                     seasons: [{ season: 1, redo: 1, rating: 7 }, { season: 2, redo: 0, rating: 9 }],

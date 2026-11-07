@@ -25,7 +25,6 @@ export const booksDefinition = defineMediaDefinition({
         },
     },
     continue: {
-        status: Status.READING,
         getUpdate: (state: ContinueStateByType[typeof MediaType.BOOKS]) => {
             const value = state.actualPage ?? 0;
             const nextPage = Math.min(value + 10, state.pages, PROGRESS_MAX);
@@ -37,7 +36,7 @@ export const booksDefinition = defineMediaDefinition({
                 : null;
         },
     },
-    statuses: [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ],
+    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLANNED],
     sorting: {
         default: "title_asc",
         options: [

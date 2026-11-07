@@ -182,18 +182,14 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --manga: #a04646;
     --user: #6e6e6e;
 
-    --playing: #456879;
-    --reading: #456879;
-    --watching: #456879;
+    --in_progress: #456879;
     --completed: #4fad9a;
     --on_hold: #dbbb50;
     --multiplayer: #f1c53b;
     --random: #ed874e;
     --dropped: #e86a5a;
     --endless: #48792c;
-    --plan_to_watch: #c65b6b;
-    --plan_to_read: #c65b6b;
-    --plan_to_play: #c65b6b;
+    --planned: #c65b6b;
 }
 
 .dark {
@@ -268,18 +264,14 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --manga: oklch(0.686 0.161 25.326);
     --user: oklch(0.72 0 0);
 
-    --playing: oklch(0.72 0.09 220);
-    --reading: oklch(0.72 0.09 220);
-    --watching: oklch(0.72 0.09 220);
+    --in_progress: oklch(0.72 0.09 220);
     --completed: oklch(0.74 0.13 165);
     --on_hold: oklch(0.80 0.13 90);
     --multiplayer: oklch(0.82 0.15 92);
     --random: oklch(0.76 0.16 55);
     --dropped: oklch(0.72 0.18 27);
     --endless: oklch(0.70 0.13 135);
-    --plan_to_watch: oklch(0.70 0.15 15);
-    --plan_to_read: oklch(0.70 0.15 15);
-    --plan_to_play: oklch(0.70 0.15 15);
+    --planned: oklch(0.70 0.15 15);
 }
 
 @theme inline {
@@ -354,18 +346,14 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --color-manga: var(--manga);
     --color-user: var(--user);
 
-    --color-playing: var(--playing);
-    --color-reading: var(--reading);
-    --color-watching: var(--watching);
+    --color-in_progress: var(--in_progress);
     --color-completed: var(--completed);
     --color-on_hold: var(--on_hold);
     --color-multiplayer: var(--multiplayer);
     --color-random: var(--random);
     --color-dropped: var(--dropped);
     --color-endless: var(--endless);
-    --color-plan_to_watch: var(--plan_to_watch);
-    --color-plan_to_read: var(--plan_to_read);
-    --color-plan_to_play: var(--plan_to_play);
+    --color-planned: var(--planned);
 }
 
 @layer base {

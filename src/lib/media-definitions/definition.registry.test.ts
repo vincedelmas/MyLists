@@ -6,12 +6,12 @@ import {importStatusSchema} from "@/lib/server/domain/imports/import-list-valida
 
 describe("shared media status policy", () => {
     it.each([
-        [MediaType.SERIES, [Status.WATCHING, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLAN_TO_WATCH]],
-        [MediaType.ANIME, [Status.WATCHING, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLAN_TO_WATCH]],
-        [MediaType.MOVIES, [Status.COMPLETED, Status.PLAN_TO_WATCH]],
-        [MediaType.BOOKS, [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ]],
-        [MediaType.GAMES, [Status.PLAYING, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_PLAY]],
-        [MediaType.MANGA, [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ]],
+        [MediaType.SERIES, [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLANNED]],
+        [MediaType.ANIME, [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLANNED]],
+        [MediaType.MOVIES, [Status.COMPLETED, Status.PLANNED]],
+        [MediaType.BOOKS, [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLANNED]],
+        [MediaType.GAMES, [Status.IN_PROGRESS, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER, Status.ON_HOLD, Status.DROPPED, Status.PLANNED]],
+        [MediaType.MANGA, [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLANNED]],
     ])("preserves status choices, order and backend validation for %s", (mediaType, expectedStatuses) => {
         expect(getMediaDefinition(mediaType).statuses).toEqual(expectedStatuses);
         const validator = importStatusSchema(mediaType);

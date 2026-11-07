@@ -247,7 +247,7 @@ export function createTvRepository(definition: TvDefinition) {
             newEpisode = epsPerSeason.at(-1)!.episodes;
             newTotal = epsPerSeason.reduce((acc, curr) => acc + curr.episodes, 0);
         }
-        else if (newStatus === Status.PLAN_TO_WATCH || newStatus === Status.RANDOM) {
+        else if (newStatus === Status.PLANNED || newStatus === Status.RANDOM) {
             newTotal = 0;
             newEpisode = 0;
         }

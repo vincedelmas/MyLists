@@ -7,7 +7,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {TopAffinity, TopAffinityDefinition} from "@/lib/types/stats.types";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {and, asc, count, countDistinct, desc, eq, exists, gte, inArray, isNotNull, notInArray, sql} from "drizzle-orm";
+import {and, asc, count, countDistinct, desc, eq, exists, gte, inArray, isNotNull, ne, sql} from "drizzle-orm";
 
 
 type AffinityResults<TDefinition extends AnyServerMediaDefinition> = {
@@ -207,7 +207,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
             metricNameCol: genreTable.name,
             metricIdCol: genreTable.mediaId,
             mediaLinkCol: listTable.mediaId,
-            filters: [notInArray(listTable.status, [Status.PLAN_TO_WATCH, Status.PLAN_TO_PLAY, Status.PLAN_TO_READ])],
+            filters: [ne(listTable.status, Status.PLANNED)],
         };
 
         return computeTopAffinityStats(metricDefinition, mediaAvgRating, userId);

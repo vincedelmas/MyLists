@@ -11,7 +11,7 @@ export const SERIES_FALLBACK_DURATION = 40;
 export const seriesDefinition = defineMediaDefinition({
     releaseNotifications: true,
     continue: tvContinueDefinition,
-    statuses: [Status.WATCHING, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLAN_TO_WATCH],
+    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLANNED],
     filters: {
         common: commonMediaFilters,
         metadata: tvMetadataFilters,

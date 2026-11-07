@@ -20,7 +20,7 @@ beforeEach(() => {
         createdAt: "2026-01-01", updatedAt: "2026-01-01" }).run();
     sqlite.query(`WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x < 1000)
         INSERT INTO games(id,api_id,name,image_cover) SELECT x,x,printf('Game %04d',x),'cover.jpg' FROM n`).run();
-    sqlite.query("INSERT INTO games_list(user_id,media_id,status,playtime) SELECT 1,id,?,120 FROM games").run(Status.PLAYING);
+    sqlite.query("INSERT INTO games_list(user_id,media_id,status,playtime) SELECT 1,id,?,120 FROM games").run(Status.IN_PROGRESS);
 });
 afterEach(() => { sqlite.close(); dbContext.db = undefined; });
 
@@ -40,7 +40,7 @@ it("bounds the preview and page response while retaining totals and non-overlapp
 
 it("sorts across media types before limiting and keeps tab counts independent of the selected tab", async () => {
     dbContext.db.insert(schema.books).values({ id: 1, apiId: "book", name: "Most recent", imageCover: "book.jpg", pages: 100 }).run();
-    dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.READING, lastUpdated: "2099-01-01" }).run();
+    dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.IN_PROGRESS, lastUpdated: "2099-01-01" }).run();
     const mixed = await getContinueItems(1, [MediaType.GAMES, MediaType.BOOKS]);
     expect(mixed.items).toHaveLength(12);
     expect(mixed.items[0]).toMatchObject({ mediaId: 1, mediaType: MediaType.BOOKS });
@@ -56,15 +56,15 @@ it("filters finished books, manga, and TV using the shared completion rules befo
         id: i + 1, apiId: `book${i}`, name: `Book ${i}`, imageCover: "book.jpg", pages: i === 8 ? 0 : 100,
     }))).run();
     dbContext.db.insert(schema.booksList).values(Array.from({ length: 9 }, (_, i) => ({
-        userId: 1, mediaId: i + 1, status: Status.READING, actualPage: i < 6 ? 100 : 0,
+        userId: 1, mediaId: i + 1, status: Status.IN_PROGRESS, actualPage: i < 6 ? 100 : 0,
     }))).run();
     dbContext.db.insert(schema.manga).values([
         { id: 1, apiId: 1, name: "Finished manga", imageCover: "manga.jpg", chapters: 10 },
         { id: 2, apiId: 2, name: "Unknown length", imageCover: "manga.jpg", chapters: null },
     ]).run();
     dbContext.db.insert(schema.mangaList).values([
-        { userId: 1, mediaId: 1, status: Status.READING, currentChapter: 10 },
-        { userId: 1, mediaId: 2, status: Status.READING, currentChapter: 10 },
+        { userId: 1, mediaId: 1, status: Status.IN_PROGRESS, currentChapter: 10 },
+        { userId: 1, mediaId: 2, status: Status.IN_PROGRESS, currentChapter: 10 },
     ]).run();
     for (const [mediaTable, listTable, seasonsTable] of [
         [schema.series, schema.seriesList, schema.seriesEpisodesPerSeason],
@@ -78,10 +78,10 @@ it("filters finished books, manga, and TV using the shared completion rules befo
             { mediaId: i + 1, season: 2, episodes: i === 3 ? 0 : 10 },
         ]).flat()).run();
         dbContext.db.insert(listTable).values([
-            { userId: 1, mediaId: 1, status: Status.WATCHING, currentSeason: 2, currentEpisode: 10 },
-            { userId: 1, mediaId: 2, status: Status.WATCHING, currentSeason: 1, currentEpisode: 10 },
-            { userId: 1, mediaId: 3, status: Status.WATCHING, currentSeason: 2, currentEpisode: 9 },
-            { userId: 1, mediaId: 4, status: Status.WATCHING, currentSeason: 2, currentEpisode: 0 },
+            { userId: 1, mediaId: 1, status: Status.IN_PROGRESS, currentSeason: 2, currentEpisode: 10 },
+            { userId: 1, mediaId: 2, status: Status.IN_PROGRESS, currentSeason: 1, currentEpisode: 10 },
+            { userId: 1, mediaId: 3, status: Status.IN_PROGRESS, currentSeason: 2, currentEpisode: 9 },
+            { userId: 1, mediaId: 4, status: Status.IN_PROGRESS, currentSeason: 2, currentEpisode: 0 },
         ]).run();
     }
     for (const mediaType of [MediaType.BOOKS, MediaType.MANGA, MediaType.SERIES, MediaType.ANIME]) {

@@ -4,14 +4,13 @@ import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import {getMediaFilterGroups} from "@/lib/client/components/media/browse/media-filter.utils";
-import {DYNAMIC_LIST_STATUS_OPTIONS} from "@/lib/client/components/dynamic-lists/dynamic-list.config";
 
 
 export const dynamicListRules = (spec: DynamicListSpec, tagNames: Record<number, string>) => {
     const rules: string[] = [];
 
     const {
-        search, statuses, statusGroup, addedBefore, addedWithin, updatedBefore, minRating, maxRating,
+        search, statuses, addedBefore, addedWithin, updatedBefore, minRating, maxRating,
         rated, favorite, hasComment, minReleaseYear, maxReleaseYear, genres,
     } = spec.filters;
 
@@ -19,12 +18,8 @@ export const dynamicListRules = (spec: DynamicListSpec, tagNames: Record<number,
         rules.push(`Title contains “${search}”`);
     }
 
-    if (statuses?.length) {
-        rules.push(statuses.join(" or "));
-    }
-
-    if (statusGroup) {
-        rules.push(DYNAMIC_LIST_STATUS_OPTIONS.find(option => option.value === statusGroup)!.label);
+    if (statuses) {
+        rules.push(statuses.length ? statuses.join(" or ") : "No statuses");
     }
 
     if (addedBefore) {

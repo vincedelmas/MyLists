@@ -61,7 +61,7 @@ export function createGamesService(repository: GamesRepository, definition: Game
         const newState = { ...currentState, status: payload.status };
         const logPayload = { oldValue: currentState.status, newValue: payload.status };
 
-        if (payload.status === Status.PLAN_TO_PLAY) {
+        if (payload.status === Status.PLANNED) {
             newState.playtime = 0;
         }
 

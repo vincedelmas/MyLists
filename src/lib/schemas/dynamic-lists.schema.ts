@@ -1,5 +1,5 @@
 import * as z from "zod";
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, Status} from "@/lib/utils/enums";
 import {mediaTagMatchingSchema} from "@/lib/schemas/media-filters.schema";
 import {mediaBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
 import {ALL_MEDIA_TYPES, getMediaDefinition, mediaCommonFilterSchemas} from "@/lib/media-definitions/definition.registry";
@@ -12,10 +12,6 @@ export type DynamicListRuntimeFilters = z.infer<typeof dynamicListRuntimeFilters
 
 
 export const dynamicListIdSchema = z.strictObject({ id: z.number().int().positive() });
-
-
-const dynamicListStatusGroupSchema = z.enum(["planned", "in_progress", "completed", "on_hold", "dropped"])
-    .describe("planned includes Plan to Watch/Play/Read; in_progress includes Watching/Playing/Reading.");
 
 
 const relativeMonthsSchema = z.strictObject({
@@ -69,7 +65,6 @@ export const dynamicListSpecSchema = z.strictObject({
     filters: z.strictObject({
         minRating: mediaRatingFilterSchema.optional(),
         maxRating: mediaRatingFilterSchema.optional(),
-        statusGroup: dynamicListStatusGroupSchema.optional(),
         favorite: mediaCommonFilterSchemas.favorite.optional(),
         genres: mediaCommonFilterSchemas.genres.min(1).optional(),
         updatedBefore: relativeMonthsSchema.optional().describe("Last updated before the cutoff."),
@@ -81,8 +76,9 @@ export const dynamicListSpecSchema = z.strictObject({
         maxReleaseYear: z.number().int().min(1).max(9999).optional().describe("Inclusive upper release-year bound; unknown release dates are excluded."),
         search: mediaCommonFilterSchemas.search.trim().min(1).max(100).optional().describe("Case-insensitive literal substring of the catalog title."),
         mediaFilters: dynamicListMediaFiltersSchema.optional().describe("Series/anime langs are origin-country codes. Games platforms refer to the user's tracked platform."),
-        statuses: z.array(mediaCommonFilterSchemas.status).min(1).max(12)
-            .refine(statuses => new Set(statuses).size === statuses.length, "Choose each status once.").optional(),
+        statuses: z.array(mediaCommonFilterSchemas.status).max(Object.keys(Status).length)
+            .refine(statuses => new Set(statuses).size === statuses.length, "Choose each status once.")
+            .describe("Match any selected status; omit for any status, or use an empty array to match none.").optional(),
     }).refine(filters => filters.minRating === undefined || filters.maxRating === undefined || filters.minRating <= filters.maxRating, {
         message: "Minimum rating cannot exceed maximum rating.", path: ["maxRating"],
     }).refine(filters => filters.minReleaseYear === undefined || filters.maxReleaseYear === undefined || filters.minReleaseYear <= filters.maxReleaseYear, {

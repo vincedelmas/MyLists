@@ -21,7 +21,7 @@ export const BooksUserDetails = ({ userMedia, mediaType, media, mutationOptions 
                 status={userMedia.status}
                 updateStatus={updateUserMediaMutation}
             />
-            {userMedia.status !== Status.PLAN_TO_READ &&
+            {userMedia.status !== Status.PLANNED &&
                 <>
                     <div className="flex justify-between items-center">
                         <div>Pages</div>
@@ -43,7 +43,7 @@ export const BooksUserDetails = ({ userMedia, mediaType, media, mutationOptions 
                     </div>
                 </>
             }
-            {userMedia.status !== Status.PLAN_TO_READ &&
+            {userMedia.status !== Status.PLANNED &&
                 <UpdateRedo
                     name={"Re-read"}
                     redo={userMedia.redo}

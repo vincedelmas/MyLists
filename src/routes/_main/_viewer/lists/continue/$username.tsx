@@ -156,7 +156,7 @@ function ContinuePage() {
                         <EmptyDescription>
                             {data.mediaTypes.length === 0
                                 ? "Enable a series, anime, books, manga, or games list to start tracking your progress."
-                                : "Set a title to Watching, Reading, or Playing in your lists and it will be waiting here."
+                                : "Set a title to In Progress in your lists and it will be waiting here."
                             }
                         </EmptyDescription>
                     </EmptyHeader>

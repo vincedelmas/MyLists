@@ -18,7 +18,7 @@ export const createMangaStatistics = (definition: MangaServerDefinition = mangaS
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(mediaTable.chapters)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(mediaTable.chapters)))
             .get();
 
         return result?.average ?? null;
@@ -35,7 +35,7 @@ export const createMangaStatistics = (definition: MangaServerDefinition = mangaS
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(mediaTable.chapters)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(mediaTable.chapters)))
             .groupBy(durationBucket)
             .orderBy(asc(durationBucket));
 

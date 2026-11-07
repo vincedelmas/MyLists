@@ -44,7 +44,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
             .from(listTable)
             .innerJoin(networkTable, eq(listTable.mediaId, networkTable.mediaId));
 
-        return queries.applyConditionsAndGroup(query, [ne(listTable.status, Status.PLAN_TO_WATCH)]);
+        return queries.applyConditionsAndGroup(query, [ne(listTable.status, Status.PLANNED)]);
     };
 
     const actor: AchievementCalculation = () => {

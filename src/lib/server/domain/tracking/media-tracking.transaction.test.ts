@@ -85,7 +85,7 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
     if (mediaType === MediaType.SERIES) {
         it("applies each quick increment to the latest saved progress and combines the full feed range", () => {
             const continueAction = { ...action, mediaType: MediaType.SERIES };
-            tracking.addMediaToList({ ...action, status: Status.WATCHING });
+            tracking.addMediaToList({ ...action, status: Status.IN_PROGRESS });
 
             expect(tracking.continueUserMedia(continueAction)).toMatchObject({ completed: false, item: { currentEpisode: 2 } });
             expect(tracking.continueUserMedia(continueAction)).toMatchObject({ completed: false, item: { currentEpisode: 3 } });
@@ -96,7 +96,7 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
 
             const history = UpdateHistoryRepository.getUserMediaHistory(action.userId, action.mediaType, action.mediaId);
             expect(history.slice(0, 2)).toMatchObject([
-                { updateType: UpdateType.STATUS, payload: { old_value: Status.WATCHING, new_value: Status.COMPLETED } },
+                { updateType: UpdateType.STATUS, payload: { old_value: Status.IN_PROGRESS, new_value: Status.COMPLETED } },
                 { updateType: UpdateType.TV, payload: { old_value: [1, 1], new_value: [1, 8] } },
             ]);
             expect(snapshot().settings[0]).toMatchObject({ totalSpecific: 8, timeSpent: 240 });
@@ -122,25 +122,25 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
         });
 
         it("records final progress before completion with one statistics and activity contribution", () => {
-            tracking.addMediaToList({ ...action, status: Status.WATCHING });
+            tracking.addMediaToList({ ...action, status: Status.IN_PROGRESS });
             tracking.updateUserMedia({ ...action, payload: { type: UpdateType.TV, currentEpisode: 4 } });
             const result = tracking.updateUserMedia({ ...action, payload: { type: UpdateType.TV, currentSeason: 1, currentEpisode: 8 } });
 
             expect(result.userMedia).toMatchObject({ status: Status.COMPLETED, currentEpisode: 8, total: 8 });
             const saved = snapshot();
-            expect(saved.settings[0]).toMatchObject({ totalSpecific: 8, timeSpent: 240, statusCounts: { [Status.WATCHING]: 0, [Status.COMPLETED]: 1 } });
+            expect(saved.settings[0]).toMatchObject({ totalSpecific: 8, timeSpent: 240, statusCounts: { [Status.IN_PROGRESS]: 0, [Status.COMPLETED]: 1 } });
             expect(saved.activity).toHaveLength(1);
             expect(saved.activity[0]).toMatchObject({ progressGained: 8, hadCompletion: true });
             const history = UpdateHistoryRepository.getUserMediaHistory(action.userId, action.mediaType, action.mediaId);
             expect(history).toHaveLength(3);
             expect(history.slice(0, 2)).toMatchObject([
-                { updateType: UpdateType.STATUS, payload: { old_value: Status.WATCHING, new_value: Status.COMPLETED } },
+                { updateType: UpdateType.STATUS, payload: { old_value: Status.IN_PROGRESS, new_value: Status.COMPLETED } },
                 { updateType: UpdateType.TV, payload: { old_value: [1, 1], new_value: [1, 8] } },
             ]);
         });
 
         it("rolls back final progress as well when the completion feed entry fails", () => {
-            tracking.addMediaToList({ ...action, status: Status.WATCHING });
+            tracking.addMediaToList({ ...action, status: Status.IN_PROGRESS });
             tracking.updateUserMedia({ ...action, payload: { type: UpdateType.TV, currentEpisode: 7 } });
             const before = snapshot();
             sqlite.run(`CREATE TRIGGER fail_completion BEFORE INSERT ON ${getTableName(schema.userMediaUpdate)}
@@ -152,7 +152,7 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
         });
 
         it("keeps the progress and completion on the selected backlog date", () => {
-            tracking.addMediaToList({ ...action, status: Status.WATCHING });
+            tracking.addMediaToList({ ...action, status: Status.IN_PROGRESS });
             tracking.updateUserMedia({ ...action, payload: { type: UpdateType.TV, currentEpisode: 8, loggedAt: "2025-05-20" } });
             const history = UpdateHistoryRepository.getUserMediaHistory(action.userId, action.mediaType, action.mediaId);
             expect(history).toHaveLength(2);
@@ -182,7 +182,7 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
     });
 
     it("restores an existing list entry and all derived records after an update fails", () => {
-        tracking.addMediaToList({ ...action, status: Status.PLAN_TO_WATCH });
+        tracking.addMediaToList({ ...action, status: Status.PLANNED });
         const before = snapshot();
         sqlite.run(`CREATE TRIGGER fail_history BEFORE INSERT ON ${getTableName(schema.userMediaUpdate)}
             BEGIN SELECT RAISE(ABORT, 'history failure'); END`);

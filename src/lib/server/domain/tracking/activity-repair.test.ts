@@ -5,7 +5,7 @@ import {drizzle} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync} from "node:fs";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, Status} from "@/lib/utils/enums";
 import {applyActivityRepairs, auditActivityRepair} from "./activity-repair";
 
 
@@ -29,7 +29,7 @@ describe("historical activity repair", () => {
         rmSync(directory, { recursive: true, force: true });
     });
 
-    const snapshot = (type: MediaType, mediaId: number, timestamp: string, progress: number, redo = 0, entries = 2, statuses = { Reading: entries } as Record<string, number>) => {
+    const snapshot = (type: MediaType, mediaId: number, timestamp: string, progress: number, redo = 0, entries = 2, statuses = { [Status.IN_PROGRESS]: entries } as Record<string, number>) => {
         db.run(`INSERT INTO user_media_stats_history
             (user_id, media_type, media_id, timestamp, total_specific, time_spent, total_redo, total_entries, active, status_counts)
             VALUES (1, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
@@ -46,7 +46,7 @@ describe("historical activity repair", () => {
             series: { media: ", duration, total_seasons, total_episodes", values: ", 25, 1, 1000", list: ", current_season, current_episode, total", listValues: `, 1, ${current}, ${current}` },
         }[type];
         db.run(`INSERT INTO ${type} (id, api_id, name, image_cover${extras.media}) VALUES (1, 1, 'Repair title', 'cover.jpg'${extras.values})`);
-        db.run(`INSERT INTO ${type}_list (user_id, media_id, status${extras.list}) VALUES (1, 1, 'Reading'${extras.listValues})`);
+        db.run(`INSERT INTO ${type}_list (user_id, media_id, status${extras.list}) VALUES (1, 1, 'In Progress'${extras.listValues})`);
 
         snapshot(type, 2, "2026-05-01 08:00:00", 1000, 0, 1);
         snapshot(type, 1, "2026-05-01 09:00:00", 1000);
@@ -54,7 +54,7 @@ describe("historical activity repair", () => {
         snapshot(type, 1, "2026-05-02 10:01:00", 1000 + current);
 
         db.run(`INSERT INTO user_media_update (user_id, media_id, media_type, media_name, update_type, payload, timestamp)
-            VALUES (1, 1, ?, 'Repair title', 'status', '{"old_value":null,"new_value":"Reading"}', '2026-05-01 09:00:00'),
+            VALUES (1, 1, ?, 'Repair title', 'status', '{"old_value":null,"new_value":"In Progress"}', '2026-05-01 09:00:00'),
                 (1, 1, ?, 'Repair title', ?, ?, '2026-05-02 10:01:00')`,
         [type, type, type === "games" ? "playtime" : type === "manga" ? "chapter" : type === "books" ? "page" : "redo", JSON.stringify({ old_value: 0, new_value: current })]);
         db.run(`INSERT INTO user_media_monthly_activity (user_id, media_id, media_type, month_bucket, progress_gained, redo_gained, last_activity_at)
@@ -65,18 +65,18 @@ describe("historical activity repair", () => {
     const report = () => auditActivityRepair(db).entries;
     const omitAddition = () => {
         db.run("DELETE FROM user_media_stats_history WHERE id = 2");
-        db.run("UPDATE user_media_stats_history SET total_entries = 2, status_counts = '{\"Reading\":2}' WHERE id = 1");
+        db.run("UPDATE user_media_stats_history SET total_entries = 2, status_counts = '{\"In Progress\":2}' WHERE id = 1");
         db.run("DELETE FROM user_media_update WHERE update_type = 'status'");
     };
     const seedCompletionUndo = (type: MediaType = MediaType.MOVIES, seconds = 203) => {
-        const planning = type === MediaType.GAMES ? "Plan to Play" : type === MediaType.BOOKS || type === MediaType.MANGA ? "Plan to Read" : "Plan to Watch";
+        const planning = Status.PLANNED;
         const peak = type === MediaType.GAMES ? 0 : type === MediaType.MOVIES ? 1 : 120;
         const completedAt = "2026-06-28 20:59:35";
         const undoneAt = new Date(Date.parse("2026-06-28T20:59:35Z") + seconds * 1000).toISOString().slice(0, 19).replace("T", " ");
         seedCase(type, 0, peak);
         db.run(`UPDATE ${type}_list SET status = ?`, [planning]);
-        db.run("UPDATE user_media_stats_history SET status_counts = ? WHERE id IN (2, 4)", [JSON.stringify({ Reading: 1, [planning]: 1 })]);
-        db.run("UPDATE user_media_stats_history SET status_counts = ?, timestamp = ? WHERE id = 3", [JSON.stringify({ Reading: 1, Completed: 1 }), completedAt]);
+        db.run("UPDATE user_media_stats_history SET status_counts = ? WHERE id IN (2, 4)", [JSON.stringify({ [Status.IN_PROGRESS]: 1, [planning]: 1 })]);
+        db.run("UPDATE user_media_stats_history SET status_counts = ?, timestamp = ? WHERE id = 3", [JSON.stringify({ [Status.IN_PROGRESS]: 1, Completed: 1 }), completedAt]);
         db.run("UPDATE user_media_stats_history SET timestamp = ? WHERE id = 4", [undoneAt]);
         db.run("UPDATE user_media_update SET payload = ? WHERE id = 1", [JSON.stringify({ old_value: null, new_value: planning })]);
         db.run("UPDATE user_media_update SET update_type = 'status', payload = ?, timestamp = ? WHERE id = 2", [JSON.stringify({ old_value: "Completed", new_value: planning }), undoneAt]);
@@ -142,7 +142,7 @@ describe("historical activity repair", () => {
         db.run("UPDATE user_media_update SET timestamp = '2026-07-01 00:02:23' WHERE id = 2");
         db.run("UPDATE user_media_monthly_activity SET last_activity_at = '2026-06-30T23:59:00Z'");
         snapshot(MediaType.MOVIES, 1, "2026-07-02 12:00:00", 1001);
-        db.run("UPDATE user_media_stats_history SET status_counts = '{\"Reading\":1,\"Completed\":1}' WHERE id = 5");
+        db.run("UPDATE user_media_stats_history SET status_counts = '{\"In Progress\":1,\"Completed\":1}' WHERE id = 5");
         db.run("UPDATE movies_list SET total = 1, status = 'Completed'");
         db.run("INSERT INTO user_media_monthly_activity (user_id, media_id, media_type, month_bucket, progress_gained, had_completion) VALUES (1, 1, 'movies', '2026-07', 1, 1)");
         const july = activity()[1];

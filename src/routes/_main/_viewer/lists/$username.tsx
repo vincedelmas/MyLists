@@ -192,7 +192,7 @@ function ListsPage() {
                                     </p>
                                     <p>
                                         Results update as your tracking changes.
-                                        For example, show movies and series that have been in Plan to Watch for more than six months.
+                                        For example, show movies and series that have been in Planned for more than six months.
                                     </p>
                                 </div>
                             </InfoPopover>

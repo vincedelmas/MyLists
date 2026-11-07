@@ -115,21 +115,21 @@ it("offers editor genres and tags from selected owner active lists only", () => 
     it("reports actual matching media types even when they are absent from the first four preview covers", () => {
         for (let id = 1; id <= 5; id++) addEntry(MediaType.MOVIES, id, { status: Status.COMPLETED, addedAt: "2025-01-01" });
         addEntry(MediaType.BOOKS, 10, { status: Status.COMPLETED, addedAt: "2026-01-01" });
-        addEntry(MediaType.GAMES, 11, { status: Status.PLAN_TO_PLAY });
+        addEntry(MediaType.GAMES, 11, { status: Status.PLANNED });
         addEntry(MediaType.MANGA, 12, { status: Status.COMPLETED });
         addEntry(MediaType.ANIME, 13, { status: Status.COMPLETED, userId: 2 });
         dbContext.db.update(schema.userMediaSettings).set({ active: false })
             .where(and(eq(schema.userMediaSettings.userId, 1), eq(schema.userMediaSettings.mediaType, MediaType.MANGA))).run();
 
-        const preview = getDynamicListSummary(1, { ...spec, filters: { statusGroup: "completed" } });
+        const preview = getDynamicListSummary(1, { ...spec, filters: { statuses: [Status.COMPLETED] } });
 
         expect(preview.total).toBe(6);
         expect(preview.mediaTypes).toEqual([MediaType.MOVIES, MediaType.BOOKS]);
         expect(preview.covers).toHaveLength(4);
         expect(preview.covers.every(cover => cover.mediaType === MediaType.MOVIES)).toBe(true);
         expect(Object.keys(preview).sort()).toEqual(["covers", "mediaTypes", "total"]);
-        const completed = { ...spec, filters: { statusGroup: "completed" as const } };
-        const planned = { ...spec, filters: { statusGroup: "planned" as const } };
+        const completed = { ...spec, filters: { statuses: [Status.COMPLETED] } };
+        const planned = { ...spec, filters: { statuses: [Status.PLANNED] } };
         const summaries = getDynamicListSummaries(1, [{ id: 1, spec: completed }, { id: 2, spec: planned }]);
         expect(summaries.get(1)).toEqual(preview);
         expect(summaries.get(2)).toEqual(getDynamicListSummary(1, planned));
@@ -141,12 +141,14 @@ it("offers editor genres and tags from selected owner active lists only", () => 
         query.mockRestore();
     });
 
-    it("resolves planned aliases across all six media types", () => {
+    it("filters the shared planned status across all six media types", () => {
         for (const [index, mediaType] of ALL_MEDIA_TYPES.entries()) {
-            addEntry(mediaType, index + 1, { status: getServerMediaDefinition(mediaType).service.defaultStatus });
+            addEntry(mediaType, index + 1, { status: Status.PLANNED });
         }
-        expect(getDynamicListResults(1, { ...spec, filters: { statusGroup: "planned" } }).total).toBe(6);
-        expect(getDynamicListResults(1, { ...spec, filters: { statusGroup: "completed" } }).total).toBe(0);
+        expect(getDynamicListResults(1, { ...spec, filters: { statuses: [Status.PLANNED] } }).total).toBe(6);
+        expect(getDynamicListResults(1, { ...spec, filters: { statuses: [Status.COMPLETED] } }).total).toBe(0);
+        expect(getDynamicListResults(1, { ...spec, filters: { statuses: [] } }).total).toBe(0);
+        expect(getDynamicListResults(1, { ...spec, filters: {} }).total).toBe(6);
     });
 
     it("sorts mixed timestamp formats chronologically and paginates globally across types", () => {
@@ -177,11 +179,11 @@ it("offers editor genres and tags from selected owner active lists only", () => 
     });
 
     it("keeps stale sorts usable when the last matching type disappears or new types match", () => {
-        addEntry(MediaType.BOOKS, 1, { status: Status.PLAN_TO_READ });
+        addEntry(MediaType.BOOKS, 1, { status: Status.PLANNED });
         addEntry(MediaType.GAMES, 2);
-        const saved: DynamicListSpec = { ...spec, filters: { statusGroup: "planned" } };
+        const saved: DynamicListSpec = { ...spec, filters: { statuses: [Status.PLANNED] } };
         expect(getDynamicListResults(1, saved, { filters: { sorting: "pages_highest" } }).sorting).toBe("pages_highest");
-        dbContext.db.update(schema.gamesList).set({ status: Status.PLAN_TO_PLAY }).where(eq(schema.gamesList.mediaId, 2)).run();
+        dbContext.db.update(schema.gamesList).set({ status: Status.PLANNED }).where(eq(schema.gamesList.mediaId, 2)).run();
         expect(getDynamicListResults(1, saved, { filters: { sorting: "pages_highest" } })).toMatchObject({ sorting: "default", total: 2 });
         dbContext.db.update(schema.booksList).set({ status: Status.COMPLETED }).where(eq(schema.booksList.mediaId, 1)).run();
         expect(getDynamicListResults(1, saved, { filters: { mediaType: MediaType.BOOKS, sorting: "pages_highest" } }))
@@ -203,7 +205,7 @@ it("ANDs filters, matches any requested tag, and scopes tags to the owner", () =
         ]);
         seedMediaTags(dbContext.db, MediaType.BOOKS, { userId: 1, mediaId: 2, name: "short" });
         seedMediaTags(dbContext.db, MediaType.GAMES, { userId: 1, mediaId: 3, name: "cozy" });
-        const querySpec: DynamicListSpec = { ...spec, filters: { statusGroup: "completed", minRating: 8, maxRating: 9, favorite: true, mediaFilters: {
+        const querySpec: DynamicListSpec = { ...spec, filters: { statuses: [Status.COMPLETED], minRating: 8, maxRating: 9, favorite: true, mediaFilters: {
             movies: { tagRules: [{ tags: [tagId(MediaType.MOVIES, "cozy"), tagId(MediaType.MOVIES, "short")] }] },
             books: { tagRules: [{ tags: [tagId(MediaType.BOOKS, "short")] }] },
             games: { tagRules: [{ tags: [tagId(MediaType.GAMES, "cozy")] }] },
@@ -218,7 +220,7 @@ it("ANDs filters, matches any requested tag, and scopes tags to the owner", () =
     it("narrows saved rules with temporary filters and exposes options only from the saved view", () => {
         addEntry(MediaType.MOVIES, 1, { rating: 9, favorite: true });
         addEntry(MediaType.BOOKS, 2, { rating: 8, favorite: false });
-        addEntry(MediaType.MOVIES, 3, { rating: 10, status: Status.PLAN_TO_WATCH });
+        addEntry(MediaType.MOVIES, 3, { rating: 10, status: Status.PLANNED });
         dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 3, name: "Excluded genre" }]).run();
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 2, name: "History" }).run();
         seedMediaTags(dbContext.db, MediaType.MOVIES, [
@@ -226,15 +228,15 @@ it("ANDs filters, matches any requested tag, and scopes tags to the owner", () =
             { userId: 1, mediaId: 3, name: "Excluded tag" },
         ]);
         seedMediaTags(dbContext.db, MediaType.BOOKS, { userId: 1, mediaId: 2, name: "learning" });
-        const saved: DynamicListSpec = { ...spec, filters: { statusGroup: "completed", minRating: 8 } };
+        const saved: DynamicListSpec = { ...spec, filters: { statuses: [Status.COMPLETED], minRating: 8 } };
         const result = getDynamicListResults(1, saved, { filters: { genres: ["Drama"], tags: ["cozy"], favorite: true } });
         expect(result.items.map(item => item.mediaId)).toEqual([1]);
         expect(result.filterOptions).toEqual({ genres: [], tags: [], mediaFilters: {} });
         const options = getDynamicListResults(1, saved, { includeFilterOptions: true });
         expect(options.filterOptions).toMatchObject({ genres: ["Drama", "History"], tags: ["cozy", "learning"] });
-        expect(getDynamicListResults(1, saved, { filters: { status: Status.PLAN_TO_WATCH } }).total).toBe(0);
+        expect(getDynamicListResults(1, saved, { filters: { status: Status.PLANNED } }).total).toBe(0);
         expect(getDynamicListResults(1, saved).total).toBe(2);
-        expect(saved.filters).toEqual({ statusGroup: "completed", minRating: 8 });
+        expect(saved.filters).toEqual({ statuses: [Status.COMPLETED], minRating: 8 });
     });
 
     it("scopes genres and tag rules to each media type without removing other types", () => {

@@ -35,7 +35,7 @@ export const createGamesStatistics = (definition: GamesServerDefinition = gamesS
                 average: sql<number | null>`avg(${listTable.playtime} / ${minutesPerInputUnit})`,
             })
             .from(listTable)
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_PLAY), isNotNull(listTable.playtime)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(listTable.playtime)))
             .get();
 
         return result?.average ?? null;
@@ -68,7 +68,7 @@ export const createGamesStatistics = (definition: GamesServerDefinition = gamesS
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_PLAY), isNotNull(listTable.playtime)))
+            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(listTable.playtime)))
             .groupBy(playtimeBucket)
             .orderBy(asc(playtimeBucket));
 

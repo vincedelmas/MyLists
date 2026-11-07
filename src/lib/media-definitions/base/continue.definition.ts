@@ -29,6 +29,5 @@ type ContinueUpdate =
 
 
 export type ContinueDefinition<T extends MediaType> = {
-    status: Status;
     getUpdate: (state: ContinueStateByType[T]) => ContinueUpdate | null;
 };

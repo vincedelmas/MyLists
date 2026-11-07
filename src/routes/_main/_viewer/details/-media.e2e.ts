@@ -32,7 +32,7 @@ test("switches local panels with the keyboard without submitting the filter form
     await expect(progress).toBeFocused();
     await progress.press("Enter");
     await expect(page.getByRole("tabpanel", { name: "Progress", exact: true })).toBeVisible();
-    await expect(page.getByRole("combobox").filter({ hasText: "Plan to Watch" })).toBeVisible();
+    await expect(page.getByRole("combobox").filter({ hasText: "Planned" })).toBeVisible();
 
     await page.goto(`/lists/tracking/movies/${users.owner.name}`);
     await page.getByRole("button", { name: "Filters", exact: true }).click();
@@ -76,7 +76,7 @@ test("tracks a movie and persists its status, rating and tags", async ({ page })
     await page.getByRole("button", { name: "Add to List", exact: true }).click();
     await expect(page.getByRole("button", { name: "Remove from your list" })).toBeVisible();
 
-    await page.getByRole("combobox").filter({ hasText: "Plan to Watch" }).click();
+    await page.getByRole("combobox").filter({ hasText: "Planned" }).click();
     await page.getByRole("option", { name: "Completed", exact: true }).click();
     await expect(page.getByRole("combobox").filter({ hasText: "Completed" })).toBeEnabled();
 
@@ -126,12 +126,12 @@ test("tracks a movie and persists its status, rating and tags", async ({ page })
 for (const view of ["grid", "list"]) {
     test(`keeps the ${view} editor usable after an edit changes filter membership`, async ({ page }) => {
         await signIn(page);
-        const search = new URLSearchParams({ view, status: JSON.stringify(["Plan to Watch"]) });
+        const search = new URLSearchParams({ view, status: JSON.stringify(["Planned"]) });
         await page.goto(`/lists/tracking/movies/${users.owner.name}?${search}`);
         const edit = page.getByRole("button", { name: `Edit ${movies.private.name}`, exact: true });
         await edit.click();
         const editor = page.getByRole("dialog", { name: movies.private.name, exact: true });
-        await editor.getByRole("combobox").filter({ hasText: "Plan to Watch" }).click();
+        await editor.getByRole("combobox").filter({ hasText: "Planned" }).click();
         await page.getByRole("option", { name: "Completed", exact: true }).click();
         const rating = editor.getByText("Rating", { exact: true }).locator("..").getByRole("combobox");
         await rating.click();
@@ -202,7 +202,7 @@ test("acknowledges auto-saves without flashing and holds slow loading feedback",
     await signIn(page);
     await page.goto(`/details/movies/${movies.editable.id}`);
     await page.getByRole("button", { name: "Add to List", exact: true }).click();
-    const status = page.getByRole("combobox").filter({ hasText: /Plan to Watch|Completed/ });
+    const status = page.getByRole("combobox").filter({ hasText: /Planned|Completed/ });
     await expect(status).toBeEnabled();
     await page.clock.install();
     await page.clock.pauseAt(new Date());
@@ -251,7 +251,7 @@ test("acknowledges auto-saves without flashing and holds slow loading feedback",
     responseGate = new Promise<void>(resolve => { release = resolve; });
     await status.click();
     await page.clock.runFor(100);
-    await page.getByRole("option", { name: "Plan to Watch", exact: true }).click();
+    await page.getByRole("option", { name: "Planned", exact: true }).click();
     await requestReceived;
     await page.clock.runFor(10);
     await page.clock.runFor(200);
@@ -260,7 +260,7 @@ test("acknowledges auto-saves without flashing and holds slow loading feedback",
     release();
     await slowDelivered;
     await page.clock.runFor(10);
-    await expect(status).toContainText("Plan to Watch");
+    await expect(status).toContainText("Planned");
     await expect(status).toBeDisabled();
     await page.clock.runFor(100);
     await expect(feedback.locator('[data-slot="spinner"]')).toHaveCount(1);
@@ -279,7 +279,7 @@ test("acknowledges auto-saves without flashing and holds slow loading feedback",
     await failed;
     await page.clock.runFor(10);
     await expect(status).toBeEnabled();
-    await expect(status).toContainText("Plan to Watch");
+    await expect(status).toContainText("Planned");
     await expect(feedback.getByText("Saved", { exact: true })).toHaveCount(0);
 });
 
@@ -288,8 +288,8 @@ test("updates season ratings and rewatches inside the open dialog without refetc
     await signIn(page);
     await page.goto(`/details/series/${series.id}`);
     await page.getByRole("button", { name: "Add to List", exact: true }).click();
-    await page.getByRole("combobox").filter({ hasText: "Plan to Watch" }).click();
-    await page.getByRole("option", { name: "Watching", exact: true }).click();
+    await page.getByRole("combobox").filter({ hasText: "Planned" }).click();
+    await page.getByRole("option", { name: "In Progress", exact: true }).click();
     const ratingRow = page.getByText("Rating", { exact: true }).locator("..");
     await expect(ratingRow.getByRole("combobox")).toBeEnabled();
     const urls = await page.evaluate(async () => {
@@ -452,7 +452,7 @@ test("shows Quick Add feedback while its selected status is saving", async ({ pa
         await expect(trigger.locator('[data-slot="spinner"]')).toBeVisible();
         await expect(selected).toBeDisabled();
         await expect(selected.locator('[data-slot="spinner"]')).toBeVisible();
-        await expect(page.getByRole("button", { name: "Plan to Watch", exact: true })).toBeDisabled();
+        await expect(page.getByRole("button", { name: "Planned", exact: true })).toBeDisabled();
         gate.resolve();
         await expect(trigger).toHaveCount(0);
     }
@@ -508,7 +508,7 @@ test("keeps disabled playtime and select backgrounds consistent in both themes",
     await signIn(page);
     await page.goto("/details/games/301");
     await page.getByRole("button", {name: "Add to List", exact: true}).click();
-    await page.getByRole("combobox").filter({hasText: "Plan to Play"}).click();
+    await page.getByRole("combobox").filter({hasText: "Planned"}).click();
     await page.getByRole("option", {name: "Endless", exact: true}).click();
     const playtime = page.getByRole("spinbutton", {name: "Playtime (hours)", exact: true});
     await expect(playtime).toBeEnabled();

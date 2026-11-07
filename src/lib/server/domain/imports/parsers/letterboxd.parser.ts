@@ -75,7 +75,7 @@ export const parseLetterboxdCsv = (csv: string, fileType?: LetterboxdCsvType): P
             status: ImportItemStatus.QUEUED,
             payload: {
                 rating: row.Rating == null ? null : row.Rating * 2,
-                status: fileType === "watchlist" ? Status.PLAN_TO_WATCH : Status.COMPLETED,
+                status: fileType === "watchlist" ? Status.PLANNED : Status.COMPLETED,
             },
         };
     });

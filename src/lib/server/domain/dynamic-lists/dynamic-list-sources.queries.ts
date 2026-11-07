@@ -1,4 +1,3 @@
-import {Status} from "@/lib/utils/enums";
 import {eq, notInArray, sql} from "drizzle-orm";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -7,15 +6,6 @@ import {getServerMediaDefinition} from "@/lib/media-definitions/definition.regis
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import type {DynamicListRuntimeFilters, DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {getMediaCommonFilterConditions, getMediaScopedFilterConditions} from "@/lib/server/domain/media/base/media-filters.queries";
-
-
-const statusGroups = {
-    on_hold: [Status.ON_HOLD],
-    dropped: [Status.DROPPED],
-    completed: [Status.COMPLETED],
-    in_progress: [Status.WATCHING, Status.READING, Status.PLAYING],
-    planned: [Status.PLAN_TO_WATCH, Status.PLAN_TO_READ, Status.PLAN_TO_PLAY],
-} satisfies Record<NonNullable<DynamicListSpec["filters"]["statusGroup"]>, Status[]>;
 
 
 export const createDynamicListSources = (userId: number, spec: DynamicListSpec, tagNames: Record<number, string>, {
@@ -64,15 +54,11 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
             conditions.push(sql`INSTR(LOWER(${mediaTable.name}), LOWER(${filters.search})) > 0`);
         }
 
-        if (definition.filters.common.status) {
-            for (const selected of [filters.statusGroup ? statusGroups[filters.statusGroup] : undefined, filters.statuses]) {
-                if (!selected) continue;
-
-                const statuses = selected.filter(status => allowedStatuses.includes(status));
-                conditions.push(statuses.length
-                    ? sql`${listTable.status} IN (${sql.join(statuses.map(status => sql`${status}`), sql`, `)})`
-                    : sql`0`);
-            }
+        if (definition.filters.common.status && filters.statuses) {
+            const statuses = filters.statuses.filter(status => allowedStatuses.includes(status));
+            conditions.push(statuses.length
+                ? sql`${listTable.status} IN (${sql.join(statuses.map(status => sql`${status}`), sql`, `)})`
+                : sql`0`);
         }
 
         if (cutoffs.addedBefore) {

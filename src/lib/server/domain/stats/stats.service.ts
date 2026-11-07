@@ -1,7 +1,6 @@
 import {HallOfFameSearch} from "@/lib/schemas";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {MediaType, Status} from "@/lib/utils/enums";
-import {getPlanningStatuses} from "@/lib/utils/media/status";
 import {UserMediaStats} from "@/lib/types/user-media.types";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import {MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
@@ -95,14 +94,13 @@ export class StatsService {
     }
 
     async userPerMediaSummaryStats(userId: number) {
-        const excludedStatuses = getPlanningStatuses();
         const activeSettings = await this.repository.userActiveMediaSettings(userId);
 
         const data = [];
         for (const setting of activeSettings) {
             let totalNoPlan = 0;
             Object.entries(setting.statusCounts).forEach(([status, count]) => {
-                if (!excludedStatuses.includes(status as Status)) {
+                if (status !== Status.PLANNED) {
                     totalNoPlan += count;
                 }
             });
@@ -242,11 +240,10 @@ export class StatsService {
             distinctMediaTypes,
         } = preComputedStats;
 
-        const excludedStatuses = getPlanningStatuses();
         const totalEntriesNoPlan = statusCountsList.reduce((sum, setting) => {
             let settingSum = 0;
             for (const [status, count] of Object.entries(setting.statusCounts)) {
-                if (!excludedStatuses.includes(status as Status)) {
+                if (status !== Status.PLANNED) {
                     settingSum += count;
                 }
             }
@@ -264,7 +261,7 @@ export class StatsService {
         const noPlanByMediaType = new Map<MediaType, number>();
         for (const setting of statusCountsList) {
             const total = Object.entries(setting.statusCounts).reduce((sum, [status, count]) => {
-                return excludedStatuses.includes(status as Status) ? sum : sum + count;
+                return status === Status.PLANNED ? sum : sum + count;
             }, 0);
             noPlanByMediaType.set(setting.mediaType, (noPlanByMediaType.get(setting.mediaType) ?? 0) + total);
         }

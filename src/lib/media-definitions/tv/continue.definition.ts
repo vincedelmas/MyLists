@@ -3,7 +3,6 @@ import type {ContinueDefinition} from "@/lib/media-definitions/base/continue.def
 
 
 export const tvContinueDefinition: ContinueDefinition<TvMediaType> = {
-    status: Status.WATCHING,
     getUpdate: (state) => {
         const seasons = [...state.epsPerSeason].sort((a, b) => a.season - b.season);
         const current = seasons.find(season => season.season === state.currentSeason)!;

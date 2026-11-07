@@ -155,6 +155,18 @@ it("clamps time until maintenance without changing other users or media types", 
         expect(await statsService.userPreComputedStatsSummary(3)).toMatchObject({ totalEntries: 3, totalEntriesNoPlan: 0, percentRated: null });
     });
 
+    it("keeps rating coverage undefined when a rated title is moved back to planned", async () => {
+        tracking.addMediaToList({ ...action, status: Status.COMPLETED });
+        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.RATING, rating: 8 } });
+        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.STATUS, status: Status.PLANNED } });
+
+        expect(settingsFor()).toMatchObject({ totalEntries: 1, entriesRated: 1, statusCounts: { [Status.PLANNED]: 1 } });
+        expect(await statsService.userPerMediaSummaryStats(1)).toMatchObject([
+            { mediaType: MediaType.MOVIES, totalNoPlan: 0, percentRated: null },
+        ]);
+        expect(await statsService.userPreComputedStatsSummary(1)).toMatchObject({ totalEntriesNoPlan: 0, percentRated: null });
+    });
+
     it("clamps time for other media types while keeping nonnegative constraints on other counters", () => {
         dbContext.db.insert(schema.userMediaSettings).values({
             userId: 1, mediaType: MediaType.BOOKS, active: true,

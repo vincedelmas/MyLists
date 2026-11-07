@@ -117,7 +117,7 @@ export class StatsService {
                 totalSpecific: setting.totalSpecific,
                 timeSpentDays: setting.timeSpent / 1440,
                 entriesFavorites: setting.entriesFavorites,
-                percentRated: (setting.entriesRated === 0) ? null : (setting.entriesRated / totalNoPlan) * 100,
+                percentRated: (setting.entriesRated === 0 || totalNoPlan === 0) ? null : (setting.entriesRated / totalNoPlan) * 100,
             };
 
             data.push(summary);

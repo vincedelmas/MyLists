@@ -1,10 +1,9 @@
-import {useId, useMemo, useState} from "react";
+import {useMemo, useState} from "react";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatBytes} from "@/lib/utils/formatting/number";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {formatDateTime} from "@/lib/utils/formatting/date";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
-import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {FileIcon, FileX, RefreshCw, ServerCrash} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {FilterSelect} from "@/lib/client/components/general/FilterSelect";
@@ -25,7 +24,6 @@ interface RuntimeLogBrowserProps {
 
 
 export function RuntimeLogBrowser({ files, onRefreshFiles, isRefreshingFiles, isFilesRefreshError }: RuntimeLogBrowserProps) {
-    const fieldId = useId();
     const queryClient = useQueryClient();
     const [enabledLevels, setEnabledLevels] = useState<LogLevel[]>(logLevels);
     const [requestedFileName, setRequestedFileName] = useState<string | undefined>(() => files[0]?.fileName);
@@ -56,12 +54,8 @@ export function RuntimeLogBrowser({ files, onRefreshFiles, isRefreshingFiles, is
     return (
         <section className="mt-4 mb-6 flex min-w-0 flex-col gap-4" aria-label="Runtime log browser">
             <div className="flex flex-wrap items-end gap-3">
-                <Field className="min-w-0 flex-1 sm:max-w-sm">
-                    <FieldLabel htmlFor={fieldId}>
-                        Log file
-                    </FieldLabel>
+                <div className="min-w-0 flex-1 sm:max-w-sm">
                     <FilterSelect
-                        id={fieldId}
                         label="Log file"
                         placeholder="No log files"
                         className="w-full min-w-0"
@@ -70,7 +64,7 @@ export function RuntimeLogBrowser({ files, onRefreshFiles, isRefreshingFiles, is
                         onChange={setRequestedFileName}
                         options={files.map(file => ({ label: file.fileName, value: file.fileName }))}
                     />
-                </Field>
+                </div>
                 <LoadingButton
                     variant="outline"
                     onClick={refreshLogs}
@@ -112,11 +106,16 @@ export function RuntimeLogBrowser({ files, onRefreshFiles, isRefreshingFiles, is
                     )}
                 </ToggleGroup>
 
-                {enabledLevels.length !== logLevels.length &&
-                    <Button variant="ghost" size="sm" onClick={() => setEnabledLevels(logLevels)}>
-                        Show all levels
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" disabled={enabledLevels.length === 0} onClick={() => setEnabledLevels([])}>
+                        Hide all levels
                     </Button>
-                }
+                    {enabledLevels.length !== logLevels.length &&
+                        <Button variant="ghost" size="sm" onClick={() => setEnabledLevels(logLevels)}>
+                            Show all levels
+                        </Button>
+                    }
+                </div>
             </div>
 
             {fileInfo &&
@@ -128,7 +127,7 @@ export function RuntimeLogBrowser({ files, onRefreshFiles, isRefreshingFiles, is
                     </p>
                     {fileQuery.data &&
                         <p className="tabular-nums">
-                            {visibleEntries.length} of {entries.length} entries · Latest at the bottom
+                            {visibleEntries.length} of {entries.length} entries
                         </p>
                     }
                 </div>

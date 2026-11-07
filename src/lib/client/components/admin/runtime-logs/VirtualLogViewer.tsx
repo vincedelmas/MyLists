@@ -40,7 +40,7 @@ export function VirtualLogViewer({ entries, scrollKey }: VirtualLogViewerProps) 
             role="region"
             ref={parentRef}
             aria-label="Log entries"
-            className="h-[65vh] min-h-80 overflow-auto rounded-lg border bg-background focus-visible:outline-ring"
+            className="h-[75vh] min-h-80 overflow-auto scrollbar-thin rounded-lg border bg-background focus-visible:outline-ring"
         >
             <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {

@@ -4,7 +4,6 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {formatMs} from "@/lib/utils/formatting/number";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Button} from "@/lib/client/components/ui/button";
-import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {formatDateTime} from "@/lib/utils/formatting/date";
 import {LogsList} from "@/lib/client/components/admin/LogsList";
 import {StepsList} from "@/lib/client/components/admin/StepsList";
@@ -45,7 +44,6 @@ const statusConfig = {
 
 export function TaskCard({ task }: TaskCardProps) {
     const detailsId = useId();
-    const confirm = useConfirm();
     const deleteTaskMutation = useAdminDeleteTaskMutation();
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -55,17 +53,6 @@ export function TaskCard({ task }: TaskCardProps) {
     const StatusIcon = config.icon;
     const taskLabel = formatTaskLabel(logs.taskName);
     const completedSteps = logs.steps.filter(step => step.status === "completed").length;
-
-    const deleteRun = async () => {
-        if (!await confirm({
-            variant: "destructive",
-            confirmLabel: "Delete archived run",
-            title: `Delete this ${taskLabel} run?`,
-            description: "The archived record, logs, and step details for this run will be permanently removed.",
-        })) return;
-
-        deleteTaskMutation.mutate({ data: { taskId: task.taskId } });
-    };
 
     return (
         <Card role="article" aria-label={`${taskLabel} run ${task.taskId}`} className="min-w-0">
@@ -132,10 +119,10 @@ export function TaskCard({ task }: TaskCardProps) {
                     <LoadingButton
                         size="sm"
                         variant="outline"
-                        onClick={deleteRun}
                         className="text-destructive"
                         isLoading={deleteTaskMutation.isPending}
                         icon={<Trash data-icon="inline-start"/>}
+                        onClick={() => deleteTaskMutation.mutate({ data: { taskId: task.taskId } })}
                     >
                         Delete run
                     </LoadingButton>

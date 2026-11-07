@@ -36,11 +36,8 @@ export function MediaTypeDashboard({ stats, showHero = true }: MediaTypeDashboar
 
     const comparison = mediaStatsDefinition.timeComparison;
 
-    const experiencedEntries = stats.statusesCounts.reduce((sum, status) => {
-        return status.name === Status.PLANNED ? sum : sum + status.value;
-    }, 0);
-
-    const plannedEntries = stats.totalEntries - experiencedEntries;
+    const plannedEntries = stats.statusesCounts.find(({ name }) => name === Status.PLANNED)?.value ?? 0;
+    const experiencedEntries = stats.totalEntries - plannedEntries;
     const completedEntries = stats.statusesCounts.find(({ name }) => name === Status.COMPLETED)?.value ?? 0;
 
     const completionRate = experiencedEntries ? (completedEntries / experiencedEntries) * 100 : 0;

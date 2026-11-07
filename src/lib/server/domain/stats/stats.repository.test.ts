@@ -33,11 +33,12 @@ vi.mock("@/lib/server/database/db", () => ({
 }));
 
 
-describe("movie time clamping after duration corrections", () => {
+describe("precomputed media statistics", () => {
     let sqlite: Database;
     let repository: ReturnType<typeof createMoviesRepository>;
     let service: ReturnType<typeof createMoviesService>;
     let tracking: MediaTrackingService;
+    let statsService: StatsService;
     const action = { userId: 1, mediaId: 1, mediaType: MediaType.MOVIES };
 
     const settingsFor = (userId = 1) => dbContext.db.select().from(schema.userMediaSettings).where(and(
@@ -76,7 +77,9 @@ describe("movie time clamping after duration corrections", () => {
         service = createMoviesService(repository);
         const monthlyActivity = createMediaMonthlyActivity({ definition: moviesServerDefinition, repository });
         const activityService = new MonthlyActivityService(MonthlyActivityRepository, { get: () => monthlyActivity } as MediaMonthlyActivityRegistry);
-        const statsService = new StatsService(StatsRepository, activityService, AchievementsRepository, UpdateHistoryRepository, {} as MediaStatsRegistry);
+        statsService = new StatsService(StatsRepository, activityService, AchievementsRepository, UpdateHistoryRepository, {
+            get: () => ({ computeTotalTags: () => 0 }),
+        } as unknown as MediaStatsRegistry);
         tracking = new MediaTrackingService(
             statsService,
             activityService,
@@ -118,6 +121,38 @@ it("clamps time until maintenance without changing other users or media types", 
 
         expect(settingsFor().timeSpent).toBe(180);
         expect(snapshot().statsHistory).toEqual(beforeHistory);
+    });
+
+    it("excludes planned entries from profile and platform rating coverage", async () => {
+        for (const setting of [
+            { userId: 1, totalEntries: 4, entriesRated: 1, sumEntriesRated: 8, statusCounts: { [Status.PLANNED]: 2, [Status.COMPLETED]: 2 } },
+            { userId: 2, totalEntries: 20, entriesRated: 20, sumEntriesRated: 140, statusCounts: { [Status.COMPLETED]: 20 } },
+            { userId: 3, totalEntries: 3, entriesRated: 2, sumEntriesRated: 14, statusCounts: { [Status.PLANNED]: 1, [Status.COMPLETED]: 2 } },
+        ]) {
+            dbContext.db.update(schema.userMediaSettings).set({ ...setting, statusCounts: setting.statusCounts as Record<Status, number> })
+                .where(and(eq(schema.userMediaSettings.userId, setting.userId), eq(schema.userMediaSettings.mediaType, MediaType.MOVIES))).run();
+        }
+        dbContext.db.insert(schema.userMediaSettings).values({
+            userId: 1, mediaType: MediaType.BOOKS, active: true, totalEntries: 3, entriesRated: 1, sumEntriesRated: 9,
+            statusCounts: { [Status.IN_PROGRESS]: 1, [Status.ON_HOLD]: 2 } as Record<Status, number>,
+        }).run();
+
+        const perMedia = await statsService.userPerMediaSummaryStats(1);
+        expect(perMedia.find(item => item.mediaType === MediaType.MOVIES)).toMatchObject({ totalEntries: 4, totalNoPlan: 2, percentRated: 50 });
+        expect(perMedia.find(item => item.mediaType === MediaType.BOOKS)).toMatchObject({ totalEntries: 3, totalNoPlan: 3 });
+        expect(await statsService.userPreComputedStatsSummary(1)).toMatchObject({ totalEntries: 7, totalEntriesNoPlan: 5, percentRated: 40 });
+
+        const platform = await statsService.platformAdvancedStatsSummary();
+        expect(platform).toMatchObject({ totalEntries: 10, totalEntriesNoPlan: 7, totalRated: 4 });
+        expect(platform.percentRated).toBeCloseTo(400 / 7);
+        expect(platform.mediaBreakdown.find(item => item.mediaType === MediaType.MOVIES)).toMatchObject({ totalEntries: 7, totalEntriesNoPlan: 4, ratingCoverage: 75 });
+        expect(platform.mediaBreakdown.find(item => item.mediaType === MediaType.BOOKS)).toMatchObject({ totalEntries: 3, totalEntriesNoPlan: 3 });
+        expect(await statsService.userPreComputedStatsSummary(99)).toMatchObject({ totalEntries: 0, totalEntriesNoPlan: 0, percentRated: null });
+
+        dbContext.db.update(schema.userMediaSettings).set({
+            entriesRated: 0, sumEntriesRated: 0, statusCounts: { [Status.PLANNED]: 3 } as Record<Status, number>,
+        }).where(eq(schema.userMediaSettings.userId, 3)).run();
+        expect(await statsService.userPreComputedStatsSummary(3)).toMatchObject({ totalEntries: 3, totalEntriesNoPlan: 0, percentRated: null });
     });
 
     it("clamps time for other media types while keeping nonnegative constraints on other counters", () => {

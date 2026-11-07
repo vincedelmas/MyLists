@@ -399,6 +399,7 @@ export class StatsRepository {
         const statusCountsList = await getDbClient()
             .select({
                 mediaType: userMediaSettings.mediaType,
+                totalEntries: userMediaSettings.totalEntries,
                 statusCounts: userMediaSettings.statusCounts,
             })
             .from(userMediaSettings)

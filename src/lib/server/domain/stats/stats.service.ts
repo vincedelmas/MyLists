@@ -98,12 +98,7 @@ export class StatsService {
 
         const data = [];
         for (const setting of activeSettings) {
-            let totalNoPlan = 0;
-            Object.entries(setting.statusCounts).forEach(([status, count]) => {
-                if (status !== Status.PLANNED) {
-                    totalNoPlan += count;
-                }
-            });
+            const totalNoPlan = setting.totalEntries - (setting.statusCounts[Status.PLANNED] ?? 0);
 
             const statusList = Object.entries(setting.statusCounts)
                 .map(([status, count]) =>
@@ -240,15 +235,13 @@ export class StatsService {
             distinctMediaTypes,
         } = preComputedStats;
 
-        const totalEntriesNoPlan = statusCountsList.reduce((sum, setting) => {
-            let settingSum = 0;
-            for (const [status, count] of Object.entries(setting.statusCounts)) {
-                if (status !== Status.PLANNED) {
-                    settingSum += count;
-                }
-            }
-            return sum + settingSum;
-        }, 0);
+        let totalEntriesNoPlan = 0;
+        const noPlanByMediaType = new Map<MediaType, number>();
+        for (const setting of statusCountsList) {
+            const totalNoPlan = setting.totalEntries - (setting.statusCounts[Status.PLANNED] ?? 0);
+            totalEntriesNoPlan += totalNoPlan;
+            noPlanByMediaType.set(setting.mediaType, (noPlanByMediaType.get(setting.mediaType) ?? 0) + totalNoPlan);
+        }
 
         const avgRated = (totalRated === 0) ? null : (sumOfAllRatings / totalRated);
         const percentRated = (totalEntriesNoPlan === 0) ? null : (totalRated / totalEntriesNoPlan) * 100;
@@ -257,14 +250,6 @@ export class StatsService {
         const avgDivisor = userId ? distinctMediaTypes : totalUsers;
         const avgComments = (avgDivisor === 0) ? null : (totalComments / avgDivisor);
         const avgFavorites = (avgDivisor === 0) ? null : (totalFavorites / avgDivisor);
-
-        const noPlanByMediaType = new Map<MediaType, number>();
-        for (const setting of statusCountsList) {
-            const total = Object.entries(setting.statusCounts).reduce((sum, [status, count]) => {
-                return status === Status.PLANNED ? sum : sum + count;
-            }, 0);
-            noPlanByMediaType.set(setting.mediaType, (noPlanByMediaType.get(setting.mediaType) ?? 0) + total);
-        }
 
         const mediaBreakdownWithRatios = mediaBreakdown.map((media) => {
             const totalEntriesForMedia = media.totalEntries ?? 0;

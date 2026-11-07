@@ -21,7 +21,7 @@ test("bounds Continue cards, loads another page, and keeps the profile preview a
     await expect(cards).toHaveCount(12);
     await expect(cards.first()).toContainText("Page game 01");
     await cards.first().getByRole("button", { name: "+ 60 min", exact: true }).click();
-    await expect(cards.first()).toContainText("3h 0m played");
+    await expect(cards.first()).toContainText("3h played");
     await page.goto("/profile/e2eowner");
     await expect(page.getByRole("region", { name: "Continue", exact: true }).locator('article[data-slot="media-card"]')).toHaveCount(5);
 });

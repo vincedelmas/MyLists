@@ -1,9 +1,9 @@
-import {eq, notInArray, sql} from "drizzle-orm";
+import {eq, inArray, notInArray, sql} from "drizzle-orm";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {mediaTags, userMediaSettings} from "@/lib/server/database/schema";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import type {DynamicListRuntimeFilters, DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {getMediaCommonFilterConditions, getMediaScopedFilterConditions} from "@/lib/server/domain/media/base/media-filters.queries";
 
@@ -38,7 +38,6 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
     }
 
     return mediaTypes.map(mediaType => {
-        const allowedStatuses = getMediaDefinition(mediaType).statuses;
         const definition = getServerMediaDefinition(mediaType).repository;
         const { tables: { mediaTable, listTable, tagTable, genreTable }, sortColumns } = definition;
 
@@ -55,10 +54,7 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
         }
 
         if (definition.filters.common.status && filters.statuses) {
-            const statuses = filters.statuses.filter(status => allowedStatuses.includes(status));
-            conditions.push(statuses.length
-                ? sql`${listTable.status} IN (${sql.join(statuses.map(status => sql`${status}`), sql`, `)})`
-                : sql`0`);
+            conditions.push(inArray(listTable.status, filters.statuses));
         }
 
         if (cutoffs.addedBefore) {

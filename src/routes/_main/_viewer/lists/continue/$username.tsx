@@ -68,7 +68,7 @@ function ContinuePage() {
                 eyebrow={<ListsBackLink username={username}/>}
                 asideValue={`${data.pagination.totalItems} ${data.pagination.totalItems === 1 ? "title" : "titles"}`}
                 description={isOwner
-                    ? "Pick up where you left off. Your current watchings, readings, and playings, all in one place."
+                    ? "Pick up where you left off. All your titles in progress, in one place."
                     : `What ${username} is currently watching, reading and playing.`
                 }
                 navigation={

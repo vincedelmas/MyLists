@@ -1,6 +1,7 @@
 import Database from "bun:sqlite";
 import {readMigrationFiles} from "drizzle-orm/migrator";
 import {expect, it} from "vitest";
+import {dynamicListSpecSchema} from "@/lib/schemas/dynamic-lists.schema";
 
 it("unifies stored media statuses, sums counts, and preserves progress and user text", () => {
     const db = new Database(":memory:");
@@ -50,29 +51,47 @@ it("unifies stored media statuses, sums counts, and preserves progress and user 
     }
 });
 
-it("replaces dynamic-list groups with status filters while preserving intersections and other rules", () => {
+it("migrates legacy dynamic lists through both status migrations into valid current specs", () => {
     const db = new Database(":memory:");
+    const migrations = readMigrationFiles({ migrationsFolder: "./drizzle" });
+    const statusMigrationIndex = migrations.findIndex(m => m.sql.some(statement => statement.includes("CREATE TEMP TABLE media_status_names")));
+    const base = { version: 2, display: "grid", mediaTypes: "all", sort: { field: "addedAt", direction: "asc" }, title: "Keep this title" };
     try {
-        db.run("CREATE TABLE smart_views (spec TEXT)");
+        db.transaction(() => {
+            for (const migration of migrations.slice(0, statusMigrationIndex)) {
+                for (const statement of migration.sql) db.run(statement);
+            }
+        })();
+        db.run("PRAGMA foreign_keys = ON");
+        db.run("INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (1, 'owner', 'owner@example.invalid', 1, '2026-01-01', '2026-01-01')");
         const groups = { planned: "Planned", in_progress: "In Progress", completed: "Completed", on_hold: "On Hold", dropped: "Dropped" };
-        const insert = db.query("INSERT INTO smart_views VALUES (?)");
-        for (const statusGroup of Object.keys(groups)) {
-            insert.run(JSON.stringify({ filters: { statusGroup, minRating: 7 }, title: "Keep this title" }));
-        }
-        insert.run(JSON.stringify({ filters: { statusGroup: "completed", statuses: ["Planned", "Completed"] } }));
-        insert.run(JSON.stringify({ filters: { statusGroup: "planned", statuses: ["Completed"] } }));
-        insert.run(JSON.stringify({ filters: { statuses: ["In Progress", "Completed"] } }));
-        insert.run(JSON.stringify({ filters: {} }));
-        const migration = readMigrationFiles({ migrationsFolder: "./drizzle" })
-            .find(m => m.sql.some(statement => statement.includes("CREATE TEMP TABLE dynamic_list_status_names")))!;
-        db.transaction(() => { for (const statement of migration.sql) db.run(statement); })();
-        expect(db.query<{ spec: string }, []>("SELECT * FROM smart_views").all().map(row => JSON.parse(row.spec))).toEqual([
-            ...Object.values(groups).map(status => ({ filters: { statuses: [status], minRating: 7 }, title: "Keep this title" })),
-            { filters: { statuses: ["Completed"] } },
-            { filters: { statuses: [] } },
-            { filters: { statuses: ["In Progress", "Completed"] } },
-            { filters: {} },
+        const filters = [
+            ...Object.keys(groups).map(statusGroup => ({ statusGroup, minRating: 7 })),
+            { statusGroup: "completed", statuses: ["Plan to Watch", "Completed"] },
+            { statusGroup: "planned", statuses: ["Completed"] },
+            { statusGroup: "in_progress", statuses: ["Watching", "Reading", "Playing", "Completed"] },
+            { statuses: ["Watching", "Reading", "Playing", "Completed"] },
+            {},
+        ];
+        const insert = db.query("INSERT INTO smart_views (user_id, spec) VALUES (1, ?)");
+        for (const filter of filters) insert.run(JSON.stringify({ ...base, filters: filter }));
+
+        db.transaction(() => {
+            for (const migration of migrations.slice(statusMigrationIndex, statusMigrationIndex + 2)) {
+                for (const statement of migration.sql) db.run(statement);
+            }
+        })();
+        const specs = db.query<{ spec: string }, []>("SELECT spec FROM smart_views ORDER BY id").all()
+            .map(row => dynamicListSpecSchema.parse(JSON.parse(row.spec)));
+        expect(specs).toEqual([
+            ...Object.values(groups).map(status => ({ ...base, filters: { statuses: [status], minRating: 7 } })),
+            { ...base, filters: { statuses: ["Completed"] } },
+            { ...base, filters: { statuses: [] } },
+            { ...base, filters: { statuses: ["In Progress"] } },
+            { ...base, filters: { statuses: ["In Progress", "Completed"] } },
+            { ...base, filters: {} },
         ]);
+        expect(db.query("PRAGMA foreign_key_check").all()).toEqual([]);
     }
     finally {
         db.close();

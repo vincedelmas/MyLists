@@ -1,10 +1,10 @@
 import * as z from "zod";
 import {parse} from "csv-parse/sync";
 import {MAX_IMPORT_ROWS} from "@/lib/utils/constants";
+import {emptyStringToNull} from "@/lib/utils/formatting/text";
 import type {LetterboxdCsvType} from "@/lib/schemas/imports.schema";
 import {ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
-import {emptyStringToNull} from "@/lib/server/domain/imports/import-list-validation";
 
 
 const LETTERBOXD_FORMAT_ERROR = "Upload the original ratings.csv, watched.csv, or watchlist.csv " +

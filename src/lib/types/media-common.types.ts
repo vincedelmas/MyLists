@@ -12,10 +12,9 @@ export type CoverType = `${MediaType}-covers` | "profile-covers" | "profile-back
 export type MediaInfo = {
     id: number;
     name: string;
-    duration?: number;
     imageCover: string;
-    releaseDate: string;
     inUserList?: boolean;
+    releaseDate: string | null;
     customCover: string | null;
 };
 

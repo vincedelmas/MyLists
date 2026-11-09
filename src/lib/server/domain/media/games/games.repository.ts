@@ -6,6 +6,7 @@ import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
 import {normalizeGamePlatforms} from "@/lib/server/domain/media/games/platforms";
+import {mediaRelationArray} from "@/lib/server/domain/media/base/media-relations.queries";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms} from "@/lib/server/database/schema";
 import {Game, UpdateGameWithDetails, UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {gamesServerDefinition, GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
@@ -65,9 +66,14 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
         const details = getDbClient()
             .select({
                 ...getTableColumns(games),
-                genres: sql`json_group_array(DISTINCT json_object('id', ${gamesGenre.id}, 'name', ${gamesGenre.name}))`.mapWith(JSON.parse),
-                companies: sql`json_group_array(DISTINCT json_object('id', ${gamesCompanies.id}, 'name', ${gamesCompanies.name}, 'developer', ${gamesCompanies.developer}, 'publisher', ${gamesCompanies.publisher}))`.mapWith(JSON.parse),
-                platforms: sql`json_group_array(DISTINCT json_object('id', ${gamesPlatforms.id}, 'name', ${gamesPlatforms.name}))`.mapWith(JSON.parse),
+                genres: mediaRelationArray(gamesGenre, games.id, { id: gamesGenre.id, name: gamesGenre.name }, gamesGenre.id),
+                companies: mediaRelationArray(gamesCompanies, games.id, {
+                    id: gamesCompanies.id,
+                    name: gamesCompanies.name,
+                    developer: gamesCompanies.developer,
+                    publisher: gamesCompanies.publisher
+                }, gamesCompanies.id),
+                platforms: mediaRelationArray(gamesPlatforms, games.id, { id: gamesPlatforms.id, name: gamesPlatforms.name }, gamesPlatforms.id),
                 collection: sql`
                     CASE 
                         WHEN ${games.collectionId} IS NULL 
@@ -86,7 +92,7 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
                                     g2.image_cover,
                                     g2.release_date
                                 FROM games g2
-                                WHERE g2.collection_id = ${games.collectionId} AND g2.id != ${games.id}
+                                WHERE g2.collection_id = ${games}.collection_id AND g2.id != ${games}.id
                                 ORDER BY g2.release_date ASC, g2.id ASC
                             ) AS x
                         )
@@ -94,11 +100,7 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
                 `.mapWith(JSON.parse),
             })
             .from(games)
-            .leftJoin(gamesCompanies, eq(gamesCompanies.mediaId, games.id))
-            .leftJoin(gamesPlatforms, eq(gamesPlatforms.mediaId, games.id))
-            .leftJoin(gamesGenre, eq(gamesGenre.mediaId, games.id))
             .where(eq(games.id, mediaId))
-            .groupBy(...Object.values(getTableColumns(games)))
             .get();
 
         if (!details) return;
@@ -110,6 +112,7 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
 
         const result: Game & AddedMediaDetails = {
             ...details,
+            collection,
             providerData: {
                 name: attribution.name,
                 url: details.igdbUrl ?? "#",
@@ -117,10 +120,6 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
                     ? `https://images.igdb.com/igdb/image/upload/t_1080p/${details.backdropImageId}.jpg`
                     : null,
             },
-            genres: details.genres || [],
-            collection: collection || [],
-            companies: details.companies || [],
-            platforms: details.platforms || [],
         };
 
         return result;

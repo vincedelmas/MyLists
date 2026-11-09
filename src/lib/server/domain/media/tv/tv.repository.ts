@@ -8,6 +8,7 @@ import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
+import {mediaRelationArray} from "@/lib/server/domain/media/base/media-relations.queries";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {attachTvSeasonEpisodes, getTvSeasonPosition, getTvSeasonTotals} from "@/lib/utils/media/tv-seasons";
@@ -276,16 +277,15 @@ export function createTvRepository(definition: TvDefinition) {
         const details = getDbClient()
             .select({
                 ...getTableColumns(mediaTable),
-                actors: sql`json_group_array(DISTINCT json_object('id', ${actorTable.id}, 'name', ${actorTable.name}))`.mapWith(JSON.parse),
-                genres: sql`json_group_array(DISTINCT json_object('id', ${genreTable.id}, 'name', ${genreTable.name}))`.mapWith(JSON.parse),
-                epsPerSeason: sql`json_group_array(DISTINCT json_object('season', ${epsPerSeasonTable.season}, 'episodes', ${epsPerSeasonTable.episodes}))`.mapWith(JSON.parse),
-                networks: sql`json_group_array(DISTINCT json_object('id', ${networkTable.id}, 'name', ${networkTable.name}))`.mapWith(JSON.parse),
+                actors: mediaRelationArray(actorTable, mediaTable.id, { id: actorTable.id, name: actorTable.name }, actorTable.id),
+                genres: mediaRelationArray(genreTable, mediaTable.id, { id: genreTable.id, name: genreTable.name }, genreTable.id),
+                epsPerSeason: mediaRelationArray(epsPerSeasonTable, mediaTable.id, {
+                    season: epsPerSeasonTable.season,
+                    episodes: epsPerSeasonTable.episodes
+                }, epsPerSeasonTable.season),
+                networks: mediaRelationArray(networkTable, mediaTable.id, { id: networkTable.id, name: networkTable.name }, networkTable.id),
             })
             .from(mediaTable)
-            .leftJoin(actorTable, eq(actorTable.mediaId, mediaTable.id))
-            .leftJoin(genreTable, eq(genreTable.mediaId, mediaTable.id))
-            .leftJoin(epsPerSeasonTable, eq(epsPerSeasonTable.mediaId, mediaTable.id))
-            .leftJoin(networkTable, eq(networkTable.mediaId, mediaTable.id))
             .where(eq(mediaTable.id, mediaId))
             .get();
 
@@ -298,10 +298,6 @@ export function createTvRepository(definition: TvDefinition) {
                 url: `${attribution.mediaUrl}${details.apiId}`,
                 backdropUrl: details.backdropPath ? `https://image.tmdb.org/t/p/w1280${details.backdropPath}` : null,
             },
-            genres: details.genres || [],
-            actors: details.actors || [],
-            networks: details.networks || [],
-            epsPerSeason: details.epsPerSeason || [],
         };
 
         return result;

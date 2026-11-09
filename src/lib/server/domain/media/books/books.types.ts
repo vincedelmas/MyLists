@@ -3,12 +3,12 @@ import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {books, booksList} from "@/lib/server/database/schema";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
+import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
 import {
     importCommentSchema,
     importFavoriteSchema,
     importRatingSchema,
     importRedoSchema,
-    importStatusSchema,
     importTotalSchema,
     nullableImportProgressSchema
 } from "@/lib/server/domain/imports/import-list-validation";
@@ -41,7 +41,7 @@ export type UpdateBooksWithDetails = {
 
 
 export const booksFinalListInsertSchema = createInsertSchema(booksList, {
-    status: importStatusSchema(MediaType.BOOKS),
+    status: mediaStatusSchema(MediaType.BOOKS),
     customCover: z.string().nullable().optional(),
 });
 
@@ -53,7 +53,7 @@ const booksCSVListSchema = createInsertSchema(booksList, {
     comment: importCommentSchema,
     favorite: importFavoriteSchema,
     actualPage: nullableImportProgressSchema,
-    status: importStatusSchema(MediaType.BOOKS),
+    status: mediaStatusSchema(MediaType.BOOKS),
 });
 
 

@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
+import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "./definition.registry";
-import {importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
 
 
 describe("shared media status policy", () => {
@@ -14,7 +14,7 @@ describe("shared media status policy", () => {
         [MediaType.MANGA, [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLANNED]],
     ])("preserves status choices, order and backend validation for %s", (mediaType, expectedStatuses) => {
         expect(getMediaDefinition(mediaType).statuses).toEqual(expectedStatuses);
-        const validator = importStatusSchema(mediaType);
+        const validator = mediaStatusSchema(mediaType);
         for (const status of Object.values(Status)) {
             expect(validator.safeParse(status).success).toBe(expectedStatuses.some(expected => expected === status));
         }

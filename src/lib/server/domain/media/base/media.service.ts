@@ -242,10 +242,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
     }
 
     async function getMediaAndUserDetails(userId: number | undefined, mediaId: number) {
-        const media = repository.findById(mediaId);
-        if (!media) throw notFound();
-
-        const mediaWithDetails = await repository.findAllAssociatedDetails(media.id);
+        const mediaWithDetails = await repository.findAllAssociatedDetails(mediaId);
         if (!mediaWithDetails) throw notFound();
 
         const userMedia = repository.findUserMedia(userId, mediaWithDetails.id);

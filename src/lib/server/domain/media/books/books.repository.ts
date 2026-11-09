@@ -1,9 +1,10 @@
 import {Status} from "@/lib/utils/enums";
 import {eq, getTableColumns, isNull, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {AddedMediaDetails, IdNamePair} from "@/lib/types/media-common.types";
+import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {books, booksAuthors, booksGenre, booksList} from "@/lib/server/database/schema";
+import {mediaRelationArray} from "@/lib/server/domain/media/base/media-relations.queries";
 import {Book, InsertBooksWithDetails, UpdateBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 import {isManualBookId, BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 
@@ -48,15 +49,10 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
         const details = getDbClient()
             .select({
                 ...getTableColumns(books),
-                authors: sql`json_group_array(DISTINCT json_object('id', ${booksAuthors.id}, 'name', ${booksAuthors.name}))
-                    FILTER (WHERE ${booksAuthors.id} IS NOT NULL)`.mapWith((value): IdNamePair[] => JSON.parse(value)),
-                genres: sql`json_group_array(DISTINCT json_object('id', ${booksGenre.id}, 'name', ${booksGenre.name}))
-                    FILTER (WHERE ${booksGenre.id} IS NOT NULL)`.mapWith((value): IdNamePair[] => JSON.parse(value)),
+                authors: mediaRelationArray(booksAuthors, books.id, { id: booksAuthors.id, name: booksAuthors.name }, booksAuthors.id),
+                genres: mediaRelationArray(booksGenre, books.id, { id: booksGenre.id, name: booksGenre.name }, booksGenre.id),
             }).from(books)
-            .leftJoin(booksAuthors, eq(booksAuthors.mediaId, books.id))
-            .leftJoin(booksGenre, eq(booksGenre.mediaId, books.id))
             .where(eq(books.id, mediaId))
-            .groupBy(...Object.values(getTableColumns(books)))
             .get();
 
         if (!details) return;

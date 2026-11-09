@@ -1,8 +1,9 @@
 import * as z from "zod";
+import {emptyStringToNull} from "@/lib/utils/formatting/text";
 import {isValidActivityDate} from "@/lib/utils/media/activity";
+import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
 import {tvSeasonStateSchema} from "@/lib/schemas/tv-seasons.schema";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {emptyStringToNull, importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
 import {COMMENT_MAX_LENGTH, MIN_ACTIVITY_DATE, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
 import {coercedPositiveIntFieldSchema, imageFileSchema, imageUrlSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 
@@ -40,7 +41,8 @@ const allowedPayloadFieldsByUpdateType = {
 
 
 const validateStatusForMediaType = (mediaType: MediaType, status: Status, ctx: z.RefinementCtx, path: (string | number)[]) => {
-    const result = importStatusSchema(mediaType).safeParse(status);
+    const result = mediaStatusSchema(mediaType).safeParse(status);
+
     if (!result.success) {
         ctx.addIssue({
             path,

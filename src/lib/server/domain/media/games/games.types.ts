@@ -1,15 +1,15 @@
 import * as z from "zod";
 import {createInsertSchema} from "drizzle-zod";
+import {emptyStringToNull} from "@/lib/utils/formatting/text";
 import {games, gamesList} from "@/lib/server/database/schema";
 import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
+import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
 import {
-    emptyStringToNull,
     importCommentSchema,
     importFavoriteSchema,
     importPlaytimeSchema,
-    importRatingSchema,
-    importStatusSchema
+    importRatingSchema
 } from "@/lib/server/domain/imports/import-list-validation";
 
 
@@ -31,7 +31,7 @@ export type UpdateGameWithDetails = Omit<UpsertGameWithDetails, "mediaData"> & {
 
 
 export const gamesFinalListInsertSchema = createInsertSchema(gamesList, {
-    status: importStatusSchema(MediaType.GAMES),
+    status: mediaStatusSchema(MediaType.GAMES),
     customCover: z.string().nullable().optional(),
     platform: z.enum(GamesPlatformsEnum).nullable().optional(),
 });
@@ -42,7 +42,7 @@ const gamesCSVListSchema = createInsertSchema(gamesList, {
     comment: importCommentSchema,
     playtime: importPlaytimeSchema,
     favorite: importFavoriteSchema,
-    status: importStatusSchema(MediaType.GAMES),
+    status: mediaStatusSchema(MediaType.GAMES),
     platform: z.preprocess(emptyStringToNull, z.enum(GamesPlatformsEnum).nullable().optional()),
 });
 

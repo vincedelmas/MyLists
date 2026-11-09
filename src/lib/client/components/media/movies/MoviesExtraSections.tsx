@@ -13,22 +13,27 @@ type MoviesDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const MoviesExtraSections = ({ mediaType, media }: MoviesDetailsProps<typeof MediaType.MOVIES>) => {
-    const INITIAL_COUNT = 5;
-    const collection = media.collection ?? [];
     const isBelowSm = useBreakpoint("sm");
     const [isExpanded, setIsExpanded] = useState(false);
-    const cleanedActors = (media.actors ?? []).filter((a) => a.name !== null);
 
+    const INITIAL_COUNT = 5;
+    const actors = media.actors ?? [];
+
+    const collection = media.collection ?? [];
     const visibleCollection = isBelowSm || isExpanded ? collection : collection.slice(0, INITIAL_COUNT);
 
     return (
         <>
-            {cleanedActors.length > 0 &&
+            {actors.length > 0 &&
                 <section>
                     <MediaSectionTitle title="Main Actors"/>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {cleanedActors.map((actor) =>
-                            <Link key={actor.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "actor", name: actor.name }}>
+                        {actors.map((actor) =>
+                            <Link
+                                key={actor.name}
+                                to="/details/$mediaType/$job/$name"
+                                params={{ mediaType, job: "actor", name: actor.name }}
+                            >
                                 <MediaExtraGrid
                                     subname="Actor"
                                     clickable={true}

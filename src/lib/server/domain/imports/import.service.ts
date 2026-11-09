@@ -66,11 +66,17 @@ export class ImportService {
                 if (items.length === 0) return [];
 
                 const delta = {
+                    failedCount: 0,
+                    skippedCount: 0,
+                    completedCount: 0,
                     processedCount: items.length,
-                    failedCount: items.filter(item => item.status === ImportItemStatus.FAILED).length,
-                    skippedCount: items.filter(item => item.status === ImportItemStatus.SKIPPED).length,
-                    completedCount: items.filter(item => item.status === ImportItemStatus.COMPLETED).length,
                 };
+
+                for (const item of items) {
+                    if (item.status === ImportItemStatus.FAILED) delta.failedCount++;
+                    else if (item.status === ImportItemStatus.SKIPPED) delta.skippedCount++;
+                    else if (item.status === ImportItemStatus.COMPLETED) delta.completedCount++;
+                }
 
                 const updatedJob = this.repository.incrementJobCounters(jobId, delta);
                 if (!updatedJob) {

@@ -3,12 +3,12 @@ import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {movies, moviesList} from "@/lib/server/database/schema";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
+import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
 import {
     importCommentSchema,
     importFavoriteSchema,
     importRatingSchema,
     importRedoSchema,
-    importStatusSchema,
     importTotalSchema
 } from "@/lib/server/domain/imports/import-list-validation";
 
@@ -30,7 +30,7 @@ export type UpdateMovieWithDetails = Omit<UpsertMovieWithDetails, "mediaData"> &
 
 
 export const moviesFinalListInsertSchema = createInsertSchema(moviesList, {
-    status: importStatusSchema(MediaType.MOVIES),
+    status: mediaStatusSchema(MediaType.MOVIES),
     customCover: z.string().nullable().optional(),
 });
 
@@ -41,7 +41,7 @@ const moviesCSVListSchema = createInsertSchema(moviesList, {
     rating: importRatingSchema,
     comment: importCommentSchema,
     favorite: importFavoriteSchema,
-    status: importStatusSchema(MediaType.MOVIES),
+    status: mediaStatusSchema(MediaType.MOVIES),
 });
 
 

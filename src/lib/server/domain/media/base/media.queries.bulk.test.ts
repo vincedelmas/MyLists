@@ -57,6 +57,19 @@ describe("Shared media persistence and list queries", () => {
         dbContext.db = undefined;
     });
 
+    it("returns only preview fields while preserving null dates, membership and custom covers", async () => {
+        db.insert(moviesList).values({ userId: 42, mediaId: 100, status: Status.COMPLETED, customCover: "custom.jpg" }).run();
+
+        const [media] = await repository.getMediaDetailsByIds([100, 100], 42);
+        expect(media).toEqual({
+            id: 100, name: "Movie 1", releaseDate: null, inUserList: true,
+            imageCover: expect.stringContaining("1.jpg"), customCover: expect.stringContaining("custom.jpg"),
+        });
+        expect(await repository.getMediaDetailsByIds([100])).toEqual([{ ...media, inUserList: false, customCover: null }]);
+        expect(await repository.getMediaDetailsByIds([])).toEqual([]);
+        expect(await repository.getMediaDetailsByIds([999])).toEqual([]);
+    });
+
     it("bulk-inserts rows and returns only entries newly added to the user list", async () => {
         const rows = [
             {

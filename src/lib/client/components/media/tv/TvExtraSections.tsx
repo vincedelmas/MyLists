@@ -1,7 +1,7 @@
 import React from "react";
 import {Link} from "@tanstack/react-router";
-import {MediaType, TvMediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/formatting/number";
+import {MediaType, TvMediaType} from "@/lib/utils/enums";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
@@ -11,17 +11,21 @@ type TvDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<TvMediaType>) => {
+    const actors = media.actors ?? [];
     const episodeUnit = getMediaDefinition(mediaType).progress.unit!;
-    const cleanedActors = (media.actors ?? []).filter((a) => a.name !== null);
 
     return (
         <>
-            {cleanedActors.length > 0 &&
+            {actors.length > 0 &&
                 <section>
                     <MediaSectionTitle title="Main Actors"/>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {cleanedActors.map((actor) =>
-                            <Link key={actor.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "actor", name: actor.name }}>
+                        {actors.map((actor) =>
+                            <Link
+                                key={actor.name}
+                                to="/details/$mediaType/$job/$name"
+                                params={{ mediaType, job: "actor", name: actor.name }}
+                            >
                                 <MediaExtraGrid
                                     subname="Actor"
                                     clickable={true}

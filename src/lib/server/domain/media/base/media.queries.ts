@@ -154,10 +154,14 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         const { mediaTable, listTable } = repoDefinition.tables;
 
         const uniqueMediaIds = [...new Set(mediaIds)];
+        if (uniqueMediaIds.length === 0) return [];
 
-        const mediaInfo = await getDbClient()
+        return getDbClient()
             .select({
-                ...getTableColumns(mediaTable),
+                id: mediaTable.id,
+                name: mediaTable.name,
+                imageCover: mediaTable.imageCover,
+                releaseDate: mediaTable.releaseDate,
                 customCover: listTable.customCover,
                 inUserList: isNotNull(listTable.userId).mapWith(Boolean).as("inUserList"),
             })
@@ -167,8 +171,6 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
                 userId === undefined ? sql`FALSE` : eq(listTable.userId, userId),
             ))
             .where(inArray(mediaTable.id, uniqueMediaIds));
-
-        return mediaInfo as unknown as MediaInfo[];
     }
 
     async function getMediaDurationsByIds(mediaIds: number[]) {
@@ -313,10 +315,6 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .innerJoin(mediaTags, eq(mediaTags.id, tagTable.tagId))
             .where(and(eq(tagTable.mediaId, mediaId), eq(tagTable.userId, userId)))
             .orderBy(asc(mediaTags.name)).all();
-
-        if (!associatedTags) {
-            return null;
-        }
 
         return {
             ...mainUserMediaData,

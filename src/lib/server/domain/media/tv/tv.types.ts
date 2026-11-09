@@ -2,15 +2,11 @@ import * as z from "zod";
 import {createInsertSchema} from "drizzle-zod";
 import {MediaType, TvMediaType} from "@/lib/utils/enums";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
+import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
 import {anime, animeList, series, seriesList} from "@/lib/server/database/schema";
 import {type TvSeasonState, tvSeasonStatesSchema} from "@/lib/schemas/tv-seasons.schema";
-import {
-    importCommentSchema,
-    importFavoriteSchema,
-    importStatusSchema,
-    importTotalSchema
-} from "@/lib/server/domain/imports/import-list-validation";
+import {importCommentSchema, importFavoriteSchema, importTotalSchema} from "@/lib/server/domain/imports/import-list-validation";
 
 
 type Series = typeof series.$inferSelect;
@@ -42,7 +38,7 @@ export type UpdateTvWithDetails = Omit<UpsertTvWithDetails, "mediaData"> & {
 const tvListSchemaOverrides = (mediaType: TvMediaType) => ({
     comment: importCommentSchema,
     favorite: importFavoriteSchema,
-    status: importStatusSchema(mediaType),
+    status: mediaStatusSchema(mediaType),
 });
 
 
@@ -67,14 +63,14 @@ const animeCSVListSchema = createInsertSchema(animeList, tvListSchemaOverrides(M
 
 
 const seriesFinalListInsertSchema = createInsertSchema(seriesList, {
-    status: importStatusSchema(MediaType.SERIES),
+    status: mediaStatusSchema(MediaType.SERIES),
     customCover: z.string().nullable().optional(),
     redo: z.number().int().min(0),
 }).extend({ seasons: tvSeasonStatesSchema });
 
 
 const animeFinalListInsertSchema = createInsertSchema(animeList, {
-    status: importStatusSchema(MediaType.ANIME),
+    status: mediaStatusSchema(MediaType.ANIME),
     customCover: z.string().nullable().optional(),
     redo: z.number().int().min(0),
 }).extend({ seasons: tvSeasonStatesSchema });

@@ -24,7 +24,6 @@ describe("ImportService.createImportJob", () => {
         getIssueItems: vi.fn(),
         countJobsAhead: vi.fn(),
         findJobForUser: vi.fn(),
-        countFailedItems: vi.fn(),
         insertParsedItems: vi.fn(),
         deleteQueuedOrTerminalJob: vi.fn(),
         claimNextQueuedJob: vi.fn(),

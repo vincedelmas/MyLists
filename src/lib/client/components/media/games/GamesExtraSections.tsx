@@ -12,12 +12,13 @@ type GamesDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const GamesExtraSections = ({ media }: GamesDetailsProps<typeof MediaType.GAMES>) => {
-    const INITIAL_COUNT = 5;
-    const collection = media.collection ?? [];
     const isBelowSm = useBreakpoint("sm");
     const [isExpanded, setIsExpanded] = useState(false);
-    const cleanedPlatforms = (media.platforms ?? []).filter((a) => a.name !== null);
-    const sortedPlatforms = cleanedPlatforms.sort((a, b) => a.name.localeCompare(b.name));
+
+    const INITIAL_COUNT = 5;
+    const collection = media.collection ?? [];
+
+    const sortedPlatforms = [...(media.platforms ?? [])].sort((a, b) => a.name.localeCompare(b.name));
     const visibleCollection = isBelowSm || isExpanded ? collection : collection.slice(0, INITIAL_COUNT);
 
     return (

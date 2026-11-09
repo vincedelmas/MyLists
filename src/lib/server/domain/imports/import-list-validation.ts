@@ -1,6 +1,5 @@
 import * as z from "zod";
-import {MediaType} from "@/lib/utils/enums";
-import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {emptyStringToNull} from "@/lib/utils/formatting/text";
 import {COMMENT_MAX_LENGTH, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
 
 
@@ -8,6 +7,7 @@ const parseImportBoolean = (value: unknown) => {
     if (typeof value !== "string") return value;
 
     const normalizedValue = value.trim().toLowerCase();
+
     if (normalizedValue === "") return null;
     if (normalizedValue === "true" || normalizedValue === "1") return true;
     if (normalizedValue === "false" || normalizedValue === "0") return false;
@@ -15,17 +15,9 @@ const parseImportBoolean = (value: unknown) => {
     return value;
 };
 
-const emptyStringToUndefined = (value: unknown) => typeof value === "string" && value.trim() === "" ? undefined : value;
-
-export const emptyStringToNull = (value: unknown) => typeof value === "string" && value.trim() === "" ? null : value;
-
-export const importStatusSchema = (mediaType: MediaType) => {
-    const allowedStatuses = getMediaDefinition(mediaType).statuses;
-
-    return z.enum(allowedStatuses, {
-        error: `Status is not valid for ${mediaType}. Allowed statuses: ${allowedStatuses.join(", ")}`,
-    });
-};
+const emptyStringToUndefined = (value: unknown) => {
+    return typeof value === "string" && value.trim() === "" ? undefined : value;
+}
 
 export const importCommentSchema = z.preprocess(
     emptyStringToNull, z.string()

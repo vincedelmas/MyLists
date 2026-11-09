@@ -4,6 +4,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
+import {mediaRelationArray} from "@/lib/server/domain/media/base/media-relations.queries";
 import {movies, moviesActors, moviesGenre, moviesList} from "@/lib/server/database/schema";
 import {Movie, UpdateMovieWithDetails, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {MovieServerDefinition, moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
@@ -76,8 +77,8 @@ export function createMoviesRepository(definition: MovieServerDefinition = movie
         const details = getDbClient()
             .select({
                 ...getTableColumns(movies),
-                genres: sql`json_group_array(DISTINCT json_object('id', ${moviesGenre.id}, 'name', ${moviesGenre.name}))`.mapWith(JSON.parse),
-                actors: sql`json_group_array(DISTINCT json_object('id', ${moviesActors.id}, 'name', ${moviesActors.name}))`.mapWith(JSON.parse),
+                genres: mediaRelationArray(moviesGenre, movies.id, { id: moviesGenre.id, name: moviesGenre.name }, moviesGenre.id),
+                actors: mediaRelationArray(moviesActors, movies.id, { id: moviesActors.id, name: moviesActors.name }, moviesActors.id),
                 collection: sql`
                     CASE 
                         WHEN ${movies.collectionId} IS NULL 
@@ -96,17 +97,14 @@ export function createMoviesRepository(definition: MovieServerDefinition = movie
                                     m2.image_cover,
                                     m2.release_date
                                 FROM movies m2
-                                WHERE m2.collection_id = ${movies.collectionId} AND m2.id != ${movies.id}
+                                WHERE m2.collection_id = ${movies}.collection_id AND m2.id != ${movies}.id
                                 ORDER BY m2.release_date ASC, m2.id ASC
                             ) AS x
                         )
                     END
                 `.mapWith(JSON.parse),
             }).from(movies)
-            .leftJoin(moviesActors, eq(moviesActors.mediaId, movies.id))
-            .leftJoin(moviesGenre, eq(moviesGenre.mediaId, movies.id))
             .where(eq(movies.id, mediaId))
-            .groupBy(...Object.values(getTableColumns(movies)))
             .get();
 
         if (!details) return;
@@ -118,14 +116,12 @@ export function createMoviesRepository(definition: MovieServerDefinition = movie
 
         const result: Movie & AddedMediaDetails = {
             ...details,
+            collection,
             providerData: {
                 name: attribution.name,
                 url: `${attribution.mediaUrl}${details.apiId}`,
                 backdropUrl: details.backdropPath ? `https://image.tmdb.org/t/p/w1280${details.backdropPath}` : null,
             },
-            actors: details.actors || [],
-            genres: details.genres || [],
-            collection: collection || [],
         };
 
         return result;
@@ -143,8 +139,8 @@ export function createMoviesRepository(definition: MovieServerDefinition = movie
             .onConflictDoUpdate({
                 target: movies.apiId,
                 set: { lastApiUpdate: sql`datetime('now')` },
-            })
-            .returning().all();
+            }).returning()
+            .all();
 
         const mediaId = media.id;
         if (actorsData && actorsData.length > 0) {
@@ -171,33 +167,38 @@ export function createMoviesRepository(definition: MovieServerDefinition = movie
                 lastApiUpdate: sql`datetime('now')`,
             })
             .where(eq(movies.apiId, mediaData.apiId))
-            .returning({ id: movies.id }).all();
+            .returning({ id: movies.id })
+            .all();
 
         const mediaId = media.id;
 
         if (actorsData !== undefined) {
             tx
                 .delete(moviesActors)
-                .where(eq(moviesActors.mediaId, mediaId)).run();
+                .where(eq(moviesActors.mediaId, mediaId))
+                .run();
 
             if (actorsData.length > 0) {
                 tx
                     .insert(moviesActors)
                     .values(actorsData.map(actor => ({ mediaId, ...actor })))
-                    .onConflictDoNothing().run();
+                    .onConflictDoNothing()
+                    .run();
             }
         }
 
         if (genresData !== undefined) {
             tx
                 .delete(moviesGenre)
-                .where(eq(moviesGenre.mediaId, mediaId)).run();
+                .where(eq(moviesGenre.mediaId, mediaId))
+                .run();
 
             if (genresData.length > 0) {
                 tx
                     .insert(moviesGenre)
                     .values(genresData.map(genre => ({ mediaId, ...genre })))
-                    .onConflictDoNothing().run();
+                    .onConflictDoNothing()
+                    .run();
             }
         }
 

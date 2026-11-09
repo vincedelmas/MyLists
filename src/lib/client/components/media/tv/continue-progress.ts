@@ -5,7 +5,7 @@ import type {ContinueItemFor, ContinueProgress} from "@/lib/client/components/co
 
 
 export function getTvContinueProgress(item: ContinueItemFor<TvMediaType>): ContinueProgress {
-    const seasons = [...item.epsPerSeason].sort((a, b) => a.season - b.season);
+    const seasons = item.epsPerSeason;
     const current = seasons.find(season => season.season === item.currentSeason)!;
 
     const update = tvContinueDefinition.getUpdate(item);

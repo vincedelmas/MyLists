@@ -508,8 +508,4 @@ export class ImportRepository {
 
         return job ?? null;
     }
-
-    static countFailedItems(items: ParsedImportItem[]) {
-        return items.filter((item) => item.status === ImportItemStatus.FAILED).length;
-    }
 }

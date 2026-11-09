@@ -3,13 +3,13 @@ import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {manga, mangaList} from "@/lib/server/database/schema";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
+import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
 import {
     importCommentSchema,
     importFavoriteSchema,
     importProgressSchema,
     importRatingSchema,
     importRedoSchema,
-    importStatusSchema,
     importTotalSchema
 } from "@/lib/server/domain/imports/import-list-validation";
 
@@ -31,7 +31,7 @@ export type UpdateMangaWithDetails = Omit<UpsertMangaWithDetails, "mediaData"> &
 
 
 export const mangaFinalListInsertSchema = createInsertSchema(mangaList, {
-    status: importStatusSchema(MediaType.MANGA),
+    status: mediaStatusSchema(MediaType.MANGA),
     customCover: z.string().nullable().optional(),
 });
 
@@ -43,7 +43,7 @@ const mangaCSVListSchema = createInsertSchema(mangaList, {
     comment: importCommentSchema,
     favorite: importFavoriteSchema,
     currentChapter: importProgressSchema,
-    status: importStatusSchema(MediaType.MANGA),
+    status: mediaStatusSchema(MediaType.MANGA),
 });
 
 

@@ -78,6 +78,16 @@ it("computes the pre-computed totals owned by the statistics component", async (
         expect(statistics.computeAllUsersStats([1, 2])).toEqual(allStats);
     });
 
+    it("counts every allowed status in the main aggregation without including another user's list", () => {
+        db.update(moviesList).set({ status: Status.PLANNED }).where(eq(moviesList.id, 2)).run();
+
+        expect(createMoviesStatistics().computeAllUsersStats().map(({ userId, statusCounts }) => ({ userId, statusCounts })))
+            .toEqual([
+                { userId: 1, statusCounts: { [Status.COMPLETED]: 2, [Status.PLANNED]: 1 } },
+                { userId: 2, statusCounts: { [Status.COMPLETED]: 1, [Status.PLANNED]: 0 } },
+            ]);
+    });
+
     it("recomputes empty lists while preserving preferences, views, and other media statistics", () => {
         db.delete(moviesList).where(eq(moviesList.userId, 2)).run();
         db.update(userMediaSettings).set({

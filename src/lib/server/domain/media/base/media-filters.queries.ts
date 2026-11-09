@@ -103,9 +103,14 @@ const createArrayFilter = ({ argName, entityTable, filterColumn, mediaTable, opt
             }
 
             const rows = optionsQuery.all();
-            const names = rows.flatMap(row => splitValues ? row.name.split(",").map(name => name.trim()) : [row.name]);
+            const normalizedQuery = query?.toLowerCase();
 
-            const matches = [...new Set(names.filter(name => name && (!query || name.toLowerCase().includes(query.toLowerCase()))))]
+            const names = rows.flatMap(row => splitValues
+                ? row.name.split(",").map(name => name.trim())
+                : [row.name]
+            );
+            
+            const matches = [...new Set(names.filter(name => name && (!normalizedQuery || name.toLowerCase().includes(normalizedQuery))))]
                 .sort((a, b) => a.localeCompare(b));
 
             return (query ? matches.slice(0, 8) : matches).map(name => ({ name }));

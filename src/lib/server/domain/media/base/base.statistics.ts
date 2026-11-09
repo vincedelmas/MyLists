@@ -1,4 +1,3 @@
-import {logger} from "@/lib/server/core/logger";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {SQLiteColumn} from "drizzle-orm/sqlite-core";
 import {toHistogramBins} from "@/lib/utils/stats/histogram";
@@ -66,7 +65,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
         const { listTable, mediaTable } = definition.repository.tables;
         const { timeSpent, totalSpecific, totalRedo } = definition.statistics.allUsers;
 
-        const expectedStatuses = getMediaDefinition(mediaType).statuses ?? [];
+        const expectedStatuses = getMediaDefinition(mediaType).statuses;
         const redoStat = totalRedo ?? (listTable.redo ? sql`COALESCE(SUM(${listTable.redo}), 0)` : sql`0`);
 
         const results = getDbClient()
@@ -74,19 +73,10 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
                 userId: userMediaSettings.userId,
                 timeSpent: timeSpent.as("timeSpent"),
                 totalSpecific: totalSpecific.as("totalSpecific"),
-                statusCounts: sql`
-                    COALESCE((
-                        SELECT
-                            JSON_GROUP_OBJECT(status, count_per_status)
-                        FROM (
-                            SELECT
-                                status,
-                                COUNT(*) as count_per_status
-                            FROM ${listTable} as sub_list
-                            WHERE sub_list.user_id = ${userMediaSettings.userId} GROUP BY status
-                        )
-                    ), '{}')
-                `.as("statusCounts"),
+                statusCounts: sql`json_object(${sql.join(expectedStatuses.flatMap(status => [
+                    sql`${status}`,
+                    sql`COUNT(*) FILTER (WHERE ${listTable.status} = ${status})`,
+                ]), sql`, `)})`.mapWith((value: string): Record<Status, number> => JSON.parse(value)),
                 entriesFavorites: sql<number>`
                     COALESCE(SUM(CASE WHEN ${listTable.favorite} = 1 THEN 1 ELSE 0 END), 0)
                 `.as("entriesFavorites"),
@@ -112,31 +102,9 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
             .groupBy(userMediaSettings.userId).all();
 
         return results.map((row) => {
-            let parsed: unknown = row.statusCounts;
-
-            if (typeof parsed === "string") {
-                try {
-                    parsed = JSON.parse(parsed);
-                }
-                catch (err) {
-                    parsed = {};
-                    logger.error({ err, userId: row.userId, statusCounts: row.statusCounts }, "Failed to parse user status counts");
-                }
-            }
-
-            const parsedObj = (parsed && typeof parsed === "object")
-                ? parsed as Record<Status, number>
-                : {} as Record<Status, number>;
-
-            const statusCounts = expectedStatuses.reduce<Record<Status, number>>((acc, status) => {
-                const value = parsedObj[status];
-                acc[status] = typeof value === "number" && Number.isFinite(value) ? value : 0;
-                return acc;
-            }, {} as Record<Status, number>);
-
             return {
-                statusCounts,
                 userId: row.userId,
+                statusCounts: row.statusCounts,
                 timeSpent: Number(row.timeSpent) || 0,
                 totalRedo: Number(row.totalRedo) || 0,
                 totalEntries: Number(row.totalEntries) || 0,

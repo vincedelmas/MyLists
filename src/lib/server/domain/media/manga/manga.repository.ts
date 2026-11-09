@@ -4,6 +4,7 @@ import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {manga, mangaAuthors, mangaGenre, mangaList} from "@/lib/server/database/schema";
 import {and, eq, getTableColumns, gte, inArray, isNull, lte, or, sql} from "drizzle-orm";
+import {mediaRelationArray} from "@/lib/server/domain/media/base/media-relations.queries";
 import {UpdateMangaWithDetails, Manga, UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
 import {mangaServerDefinition, MangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 
@@ -53,13 +54,10 @@ export function createMangaRepository(definition: MangaServerDefinition = mangaS
         const details = getDbClient()
             .select({
                 ...getTableColumns(manga),
-                genres: sql`json_group_array(DISTINCT json_object('id', ${mangaGenre.id}, 'name', ${mangaGenre.name}))`.mapWith(JSON.parse),
-                authors: sql`json_group_array(DISTINCT json_object('id', ${mangaAuthors.id}, 'name', ${mangaAuthors.name}))`.mapWith(JSON.parse),
+                genres: mediaRelationArray(mangaGenre, manga.id, { id: mangaGenre.id, name: mangaGenre.name }, mangaGenre.id),
+                authors: mediaRelationArray(mangaAuthors, manga.id, { id: mangaAuthors.id, name: mangaAuthors.name }, mangaAuthors.id),
             }).from(manga)
-            .leftJoin(mangaAuthors, eq(mangaAuthors.mediaId, manga.id))
-            .leftJoin(mangaGenre, eq(mangaGenre.mediaId, manga.id))
             .where(eq(manga.id, mediaId))
-            .groupBy(...Object.values(getTableColumns(manga)))
             .get();
 
         if (!details) return;
@@ -70,8 +68,6 @@ export function createMangaRepository(definition: MangaServerDefinition = mangaS
                 name: attribution.name,
                 url: `${attribution.mediaUrl}${details.apiId}`,
             },
-            genres: details.genres || [],
-            authors: details.authors || [],
         };
 
         return result;

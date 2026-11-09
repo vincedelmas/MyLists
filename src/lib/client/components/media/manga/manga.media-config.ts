@@ -3,14 +3,12 @@ import {Building2, PenLine, XLineTop} from "lucide-react";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {MangaListItem} from "@/lib/client/components/media/manga/MangaListItem";
-import {MangaInfoGrid} from "@/lib/client/components/media/manga/MangaInfoGrid";
-import {MangaOverTitle} from "@/lib/client/components/media/manga/MangaOverTitle";
 import {defineMediaConfig} from "@/lib/client/components/media/media-config.types";
 import {MangaFollowCard} from "@/lib/client/components/media/manga/MangaFollowCard";
-import {MangaUnderTitle} from "@/lib/client/components/media/manga/MangaUnderTitle";
 import {getMangaColumns} from "@/lib/client/components/media/manga/MangaListColumns";
 import {MangaUserDetails} from "@/lib/client/components/media/manga/MangaUserDetails";
 import {getMangaContinueProgress} from "@/lib/client/components/media/manga/continue-progress";
+import {MangaInfoGrid, MangaOverTitle, MangaUnderTitle} from "@/lib/client/components/media/manga/MangaDetails";
 
 
 export const mangaMediaConfig = defineMediaConfig({

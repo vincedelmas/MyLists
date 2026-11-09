@@ -5,15 +5,13 @@ import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatLocaleName} from "@/lib/utils/formatting/text";
 import {BookListItem} from "@/lib/client/components/media/books/BookListItem";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
-import {BooksInfoGrid} from "@/lib/client/components/media/books/BooksInfoGrid";
-import {BooksOverTitle} from "@/lib/client/components/media/books/BooksOverTitle";
 import {BookFollowCard} from "@/lib/client/components/media/books/BookFollowCard";
 import {defineMediaConfig} from "@/lib/client/components/media/media-config.types";
-import {BooksUnderTitle} from "@/lib/client/components/media/books/BooksUnderTitle";
 import {BooksUserDetails} from "@/lib/client/components/media/books/BookUserDetails";
 import {getBooksColumns} from "@/lib/client/components/media/books/BooksListColumns";
 import {getBooksContinueProgress} from "@/lib/client/components/media/books/continue-progress";
 import {bookSearchFilterDefinition} from "@/lib/client/components/media/books/BookSearchFilters";
+import {BooksInfoGrid, BooksOverTitle, BooksUnderTitle} from "@/lib/client/components/media/books/BooksDetails";
 
 
 export const booksMediaConfig = defineMediaConfig({

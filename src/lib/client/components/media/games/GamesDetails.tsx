@@ -1,25 +1,63 @@
-import React, {useEffect} from "react";
-import {Link} from "@tanstack/react-router";
+import {useEffect} from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {formatDate} from "@/lib/utils/formatting/date";
+import {Link} from "@tanstack/react-router";
+import {Calendar, Clock} from "lucide-react";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {shouldCheckGameHltb} from "@/lib/utils/media/hltb";
 import {formatMinutes} from "@/lib/utils/formatting/number";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {extractYear, formatDate} from "@/lib/utils/formatting/date";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
-import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
-import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
+import type {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {gameHltbOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {MediaUnderItem, MediaUnderRating, MediaInfoGridItem, UpComingAlert} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type GamesDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
+type GamesDetailsProps = MediaDetailsProps<typeof MediaType.GAMES>;
 
 
 const gamesProgressTiming = gamesDefinition.progress.timing;
 
 
-export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps<typeof MediaType.GAMES>) => {
+export const GamesOverTitle = ({ mediaType, media }: GamesDetailsProps) => {
+    const developers = media.companies ? media.companies.filter((c) => c.developer) : [];
+
+    return (
+        <>
+            {developers.slice(0, 3).map((dev) =>
+                <Badge key={dev.id} variant="overlay">
+                    <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: dev.name }}>
+                        {dev.name}
+                    </Link>
+                </Badge>
+            )}
+        </>
+    );
+};
+
+
+export const GamesUnderTitle = ({ media }: GamesDetailsProps) => {
+    return (
+        <>
+            <MediaUnderRating
+                divisor={10}
+                voteCount={media.voteCount}
+                voteAverage={media.voteAverage}
+            />
+            <MediaUnderItem icon={Calendar}>
+                {extractYear(media.releaseDate)}
+            </MediaUnderItem>
+            <MediaUnderItem icon={Clock}>
+                {formatMinutes(media.hltbMainTime ? (media.hltbMainTime * gamesProgressTiming.minutesPerInputUnit) : null, { onlyHours: true })}
+            </MediaUnderItem>
+        </>
+    );
+};
+
+
+export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps) => {
     const queryClient = useQueryClient();
     const { data, isFetching } = useQuery(gameHltbOptions(media.id, media.hltbLastCheckedAt, shouldCheckGameHltb(media)));
 
@@ -90,5 +128,15 @@ export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps<typeof Med
                 }
             </MediaInfoGridItem>
         </>
+    );
+};
+
+
+export const GamesUpComingAlert = ({ media }: GamesDetailsProps) => {
+    return (
+        <UpComingAlert
+            title="Game Release"
+            dateString={media.releaseDate}
+        />
     );
 };

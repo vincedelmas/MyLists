@@ -1,19 +1,51 @@
-import React from "react";
-import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
+import {Link} from "@tanstack/react-router";
+import {BookOpen, Calendar} from "lucide-react";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {extractYear} from "@/lib/utils/formatting/date";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatMinutes} from "@/lib/utils/formatting/number";
 import {capitalize, formatLocaleName} from "@/lib/utils/formatting/text";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
-import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 import type {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
+import {MediaUnderItem, MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type BooksDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
+type BooksDetailsProps = MediaDetailsProps<typeof MediaType.BOOKS>;
 
 
-export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps<typeof MediaType.BOOKS>) => {
+export const BooksOverTitle = ({ mediaType, media }: BooksDetailsProps) => {
+    return (
+        <>
+            {media.authors?.slice(0, 3).map((author) =>
+                <Badge key={author.id} variant="overlay">
+                    <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: author.name }}>
+                        {author.name}
+                    </Link>
+                </Badge>
+            )}
+        </>
+    );
+};
+
+
+export const BooksUnderTitle = ({ media }: BooksDetailsProps) => {
+    const pageUnit = booksDefinition.progress.unit;
+
+    return (
+        <>
+            <MediaUnderItem icon={Calendar}>
+                {extractYear(media.releaseDate)}
+            </MediaUnderItem>
+            <MediaUnderItem icon={BookOpen}>
+                {media.pages ?? DEFAULT_DASH_FALLBACK} {pageUnit.plural}
+            </MediaUnderItem>
+        </>
+    );
+};
+
+
+export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps) => {
     const booksProgressUnit = booksDefinition.progress.unit;
     const booksProgressTiming = booksDefinition.progress.timing;
 

@@ -1,32 +1,27 @@
 import {MediaType} from "@/lib/utils/enums";
-import type {TvService, TvStatistics} from "@/lib/server/domain/media/tv";
-import type {GamesService, GamesStatistics} from "@/lib/server/domain/media/games";
-import type {MangaService, MangaStatistics} from "@/lib/server/domain/media/manga";
-import type {BooksService, BooksStatistics} from "@/lib/server/domain/media/books";
-import type {MoviesService, MoviesStatistics} from "@/lib/server/domain/media/movies";
-import type {MediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
+import type {createTvModule} from "@/lib/server/domain/media/tv";
+import type {createGamesModule} from "@/lib/server/domain/media/games";
+import type {createMangaModule} from "@/lib/server/domain/media/manga";
+import type {createBooksModule} from "@/lib/server/domain/media/books";
+import type {createMoviesModule} from "@/lib/server/domain/media/movies";
 
 
-export type MediaMonthlyActivityRegistry = MediaRegistry<Record<MediaType, MediaMonthlyActivity>>;
+export type MediaStatsRegistry = MediaModuleRegistry<"statistics">;
+export type MediaServiceRegistry = MediaModuleRegistry<"service">;
+export type MediaMonthlyActivityRegistry = MediaModuleRegistry<"monthlyActivity">;
 
 
-export type MediaStatsRegistry = MediaRegistry<{
-    [MediaType.SERIES]: TvStatistics;
-    [MediaType.ANIME]: TvStatistics;
-    [MediaType.MOVIES]: MoviesStatistics;
-    [MediaType.GAMES]: GamesStatistics;
-    [MediaType.BOOKS]: BooksStatistics;
-    [MediaType.MANGA]: MangaStatistics;
-}>;
+type MediaModule = ReturnType<
+    | typeof createTvModule
+    | typeof createGamesModule
+    | typeof createMangaModule
+    | typeof createBooksModule
+    | typeof createMoviesModule
+>;
 
 
-export type MediaServiceRegistry = MediaRegistry<{
-    [MediaType.SERIES]: TvService;
-    [MediaType.ANIME]: TvService;
-    [MediaType.MOVIES]: MoviesService;
-    [MediaType.GAMES]: GamesService;
-    [MediaType.BOOKS]: BooksService;
-    [MediaType.MANGA]: MangaService;
+type MediaModuleRegistry<TField extends keyof MediaModule> = MediaRegistry<{
+    [TModule in MediaModule as TModule["mediaType"]]: TModule[TField];
 }>;
 
 
@@ -35,12 +30,27 @@ export type MediaRegistry<TEntries extends Record<MediaType, unknown>> = {
 };
 
 
-export const createMediaRegistry = <const TEntries extends Record<MediaType, unknown>>(entries: TEntries): MediaRegistry<TEntries> => {
-    const immutableEntries = Object.freeze({ ...entries }) as Readonly<TEntries>;
+export function createMediaRegistry<const TEntries extends Record<MediaType, unknown>>(entries: TEntries): MediaRegistry<TEntries>;
+
+
+export function createMediaRegistry<
+    const TModules extends readonly { mediaType: MediaType }[],
+    TField extends keyof TModules[number]
+>(modules: TModules & (MediaType extends TModules[number]["mediaType"] ? unknown : never), field: TField): MediaRegistry<{
+    [T in MediaType]: Extract<TModules[number], { mediaType: T }>[TField];
+}>;
+
+
+export function createMediaRegistry(entries: Record<MediaType, unknown> | readonly Record<string, unknown>[], field?: string): MediaRegistry<Record<MediaType, unknown>> {
+    const immutableEntries = Object.freeze(field === undefined
+        ? { ...entries }
+        : Object.fromEntries((entries as readonly Record<string, unknown>[]).map(module => [
+            module.mediaType, module[field],
+        ]))) as Readonly<Record<MediaType, unknown>>;
 
     return Object.freeze({
-        get<TMediaType extends MediaType>(mediaType: TMediaType) {
+        get(mediaType: MediaType) {
             return immutableEntries[mediaType];
         },
     });
-};
+}

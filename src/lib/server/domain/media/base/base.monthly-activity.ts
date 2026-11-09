@@ -160,4 +160,4 @@ export const createMediaMonthlyActivity = ({ definition, repository, durationCol
 };
 
 
-export type MediaMonthlyActivity = ReturnType<typeof createMediaMonthlyActivity>;
+type MediaMonthlyActivity = ReturnType<typeof createMediaMonthlyActivity>;

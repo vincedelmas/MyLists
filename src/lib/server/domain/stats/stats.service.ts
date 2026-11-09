@@ -89,7 +89,7 @@ export class StatsService {
     // --- User Profile Summary Stats --------------------------------------------
 
     async userPreComputedStatsSummary(userId: number) {
-        const { mediaBreakdown: _mediaBreakdown, ...summary } = await this._getComputedStatsSummary({ userId });
+        const { mediaBreakdown: _mediaBreakdown, ...summary } = await this.getComputedStatsSummary({ userId });
         return summary;
     }
 
@@ -128,39 +128,59 @@ export class StatsService {
 
     // --- User Advanced Stats  --------------------------------------------------
 
-    async userAdvancedSummaryStats(userId: number) {
-        const [userPreComputedStats, platinumAchievements, updateFingerprint, activityByMonth] = await Promise.all([
-            this._getComputedStatsSummary({ userId }),
+    userAdvancedSummaryStats(userId: number) {
+        return this.getAdvancedSummaryStats(userId);
+    }
+
+    userAdvancedMediaStats(userId: number, mediaType: MediaType) {
+        return this.getAdvancedMediaStats(mediaType, userId);
+    }
+
+    // --- Platform Advanced Stats -----------------------------------------------
+
+    platformAdvancedStatsSummary() {
+        return this.getAdvancedSummaryStats();
+    }
+
+    platformMediaAdvancedStats(mediaType: MediaType) {
+        return this.getAdvancedMediaStats(mediaType);
+    }
+
+    private async getAdvancedSummaryStats(userId?: number) {
+        const activityScope = userId === undefined ? { excludeBulkImports: true } : { userId };
+        const [preComputedStats, activityByMonth, platinumAchievements, updateFingerprint] = await Promise.all([
+            this.getComputedStatsSummary({ userId }),
+            this.activityService.getActivityStatsByMonth(activityScope),
             this.achievementsRepository.countPlatinumAchievements(userId),
-            this.updateHistoryRepository.mediaUpdateFingerprint({ userId }),
-            this.activityService.getActivityStatsByMonth({ userId }),
+            this.updateHistoryRepository.mediaUpdateFingerprint(activityScope),
         ]);
 
-        const tagCountPromises = userPreComputedStats.mediaTypes.map((mediaType) => {
-            const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
-            return mediaStatistics.computeTotalTags(userId);
-        });
-        const tagCounts = await Promise.all(tagCountPromises);
-        const totalTags = tagCounts.reduce((sum, count) => sum + count, 0);
+        const tagCounts = await Promise.all(preComputedStats.mediaTypes.map(mediaType =>
+            this.mediaStatsRegistry.get(mediaType).computeTotalTags(userId)
+        ));
 
         return {
-            ...userPreComputedStats,
-            totalTags,
+            ...preComputedStats,
             activityByMonth,
             updateFingerprint,
             platinumAchievements,
+            totalTags: tagCounts.reduce((sum, count) => sum + count, 0),
         };
     }
 
-    async userAdvancedMediaStats(userId: number, mediaType: MediaType) {
+    private async getAdvancedMediaStats(mediaType: MediaType, userId?: number) {
         const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
+
+        const activityScope = userId === undefined
+            ? { mediaType, excludeBulkImports: true }
+            : { mediaType, userId };
 
         const preComputedMediaStats = await this.repository.getAggregatedMediaStats({ userId, mediaType });
 
-        const [activityByMonth, specificMediaStats, updateFingerprint] = await Promise.all([
-            this.activityService.getActivityStatsByMonth({ userId, mediaType }),
+        const [activityByMonth, updateFingerprint, specificMediaStats] = await Promise.all([
+            this.activityService.getActivityStatsByMonth(activityScope),
+            this.updateHistoryRepository.mediaUpdateFingerprint(activityScope),
             mediaStatistics.calculateAdvancedMediaStats(preComputedMediaStats.avgRated, userId),
-            this.updateHistoryRepository.mediaUpdateFingerprint({ mediaType, userId }),
         ]);
 
         return {
@@ -171,60 +191,9 @@ export class StatsService {
         };
     }
 
-    // --- Platform Advanced Stats -----------------------------------------------
-
-    async platformAdvancedStatsSummary() {
-        const [platformPreComputedStats, platinumAchievements, activityByMonth, updateFingerprint] = await Promise.all([
-            this._getComputedStatsSummary({}),
-            this.achievementsRepository.countPlatinumAchievements(),
-            this.activityService.getActivityStatsByMonth({ excludeBulkImports: true }),
-            this.updateHistoryRepository.mediaUpdateFingerprint({ excludeBulkImports: true }),
-        ]);
-
-        const tagCountPromises = platformPreComputedStats.mediaTypes.map((mediaType) => {
-            const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
-            return mediaStatistics.computeTotalTags();
-        });
-        const tagCounts = await Promise.all(tagCountPromises);
-        const totalTags = tagCounts.reduce((sum, count) => sum + count, 0);
-
-        return {
-            ...platformPreComputedStats,
-            totalTags,
-            activityByMonth,
-            updateFingerprint,
-            platinumAchievements,
-        };
-    }
-
-    async platformMediaAdvancedStats(mediaType: MediaType) {
-        const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
-        const platformPreComputedStats = await this.repository.getAggregatedMediaStats({ mediaType });
-
-        const [specificMediaStats, activityByMonth, updateFingerprint] = await Promise.all([
-            mediaStatistics.calculateAdvancedMediaStats(platformPreComputedStats.avgRated),
-            this.activityService.getActivityStatsByMonth({ mediaType, excludeBulkImports: true }),
-            this.updateHistoryRepository.mediaUpdateFingerprint({ mediaType, excludeBulkImports: true }),
-        ]);
-
-        return {
-            ...platformPreComputedStats,
-            activityByMonth,
-            updateFingerprint,
-            specificMediaStats,
-        };
-    }
-
-    private async _getComputedStatsSummary({ userId }: { userId?: number }) {
-        const {
-            totalUsers, mediaBreakdown,
-            preComputedStats, mediaTimeDistribution,
-        } = await this.repository.getPreComputedStatsSummary({ userId });
-
-        const {
-            totalRedo, totalRated, totalHours, totalEntries, totalComments,
-            totalFavorites, sumOfAllRatings, distinctMediaTypes,
-        } = preComputedStats;
+    private async getComputedStatsSummary({ userId }: { userId?: number }) {
+        const { totalUsers, mediaBreakdown, preComputedStats, mediaTimeDistribution } = await this.repository.getPreComputedStatsSummary({ userId });
+        const { totalRedo, totalRated, totalHours, totalEntries, totalComments, totalFavorites, sumOfAllRatings, distinctMediaTypes } = preComputedStats;
 
         const totalEntriesNoPlan = mediaBreakdown.reduce((total, media) => total + media.totalEntriesNoPlan, 0);
 

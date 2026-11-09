@@ -4,17 +4,14 @@ import {Building2, Gamepad2, XLineTop} from "lucide-react";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {GameListItem} from "@/lib/client/components/media/games/GameListItem";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
-import {GamesInfoGrid} from "@/lib/client/components/media/games/GamesInfoGrid";
-import {GamesOverTitle} from "@/lib/client/components/media/games/GamesOverTitle";
 import {GameFollowCard} from "@/lib/client/components/media/games/GameFollowCard";
 import {defineMediaConfig} from "@/lib/client/components/media/media-config.types";
-import {GamesUnderTitle} from "@/lib/client/components/media/games/GamesUnderTitle";
 import {getGamesColumns} from "@/lib/client/components/media/games/GamesListColumns";
 import {GamesUserDetails} from "@/lib/client/components/media/games/GamesUserDetails";
 import {GamesExtraSections} from "@/lib/client/components/media/games/GamesExtraSections";
-import {GamesUpComingAlert} from "@/lib/client/components/media/games/GamesUpComingAlert";
 import {getGamesContinueProgress} from "@/lib/client/components/media/games/continue-progress";
 import {gameSearchFilterDefinition} from "@/lib/client/components/media/games/GameSearchFilters";
+import {GamesInfoGrid, GamesOverTitle, GamesUnderTitle, GamesUpComingAlert} from "@/lib/client/components/media/games/GamesDetails";
 
 
 export const gamesMediaConfig = defineMediaConfig({

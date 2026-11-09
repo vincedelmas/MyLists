@@ -3,6 +3,8 @@ import type {HistogramBin} from "@/lib/types/stats.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
+import type {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
+import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
 import {gamesServerDefinition, GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 
@@ -91,3 +93,12 @@ export const createGamesStatistics = (definition: GamesServerDefinition = gamesS
 
 
 export type GamesStatistics = ReturnType<typeof createGamesStatistics>;
+
+
+export function createGamesMonthlyActivity(definition: GamesServerDefinition, repository: GamesRepository) {
+    return createMediaMonthlyActivity({
+        definition,
+        repository,
+        progressFromDelta: (delta) => delta.timeSpent ?? 0,
+    });
+}

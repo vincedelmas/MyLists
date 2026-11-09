@@ -1,23 +1,134 @@
-import {ApiProviderType} from "@/lib/utils/enums";
-import {GamesService} from "@/lib/server/domain/media/games/games.service";
+import {logger} from "@/lib/server/core/logger";
+import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
+import type {GamesService} from "@/lib/server/domain/media/games/games.service";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
+import type {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
-import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
-import {ExternalIGDBGamesMatcher} from "@/lib/server/domain/media/games/external-game.matcher";
-import {GamesImportListWriter} from "@/lib/server/domain/media/games/games-import-list.writer";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
+import {gamesFinalListInsertSchema, gamesImportPayloadSchema} from "@/lib/server/domain/media/games/games.types";
+import {createImportListWriter, createMediaMatcher, type ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 
 
-export const createGamesMatcher = (
-    gamesService: GamesService,
-    gamesIngestion: MediaIngestionService,
-) => createMediaMatcher({
-    internalMatchers: [
-        internalApiIdMatcher(ApiProviderType.IGDB, gamesService),
-        internalNameDateMatcher(gamesService, ApiProviderType.IGDB),
-    ],
-    externalMatchers: [
-        new ExternalIGDBGamesMatcher(gamesIngestion),
-    ],
-    listWriter: new GamesImportListWriter(gamesService),
-});
+const PROVIDER_BATCH_SIZE = 500;
+const GAME_API_RES_FAILED_REASON = "API failed for this media";
+
+
+export const createGamesMatcher = (gamesService: GamesService, gamesIngestion: MediaIngestionService) => {
+    return createMediaMatcher({
+        internalMatchers: [
+            internalApiIdMatcher(ApiProviderType.IGDB, gamesService),
+            internalNameDateMatcher(gamesService, ApiProviderType.IGDB),
+        ],
+        externalMatchers: [
+            new ExternalIGDBGamesMatcher(gamesIngestion),
+        ],
+        listWriter: createImportListWriter({
+            insertRows: gamesService.bulkInsertUserMedia,
+            toRow: (userId, { item, mediaId }) => {
+                const payload = gamesImportPayloadSchema.parse(item.payload);
+                return gamesFinalListInsertSchema.parse({ userId, mediaId, ...payload, playtime: payload.playtime ?? 0 });
+            },
+        }),
+    });
+}
+
+
+class ExternalIGDBGamesMatcher implements ExternalMediaMatcher {
+    constructor(private gamesIngestion: MediaIngestionService, private resultBatchSize = 50) {
+    }
+
+    async* match(items: ImportItemsSelect[]) {
+        let batch = this._createEmptyBatch();
+
+        const igdbItems = items.filter((item): item is ImportItemsSelect & { externalApiId: string } => this._hasIgdbExternalId(item));
+        const igdbItemIds = new Set(igdbItems.map((item) => item.id));
+
+        for (const item of items) {
+            if (!igdbItemIds.has(item.id)) {
+                batch.unresolved.push(item);
+                if (this._shouldFlush(batch)) {
+                    yield batch;
+                    batch = this._createEmptyBatch();
+                }
+            }
+        }
+
+        for (let offset = 0; offset < igdbItems.length; offset += PROVIDER_BATCH_SIZE) {
+            const chunk = igdbItems.slice(offset, offset + PROVIDER_BATCH_SIZE);
+            const chunkedApiIds = chunk.map((item) => item.externalApiId);
+
+            try {
+                const mediaIdByApiId = await this.gamesIngestion.storeBatchFromExternal(chunkedApiIds, false);
+                for (const item of chunk) {
+                    const mediaId = mediaIdByApiId.get(item.externalApiId);
+                    if (mediaId) batch.matched.push({ item, mediaId });
+                    else batch.unresolved.push(item);
+
+                    if (this._shouldFlush(batch)) {
+                        yield batch;
+                        batch = this._createEmptyBatch();
+                    }
+                }
+            }
+            catch (error) {
+                if (error instanceof ProviderRequestError && error.details.kind !== "item") {
+                    if (this._hasResults(batch)) yield batch;
+                    throw error;
+                }
+                chunk.forEach((item) => {
+                    this._logResolutionError(item, error);
+                    batch.failed.push(this._createFailedOutcome(item));
+                });
+                yield batch;
+                batch = this._createEmptyBatch();
+            }
+        }
+
+        if (this._hasResults(batch)) {
+            yield batch;
+        }
+    }
+
+    private _createEmptyBatch(): ExternalResolverResult {
+        return {
+            failed: [],
+            matched: [],
+            skipped: [],
+            unresolved: [],
+        };
+    }
+
+    private _shouldFlush(batch: ExternalResolverResult) {
+        return batch.matched.length + batch.failed.length + batch.skipped.length + batch.unresolved.length >= this.resultBatchSize;
+    }
+
+    private _hasResults(batch: ExternalResolverResult) {
+        return batch.matched.length > 0 || batch.failed.length > 0 || batch.skipped.length > 0 || batch.unresolved.length > 0;
+    }
+
+    private _hasIgdbExternalId(item: ImportItemsSelect): item is ImportItemsSelect & { externalApiId: string } {
+        return item.externalApiSource === ApiProviderType.IGDB && !!item.externalApiId;
+    }
+
+    private _createFailedOutcome(item: ImportItemsSelect) {
+        return {
+            itemId: item.id,
+            matchedMediaId: null,
+            status: ImportItemStatus.FAILED,
+            statusReason: GAME_API_RES_FAILED_REASON,
+        };
+    }
+
+    private _logResolutionError(item: ImportItemsSelect, error: unknown) {
+        logger.warn({
+            err: error,
+            itemId: item.id,
+            name: item.name,
+            jobId: item.jobId,
+            releaseDate: item.releaseDate,
+            externalApiId: item.externalApiId,
+            externalApiSource: item.externalApiSource,
+        }, "Game import API resolution failed");
+    }
+}

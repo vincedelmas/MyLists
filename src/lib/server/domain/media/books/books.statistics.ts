@@ -1,7 +1,9 @@
 import {Status} from "@/lib/utils/enums";
 import {toHistogramBins} from "@/lib/utils/stats/histogram";
-import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
+import type {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
+import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
 import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 
@@ -56,3 +58,8 @@ export const createBooksStatistics = (definition: BookServerDefinition = booksSe
 
 
 export type BooksStatistics = ReturnType<typeof createBooksStatistics>;
+
+
+export function createBooksMonthlyActivity(definition: BookServerDefinition, repository: BooksRepository) {
+    return createMediaMonthlyActivity({ definition, repository });
+}

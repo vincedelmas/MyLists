@@ -16,7 +16,6 @@ import {
 
 export type Book = typeof books.$inferSelect;
 export type BooksList = typeof booksList.$inferSelect;
-export type BooksImportPayload = z.infer<typeof booksImportPayloadSchema>;
 
 
 export type InsertBooksWithDetails = {

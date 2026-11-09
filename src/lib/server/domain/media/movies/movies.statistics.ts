@@ -1,7 +1,9 @@
 import {Status} from "@/lib/utils/enums";
 import {toHistogramBins} from "@/lib/utils/stats/histogram";
-import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
+import type {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
+import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
 import {MovieServerDefinition, moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 
@@ -78,3 +80,9 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
 
 
 export type MoviesStatistics = ReturnType<typeof createMoviesStatistics>;
+
+
+export function createMoviesMonthlyActivity(definition: MovieServerDefinition, repository: MoviesRepository) {
+    const { duration: durationColumn } = definition.repository.tables.mediaTable;
+    return createMediaMonthlyActivity({ definition, repository, durationColumn });
+}

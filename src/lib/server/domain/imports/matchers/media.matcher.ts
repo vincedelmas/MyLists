@@ -1,12 +1,47 @@
 import {ImportItemStatus} from "@/lib/utils/enums";
-import {ImportItemOutcome, ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
-import type {ExternalMediaMatcher, ImportListWriter, InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import type {ExternalResolverResult, ImportItemOutcome, ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
+
+
+export interface ImportListWriter {
+    addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]>
+}
+
+
+export interface InternalMediaMatcher {
+    match(items: ImportItemsSelect[]): Promise<{ matched: MatchedImportItem[], unresolved: ImportItemsSelect[] }>;
+}
+
+
+export interface ExternalMediaMatcher {
+    match(items: ImportItemsSelect[]): AsyncIterable<ExternalResolverResult>;
+}
+
+
+export function createImportListWriter<TRow>({ toRow, insertRows }: {
+    toRow: (userId: number, match: MatchedImportItem) => TRow;
+    insertRows: (rows: TRow[]) => Promise<unknown>;
+}): ImportListWriter {
+    return {
+        async addMatchedItems(userId, matches) {
+            if (matches.length === 0) return [];
+
+            const rows = matches.map(match => toRow(userId, match));
+            await insertRows(rows);
+
+            return matches.map(({ item, mediaId }) => ({
+                itemId: item.id,
+                matchedMediaId: mediaId,
+                status: ImportItemStatus.COMPLETED,
+            }));
+        },
+    };
+}
 
 
 export function createMediaMatcher(params: {
+    listWriter: ImportListWriter;
     internalMatchers: InternalMediaMatcher[];
     externalMatchers: ExternalMediaMatcher[];
-    listWriter: ImportListWriter;
 }) {
     const { internalMatchers, externalMatchers, listWriter } = params;
 

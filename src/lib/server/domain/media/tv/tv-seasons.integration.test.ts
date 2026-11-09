@@ -8,7 +8,7 @@ import {Status, UpdateType} from "@/lib/utils/enums";
 import {createTvRepository, type TvRepository} from "./tv.repository";
 import {createTvService, type TvService} from "./tv.service";
 
-import {TvImportListWriter} from "./tv-import-list.writer";
+import {createTvImportListWriter} from "./tv.matcher";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {MediaTrackingService} from "@/lib/server/domain/tracking/media-tracking.service";
@@ -138,7 +138,7 @@ it("validates every targeted season and scopes edits to the owner", () => {
         expect(exported[0].firstWatchProgress).toBe(24);
         const parsed = parseMyListsCsv(convertToCsv(exported));
         expect(parsed.failedCount).toBe(0);
-        const writer = new TvImportListWriter(service);
+        const writer = createTvImportListWriter(service);
         const item = { ...parsed.items[0], id: 1, jobId: 1, mediaType, matchedMediaId: 1, statusReason: null } as MatchedImportItem["item"];
         update({ type: UpdateType.RATING, rating: 10 });
         await writer.addMatchedItems(1, [{ item, mediaId: 1 }]);

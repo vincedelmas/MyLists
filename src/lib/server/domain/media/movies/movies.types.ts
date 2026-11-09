@@ -15,7 +15,6 @@ import {
 
 export type Movie = typeof movies.$inferSelect;
 export type MoviesList = typeof moviesList.$inferSelect;
-export type MoviesImportPayload = z.infer<typeof moviesImportPayloadSchema>;
 
 
 export type UpsertMovieWithDetails = {

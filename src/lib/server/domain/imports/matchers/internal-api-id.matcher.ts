@@ -1,7 +1,7 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
-import type {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import type {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 
 
 export const internalApiIdMatcher = (apiProviderType: ApiProviderType, mediaService: Pick<MediaQueries, "findByApiIds">): InternalMediaMatcher => ({

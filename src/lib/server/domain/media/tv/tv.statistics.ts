@@ -2,7 +2,9 @@ import {Status} from "@/lib/utils/enums";
 import {toHistogramBins} from "@/lib/utils/stats/histogram";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, asc, count, eq, ne, notInArray, sql} from "drizzle-orm";
+import type {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
+import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
 
@@ -77,3 +79,9 @@ export const createTvStatistics = (definition: TvDefinition) => {
 
 
 export type TvStatistics = ReturnType<typeof createTvStatistics>;
+
+
+export function createTvMonthlyActivity(definition: TvDefinition, repository: TvRepository) {
+    const { duration: durationColumn } = definition.repository.tables.mediaTable;
+    return createMediaMonthlyActivity({ definition, repository, durationColumn });
+}

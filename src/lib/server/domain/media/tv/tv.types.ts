@@ -17,7 +17,6 @@ type AnimeList = typeof animeList.$inferSelect;
 
 export type TvType = Series | Anime;
 export type TvList = SeriesList | AnimeList;
-export type TvImportPayload = z.infer<typeof tvImportPayloadSchema>;
 export type TvListUpdate = TvList & { seasonChanges?: (Pick<TvSeasonState, "season"> & Partial<Pick<TvSeasonState, "rating" | "redo">>)[] };
 
 

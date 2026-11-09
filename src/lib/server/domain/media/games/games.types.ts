@@ -15,7 +15,6 @@ import {
 
 export type Game = typeof games.$inferSelect;
 export type GamesList = typeof gamesList.$inferSelect;
-export type GamesImportPayload = z.infer<typeof gamesImportPayloadSchema>;
 
 
 export type UpsertGameWithDetails = {

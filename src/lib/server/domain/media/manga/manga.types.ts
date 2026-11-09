@@ -16,7 +16,6 @@ import {
 
 export type Manga = typeof manga.$inferSelect;
 export type MangaList = typeof mangaList.$inferSelect;
-export type MangaImportPayload = z.infer<typeof mangaImportPayloadSchema>;
 
 
 export type UpsertMangaWithDetails = {

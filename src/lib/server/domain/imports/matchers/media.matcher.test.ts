@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 import {ImportItemOutcome, ImportItemsSelect} from "@/lib/types/imports.types";
-import type {MediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
+import {createImportListWriter, type MediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {createTvMatcher} from "@/lib/server/domain/media/tv/tv.matcher";
 import {createBooksMatcher} from "@/lib/server/domain/media/books/books.matcher";
 import {createGamesMatcher} from "@/lib/server/domain/media/games/games.matcher";
@@ -121,6 +121,111 @@ describe.each(Object.values(MediaType))("%s import matching", (mediaType) => {
         });
     }
 
-    if (mediaType === MediaType.GAMES || mediaType === MediaType.BOOKS) return;
+    it("materializes completed progress using this media's own rules", async () => {
+        item.payload.redo = 2;
+        item.payload.playtime = 90;
+        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+            item.payload.seasons = [{ season: 1, redo: 2, rating: 8 }];
+        }
 
+        await processItem();
+
+        let expected: object;
+        switch (mediaType) {
+            case MediaType.BOOKS: expected = { redo: 2, actualPage: 100, total: 300 }; break;
+            case MediaType.MANGA: expected = { redo: 2, currentChapter: 100, total: 300 }; break;
+            case MediaType.MOVIES: expected = { redo: 2, total: 3 }; break;
+            case MediaType.GAMES: expected = { playtime: 90 }; break;
+            default: expected = { redo: 2, total: 30, currentSeason: 1, currentEpisode: 10, rating: 8 };
+        }
+        expect(service.bulkInsertUserMedia).toHaveBeenCalledWith([expect.objectContaining(expected)]);
+    });
+
+    it("rejects invalid payloads before inserting any entries", async () => {
+        item.payload.status = "Invalid status";
+        await expect(processItem()).rejects.toThrow();
+        expect(service.bulkInsertUserMedia).not.toHaveBeenCalled();
+    });
+
+    if (mediaType === MediaType.BOOKS || mediaType === MediaType.MANGA) {
+        it("preserves explicit progress and totals instead of replacing them with completion defaults", async () => {
+            item.payload.total = 240;
+            item.payload.actualPage = null;
+            item.payload.currentChapter = 40;
+
+            await processItem();
+
+            expect(service.bulkInsertUserMedia).toHaveBeenCalledWith([expect.objectContaining({
+                total: 240,
+                ...(mediaType === MediaType.BOOKS ? { actualPage: null } : { currentChapter: 40 }),
+            })]);
+        });
+    }
+
+    if (mediaType === MediaType.MANGA) {
+        it("uses supplied chapter progress for completed manga with an unknown length", async () => {
+            service.findById.mockReturnValue({ chapters: null });
+            item.payload.currentChapter = 40;
+            item.payload.redo = 2;
+
+            await processItem();
+
+            expect(service.bulkInsertUserMedia).toHaveBeenCalledWith([expect.objectContaining({ currentChapter: 40, total: 120 })]);
+        });
+    }
+});
+
+
+describe("import list batch writes", () => {
+    const matches = [1, 2].map(id => ({ item: { id } as ImportItemsSelect, mediaId: id * 10 }));
+
+    it("does not insert an empty batch", async () => {
+        const insertRows = vi.fn();
+        const writer = createImportListWriter({ toRow: (_userId, match) => match.mediaId, insertRows });
+        expect(await writer.addMatchedItems(42, [])).toEqual([]);
+        expect(insertRows).not.toHaveBeenCalled();
+    });
+
+    it("validates the whole batch before writing any rows", async () => {
+        const insertRows = vi.fn();
+        const writer = createImportListWriter({
+            insertRows,
+            toRow: (_userId, match) => {
+                if (match.item.id === 2) throw new Error("Invalid row");
+                return match.mediaId;
+            },
+        });
+
+        await expect(writer.addMatchedItems(42, matches)).rejects.toThrow("Invalid row");
+        expect(insertRows).not.toHaveBeenCalled();
+    });
+
+    it("reports completion only after the batch has been persisted", async () => {
+        let persist!: () => void;
+        const insertRows = vi.fn(() => new Promise<void>(resolve => { persist = resolve; }));
+        const writer = createImportListWriter({
+            insertRows,
+            toRow: (userId, { mediaId }) => ({ userId, mediaId }),
+        });
+        let completed = false;
+        const result = writer.addMatchedItems(42, matches).then(outcomes => { completed = true; return outcomes; });
+
+        await Promise.resolve();
+        expect(completed).toBe(false);
+        expect(insertRows).toHaveBeenCalledWith([{ userId: 42, mediaId: 10 }, { userId: 42, mediaId: 20 }]);
+        persist();
+        expect(await result).toEqual(matches.map(({ item, mediaId }) => ({
+            itemId: item.id, matchedMediaId: mediaId, status: ImportItemStatus.COMPLETED,
+        })));
+    });
+
+    it("propagates insertion failures without reporting successful outcomes", async () => {
+        const error = new Error("Insert failed");
+        const writer = createImportListWriter({
+            toRow: (_userId, match) => match.mediaId,
+            insertRows: vi.fn().mockRejectedValue(error),
+        });
+
+        await expect(writer.addMatchedItems(42, matches)).rejects.toBe(error);
+    });
 });

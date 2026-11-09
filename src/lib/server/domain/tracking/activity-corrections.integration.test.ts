@@ -1,3 +1,4 @@
+import {createGamesMonthlyActivity} from "@/lib/server/domain/media/games/games.statistics";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
@@ -8,7 +9,7 @@ import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import type {UpdateUserMedia} from "@/lib/schemas";
 import {allocateActivityCorrection} from "@/lib/utils/media/activity";
 import {createBooksRepository, createBooksService} from "@/lib/server/domain/media/books";
-import {createGamesRepository, createGamesService, createGamesMonthlyActivity} from "@/lib/server/domain/media/games";
+import {createGamesRepository, createGamesService} from "@/lib/server/domain/media/games";
 import {booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {gamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";

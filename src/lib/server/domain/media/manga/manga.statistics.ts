@@ -2,6 +2,8 @@ import {Status} from "@/lib/utils/enums";
 import {toHistogramBins} from "@/lib/utils/stats/histogram";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
+import type {MangaRepository} from "@/lib/server/domain/media/manga/manga.repository";
+import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
 import {mangaServerDefinition, MangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 
@@ -58,3 +60,8 @@ export const createMangaStatistics = (definition: MangaServerDefinition = mangaS
 
 
 export type MangaStatistics = ReturnType<typeof createMangaStatistics>;
+
+
+export function createMangaMonthlyActivity(definition: MangaServerDefinition, repository: MangaRepository) {
+    return createMediaMonthlyActivity({ definition, repository });
+}

@@ -1,7 +1,6 @@
 import * as z from "zod";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
-import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
 import {ApiProviderType, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {commonEditableFields, metadataTextSchema, metadataIntegerSchema} from "@/lib/media-definitions/base/media-metadata";
@@ -23,6 +22,7 @@ export const booksDefinition = defineMediaDefinition({
     maxGenres: 4,
     releaseNotifications: false,
     metadataSchema: bookMetadataSchema,
+    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLANNED],
     genres: [
         "Action & Adventure", "Biography", "Chick lit", "Children", "Classic", "Crime", "Drama",
         "Dystopian", "Essay", "Fantastic", "Fantasy", "Historical Fiction", "History", "Humor", "Horror",
@@ -37,7 +37,7 @@ export const booksDefinition = defineMediaDefinition({
         },
     },
     continue: {
-        getUpdate: (state: ContinueStateByType[typeof MediaType.BOOKS]) => {
+        getUpdate: (state: { actualPage: number | null; pages: number }) => {
             const value = state.actualPage ?? 0;
             const nextPage = Math.min(value + 10, state.pages, PROGRESS_MAX);
             if (nextPage > value) {
@@ -48,7 +48,6 @@ export const booksDefinition = defineMediaDefinition({
                 : null;
         },
     },
-    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLANNED],
     sorting: {
         default: "title_asc",
         options: [

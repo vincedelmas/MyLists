@@ -1,5 +1,6 @@
 import * as z from "zod";
-import {Status, TvMediaType, UpdateType} from "@/lib/utils/enums";
+import {Status, UpdateType} from "@/lib/utils/enums";
+import type {EpsPerSeasonType} from "@/lib/types/media-list.types";
 import {mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import type {ContinueDefinition} from "@/lib/media-definitions/base/continue.definition";
 import {commonEditableFields, metadataUrlSchema, metadataTextSchema, metadataDateSchema, metadataIntegerSchema} from "@/lib/media-definitions/base/media-metadata";
@@ -25,7 +26,11 @@ export const tvMetadataFilters = {
 };
 
 
-export const tvContinueDefinition: ContinueDefinition<TvMediaType> = {
+export const tvContinueDefinition: ContinueDefinition<{
+    currentSeason: number;
+    currentEpisode: number;
+    epsPerSeason: EpsPerSeasonType[];
+}> = {
     getUpdate: (state) => {
         const seasons = [...state.epsPerSeason].sort((a, b) => a.season - b.season);
         const current = seasons.find(season => season.season === state.currentSeason)!;

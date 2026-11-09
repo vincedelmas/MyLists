@@ -3,10 +3,11 @@ import {createInsertSchema} from "drizzle-zod";
 import {emptyStringToNull} from "@/lib/utils/formatting/text";
 import {games, gamesList} from "@/lib/server/database/schema";
 import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";
-import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
 import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
+import {minimalMyListsCSVSchema} from "@/lib/server/domain/imports/mylists-format";
 import {
     importCommentSchema,
+    importExternalNumericIdSchema,
     importFavoriteSchema,
     importPlaytimeSchema,
     importRatingSchema
@@ -57,4 +58,7 @@ export const gamesImportPayloadSchema = gamesCSVListSchema.omit({
 });
 
 
-export const gamesMyListsCSVRowSchema = minimalMyListsCSVSchema.extend(gamesImportPayloadSchema.shape);
+export const gamesMyListsCSVRowSchema = minimalMyListsCSVSchema.extend({
+    ...gamesImportPayloadSchema.shape,
+    externalApiId: importExternalNumericIdSchema,
+});

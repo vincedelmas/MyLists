@@ -1,7 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import React, {useId, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {THEME_ICONS_MAP} from "@/lib/client/theme";
+import {getThemeIcon} from "@/lib/client/theme";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {Input} from "@/lib/client/components/ui/input";
@@ -168,7 +168,7 @@ export const DynamicListEditor = ({ listId, initialSpec, initialTagNames = {}, o
                                         All media
                                     </ToggleGroupItem>
                                     {selectableMediaTypes.map(type => {
-                                        const Icon = THEME_ICONS_MAP[type];
+                                        const Icon = getThemeIcon(type);
                                         return (
                                             <ToggleGroupItem key={type} value={type}>
                                                 <Icon data-icon="inline-start"/>

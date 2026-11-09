@@ -57,7 +57,7 @@ export type MediaDefinition<TMediaType extends MediaType = MediaType> = Readonly
     statistics: MediaStatsDefinition;
     progress: MediaProgressDefinition;
     metadataSchema: z.ZodObject<z.ZodRawShape>;
-    continue: ContinueDefinition<TMediaType> | (TMediaType extends typeof MediaType.MOVIES ? null : never);
+    continue: ContinueDefinition<never> | (TMediaType extends typeof MediaType.MOVIES ? null : never);
     identity: Readonly<{
         mediaType: TMediaType;
     }>;

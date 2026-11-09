@@ -7,11 +7,14 @@ import {animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition
 import {moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
 import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import {seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
+import type {ContinueDefinition} from "@/lib/media-definitions/base/continue.definition";
 
 
 type DeclaredCommonFilterSchemas = typeof mediaDefinitions[MediaType]["filters"]["common"];
 type DeclaredMediaFilterSchemas = typeof mediaDefinitions[MediaType]["filters"]["metadata"];
+type ContinueStateByType = { [T in MediaType]: Parameters<NonNullable<MediaDefinitions[T]["continue"]>["getUpdate"]>[0] };
 type MediaDefinitions = { [Definition in typeof definitions[number] as Definition["identity"]["mediaType"]]: Definition };
+
 
 export type MediaMetadataFilterKey = MediaFilterKeyFor<MediaType>;
 export type MediaCommonFilterKey = MediaCommonFilterKeyFor<MediaType>;
@@ -63,9 +66,10 @@ export const mediaCommonFilterSchemas = Object.fromEntries(
 ) as MediaCommonFilterSchemas;
 
 
-export function getMediaDefinition<T extends MediaType>(mediaType: T): Omit<MediaDefinition<T>, "filters" | "metadataSchema"> & {
+export function getMediaDefinition<T extends MediaType>(mediaType: T): Omit<MediaDefinition<T>, "filters" | "metadataSchema" | "continue"> & {
     filters: typeof mediaDefinitions[T]["filters"];
     metadataSchema: typeof mediaDefinitions[T]["metadataSchema"];
+    continue: ContinueDefinition<ContinueStateByType[T]> | (T extends typeof MediaType.MOVIES ? null : never);
 };
 
 

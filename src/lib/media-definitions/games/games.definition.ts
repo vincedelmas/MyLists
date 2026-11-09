@@ -1,7 +1,6 @@
 import * as z from "zod";
 import {PLAYTIME_MAX_MINUTES} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
-import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
 import {ApiProviderType, GamesPlatformsEnum, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {commonMediaFilters, MAX_MEDIA_FILTER_VALUES, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {commonEditableFields, metadataTextSchema, nullableMetadataNumberSchema} from "@/lib/media-definitions/base/media-metadata";
@@ -30,7 +29,7 @@ export const gamesDefinition = defineMediaDefinition({
         },
     },
     continue: {
-        getUpdate: (state: ContinueStateByType[typeof MediaType.GAMES]) => {
+        getUpdate: (state: { playtime: number | null }) => {
             const value = state.playtime ?? 0;
             const nextPlaytime = Math.min(value + 60, PLAYTIME_MAX_MINUTES);
             return nextPlaytime > value ? { type: UpdateType.PLAYTIME, playtime: nextPlaytime } : null;

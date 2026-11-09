@@ -2,10 +2,11 @@ import * as z from "zod";
 import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {manga, mangaList} from "@/lib/server/database/schema";
-import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
 import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
+import {minimalMyListsCSVSchema} from "@/lib/server/domain/imports/mylists-format";
 import {
     importCommentSchema,
+    importExternalNumericIdSchema,
     importFavoriteSchema,
     importProgressSchema,
     importRatingSchema,
@@ -57,4 +58,7 @@ export const mangaImportPayloadSchema = mangaCSVListSchema.omit({
 });
 
 
-export const mangaMyListsCSVRowSchema = minimalMyListsCSVSchema.extend(mangaImportPayloadSchema.shape);
+export const mangaMyListsCSVRowSchema = minimalMyListsCSVSchema.extend({
+    ...mangaImportPayloadSchema.shape,
+    externalApiId: importExternalNumericIdSchema,
+});

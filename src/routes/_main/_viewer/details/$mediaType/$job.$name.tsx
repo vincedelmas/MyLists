@@ -1,4 +1,4 @@
-import {THEME_ICONS_MAP} from "@/lib/client/theme";
+import {getThemeIcon} from "@/lib/client/theme";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaDetailsJobSchema} from "@/lib/schemas";
 import {capitalize} from "@/lib/utils/formatting/text";
@@ -52,7 +52,7 @@ function JobInfoPage() {
     const apiData = useSuspenseQuery(jobDetailsQueryOptions).data;
 
     const isGrid = filters.display !== "table";
-    const MediaIcon = THEME_ICONS_MAP[mediaType];
+    const MediaIcon = getThemeIcon(mediaType);
 
     const sortingOptions = getMediaSortOptions([mediaType], false);
     const { label, icon: JobIcon, sectionTitle, descriptionVerb, descriptionSuffix } = getMediaConfig(mediaType).jobs[job]!;

@@ -1,7 +1,7 @@
 import {cn} from "@/lib/utils/classnames";
 import {Globe, Lock, Shield} from "lucide-react";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
-import {getThemeColor, THEME_ICONS_MAP} from "@/lib/client/theme";
+import {getThemeColor, getThemeIcon} from "@/lib/client/theme";
 
 
 interface MainThemeIconProps {
@@ -13,8 +13,7 @@ interface MainThemeIconProps {
 
 
 export const MainThemeIcon = ({ type, size, className, dataIcon }: MainThemeIconProps) => {
-    const IconComp = THEME_ICONS_MAP[type];
-    if (!IconComp) return null;
+    const IconComp = getThemeIcon(type);
 
     return (
         <IconComp

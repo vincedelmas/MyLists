@@ -3,10 +3,11 @@ import {serverEnv} from "@/env/server";
 import {Renderer} from "takumi-js/node";
 import {createRequire} from "node:module";
 import {FontDetails, render} from "takumi-js";
+import {RatingSystemType} from "@/lib/utils/enums";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {getImageFilename} from "@/lib/server/core/images/image-url";
-import {MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {YearRecap, YearRecapTitle} from "@/lib/types/year-recap.types";
+import {getMediaTheme} from "@/lib/client/components/media/media-theme";
 import {formatContinuousTime, formatHours, formatNumber, formatPercent} from "@/lib/utils/formatting/number";
 import {MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardStatic, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
@@ -37,14 +38,6 @@ const YEAR_RECAP_PALETTE = {
         completions: "#8c7cf4",
         activeMonths: "#f2b84b",
     },
-    media: {
-        [MediaType.SERIES]: "#51c7d5",
-        [MediaType.ANIME]: "#ef7d62",
-        [MediaType.MOVIES]: "#e6b744",
-        [MediaType.GAMES]: "#50bd67",
-        [MediaType.BOOKS]: "#ba83d4",
-        [MediaType.MANGA]: "#ea6ea8",
-    } satisfies Record<MediaType, string>,
 } as const;
 
 const YEAR_RECAP_CHART_COLORS = [
@@ -127,7 +120,10 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
         };
     }));
 
-    const accent = recap.scope === "all" ? YEAR_RECAP_PALETTE.brand : YEAR_RECAP_PALETTE.media[recap.scope];
+    const accent = recap.scope === "all"
+        ? YEAR_RECAP_PALETTE.brand
+        : getMediaTheme(recap.scope).recapColor;
+
     const maximumMonth = Math.max(...recap.months.map((month) => month.hours), 1);
     const scopeLabel = recap.scope === "all" ? "ALL MEDIA" : recap.scope.toUpperCase();
 
@@ -196,11 +192,8 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                     >
                         {title.ratingLabel &&
                             <span
+                                style={{ backgroundColor: YEAR_RECAP_PALETTE.overlay, borderColor: getMediaTheme(title.mediaType).recapColor }}
                                 className="absolute left-2 top-2 z-20 rounded-full border px-2 py-1 text-[10px] font-bold leading-none text-white"
-                                style={{
-                                    backgroundColor: YEAR_RECAP_PALETTE.overlay,
-                                    borderColor: YEAR_RECAP_PALETTE.media[title.mediaType],
-                                }}
                             >
                                 {title.ratingLabel}
                             </span>
@@ -212,10 +205,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                                 ${YEAR_RECAP_PALETTE.overlay} 58%, transparent 100%)`,
                             }}
                         >
-                            <MediaCardTitle
-                                title={title.name}
-                                className="min-w-0 truncate text-[11px] font-bold leading-[1.15]"
-                            >
+                            <MediaCardTitle title={title.name} className="min-w-0 truncate text-[11px] font-bold leading-[1.15]">
                                 {title.name}
                             </MediaCardTitle>
                             <MediaCardMeta
@@ -224,7 +214,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                             >
                                 <MediaCardDetails
                                     className="flex items-center gap-1 tracking-[0.7px]"
-                                    style={{ color: YEAR_RECAP_PALETTE.media[title.mediaType] }}
+                                    style={{ color: getMediaTheme(title.mediaType).recapColor }}
                                 >
                                     {recap.scope === "all" &&
                                         <span>{title.mediaType.toUpperCase()}</span>
@@ -305,11 +295,11 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                                 key={media.mediaType}
                                 className="flex min-w-0 flex-1 flex-col rounded-2xl px-4 py-4.5"
                                 style={{
-                                    backgroundColor: `${YEAR_RECAP_PALETTE.media[media.mediaType]}18`,
-                                    border: `1px solid ${YEAR_RECAP_PALETTE.media[media.mediaType]}55`,
+                                    backgroundColor: `${getMediaTheme(media.mediaType).recapColor}18`,
+                                    border: `1px solid ${getMediaTheme(media.mediaType).recapColor}55`,
                                 }}
                             >
-                                <span className="text-[17px] font-bold" style={{ color: YEAR_RECAP_PALETTE.media[media.mediaType] }}>
+                                <span className="text-[17px] font-bold" style={{ color: getMediaTheme(media.mediaType).recapColor }}>
                                     {capitalize(media.mediaType)}
                                 </span>
                                 <span className="mt-2 text-[25px] font-bold">

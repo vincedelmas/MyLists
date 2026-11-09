@@ -1,6 +1,7 @@
 import {getTableColumns, ne, not, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {booksMyListsCSVRowSchema} from "@/lib/server/domain/media/books/books.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
@@ -33,6 +34,7 @@ const sortColumns = {
 
 
 export const booksServerDefinition = defineServerMediaDefinition({
+    listImport: { csvRowSchema: booksMyListsCSVRowSchema },
     identity: {
         mediaType: MediaType.BOOKS,
         coverDirectory: "books-covers",

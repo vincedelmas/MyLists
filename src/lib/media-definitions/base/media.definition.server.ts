@@ -1,7 +1,9 @@
+import type z from "zod";
 import type {SQL} from "drizzle-orm";
 import type {CoverType} from "@/lib/types/media-common.types";
 import type {TopAffinityDefinition} from "@/lib/types/stats.types";
 import type {MediaEditFieldByType} from "@/lib/schemas/media-details.schema";
+import type {MyListsCSVImport} from "@/lib/server/domain/imports/mylists-format";
 import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {MediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
@@ -114,6 +116,7 @@ interface MediaRepositoryDefinition<
     TTables extends BaseMediaTables = BaseMediaTables,
     TSortDefinitions extends SortDefinitions = SortDefinitions,
     TSortColumns extends MediaSortColumns = MediaSortColumns,
+    TSelection extends BaseSelection = BaseSelection,
 > {
     readonly tables: TTables;
     readonly sortColumns: TSortColumns;
@@ -127,8 +130,8 @@ interface MediaRepositoryDefinition<
         readonly aggregates: Partial<Record<"totalRedo" | "totalSpecific" | "totalPlaytime", SQL<number>>>;
     };
     readonly listQuery: {
+        readonly selection: TSelection;
         readonly sorts: TSortDefinitions;
-        readonly selection: BaseSelection;
         readonly defaultSort: NoInfer<Extract<keyof TSortDefinitions, string>>;
     };
 }
@@ -193,13 +196,15 @@ export interface ServerMediaDefinition<
     TMediaType extends MediaType = MediaType,
     TIngestion extends MediaIngestionPolicy = MediaIngestionPolicy,
     TSortColumns extends MediaSortColumns = MediaSortColumns,
+    TSelection extends BaseSelection = BaseSelection,
 > {
     readonly ingestion: TIngestion;
     readonly attribution: ProviderAttribution;
     readonly identity: MediaIdentity<TMediaType>;
     readonly service: MediaServicePolicy<TTables, TMediaType>;
     readonly statistics: MediaStatisticsDefinition<TAffinityDefinitions>;
-    readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions, TSortColumns>;
+    readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions, TSortColumns, TSelection>;
+    readonly listImport: { readonly csvRowSchema: z.ZodObject<{ [K in keyof MyListsCSVImport]: z.ZodType<MyListsCSVImport[K]> }> };
 }
 
 
@@ -237,6 +242,7 @@ export type AnyServerMediaDefinition = {
     readonly attribution: ProviderAttribution;
     readonly repository: AnyMediaRepositoryDefinition;
     readonly statistics: AnyMediaStatisticsDefinition;
+    readonly listImport: ServerMediaDefinition["listImport"];
     readonly service: {
         readonly editableFields: readonly MediaEditFieldByType[MediaType][];
         readonly progressTotals: (state: any | null, media: any) => ProgressTotals;
@@ -251,7 +257,8 @@ export const defineServerMediaDefinition = <
     const TMediaType extends MediaType,
     const TIngestion extends MediaIngestionPolicy,
     const TSortColumns extends MediaSortColumns,
->(definition: ServerMediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion, TSortColumns>) => {
+    const TSelection extends BaseSelection,
+>(definition: ServerMediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion, TSortColumns, TSelection>) => {
     return definition;
 }
 

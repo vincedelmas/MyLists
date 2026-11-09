@@ -1,5 +1,6 @@
+import {LayoutGrid} from "lucide-react";
 import {AchievementDifficulty, MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import {BookImage, Cat, Gamepad2, LayoutGrid, Library, Monitor, Popcorn} from "lucide-react";
+import {getMediaTheme, MEDIA_THEME_COLORS} from "@/lib/client/components/media/media-theme";
 
 
 type DifficultyColorVariant = "text" | "border" | "ring" | "bg";
@@ -7,15 +8,8 @@ type ThemeColorKey = MediaType | Status | "all" | "brand" | "overview";
 type DifficultyColorKey = `${DifficultyColorVariant}-${AchievementDifficulty}`;
 
 
-export const THEME_ICONS_MAP = {
-    all: LayoutGrid,
-    overview: LayoutGrid,
-    [MediaType.SERIES]: Monitor,
-    [MediaType.ANIME]: Cat,
-    [MediaType.MOVIES]: Popcorn,
-    [MediaType.GAMES]: Gamepad2,
-    [MediaType.BOOKS]: Library,
-    [MediaType.MANGA]: BookImage,
+export const getThemeIcon = (type: MediaType | "all" | "overview") => {
+    return type === "all" || type === "overview" ? LayoutGrid : getMediaTheme(type).icon;
 };
 
 
@@ -24,12 +18,7 @@ const THEME_COLOR_MAP = {
     all: "var(--muted-foreground)",
     overview: "var(--muted-foreground)",
 
-    [MediaType.SERIES]: "var(--series)",
-    [MediaType.ANIME]: "var(--anime)",
-    [MediaType.MOVIES]: "var(--movies)",
-    [MediaType.BOOKS]: "var(--books)",
-    [MediaType.GAMES]: "var(--games)",
-    [MediaType.MANGA]: "var(--manga)",
+    ...MEDIA_THEME_COLORS,
 
     [Status.IN_PROGRESS]: "var(--in_progress)",
     [Status.PLANNED]: "var(--planned)",

@@ -1,18 +1,14 @@
-import {MediaType} from "@/lib/utils/enums";
+import type {MediaType} from "@/lib/utils/enums";
 import type {MediaListData} from "@/lib/types/media-list.types";
-import {animeList, booksList, gamesList, mangaList, moviesList, seriesList} from "@/lib/server/database/schema";
+import type {SelectResultFields} from "drizzle-orm/query-builders/select.types";
+import type {ServerMediaDefinitionFor} from "@/lib/media-definitions/definition.registry.server";
 
 
-export type TListByType = {
-    [MediaType.SERIES]: typeof seriesList.$inferSelect;
-    [MediaType.ANIME]: typeof animeList.$inferSelect;
-    [MediaType.MOVIES]: typeof moviesList.$inferSelect;
-    [MediaType.GAMES]: typeof gamesList.$inferSelect;
-    [MediaType.BOOKS]: typeof booksList.$inferSelect & { pages: number };
-    [MediaType.MANGA]: typeof mangaList.$inferSelect & { chapters: number | null };
+export type MediaListRowByType = {
+    [T in MediaType]: SelectResultFields<ServerMediaDefinitionFor<T>["repository"]["listQuery"]["selection"]>;
 };
 
 
 export type MediaListDataByType = {
-    [K in MediaType]: MediaListData<TListByType[K]>;
+    [K in MediaType]: MediaListData<MediaListRowByType[K]>;
 };

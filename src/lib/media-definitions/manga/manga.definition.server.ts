@@ -1,6 +1,7 @@
 import {getTableColumns, ne, not, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/manga.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {MANGA_FIXED_DURATION_MIN, mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
@@ -26,6 +27,7 @@ const sortColumns = {
 
 
 export const mangaServerDefinition = defineServerMediaDefinition({
+    listImport: { csvRowSchema: mangaMyListsCSVRowSchema },
     identity: {
         mediaType: MediaType.MANGA,
         coverDirectory: "manga-covers",

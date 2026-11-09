@@ -1,12 +1,10 @@
-import * as z from "zod";
 import {importItems} from "@/lib/server/database/schema";
 import type {ImportCsvType} from "@/lib/schemas/imports.schema";
-import {ApiProviderType, ImportItemStatus, ImportSource, MediaType} from "@/lib/utils/enums";
+import {ImportItemStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
 
 type ImportParser = (contents: string, fileType?: ImportCsvType) => ParsedImport;
 
-export type MyListsCSVImport = z.infer<typeof minimalMyListsCSVSchema>;
 export type ParsedImportItem = Omit<typeof importItems.$inferInsert, "jobId">;
 export type ImportParserRegistry = Partial<Record<ImportSource, ImportParser>>;
 export type ImportItemsSelect = Omit<typeof importItems.$inferSelect, "mediaType"> & { mediaType: MediaType };
@@ -52,13 +50,3 @@ export type ImportItemOutcome = {
     matchedMediaId?: null;
     status: typeof ImportItemStatus.SKIPPED | typeof ImportItemStatus.FAILED;
 };
-
-
-export const minimalMyListsCSVSchema = z.object({
-    mediaName: z.string().trim().min(1, "Media name is required"),
-    formatVersion: z.string(),
-    mediaType: z.enum(MediaType),
-    externalApiId: z.string().trim().min(1, "External media ID is required"),
-    releaseDate: z.string().nullable(),
-    externalApiSource: z.enum(ApiProviderType),
-});

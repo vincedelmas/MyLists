@@ -2,8 +2,8 @@ import * as z from "zod";
 import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {books, booksList} from "@/lib/server/database/schema";
-import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
 import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
+import {minimalMyListsCSVSchema} from "@/lib/server/domain/imports/mylists-format";
 import {
     importCommentSchema,
     importFavoriteSchema,

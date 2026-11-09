@@ -8,6 +8,9 @@ import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.d
 import type {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 
 
+export type ServerMediaDefinitionFor<T extends MediaType> = typeof serverMediaDefinitions[T];
+
+
 const definitions = [
     seriesServerDefinition,
     animeServerDefinition,

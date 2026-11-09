@@ -1,7 +1,7 @@
 import {useId} from "react";
 import type {ZodType} from "zod";
 import {cn} from "@/lib/utils/classnames";
-import {THEME_ICONS_MAP} from "@/lib/client/theme";
+import {getThemeIcon} from "@/lib/client/theme";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
@@ -60,7 +60,7 @@ function MediaEditPage() {
         },
     });
 
-    const MediaIcon = THEME_ICONS_MAP[mediaType];
+    const MediaIcon = getThemeIcon(mediaType);
     const mediaName = apiData.fields?.name ?? capitalize(mediaType);
 
     const onSubmit = (submittedData: EditMediaDetailsPayload) => {

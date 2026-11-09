@@ -1,12 +1,11 @@
 import * as z from "zod";
 import {createInsertSchema} from "drizzle-zod";
 import {MediaType, TvMediaType} from "@/lib/utils/enums";
-import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
 import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
-import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
 import {anime, animeList, series, seriesList} from "@/lib/server/database/schema";
 import {type TvSeasonState, tvSeasonStatesSchema} from "@/lib/schemas/tv-seasons.schema";
-import {importCommentSchema, importFavoriteSchema, importTotalSchema} from "@/lib/server/domain/imports/import-list-validation";
+import {minimalMyListsCSVSchema, MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
+import {importCommentSchema, importExternalNumericIdSchema, importFavoriteSchema, importTotalSchema} from "@/lib/server/domain/imports/import-list-validation";
 
 
 type Series = typeof series.$inferSelect;
@@ -56,7 +55,6 @@ const seasonalImportFields = {
 
 
 const seriesCSVListSchema = createInsertSchema(seriesList, tvListSchemaOverrides(MediaType.SERIES)).extend(seasonalImportFields);
-
 
 const animeCSVListSchema = createInsertSchema(animeList, tvListSchemaOverrides(MediaType.ANIME)).extend(seasonalImportFields);
 
@@ -114,12 +112,14 @@ export const tvFinalListInsertSchema = z.union([seriesFinalListInsertSchema, ani
 
 
 export const seriesMyListsCSVRowSchema = minimalMyListsCSVSchema.extend({
+    externalApiId: importExternalNumericIdSchema,
     ...seriesImportPayloadSchema.shape,
     formatVersion: z.literal(MYLISTS_CSV_VERSION),
 });
 
 
 export const animeMyListsCSVRowSchema = minimalMyListsCSVSchema.extend({
+    externalApiId: importExternalNumericIdSchema,
     ...animeImportPayloadSchema.shape,
     formatVersion: z.literal(MYLISTS_CSV_VERSION),
 });

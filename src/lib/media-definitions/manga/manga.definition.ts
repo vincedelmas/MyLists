@@ -1,7 +1,6 @@
 import * as z from "zod";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
-import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
 import {ApiProviderType, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {commonEditableFields, metadataTextSchema, metadataIntegerSchema, blankMetadataFieldSchema} from "@/lib/media-definitions/base/media-metadata";
@@ -33,7 +32,7 @@ export const mangaDefinition = defineMediaDefinition({
         },
     },
     continue: {
-        getUpdate: (state: ContinueStateByType[typeof MediaType.MANGA]) => {
+        getUpdate: (state: { currentChapter: number; chapters: number | null }) => {
             const nextChapter = Math.min(state.currentChapter + 1, state.chapters || PROGRESS_MAX, PROGRESS_MAX);
             if (nextChapter > state.currentChapter) {
                 return { type: UpdateType.CHAPTER, currentChapter: nextChapter };

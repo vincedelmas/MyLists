@@ -3,13 +3,8 @@ import {parse} from "csv-parse/sync";
 import {MAX_IMPORT_ROWS} from "@/lib/utils/constants";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType, Status,} from "@/lib/utils/enums";
-import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
-import {booksMyListsCSVRowSchema} from "@/lib/server/domain/media/books/books.types";
-import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/manga.types";
-import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/movies.types";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {MYLISTS_CSV_VERSION, MYLISTS_FORMAT_ERROR} from "@/lib/server/domain/imports/mylists-format";
-import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
 
 
 const parseCsvRecords = (csv: string) => {
@@ -26,17 +21,7 @@ const parseCsvRecords = (csv: string) => {
 };
 
 
-const mediaRowValidatorMap = {
-    [MediaType.SERIES]: seriesMyListsCSVRowSchema,
-    [MediaType.ANIME]: animeMyListsCSVRowSchema,
-    [MediaType.MOVIES]: moviesMyListsCSVRowSchema,
-    [MediaType.GAMES]: gamesMyListsCSVRowSchema,
-    [MediaType.BOOKS]: booksMyListsCSVRowSchema,
-    [MediaType.MANGA]: mangaMyListsCSVRowSchema,
-} satisfies Record<MediaType, z.ZodType>;
-
-
-// Normalize legacy export labels only at the import boundary.
+// Normalize legacy export labels at import boundary
 const legacyStatuses: Record<string, Status> = {
     "Plan to Watch": Status.PLANNED,
     "Plan to Play": Status.PLANNED,
@@ -73,16 +58,15 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
         throw new Error(`The CSV file contains too many rows. Maximum is ${MAX_IMPORT_ROWS}.`);
     }
 
-    // MyLists exports one media list per file; mixed mediaType is wrong CSV
+    // MyLists exports one media list per file, mixed mediaType is wrong CSV
     const firstRawRow = Object.fromEntries(headers.map((header, cellIdx) => [header, rows[0][cellIdx] ?? ""]));
+
     const result = z.enum(MediaType).safeParse(firstRawRow.mediaType);
     if (!result.success) throw new Error(MYLISTS_FORMAT_ERROR);
-    const rowSchema = mediaRowValidatorMap[result.data];
-    const mediaZodValidator = rowSchema.required().extend({
-        externalApiSource: z.literal(getServerMediaDefinition(result.data).ingestion.externalApiSource),
-        externalApiId: rowSchema.shape.externalApiId.refine(value => result.data === MediaType.BOOKS
-                || (/^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))),
-            "External media ID must be a positive whole number"),
+
+    const definition = getServerMediaDefinition(result.data);
+    const mediaZodValidator = definition.listImport.csvRowSchema.required().extend({
+        externalApiSource: z.literal(definition.ingestion.externalApiSource),
     });
 
     // Even nullable fields have a column in a current export. Missing columns must

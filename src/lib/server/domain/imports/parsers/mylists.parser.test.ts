@@ -1,9 +1,7 @@
 import {describe, expect, it} from "vitest";
+import {MYLISTS_FORMAT_ERROR} from "@/lib/server/domain/imports/mylists-format";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
-
-
-import {MYLISTS_FORMAT_ERROR} from "@/lib/server/domain/imports/mylists-format";
 
 
 const toCsv = (rows: Record<string, string>[]) => {

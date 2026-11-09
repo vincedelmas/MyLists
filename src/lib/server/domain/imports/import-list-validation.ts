@@ -39,3 +39,8 @@ export const importProgressSchema = z.preprocess(emptyStringToUndefined, z.coerc
 export const importPlaytimeSchema = z.preprocess(emptyStringToUndefined, z.coerce.number().int().min(0).max(PLAYTIME_MAX_MINUTES).optional());
 
 export const nullableImportProgressSchema = z.preprocess(emptyStringToNull, z.coerce.number().int().min(0).max(PROGRESS_MAX).nullable().optional());
+
+
+export const importExternalNumericIdSchema = z.string().trim().min(1, "External media ID is required")
+    .refine(value => /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value)),
+        "External media ID must be a positive whole number");

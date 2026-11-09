@@ -2,10 +2,11 @@ import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {and, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
+import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
-import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 const tables = {
@@ -25,6 +26,7 @@ const sortColumns = {
 
 
 export const gamesServerDefinition = defineServerMediaDefinition({
+    listImport: { csvRowSchema: gamesMyListsCSVRowSchema },
     identity: {
         mediaType: MediaType.GAMES,
         coverDirectory: "games-covers",

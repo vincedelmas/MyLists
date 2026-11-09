@@ -1,6 +1,8 @@
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {getTableColumns, not, notInArray, sql} from "drizzle-orm";
+import type {EpsPerSeasonType} from "@/lib/types/media-list.types";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {animeMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {ANIME_FALLBACK_DURATION, animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
@@ -29,6 +31,7 @@ const sortColumns = {
 
 
 export const animeServerDefinition = defineServerMediaDefinition({
+    listImport: { csvRowSchema: animeMyListsCSVRowSchema },
     identity: {
         mediaType: MediaType.ANIME,
         coverDirectory: "anime-covers",
@@ -74,7 +77,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 mediaName: anime.name,
                 duration: anime.duration,
                 imageCover: anime.imageCover,
-                epsPerSeason: sql<{ season: number; episodes: number }[]>`(
+                epsPerSeason: sql`(
                     SELECT
                         json_group_array(json_object(
                             'season', ${animeEpisodesPerSeason.season},
@@ -82,7 +85,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
                         ))
                     FROM ${animeEpisodesPerSeason}
                     WHERE ${animeEpisodesPerSeason.mediaId} = ${anime.id}
-                )`.mapWith(JSON.parse),
+                )`.mapWith((value): EpsPerSeasonType[] => JSON.parse(value)),
                 ...getTableColumns(animeList),
             },
         },

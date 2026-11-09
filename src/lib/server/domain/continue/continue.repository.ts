@@ -1,20 +1,17 @@
+import {MediaType, Status} from "@/lib/utils/enums";
 import {toItemKey} from "@/lib/utils/media/item-key";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {ContinueSearch} from "@/lib/schemas/continue.schema";
 import {and, asc, count, desc, eq, inArray, sql} from "drizzle-orm";
-import {MediaType, Status, type TvMediaType} from "@/lib/utils/enums";
-import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
+import type {MediaListRowByType} from "@/lib/server/domain/media/media-list.types";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {MediaListDataByType, TListByType} from "@/lib/server/domain/media/media-list.types";
 
 
 export type ContinueMediaType = Exclude<MediaType, typeof MediaType.MOVIES>;
 
 
 type ContinueItem = {
-    [T in ContinueMediaType]: Omit<MediaListDataByType[T]["items"][number], "common" | "ratingSystem">
-    & TListByType[T] & ContinueStateByType[T] & { mediaType: T }
-    & (T extends TvMediaType ? { duration: number } : T extends typeof MediaType.GAMES ? { hltbMainTime: number | null } : unknown);
+    [T in ContinueMediaType]: MediaListRowByType[T] & { mediaType: T };
 }[ContinueMediaType];
 
 

@@ -6,7 +6,7 @@ export const closest = (target: string, candidates: string[]) => {
     const normalizedTarget = target.toLowerCase();
 
     for (const candidate of candidates) {
-        const distance = levenshteinDistance(normalizedTarget, candidate.toLowerCase());
+        const distance = levenshteinDistance(normalizedTarget, candidate.toLowerCase(), minDistance - 1);
         if (distance < minDistance) {
             minDistance = distance;
             closestMatch = candidate;
@@ -19,7 +19,9 @@ export const closest = (target: string, candidates: string[]) => {
 };
 
 
-export const levenshteinDistance = (a: string, b: string) => {
+// With finite bound, distances above it return maxDistance + 1
+export const levenshteinDistance = (a: string, b: string, maxDistance = Infinity) => {
+    if (Math.abs(a.length - b.length) > maxDistance) return maxDistance + 1;
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
 
@@ -33,13 +35,17 @@ export const levenshteinDistance = (a: string, b: string) => {
     for (let i = 1; i <= b.length; i++) {
         let diagonal = row[0];
         row[0] = i;
+        let rowMinimum = i;
 
         for (let j = 1; j <= a.length; j++) {
             const above = row[j];
             row[j] = Math.min(diagonal + (b.charAt(i - 1) === a.charAt(j - 1) ? 0 : 1), row[j - 1] + 1, above + 1);
             diagonal = above;
+            rowMinimum = Math.min(rowMinimum, row[j]);
         }
+
+        if (rowMinimum > maxDistance) return maxDistance + 1;
     }
 
-    return row[a.length];
+    return Math.min(row[a.length], maxDistance + 1);
 };

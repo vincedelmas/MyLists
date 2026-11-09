@@ -217,31 +217,16 @@ export class StatsService {
 
     private async _getComputedStatsSummary({ userId }: { userId?: number }) {
         const {
-            preComputedStats,
-            statusCountsList,
-            mediaTimeDistribution,
-            mediaBreakdown,
-            totalUsers,
+            totalUsers, mediaBreakdown,
+            preComputedStats, mediaTimeDistribution,
         } = await this.repository.getPreComputedStatsSummary({ userId });
 
         const {
-            totalRedo,
-            totalRated,
-            totalHours,
-            totalEntries,
-            totalComments,
-            totalFavorites,
-            sumOfAllRatings,
-            distinctMediaTypes,
+            totalRedo, totalRated, totalHours, totalEntries, totalComments,
+            totalFavorites, sumOfAllRatings, distinctMediaTypes,
         } = preComputedStats;
 
-        let totalEntriesNoPlan = 0;
-        const noPlanByMediaType = new Map<MediaType, number>();
-        for (const setting of statusCountsList) {
-            const totalNoPlan = setting.totalEntries - (setting.statusCounts[Status.PLANNED] ?? 0);
-            totalEntriesNoPlan += totalNoPlan;
-            noPlanByMediaType.set(setting.mediaType, (noPlanByMediaType.get(setting.mediaType) ?? 0) + totalNoPlan);
-        }
+        const totalEntriesNoPlan = mediaBreakdown.reduce((total, media) => total + media.totalEntriesNoPlan, 0);
 
         const avgRated = (totalRated === 0) ? null : (sumOfAllRatings / totalRated);
         const percentRated = (totalEntriesNoPlan === 0) ? null : (totalRated / totalEntriesNoPlan) * 100;
@@ -252,9 +237,9 @@ export class StatsService {
         const avgFavorites = (avgDivisor === 0) ? null : (totalFavorites / avgDivisor);
 
         const mediaBreakdownWithRatios = mediaBreakdown.map((media) => {
-            const totalEntriesForMedia = media.totalEntries ?? 0;
-            const totalEntriesNoPlanForMedia = noPlanByMediaType.get(media.mediaType) ?? 0;
             const totalRatedForMedia = media.totalRated ?? 0;
+            const totalEntriesForMedia = media.totalEntries ?? 0;
+            const totalEntriesNoPlanForMedia = media.totalEntriesNoPlan;
 
             return {
                 mediaType: media.mediaType,

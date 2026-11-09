@@ -7,26 +7,46 @@ import {getRedisConnection} from "@/lib/server/core/redis-client";
 export type CacheManager = Awaited<ReturnType<typeof setupCacheManager>>;
 
 
-interface CacheStore {
-    getStoreType(): string;
+abstract class CacheStore {
+    private pending = new Map<string, Promise<unknown>>();
 
-    del(key: string): Promise<void>;
+    abstract getStoreType(): string;
 
-    get<T>(key: string): Promise<T | undefined>;
+    abstract del(key: string): Promise<void>;
 
-    increment(key: string, amount?: number): Promise<number>;
+    abstract get<T>(key: string): Promise<T | undefined>;
 
-    set(key: string, value: any, ttl?: number): Promise<void>;
+    abstract increment(key: string, amount?: number): Promise<number>;
 
-    wrap<T>(key: string, fn: () => Promise<T>, options?: { ttl?: number }): Promise<T>;
+    abstract set(key: string, value: any, ttl?: number): Promise<void>;
+
+    async wrap<T>(key: string, fn: () => Promise<T>, options?: { ttl?: number }): Promise<T> {
+        const existing = this.pending.get(key);
+        if (existing) return existing as Promise<T>;
+
+        const pending = (async () => {
+            const cached = await this.get<T>(key);
+            if (cached !== undefined) return cached;
+
+            const result = await fn();
+            await this.set(key, result, options?.ttl);
+            return result;
+        })();
+
+        this.pending.set(key, pending);
+        try {
+            return await pending;
+        }
+        finally {
+            this.pending.delete(key);
+        }
+    }
 }
 
 
-class RedisCacheStore implements CacheStore {
-    constructor(
-        private redis: Redis,
-        private defaultTtl: number,
-    ) {
+class RedisCacheStore extends CacheStore {
+    constructor(private redis: Redis, private defaultTtl: number) {
+        super();
     }
 
     async get<T>(key: string): Promise<T | undefined> {
@@ -43,18 +63,6 @@ class RedisCacheStore implements CacheStore {
         await this.redis.del(key);
     }
 
-    async wrap<T>(key: string, fn: () => Promise<T>, options?: { ttl?: number }): Promise<T> {
-        const cached = await this.get<T>(key);
-        if (cached !== undefined) {
-            return cached;
-        }
-
-        const result = await fn();
-        await this.set(key, result, options?.ttl);
-
-        return result;
-    }
-
     async increment(key: string, amount = 1) {
         const newValue = await this.redis.incrby(key, amount);
         return newValue;
@@ -66,10 +74,12 @@ class RedisCacheStore implements CacheStore {
 }
 
 
-class MemoryCacheStore implements CacheStore {
+class MemoryCacheStore extends CacheStore {
     private cache = new Map<string, { value: any; expires: number }>();
 
     constructor(private defaultTtl: number) {
+        super();
+        
         setInterval(() => {
             const now = Date.now();
 
@@ -102,18 +112,6 @@ class MemoryCacheStore implements CacheStore {
 
     async del(key: string) {
         this.cache.delete(key);
-    }
-
-    async wrap<T>(key: string, fn: () => Promise<T>, options?: { ttl?: number }): Promise<T> {
-        const cached = await this.get<T>(key);
-        if (cached !== undefined) {
-            return cached;
-        }
-
-        const result = await fn();
-        await this.set(key, result, options?.ttl);
-
-        return result;
     }
 
     async increment(key: string, amount = 1) {

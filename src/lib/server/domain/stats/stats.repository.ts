@@ -1,7 +1,7 @@
 import {SearchType} from "@/lib/schemas";
-import {MediaType} from "@/lib/utils/enums";
 import {alias} from "drizzle-orm/sqlite-core";
 import {DeltaStats} from "@/lib/types/stats.types";
+import {MediaType, Status} from "@/lib/utils/enums";
 import {UserMediaStats} from "@/lib/types/user-media.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {getPublishedMediaSettings} from "@/lib/utils/media/list-activation";
@@ -397,15 +397,6 @@ export class StatsRepository {
 
         if (!preComputedStats) throw new Error("No stats found");
 
-        const statusCountsList = await getDbClient()
-            .select({
-                mediaType: userMediaSettings.mediaType,
-                totalEntries: userMediaSettings.totalEntries,
-                statusCounts: userMediaSettings.statusCounts,
-            })
-            .from(userMediaSettings)
-            .where(activeSettings);
-
         const mediaBreakdown = await getDbClient()
             .select({
                 mediaType: userMediaSettings.mediaType,
@@ -417,6 +408,9 @@ export class StatsRepository {
                 totalComments: sum(userMediaSettings.entriesCommented).mapWith(Number),
                 totalFavorites: sum(userMediaSettings.entriesFavorites).mapWith(Number),
                 timeSpentHours: sql`sum(${userMediaSettings.timeSpent}) / 60.0`.mapWith(Number),
+                totalEntriesNoPlan: sql<number>`
+                    SUM(${userMediaSettings.totalEntries} - COALESCE(json_extract(${userMediaSettings.statusCounts}, ${`$."${Status.PLANNED}"`}), 0))`
+                    .mapWith(Number),
             })
             .from(userMediaSettings)
             .where(activeSettings)
@@ -438,7 +432,6 @@ export class StatsRepository {
         return {
             totalUsers,
             mediaBreakdown,
-            statusCountsList,
             mediaTimeDistribution,
             preComputedStats: {
                 totalRedo: preComputedStats?.totalRedo ?? 0,

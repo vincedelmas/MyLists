@@ -84,21 +84,27 @@ export function createTvRepository(definition: TvDefinition) {
     }
 
     function getUserSeasons(userId: number, mediaId: number) {
+        return getSeasonStates(mediaId, userId)
+            .map(({ listId: _listId, ...state }) => state);
+    }
+
+    function getSeasonStates(mediaId: number, userId?: number) {
         const { listTable, seasonStateTable, epsPerSeasonTable } = repoDefinition.tables;
 
         return getDbClient()
             .select({
                 redo: seasonStateTable.redo,
+                listId: seasonStateTable.listId,
                 rating: seasonStateTable.rating,
                 season: seasonStateTable.season,
                 episodes: epsPerSeasonTable.episodes,
-            }).from(seasonStateTable)
-            .innerJoin(listTable, eq(listTable.id, seasonStateTable.listId))
+            }).from(listTable)
+            .innerJoin(seasonStateTable, eq(seasonStateTable.listId, listTable.id))
             .leftJoin(epsPerSeasonTable, and(
                 eq(epsPerSeasonTable.mediaId, listTable.mediaId),
                 eq(epsPerSeasonTable.season, seasonStateTable.season),
             ))
-            .where(and(eq(listTable.userId, userId), eq(listTable.mediaId, mediaId)))
+            .where(and(userId === undefined ? undefined : eq(listTable.userId, userId), eq(listTable.mediaId, mediaId)))
             .orderBy(asc(seasonStateTable.season))
             .all();
     }
@@ -457,8 +463,17 @@ export function createTvRepository(definition: TvDefinition) {
         const hasNewSeason = newMaxSeason > oldMaxSeason;
         const usersWithMediaInTheirList = _getAllUsersWithMediaInTheirList(mediaId);
 
+        const statesByList = new Map<number, ReturnType<typeof getUserSeasons>>();
+        const seasonStates = getSeasonStates(mediaId);
+
+        for (const { listId, ...state } of seasonStates) {
+            const states = statesByList.get(listId) ?? [];
+            states.push(state);
+            statesByList.set(listId, states);
+        }
+
         for (const userMedia of usersWithMediaInTheirList) {
-            const states = getUserSeasons(userMedia.userId, mediaId);
+            const states = statesByList.get(userMedia.id) ?? [];
             const oldRedoTotal = getTvSeasonTotals(states).redoEpisodes;
 
             // Calculate Absolute Progress

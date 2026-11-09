@@ -32,7 +32,7 @@ export const MobileSearch = () => {
     const resultsRef = useRef<HTMLDivElement>(null);
 
     const categories = getSearchProviderItems(currentUser?.settings);
-    const [provider, setProvider] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.TMDB);
+    const [provider, setProvider] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.USERS);
 
     const query = search.trim();
     const debouncedSearch = useDebounce(query, 400);

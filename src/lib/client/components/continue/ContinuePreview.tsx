@@ -3,9 +3,8 @@ import {ArrowUpRight, Play} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ContinueCard} from "@/lib/client/components/continue/ContinueCard";
-import {useContinueOrder} from "@/lib/client/components/continue/use-continue-order";
 import {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
-import {groupContinueItems} from "@/lib/client/components/continue/group-continue-items";
+import {useContinueOrder, groupContinueItems} from "@/lib/client/components/continue/continue-items";
 
 
 export const ContinuePreview = ({ items, isCurrent }: { items: ContinueItem[]; isCurrent: boolean }) => {

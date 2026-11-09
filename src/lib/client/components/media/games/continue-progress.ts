@@ -1,7 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
-import {formatContinueProgress} from "@/lib/client/components/continue/format-remaining";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
-import type {ContinueItemFor, ContinueProgress} from "@/lib/client/components/continue/continue.types";
+import {formatContinueProgress, type ContinueItemFor, type ContinueProgress} from "@/lib/client/components/continue/continue.utils";
 
 
 export function getGamesContinueProgress(item: ContinueItemFor<typeof MediaType.GAMES>): ContinueProgress {
@@ -16,12 +15,9 @@ export function getGamesContinueProgress(item: ContinueItemFor<typeof MediaType.
 
     return {
         value,
-        label: formatContinueProgress(
-            `${hours}h${minutes > 0 ? ` ${minutes}m` : ""} played`,
-            total !== null ? remaining : null,
-        ),
         total,
         update: update ? { payload: update } : null,
         actionLabel: update ? `+ ${update.playtime - value} min` : "Playtime limit reached",
+        label: formatContinueProgress(`${hours}h${minutes > 0 ? ` ${minutes}m` : ""} played`, total !== null ? remaining : null),
     };
 }

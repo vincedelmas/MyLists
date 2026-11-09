@@ -12,7 +12,6 @@ import {getServerMediaDefinition} from "@/lib/media-definitions/definition.regis
 import {ImportRepository} from "./import.repository";
 import {drainImportJobs} from "./import-drain";
 import {MYLISTS_FORMAT_ERROR} from "./mylists-format";
-import {MediaMatcherRegistry} from "./matchers/media-matcher.registry";
 import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ImportJobProcessor} from "./import-job.processor";
 import {ImportService} from "./import.service";
@@ -27,13 +26,13 @@ vi.mock("@/lib/server/database/db", () => ({ get db() { return context.db; } }))
 describe.each(Object.values(MediaType))("current MyLists %s export/import", mediaType => {
     let sqlite: Database;
     let mediaModule: ReturnType<typeof setupMediaModule>;
+    let importModule: ReturnType<typeof setupImportModule>;
     let imports: ReturnType<typeof setupImportModule>["services"];
     let exported: Record<string, any>;
     let externalCall: ReturnType<typeof vi.fn>;
     const { mediaTable, listTable } = getServerMediaDefinition(mediaType).repository.tables;
 
     beforeEach(async () => {
-        MediaMatcherRegistry.clear();
         sqlite = new Database(":memory:");
         context.db = drizzle(sqlite, { schema, casing: "snake_case" });
         migrate(context.db, { migrationsFolder: "./drizzle" });
@@ -69,9 +68,10 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
         mediaModule = setupMediaModule();
         externalCall = vi.fn().mockRejectedValue(new Error("Provider unavailable"));
         const provider = { search: externalCall, storeFromExternal: externalCall, storeBatchFromExternal: externalCall };
-        imports = setupImportModule(mediaModule, {
+        importModule = setupImportModule(mediaModule, {
             registries: { externalProviders: { get: () => provider }, ingestionServices: { get: () => provider } },
-        } as any).services;
+        } as any);
+        imports = importModule.services;
         [exported] = (await mediaModule.services[mediaType].downloadMediaListAsCSV(42))!;
     });
 
@@ -103,6 +103,31 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
     });
 
     if (mediaType === MediaType.MOVIES) {
+        it("keeps each import module's matchers bound to its own providers", async () => {
+            externalCall.mockResolvedValue(100);
+            const otherExternalCall = vi.fn().mockResolvedValue(100);
+            const otherProvider = { storeFromExternal: otherExternalCall };
+            const otherModule = setupImportModule(mediaModule, {
+                registries: { externalProviders: { get: () => otherProvider }, ingestionServices: { get: () => otherProvider } },
+            } as any);
+
+            const first = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
+                convertToCsv([{ ...exported, externalApiId: "101" }]));
+            await expect(imports.importProcessor.processNextJob()).resolves.toMatchObject({
+                id: first.id, status: ImportJobStatus.COMPLETED, completedCount: 1,
+            });
+            expect(externalCall).toHaveBeenCalledOnce();
+            expect(otherExternalCall).not.toHaveBeenCalled();
+
+            const second = await otherModule.services.imports.createImportJob(44, ImportSource.MYLISTS,
+                convertToCsv([{ ...exported, externalApiId: "102" }]));
+            await expect(otherModule.services.importProcessor.processNextJob()).resolves.toMatchObject({
+                id: second.id, status: ImportJobStatus.COMPLETED, completedCount: 1,
+            });
+            expect(externalCall).toHaveBeenCalledOnce();
+            expect(otherExternalCall).toHaveBeenCalledOnce();
+        });
+
         it("preserves local matches during a provider pause, processes other jobs, and resumes unfinished rows", async () => {
             const error = new ProviderRequestError("Provider paused", {
                 provider: "test-provider", statusCode: 429, kind: "quota", retryAt: Date.now() + 86_400_000,
@@ -122,7 +147,7 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
                 .toEqual([ImportItemStatus.COMPLETED, ImportItemStatus.QUEUED]);
 
             // A fresh processor must respect the persisted pause, including during crash recovery.
-            const resumedProcessor = new ImportJobProcessor(new ImportService(ImportRepository), MediaMatcherRegistry);
+            const resumedProcessor = new ImportJobProcessor(new ImportService(ImportRepository), importModule.registries.importMatcher);
             await resumedProcessor.requeueInterruptedJobs();
             await expect(resumedProcessor.processNextJob()).resolves.toBeNull();
             context.db.update(schema.importJobs).set({ nextAttemptAt: "2000-01-01 00:00:00" }).where(eq(schema.importJobs.id, paused.id)).run();

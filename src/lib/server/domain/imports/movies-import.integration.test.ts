@@ -6,7 +6,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType, Status} from "@/lib/utils/enums";
+import {ImportItemStatus, ImportJobStatus, ImportSource, Status} from "@/lib/utils/enums";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -24,7 +24,6 @@ const { ImportRepository } = await import("@/lib/server/domain/imports/import.re
 const { createMoviesMatcher } = await import("@/lib/server/domain/media/movies/movies.matcher");
 const { createMoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
-const { MediaMatcherRegistry } = await import("@/lib/server/domain/imports/matchers/media-matcher.registry");
 const { createMoviesIngestionService } = await import("@/lib/server/api-providers/tmdb-movies.provider");
 
 
@@ -33,8 +32,6 @@ describe("movies import processing", () => {
     let db: BunSQLiteDatabase<typeof schema>;
 
     beforeEach(async () => {
-        MediaMatcherRegistry.clear();
-
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
@@ -78,10 +75,10 @@ describe("movies import processing", () => {
             findMovieIdsByImdbId: vi.fn(async (imdbId: string) => imdbMovieIds.get(imdbId)!),
         };
         const repository = createMoviesRepository();
-        MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+        const matcher = createMoviesMatcher(
             createMoviesService(repository), provider, createMoviesIngestionService(repository, provider),
-        ));
-        const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+        );
+        const processor = new ImportJobProcessor(importService, { get: () => matcher });
         const ratings = await importService.createImportJob(42, ImportSource.IMDB, [
             "Const,Title,Year,Title Type,Your Rating,Date Rated,IMDb Rating",
             "tt0137523,Fight Club,1999,Movie,7,2024-01-01,8.8",
@@ -122,12 +119,12 @@ describe("movies import processing", () => {
         ]);
         const importService = new ImportService(ImportRepository);
         const search = vi.fn();
-        MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+        const matcher = createMoviesMatcher(
             createMoviesService(createMoviesRepository()),
             { search } as any,
             { storeFromExternal: vi.fn() } as any,
-        ));
-        const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+        );
+        const processor = new ImportJobProcessor(importService, { get: () => matcher });
         const headers = "Date,Name,Year,Letterboxd URI";
         const fightClub = "2024-01-01,Fight Club,1999,https://boxd.it/2a9q";
 

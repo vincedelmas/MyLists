@@ -117,6 +117,7 @@ interface MediaRepositoryDefinition<
 > {
     readonly tables: TTables;
     readonly sortColumns: TSortColumns;
+    readonly continuePreviewCondition?: SQL;
     readonly filters: MediaFilterDefinitions;
     readonly jobs: Partial<Record<JobType, JobDefinition>>;
     readonly popularity?: {
@@ -205,6 +206,7 @@ export interface ServerMediaDefinition<
 export type AnyMediaRepositoryDefinition = {
     readonly tables: BaseMediaTables;
     readonly sortColumns: MediaSortColumns;
+    readonly continuePreviewCondition?: SQL;
     readonly filters: MediaFilterDefinitions;
     readonly popularity?: { readonly eligibility: SQL };
     readonly jobs: Partial<Record<JobType, JobDefinition>>;

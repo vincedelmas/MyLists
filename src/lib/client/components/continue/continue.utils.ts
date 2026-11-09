@@ -3,12 +3,8 @@ import type {UpdatePayload} from "@/lib/types/user-media.types";
 import type {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
 
 
-type ContinueItemsByType = {
-    [T in MediaType]: Extract<ContinueItem, { mediaType: T }>;
-};
-
-
 export type ContinueItemFor<T extends MediaType> = ContinueItemsByType[T];
+type ContinueItemsByType = { [T in MediaType]: Extract<ContinueItem, { mediaType: T }> };
 
 
 export type ContinueProgress = {
@@ -22,4 +18,15 @@ export type ContinueProgress = {
 
 export type ContinueConfig<T extends MediaType> = {
     getProgress: (item: ContinueItemFor<T>) => ContinueProgress;
+};
+
+
+export const formatContinueProgress = (position: string, remainingMinutes: number | null) => {
+    if (remainingMinutes === null || remainingMinutes <= 0) return position;
+
+    const estimate = remainingMinutes < 60
+        ? "< 1h"
+        : `~ ${Math.round(remainingMinutes / 60)}h`;
+
+    return `${position} · ${estimate} left`;
 };

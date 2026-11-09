@@ -1,7 +1,7 @@
 import {beforeEach, afterEach, describe, expect, it, vi} from "vitest";
 import {MutationObserver, QueryClient, QueryObserver} from "@tanstack/react-query";
 import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {createUserMediaCache} from "@/lib/client/components/media/user-media-cache";
+import {createUserMediaCache} from "@/lib/client/react-query/query-mutations/user-media-cache";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options/user-media.options";
 
 import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";

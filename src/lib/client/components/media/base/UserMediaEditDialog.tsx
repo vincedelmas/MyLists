@@ -4,9 +4,9 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
-import {createUserMediaCache} from "@/lib/client/components/media/user-media-cache";
-import {historyOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
+import {historyOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {createUserMediaCache} from "@/lib/client/react-query/query-mutations/user-media-cache";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 

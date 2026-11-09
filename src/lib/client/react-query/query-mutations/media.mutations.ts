@@ -3,7 +3,7 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {postCreateBook} from "@/lib/server/functions/books";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {mediaDetailsOptions, profileOptions} from "@/lib/client/react-query/query-options";
-import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
+import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/user-media-cache";
 import {postEditMediaDetails, postUpdateBookCover, refreshMediaDetails, resolveExternalMedia} from "@/lib/server/functions/media-details";
 
 

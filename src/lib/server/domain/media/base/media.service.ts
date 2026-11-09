@@ -4,18 +4,16 @@ import {DeltaStats} from "@/lib/types/stats.types";
 import {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
+import {Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import type {AddedMediaDetails} from "@/lib/types/media-common.types";
-import {JobType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
-import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
+import {SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
-import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
 import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.queries";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {MediaListArgs, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 import {createMediaCommunityQueries} from "@/lib/server/domain/media/base/media-community.queries";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 
@@ -50,62 +48,6 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         ...handlers,
     };
 
-    function getPopularMediaRefs() {
-        return repository.getPopularMediaRefs();
-    }
-
-    async function getUserFavorites(userId: number, limit = 7) {
-        return listQueries.getUserFavorites(userId, limit);
-    }
-
-    async function searchUserListByName(userId: number, query: string, limit?: number) {
-        return listQueries.searchUserListByName(userId, query, limit);
-    }
-
-    async function getUpcomingMedia(userId?: number, maxAWeek?: boolean) {
-        return repository.getUpcomingMedia(userId, maxAWeek);
-    }
-
-    async function searchMediadleSuggestion(query: string) {
-        return repository.searchMediadleSuggestion(query);
-    }
-
-    async function searchByName(query: string, limit?: number) {
-        return repository.searchByName(query, limit);
-    }
-
-    async function getListFilters(userId: number, metadataFields?: readonly MediaMetadataFilterKey[]) {
-        return listQueries.getListFilters(userId, metadataFields);
-    }
-
-    async function getTagNames(userId: number) {
-        return await tagQueries.getTagNames(userId);
-    }
-
-    async function getMediaDetailsByIds(mediaIds: number[], userId?: number) {
-        return repository.getMediaDetailsByIds(mediaIds, userId);
-    }
-
-    async function bulkInsertUserMedia(rows: TDef["repository"]["tables"]["listTable"]["$inferInsert"][]) {
-        return repository.bulkInsertUserMedia(rows);
-    }
-
-    function findById(mediaId: number) {
-        return repository.findById(mediaId);
-    }
-
-    async function findByApiIds(apiIds: (number | string)[]) {
-        return repository.findByApiIds(apiIds);
-    }
-
-    async function findUserMediaIds(userId: number, mediaIds: number[]) {
-        return repository.findUserMediaIds(userId, mediaIds);
-    }
-
-    async function findByNames(names: string[]) {
-        return repository.findByNames(names);
-    }
-
     async function downloadMediaListAsCSV(userId: number) {
         const mediaType = identity.mediaType;
         const rows = await repository.downloadMediaListAsCSV(userId);
@@ -118,14 +60,6 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
                 externalApiSource: ingestion.externalApiSource,
             } satisfies MyListsCSVImport
         });
-    }
-
-    async function getSearchListFilters(userId: number, query: string, field: MediaMetadataFilterKey) {
-        return listQueries.getSearchListFilters(userId, query, field);
-    }
-
-    async function getMediaJobDetails(job: JobType, name: string, filters: MediaCatalogBrowseFilters, userId?: number) {
-        return repository.getMediaJobDetails(job, name, filters, userId);
     }
 
     async function getMediaCommunityActivity(actor: Actor, mediaId: number, search: SearchType) {
@@ -143,14 +77,6 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
 
             return tagQueries.editUserTag(userId, tag, action, mediaId);
         });
-    }
-
-    async function getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs) {
-        return listQueries.getMediaList(currentUserId, userId, args);
-    }
-
-    async function getTagsView(userId: number) {
-        return tagQueries.getTagsView(userId);
     }
 
     function addMediaToUserList(userId: number, mediaId: number, status: Status = Status.PLANNED) {
@@ -319,36 +245,36 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
     }
 
     return {
-        findById,
         editUserTag,
-        getTagsView,
-        getTagNames,
-        findByNames,
-        getMediaList,
-        searchByName,
-        findByApiIds,
-        getListFilters,
-        findUserMediaIds,
-        getUpcomingMedia,
-        getUserFavorites,
-        getMediaJobDetails,
         addMediaToUserList,
-        getPopularMediaRefs,
         calculateDeltaStats,
-        bulkInsertUserMedia,
-        getMediaDetailsByIds,
-        searchUserListByName,
-        getSearchListFilters,
         updateUserCustomCover,
         downloadMediaListAsCSV,
         updateUserMediaDetails,
         getMediaAndUserDetails,
         removeMediaFromUserList,
-        searchMediadleSuggestion,
         getMediaCommunityActivity,
         updateUserMediaNotifications,
+        findById: repository.findById,
+        getTagsView: tagQueries.getTagsView,
+        getTagNames: tagQueries.getTagNames,
+        findByNames: repository.findByNames,
+        searchByName: repository.searchByName,
+        findByApiIds: repository.findByApiIds,
+        getMediaList: listQueries.getMediaList,
         findUserMedia: repository.findUserMedia,
+        getListFilters: listQueries.getListFilters,
+        findUserMediaIds: repository.findUserMediaIds,
+        getUpcomingMedia: repository.getUpcomingMedia,
+        getUserFavorites: listQueries.getUserFavorites,
+        getMediaJobDetails: repository.getMediaJobDetails,
+        getPopularMediaRefs: repository.getPopularMediaRefs,
+        bulkInsertUserMedia: repository.bulkInsertUserMedia,
+        getMediaDetailsByIds: repository.getMediaDetailsByIds,
+        searchUserListByName: listQueries.searchUserListByName,
+        getSearchListFilters: listQueries.getSearchListFilters,
         getReleaseCalendarMedia: repository.getReleaseCalendarMedia,
+        searchMediadleSuggestion: repository.searchMediadleSuggestion,
     };
 }
 

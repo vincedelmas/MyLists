@@ -1,14 +1,13 @@
 import {logger} from "@/lib/server/core/logger";
+import type {MediaType} from "@/lib/utils/enums";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
+import type {MediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
-import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
+import type {MediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 
 
 export class ImportJobProcessor {
-    constructor(
-        private importService: ImportService,
-        private matcherRegistry: typeof MediaMatcherRegistry,
-    ) {
+    constructor(private importService: ImportService, private matcherRegistry: MediaRegistry<Record<MediaType, MediaMatcher>>) {
     }
 
     requeueInterruptedJobs() {

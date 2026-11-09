@@ -1,7 +1,6 @@
 import {MediaType, UpdateType} from "@/lib/utils/enums";
 import {mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
-import {formatContinueProgress} from "@/lib/client/components/continue/format-remaining";
-import type {ContinueItemFor, ContinueProgress} from "@/lib/client/components/continue/continue.types";
+import {formatContinueProgress, type ContinueItemFor, type ContinueProgress} from "@/lib/client/components/continue/continue.utils";
 
 
 export function getMangaContinueProgress(item: ContinueItemFor<typeof MediaType.MANGA>): ContinueProgress {
@@ -12,12 +11,12 @@ export function getMangaContinueProgress(item: ContinueItemFor<typeof MediaType.
 
     return {
         value,
+        total: item.chapters || null,
+        update: update ? { payload: update } : null,
+        actionLabel: update?.type === UpdateType.STATUS ? "Mark completed" : update ? "+ 1 chapter" : "Progress limit reached",
         label: formatContinueProgress(
             `${value}/${item.chapters || "?"} ch`,
             item.chapters ? remaining * mangaDefinition.progress.timing.minutesPerUnit : null,
         ),
-        total: item.chapters || null,
-        update: update ? { payload: update } : null,
-        actionLabel: update?.type === UpdateType.STATUS ? "Mark completed" : update ? "+ 1 chapter" : "Progress limit reached",
     };
 }

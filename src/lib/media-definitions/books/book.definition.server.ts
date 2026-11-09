@@ -1,4 +1,4 @@
-import {getTableColumns, ne, sql} from "drizzle-orm";
+import {getTableColumns, ne, not, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
@@ -39,6 +39,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
     },
     repository: {
         sortColumns,
+        continuePreviewCondition: not(sql`COALESCE(${books.pages} > 0 AND COALESCE(${booksList.actualPage}, 0) = ${books.pages}, 0)`),
         filters: defineMediaFilterDefinitions(booksDefinition, tables, {
             langs: {
                 filterColumn: books.language,

@@ -1,15 +1,14 @@
-import {captureEvent} from "@/lib/client/analytics";
 import {UpdateType} from "@/lib/utils/enums";
 import {useNavigate} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {captureEvent} from "@/lib/client/analytics";
 import {toast} from "@/lib/client/components/ui/toast";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {getContinueMedia, postContinueMedia} from "@/lib/server/functions/continue";
 import {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
 import {historyOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
-import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
-import {userMediaEditKey} from "@/lib/client/components/media/user-media-cache";
+import {invalidateUserProgressQueries, userMediaEditKey} from "@/lib/client/react-query/query-mutations/user-media-cache";
 
 
 export const useContinueMediaMutation = ({ mediaType, mediaId, mediaName }: ContinueItem) => {

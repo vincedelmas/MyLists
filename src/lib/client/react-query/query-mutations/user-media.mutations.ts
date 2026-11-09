@@ -13,8 +13,7 @@ import {tvSeasonsOptions} from "@/lib/client/react-query/query-options/tv-season
 import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
 import {profilePinsOptions} from "@/lib/client/react-query/query-options/profile-pins.options";
 import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
-import {createUserMediaCache, userMediaEditKey} from "@/lib/client/components/media/user-media-cache";
-import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
+import {createUserMediaCache, userMediaEditKey, invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/user-media-cache";
 import {allUpdatesOptions, historyOptions, profileOptions, profileRecentFeedOptions, tagNamesOptions} from "@/lib/client/react-query/query-options";
 import {
     postAddMediaToList,
@@ -28,9 +27,9 @@ import {
 
 
 export type UpdateUserMediaMutationOptions = {
-    source?: "list_dialog" | "details";
     loggedAt?: string;
     backlogMode?: boolean;
+    source?: "list_dialog" | "details";
 }
 
 

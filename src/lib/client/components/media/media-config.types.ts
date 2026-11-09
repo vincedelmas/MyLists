@@ -5,7 +5,7 @@ import type {MediaStatsFor} from "@/lib/types/stats.types";
 import type {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
 import type {MediaFilterKeyFor} from "@/lib/media-definitions/definition.registry";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import type {ContinueConfig} from "@/lib/client/components/continue/continue.types";
+import type {ContinueConfig} from "@/lib/client/components/continue/continue.utils";
 import type {AdvancedSearchFilterDefinition} from "@/lib/types/advanced-search.types";
 import type {ColumnConfigProps} from "@/lib/client/components/media/base/BaseListTable";
 import type {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";

@@ -1,7 +1,6 @@
 import {MediaType, UpdateType} from "@/lib/utils/enums";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
-import type {ContinueItemFor, ContinueProgress} from "@/lib/client/components/continue/continue.types";
-import {formatContinueProgress} from "@/lib/client/components/continue/format-remaining";
+import {formatContinueProgress, type ContinueItemFor, type ContinueProgress} from "@/lib/client/components/continue/continue.utils";
 
 
 export function getBooksContinueProgress(item: ContinueItemFor<typeof MediaType.BOOKS>): ContinueProgress {

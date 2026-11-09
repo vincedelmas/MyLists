@@ -1,15 +1,15 @@
 import {MediaType} from "@/lib/utils/enums";
 import {MediaModule} from "@/lib/server/core/container/media.module";
+import {createTvMatcher} from "@/lib/server/domain/media/tv/tv.matcher";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {ProviderModule} from "@/lib/server/core/container/provider.module";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
-import {createTvMatcher} from "@/lib/server/domain/media/tv/tv.matcher";
-import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
+import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {createGamesMatcher} from "@/lib/server/domain/media/games/games.matcher";
 import {createBooksMatcher} from "@/lib/server/domain/media/books/books.matcher";
 import {createMangaMatcher} from "@/lib/server/domain/media/manga/manga.matcher";
 import {createMoviesMatcher} from "@/lib/server/domain/media/movies/movies.matcher";
-import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
+import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
 
 
 export function setupImportModule(mediaModule: MediaModule, providerModule: ProviderModule) {
@@ -19,7 +19,7 @@ export function setupImportModule(mediaModule: MediaModule, providerModule: Prov
     const importRepository = ImportRepository;
     const importService = new ImportService(importRepository);
 
-    const matchersService = {
+    const importMatcher = createMediaRegistry({
         series: createTvMatcher(
             MediaType.SERIES,
             mediaModule.services.series,
@@ -51,12 +51,9 @@ export function setupImportModule(mediaModule: MediaModule, providerModule: Prov
             externalProviderRegistry.get(MediaType.MANGA),
             ingestionServiceRegistry.get(MediaType.MANGA),
         ),
-    }
-    Object.entries(matchersService).forEach(([key, service]) => {
-        MediaMatcherRegistry.register(key as MediaType, service);
     });
 
-    const importProcessor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+    const importProcessor = new ImportJobProcessor(importService, importMatcher);
 
     return {
         repositories: {
@@ -67,7 +64,7 @@ export function setupImportModule(mediaModule: MediaModule, providerModule: Prov
             imports: importService,
         },
         registries: {
-            importMatcher: MediaMatcherRegistry,
+            importMatcher,
         },
     };
 }

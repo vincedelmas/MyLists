@@ -3,9 +3,8 @@ import {MediaType} from "@/lib/utils/enums";
 import {getTvContinueProgress} from "@/lib/client/components/media/tv/continue-progress";
 import {getGamesContinueProgress} from "@/lib/client/components/media/games/continue-progress";
 import {getBooksContinueProgress} from "@/lib/client/components/media/books/continue-progress";
-import {formatContinueProgress} from "./format-remaining";
 import {getMangaContinueProgress} from "@/lib/client/components/media/manga/continue-progress";
-import type {ContinueItemFor} from "./continue.types";
+import {formatContinueProgress, type ContinueItemFor} from "./continue.utils";
 
 
 describe("Continue remaining estimates", () => {

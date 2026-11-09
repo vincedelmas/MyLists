@@ -1,5 +1,5 @@
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
-import {getTableColumns, notInArray, sql} from "drizzle-orm";
+import {getTableColumns, not, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {ANIME_FALLBACK_DURATION, animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
@@ -36,6 +36,14 @@ export const animeServerDefinition = defineServerMediaDefinition({
     repository: {
         tables,
         sortColumns,
+        continuePreviewCondition: not(sql`EXISTS (
+            SELECT 1 FROM ${animeEpisodesPerSeason}
+            WHERE ${animeEpisodesPerSeason.mediaId} = ${anime.id}
+                AND ${animeEpisodesPerSeason.season} = (SELECT MAX(s.season) FROM ${animeEpisodesPerSeason} s WHERE s.media_id = ${anime.id})
+                AND ${animeEpisodesPerSeason.season} = ${animeList.currentSeason}
+                AND ${animeEpisodesPerSeason.episodes} > 0
+                AND ${animeEpisodesPerSeason.episodes} = ${animeList.currentEpisode}
+        )`),
         popularity: {
             eligibility: sql`${anime.voteCount} >= 50`,
         },

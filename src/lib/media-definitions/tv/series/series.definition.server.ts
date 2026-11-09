@@ -1,6 +1,7 @@
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
-import {getTableColumns, notInArray, sql} from "drizzle-orm";
+import {getTableColumns, not, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {SERIES_FALLBACK_DURATION, seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
@@ -14,7 +15,6 @@ import {
     seriesNetwork,
     seriesTags
 } from "@/lib/server/database/schema/media/series.schema";
-import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 
 
 const tables = {
@@ -43,7 +43,16 @@ export const seriesServerDefinition = defineServerMediaDefinition({
         coverDirectory: "series-covers",
     },
     repository: {
+        tables,
         sortColumns,
+        continuePreviewCondition: not(sql`EXISTS (
+            SELECT 1 FROM ${seriesEpisodesPerSeason}
+            WHERE ${seriesEpisodesPerSeason.mediaId} = ${series.id}
+                AND ${seriesEpisodesPerSeason.season} = (SELECT MAX(s.season) FROM ${seriesEpisodesPerSeason} s WHERE s.media_id = ${series.id})
+                AND ${seriesEpisodesPerSeason.season} = ${seriesList.currentSeason}
+                AND ${seriesEpisodesPerSeason.episodes} > 0
+                AND ${seriesEpisodesPerSeason.episodes} = ${seriesList.currentEpisode}
+        )`),
         filters: defineMediaFilterDefinitions(seriesDefinition, tables, {
             actors: {
                 searchable: true,
@@ -64,7 +73,6 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                 filterColumn: series.originCountry,
             },
         }),
-        tables,
         popularity: {
             eligibility: sql`${series.voteCount} >= 300`,
         },

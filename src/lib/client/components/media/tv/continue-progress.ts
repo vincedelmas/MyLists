@@ -1,5 +1,5 @@
 import {TvMediaType, UpdateType} from "@/lib/utils/enums";
-import {tvContinueDefinition} from "@/lib/media-definitions/tv/continue.definition";
+import {tvContinueDefinition} from "@/lib/media-definitions/tv/tv.definition";
 import {formatContinueProgress, type ContinueItemFor, type ContinueProgress} from "@/lib/client/components/continue/continue.utils";
 
 

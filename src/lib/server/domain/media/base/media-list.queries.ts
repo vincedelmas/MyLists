@@ -160,7 +160,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
             // Fetch common IDs (if in filter)
             let commonIdsSet = new Set<number>();
             if (currentUserId && currentUserId !== userId && !filterArgs.hideCommon && results.length > 0) {
-                const mediaIds = results.map((m: any) => m.mediaId);
+                const mediaIds = results.map(m => m.mediaId);
                 const commonMediaIdsResult = await getDbClient()
                     .select({ mediaId: listTable.mediaId })
                     .from(listTable)
@@ -170,14 +170,14 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
             }
 
             // Process results - add `common` field and replace `imageCover` with user's `customCover`
-            const processedResults = results.map((item: any) => ({
+            const processedResults = results.map(item => ({
                 ...item,
                 common: commonIdsSet.has(item.mediaId),
                 imageCover: item.customCover ?? item.imageCover,
             }));
 
             return {
-                items: processedResults,
+                items: processedResults as MediaListData<TRepoDef["tables"]["listTable"]["$inferSelect"]>["items"],
                 pagination: {
                     page,
                     perPage,

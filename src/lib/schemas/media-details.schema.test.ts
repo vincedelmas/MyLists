@@ -1,6 +1,7 @@
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {describe, expect, it} from "vitest";
 import {MediaType} from "@/lib/utils/enums";
-import {editMediaDetailsPayloadSchemas, editMediaDetailsSchema} from "./media-details.schema";
+import {editMediaDetailsSchema} from "./media-details.schema";
 
 
 describe("metadata edit validation", () => {
@@ -12,11 +13,11 @@ describe("metadata edit validation", () => {
         }).payload).toEqual({
             duration: 120, budget: 0, revenue: 12.5, lockStatus: false, releaseDate: null, homepage: null, imageCover: undefined,
         });
-        expect(editMediaDetailsPayloadSchemas[MediaType.GAMES].parse({ hltbMainTime: "2.5", hltbMainAndExtraTime: "" }))
+        expect(getMediaDefinition(MediaType.GAMES).metadataSchema.parse({ hltbMainTime: "2.5", hltbMainAndExtraTime: "" }))
             .toEqual({ hltbMainTime: 2.5, hltbMainAndExtraTime: null });
-        expect(editMediaDetailsPayloadSchemas[MediaType.BOOKS].parse({ pages: "250", authors: "" }))
+        expect(getMediaDefinition(MediaType.BOOKS).metadataSchema.parse({ pages: "250", authors: "" }))
             .toEqual({ pages: 250, authors: "" });
-        expect(editMediaDetailsPayloadSchemas[MediaType.MANGA].parse({ chapters: null, genres: [] }))
+        expect(getMediaDefinition(MediaType.MANGA).metadataSchema.parse({ chapters: null, genres: [] }))
             .toEqual({ chapters: null, genres: [] });
     });
 

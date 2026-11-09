@@ -1,22 +1,14 @@
+import type z from "zod";
 import type {MediaSortKey} from "@/lib/media-definitions/base/media-sorting";
-import type {commonMediaFilters, MediaFilterSchemas} from "@/lib/media-definitions/base/media-filters";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {ContinueDefinition} from "@/lib/media-definitions/base/continue.definition";
+import type {commonMediaFilters, MediaFilterSchemas} from "@/lib/media-definitions/base/media-filters";
 
 
 type MediaProgressTiming =
-    | Readonly<{
-    kind: "fixed";
-    minutesPerUnit: number;
-}>
-    | Readonly<{
-    kind: "media-duration";
-    fallbackMinutes: number;
-}>
-    | Readonly<{
-    kind: "stored-minutes";
-    minutesPerInputUnit: number;
-}>;
+    | Readonly<{ kind: "fixed"; minutesPerUnit: number }>
+    | Readonly<{ kind: "media-duration"; fallbackMinutes: number }>
+    | Readonly<{ kind: "stored-minutes"; minutesPerInputUnit: number }>;
 
 
 type MediaStatsDefinition = Readonly<{
@@ -64,6 +56,7 @@ export type MediaDefinition<TMediaType extends MediaType = MediaType> = Readonly
     releaseNotifications: boolean;
     statistics: MediaStatsDefinition;
     progress: MediaProgressDefinition;
+    metadataSchema: z.ZodObject<z.ZodRawShape>;
     continue: ContinueDefinition<TMediaType> | (TMediaType extends typeof MediaType.MOVIES ? null : never);
     identity: Readonly<{
         mediaType: TMediaType;

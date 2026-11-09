@@ -11,6 +11,7 @@ import {seriesDefinition} from "@/lib/media-definitions/tv/series/series.definit
 
 type DeclaredCommonFilterSchemas = typeof mediaDefinitions[MediaType]["filters"]["common"];
 type DeclaredMediaFilterSchemas = typeof mediaDefinitions[MediaType]["filters"]["metadata"];
+type MediaDefinitions = { [Definition in typeof definitions[number] as Definition["identity"]["mediaType"]]: Definition };
 
 export type MediaMetadataFilterKey = MediaFilterKeyFor<MediaType>;
 export type MediaCommonFilterKey = MediaCommonFilterKeyFor<MediaType>;
@@ -38,24 +39,20 @@ export type MediaMetadataFilterSchemas = {
 };
 
 
-export const ALL_MEDIA_TYPES = [
-    MediaType.SERIES,
-    MediaType.ANIME,
-    MediaType.MOVIES,
-    MediaType.BOOKS,
-    MediaType.GAMES,
-    MediaType.MANGA,
-] as const satisfies readonly MediaType[];
+const definitions = [
+    seriesDefinition,
+    animeDefinition,
+    moviesDefinition,
+    booksDefinition,
+    gamesDefinition,
+    mangaDefinition,
+] as const satisfies readonly { [T in MediaType]: MediaDefinition<T> }[MediaType][];
 
 
-const mediaDefinitions = {
-    [MediaType.SERIES]: seriesDefinition,
-    [MediaType.ANIME]: animeDefinition,
-    [MediaType.MOVIES]: moviesDefinition,
-    [MediaType.GAMES]: gamesDefinition,
-    [MediaType.BOOKS]: booksDefinition,
-    [MediaType.MANGA]: mangaDefinition,
-} satisfies { [T in MediaType]: MediaDefinition<T> };
+const mediaDefinitions = Object.fromEntries(definitions.map(definition => [definition.identity.mediaType, definition])) as MediaDefinitions;
+
+
+export const ALL_MEDIA_TYPES: readonly MediaType[] = definitions.map(definition => definition.identity.mediaType);
 
 
 export const RELEASE_NOTIFICATION_MEDIA_TYPES = ALL_MEDIA_TYPES.filter(m => mediaDefinitions[m].releaseNotifications);
@@ -66,8 +63,9 @@ export const mediaCommonFilterSchemas = Object.fromEntries(
 ) as MediaCommonFilterSchemas;
 
 
-export function getMediaDefinition<T extends MediaType>(mediaType: T): Omit<MediaDefinition<T>, "filters"> & {
+export function getMediaDefinition<T extends MediaType>(mediaType: T): Omit<MediaDefinition<T>, "filters" | "metadataSchema"> & {
     filters: typeof mediaDefinitions[T]["filters"];
+    metadataSchema: typeof mediaDefinitions[T]["metadataSchema"];
 };
 
 

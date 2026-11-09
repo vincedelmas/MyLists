@@ -1,7 +1,8 @@
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
-import {createMediaEditPayloadSchema, editMediaDetailsPayloadSchemas} from "@/lib/schemas/media-details.schema";
+import {createMediaEditPayloadSchema} from "@/lib/schemas/media-details.schema";
 import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {type BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
@@ -67,7 +68,7 @@ describe("validated metadata edits", () => {
     it.each(Object.values(MediaType))("updates only submitted fields for %s", async (mediaType) => {
         const service = services[mediaType];
         const before = service.findById(1)!;
-        const payload = Object.freeze(editMediaDetailsPayloadSchemas[mediaType].parse({ name: "Updated", lockStatus: "false" }));
+        const payload = Object.freeze(getMediaDefinition(mediaType).metadataSchema.parse({ name: "Updated", lockStatus: "false" }));
 
         await service.updateMediaEditableFields(1, payload);
 
@@ -91,7 +92,7 @@ describe("validated metadata edits", () => {
         expect(formSchema.safeParse(fields).success).toBe(true);
         for (const payload of [{ chapters: 60 }, { genres: [] }, { imageCover: "https://example.com/cover.jpg" }]) {
             // The value is valid, but the definition no longer permits editing it.
-            expect(editMediaDetailsPayloadSchemas[MediaType.MANGA].safeParse(payload).success).toBe(true);
+            expect(getMediaDefinition(MediaType.MANGA).metadataSchema.safeParse(payload).success).toBe(true);
             expect(formSchema.safeParse(payload).success).toBe(false);
             await expect(service.updateMediaEditableFields(1, { name: "Must not be saved", ...payload })).rejects.toThrow();
         }
@@ -153,7 +154,7 @@ describe("validated metadata edits", () => {
         await service.updateMediaEditableFields(1, { chapters: 100 });
         expect(db.select().from(schema.mangaGenre).all()).toMatchObject([{ name: "Original genre" }]);
 
-        const payload = editMediaDetailsPayloadSchemas[MediaType.MANGA].parse({ genres: ["Drama", { name: "Drama" }, "Action"] });
+        const payload = getMediaDefinition(MediaType.MANGA).metadataSchema.parse({ genres: ["Drama", { name: "Drama" }, "Action"] });
         await service.updateMediaEditableFields(1, payload);
         expect(db.select({ name: schema.mangaGenre.name }).from(schema.mangaGenre).where(eq(schema.mangaGenre.mediaId, 1)).orderBy(schema.mangaGenre.name).all())
             .toEqual([{ name: "Action" }, { name: "Drama" }]);

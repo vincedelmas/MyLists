@@ -3,12 +3,11 @@ import {Actor} from "@/lib/server/authorization";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import type {AddedMediaDetails} from "@/lib/types/media-common.types";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
-import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
+import {formatMyListsCsvExport} from "@/lib/server/domain/imports/mylists-format";
 import {SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.queries";
@@ -49,17 +48,8 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
     };
 
     async function downloadMediaListAsCSV(userId: number) {
-        const mediaType = identity.mediaType;
         const rows = await repository.downloadMediaListAsCSV(userId);
-
-        return rows?.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, releaseNotificationsEnabled: _releaseNotificationsEnabled, ...row }) => {
-            return {
-                ...row,
-                mediaType,
-                formatVersion: MYLISTS_CSV_VERSION,
-                externalApiSource: ingestion.externalApiSource,
-            } satisfies MyListsCSVImport
-        });
+        return formatMyListsCsvExport(rows, identity.mediaType, ingestion.externalApiSource);
     }
 
     async function getMediaCommunityActivity(actor: Actor, mediaId: number, search: SearchType) {

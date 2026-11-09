@@ -1,5 +1,28 @@
+import * as z from "zod";
 import {Status, TvMediaType, UpdateType} from "@/lib/utils/enums";
+import {mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import type {ContinueDefinition} from "@/lib/media-definitions/base/continue.definition";
+import {commonEditableFields, metadataUrlSchema, metadataTextSchema, metadataDateSchema, metadataIntegerSchema} from "@/lib/media-definitions/base/media-metadata";
+
+
+export const tvMetadataSchema = z.strictObject({
+    ...commonEditableFields,
+    homepage: metadataUrlSchema,
+    createdBy: metadataTextSchema,
+    prodStatus: metadataTextSchema,
+    lastAirDate: metadataDateSchema,
+    originalName: metadataTextSchema,
+    originCountry: metadataTextSchema,
+    duration: metadataIntegerSchema.optional(),
+});
+
+
+export const tvMetadataFilters = {
+    langs: mediaFilterNamesSchema,
+    actors: mediaFilterNamesSchema,
+    creators: mediaFilterNamesSchema,
+    networks: mediaFilterNamesSchema,
+};
 
 
 export const tvContinueDefinition: ContinueDefinition<TvMediaType> = {
@@ -17,7 +40,7 @@ export const tvContinueDefinition: ContinueDefinition<TvMediaType> = {
         }
 
         return state.currentSeason === seasons.at(-1)!.season
-            && state.currentEpisode === current.episodes && current.episodes > 0
+        && state.currentEpisode === current.episodes && current.episodes > 0
             ? { type: UpdateType.STATUS, status: Status.COMPLETED }
             : null;
     },

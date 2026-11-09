@@ -4,10 +4,24 @@ import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definiti
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
 import {ApiProviderType, GamesPlatformsEnum, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {commonMediaFilters, MAX_MEDIA_FILTER_VALUES, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
+import {commonEditableFields, metadataTextSchema, nullableMetadataNumberSchema} from "@/lib/media-definitions/base/media-metadata";
+
+
+const gameMetadataSchema = z.strictObject({
+    ...commonEditableFields,
+    gameModes: metadataTextSchema,
+    gameEngine: metadataTextSchema,
+    playerPerspective: metadataTextSchema,
+    hltbMainTime: nullableMetadataNumberSchema,
+    hltbMainAndExtraTime: nullableMetadataNumberSchema,
+    hltbTotalCompleteTime: nullableMetadataNumberSchema,
+});
 
 
 export const gamesDefinition = defineMediaDefinition({
     releaseNotifications: true,
+    metadataSchema: gameMetadataSchema,
+    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER, Status.ON_HOLD, Status.DROPPED, Status.PLANNED],
     filters: {
         common: commonMediaFilters,
         metadata: {
@@ -22,7 +36,6 @@ export const gamesDefinition = defineMediaDefinition({
             return nextPlaytime > value ? { type: UpdateType.PLAYTIME, playtime: nextPlaytime } : null;
         },
     },
-    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER, Status.ON_HOLD, Status.DROPPED, Status.PLANNED],
     sorting: {
         default: "playtime_highest",
         options: [

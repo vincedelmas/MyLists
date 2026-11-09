@@ -8,7 +8,7 @@ import {withTransaction} from "@/lib/server/database/async-storage";
 import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {createMediaService} from "@/lib/server/domain/media/base/media.service";
-import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
+import {formatMyListsCsvExport} from "@/lib/server/domain/imports/mylists-format";
 import {TvList, TvListUpdate, TvType} from "@/lib/server/domain/media/tv/tv.types";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
@@ -21,7 +21,6 @@ type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
 
 export function createTvService(repository: TvRepository, definition: TvDefinition) {
     const { identity, service: servicePolicy } = definition;
-
     const editPayloadSchema = createMediaEditPayloadSchema(identity.mediaType, servicePolicy.editableFields);
 
     const service = createMediaService(repository, definition, {
@@ -49,13 +48,7 @@ export function createTvService(repository: TvRepository, definition: TvDefiniti
 
     async function downloadMediaListAsCSV(userId: number) {
         const rows = await repository.downloadMediaListAsCSV(userId);
-
-        return rows.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, releaseNotificationsEnabled: _releaseNotificationsEnabled, ...row }) => ({
-            ...row,
-            mediaType: identity.mediaType,
-            formatVersion: MYLISTS_CSV_VERSION,
-            externalApiSource: definition.ingestion.externalApiSource,
-        }));
+        return formatMyListsCsvExport(rows, identity.mediaType, definition.ingestion.externalApiSource);
     }
 
     async function updateMediaEditableFields(mediaId: number, payload: EditMediaDetailsPayloadByType[typeof MediaType.SERIES | typeof MediaType.ANIME]) {

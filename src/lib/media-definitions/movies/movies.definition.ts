@@ -1,13 +1,31 @@
-import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
+import * as z from "zod";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
+import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
+import {commonEditableFields, metadataTextSchema, metadataUrlSchema, nullableMetadataNumberSchema, metadataIntegerSchema} from "@/lib/media-definitions/base/media-metadata";
 
 
 export const MOVIES_FALLBACK_DURATION = 100;
 
 
+const movieMetadataSchema = z.strictObject({
+    ...commonEditableFields,
+    tagline: metadataTextSchema,
+    homepage: metadataUrlSchema,
+    originalName: metadataTextSchema,
+    directorName: metadataTextSchema,
+    budget: nullableMetadataNumberSchema,
+    originalLanguage: metadataTextSchema,
+    revenue: nullableMetadataNumberSchema,
+    duration: metadataIntegerSchema.optional(),
+});
+
+
 export const moviesDefinition = defineMediaDefinition({
+    continue: null,
     releaseNotifications: true,
+    metadataSchema: movieMetadataSchema,
+    statuses: [Status.COMPLETED, Status.PLANNED],
     filters: {
         common: commonMediaFilters,
         metadata: {
@@ -16,8 +34,6 @@ export const moviesDefinition = defineMediaDefinition({
             langs: mediaFilterNamesSchema,
         },
     },
-    continue: null,
-    statuses: [Status.COMPLETED, Status.PLANNED],
     sorting: {
         default: "title_asc",
         options: [

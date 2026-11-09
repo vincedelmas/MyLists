@@ -1,21 +1,21 @@
 import {commonMediaFilters} from "@/lib/media-definitions/base/media-filters";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {tvMetadataFilters} from "@/lib/media-definitions/tv/filters.definition";
-import {tvContinueDefinition} from "@/lib/media-definitions/tv/continue.definition";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
+import {tvContinueDefinition, tvMetadataFilters, tvMetadataSchema} from "@/lib/media-definitions/tv/tv.definition";
 
 
 export const ANIME_FALLBACK_DURATION = 24;
 
 
 export const animeDefinition = defineMediaDefinition({
+    releaseNotifications: true,
+    continue: tvContinueDefinition,
+    metadataSchema: tvMetadataSchema,
+    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLANNED],
     filters: {
         common: commonMediaFilters,
         metadata: tvMetadataFilters,
     },
-    releaseNotifications: true,
-    continue: tvContinueDefinition,
-    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLANNED],
     sorting: {
         default: "title_asc",
         options: [

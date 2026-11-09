@@ -66,13 +66,6 @@ export type PaginatedMonthlyActivityFilter = {
 }
 
 
-export type WrappedMonthlyActivityResult = {
-    count: number;
-    timeGained: number;
-    progressTotal: number;
-}
-
-
 export type MonthlyActivityMediaRef = {
     mediaId: number;
     mediaType: MediaType;

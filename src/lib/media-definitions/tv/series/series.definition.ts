@@ -1,8 +1,7 @@
 import {commonMediaFilters} from "@/lib/media-definitions/base/media-filters";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {tvMetadataFilters} from "@/lib/media-definitions/tv/filters.definition";
-import {tvContinueDefinition} from "@/lib/media-definitions/tv/continue.definition";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
+import {tvContinueDefinition, tvMetadataFilters, tvMetadataSchema} from "@/lib/media-definitions/tv/tv.definition";
 
 
 export const SERIES_FALLBACK_DURATION = 40;
@@ -11,6 +10,7 @@ export const SERIES_FALLBACK_DURATION = 40;
 export const seriesDefinition = defineMediaDefinition({
     releaseNotifications: true,
     continue: tvContinueDefinition,
+    metadataSchema: tvMetadataSchema,
     statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLANNED],
     filters: {
         common: commonMediaFilters,

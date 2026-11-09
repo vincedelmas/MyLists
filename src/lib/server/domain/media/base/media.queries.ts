@@ -15,7 +15,7 @@ import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema"
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
-import {and, asc, count, desc, eq, exists, getTableColumns, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, SQL, sql} from "drizzle-orm";
+import {and, asc, count, desc, eq, exists, getTableColumns, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, sql} from "drizzle-orm";
 
 
 const SIMILAR_MAX_GENRES = 10;
@@ -173,27 +173,6 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .where(inArray(mediaTable.id, uniqueMediaIds));
     }
 
-    async function getMediaDurationsByIds(mediaIds: number[]) {
-        const { mediaType } = identity;
-        const { mediaTable } = repoDefinition.tables;
-
-        const uniqueMediaIds = [...new Set(mediaIds)];
-        if (uniqueMediaIds.length === 0) return [];
-
-        const hasDuration = mediaType === MediaType.SERIES || mediaType === MediaType.ANIME || mediaType === MediaType.MOVIES;
-        const durationColumn = hasDuration
-            ? (mediaTable as typeof mediaTable & { duration: SQL<number> }).duration
-            : sql<number | null>`NULL`;
-
-        return getDbClient()
-            .select({
-                id: mediaTable.id,
-                duration: durationColumn,
-            })
-            .from(mediaTable)
-            .where(inArray(mediaTable.id, uniqueMediaIds));
-    }
-
     function findById(mediaId: number): TMediaTableSelect | undefined {
         const { mediaTable } = repoDefinition.tables;
 
@@ -322,7 +301,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         };
     }
 
-    async function downloadMediaListAsCSV(userId: number): Promise<(TListTableSelect & ExportMediaList)[] | undefined> {
+    async function downloadMediaListAsCSV(userId: number): Promise<(TListTableSelect & ExportMediaList)[]> {
         const { mediaTable, listTable } = repoDefinition.tables;
 
         return getDbClient()
@@ -472,7 +451,6 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         bulkInsertUserMedia,
         getPopularMediaRefs,
         getMediaDetailsByIds,
-        getMediaDurationsByIds,
         updateUserMediaDetails,
         downloadMediaListAsCSV,
         removeMediaFromUserList,

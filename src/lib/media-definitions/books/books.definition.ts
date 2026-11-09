@@ -1,16 +1,28 @@
+import * as z from "zod";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
 import {ApiProviderType, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
+import {commonEditableFields, metadataTextSchema, metadataIntegerSchema} from "@/lib/media-definitions/base/media-metadata";
 
 
 export const BOOKS_FIXED_DURATION_MIN = 1.7;
 
 
+const bookMetadataSchema = z.strictObject({
+    ...commonEditableFields,
+    language: metadataTextSchema,
+    publishers: metadataTextSchema,
+    authors: z.string().optional(),
+    pages: metadataIntegerSchema.optional(),
+});
+
+
 export const booksDefinition = defineMediaDefinition({
     maxGenres: 4,
     releaseNotifications: false,
+    metadataSchema: bookMetadataSchema,
     genres: [
         "Action & Adventure", "Biography", "Chick lit", "Children", "Classic", "Crime", "Drama",
         "Dystopian", "Essay", "Fantastic", "Fantasy", "Historical Fiction", "History", "Humor", "Horror",

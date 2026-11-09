@@ -1,15 +1,30 @@
+import * as z from "zod";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
 import {ApiProviderType, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
+import {commonEditableFields, metadataTextSchema, metadataIntegerSchema, blankMetadataFieldSchema} from "@/lib/media-definitions/base/media-metadata";
 
 
 export const MANGA_FIXED_DURATION_MIN = 7;
 
 
+const mangaMetadataSchema = z.strictObject({
+    ...commonEditableFields,
+    publishers: metadataTextSchema,
+    chapters: z.union([metadataIntegerSchema, blankMetadataFieldSchema]).nullable().optional(),
+    genres: z.array(z.union([
+        z.string().trim().min(1),
+        z.strictObject({ name: z.string().trim().min(1) }),
+    ])).optional(),
+});
+
+
 export const mangaDefinition = defineMediaDefinition({
     releaseNotifications: false,
+    metadataSchema: mangaMetadataSchema,
+    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLANNED],
     filters: {
         common: commonMediaFilters,
         metadata: {
@@ -28,7 +43,6 @@ export const mangaDefinition = defineMediaDefinition({
                 : null;
         },
     },
-    statuses: [Status.IN_PROGRESS, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLANNED],
     sorting: {
         default: "title_asc",
         options: [

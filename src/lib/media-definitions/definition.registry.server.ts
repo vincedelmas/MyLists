@@ -8,14 +8,19 @@ import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.d
 import type {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 
 
-const serverMediaDefinitions = {
-    [MediaType.SERIES]: seriesServerDefinition,
-    [MediaType.ANIME]: animeServerDefinition,
-    [MediaType.MOVIES]: moviesServerDefinition,
-    [MediaType.GAMES]: gamesServerDefinition,
-    [MediaType.BOOKS]: booksServerDefinition,
-    [MediaType.MANGA]: mangaServerDefinition,
-} as const satisfies Record<MediaType, AnyServerMediaDefinition>;
+const definitions = [
+    seriesServerDefinition,
+    animeServerDefinition,
+    moviesServerDefinition,
+    gamesServerDefinition,
+    booksServerDefinition,
+    mangaServerDefinition,
+] as const;
+
+
+const serverMediaDefinitions = Object.fromEntries(definitions.map(definition => [definition.identity.mediaType, definition])) as {
+    [Definition in typeof definitions[number] as Definition["identity"]["mediaType"]]: Definition;
+} satisfies Record<MediaType, AnyServerMediaDefinition>;
 
 
 export const getServerMediaDefinition = (mediaType: MediaType): AnyServerMediaDefinition => {

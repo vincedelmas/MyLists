@@ -1,15 +1,13 @@
 import * as z from "zod";
-import {MediaType} from "@/lib/utils/enums";
 import {imageUrlSchema} from "@/lib/schemas/common.schema";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
-import {editMediaDetailsPayloadSchemas} from "@/lib/schemas/media-details.schema";
 
 
 export type CreateBookInput = z.input<typeof createBookSchema>;
 export type CreateBookPayload = z.output<typeof createBookSchema>;
 
 
-const bookFields = editMediaDetailsPayloadSchemas[MediaType.BOOKS].pick({
+const bookFields = booksDefinition.metadataSchema.pick({
     name: true, authors: true, pages: true, language: true, publishers: true,
     releaseDate: true, synopsis: true, imageCover: true,
 });

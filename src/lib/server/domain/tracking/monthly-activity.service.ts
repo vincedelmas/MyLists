@@ -15,8 +15,7 @@ import {
     LogMonthlyActivityFromDelta,
     MonthlyActivityChartDatum,
     MonthlyActivityEditor,
-    MonthlyActivityOccurrence,
-    WrappedMonthlyActivityResult
+    MonthlyActivityOccurrence
 } from "@/lib/types/activity.types";
 
 
@@ -96,21 +95,15 @@ export class MonthlyActivityService {
         const activities = await this.repository.getMonthlyStatsContributions(userId, mediaTypes, range.startMonth, range.endMonth);
         const mediaDetailsByType = await resolveMonthlyActivityMedia(activities, this.mediaMonthlyActivityRegistry);
 
-        const activityRecord = Object.fromEntries(mediaTypes.map((mediaType) => {
+        const mediaStats = mediaTypes.map((mediaType) => {
             const monthlyActivity = this.mediaMonthlyActivityRegistry.get(mediaType);
             const contributions = activities.filter((activity) => activity.mediaType === mediaType);
+            
             const mediaById = mediaDetailsByType.get(mediaType) ?? new Map();
+            const { count, timeGained, progressTotal } = monthlyActivity.summarize(contributions, mediaById);
 
-            return [mediaType, monthlyActivity.summarize(contributions, mediaById)];
-        })) as Record<MediaType, WrappedMonthlyActivityResult>;
-
-        const mediaStats = mediaTypes
-            .map((mediaType) => ({
-                mediaType,
-                count: activityRecord[mediaType].count,
-                timeGained: activityRecord[mediaType].timeGained,
-                progressTotal: activityRecord[mediaType].progressTotal,
-            }))
+            return { mediaType, count, timeGained, progressTotal };
+        })
             .filter((stat) => stat.timeGained > 0 || stat.progressTotal > 0)
             .sort((a, b) => b.timeGained - a.timeGained);
 

@@ -7,17 +7,19 @@ import {animeMediaConfig, seriesMediaConfig} from "@/lib/client/components/media
 import {AdvancedSearchConfig, MediaClientConfig, MediaConfigRegistry} from "@/lib/client/components/media/media-config.types";
 
 
-export const mediaConfig: MediaConfigRegistry = {
-    [MediaType.SERIES]: seriesMediaConfig,
-    [MediaType.ANIME]: animeMediaConfig,
-    [MediaType.MOVIES]: moviesMediaConfig,
-    [MediaType.GAMES]: gamesMediaConfig,
-    [MediaType.BOOKS]: booksMediaConfig,
-    [MediaType.MANGA]: mangaMediaConfig,
+const mediaConfigValues = [
+    seriesMediaConfig,
+    animeMediaConfig,
+    moviesMediaConfig,
+    gamesMediaConfig,
+    booksMediaConfig,
+    mangaMediaConfig,
+] as const;
+
+
+export const mediaConfig: MediaConfigRegistry = Object.fromEntries(mediaConfigValues.map(config => [config.mediaType, config])) as {
+    [Config in typeof mediaConfigValues[number] as Config["mediaType"]]: Config;
 };
-
-
-const mediaConfigValues = Object.values(mediaConfig);
 
 
 export const getMediaConfig = <T extends MediaType>(mediaType: T): MediaClientConfig<T> => {

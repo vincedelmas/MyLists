@@ -8,7 +8,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType, SocialState, UpdateType} from "@/lib/utils/enums";
 import {Actor, followFeedProfileVisibilityCondition} from "@/lib/server/authorization";
 import {followers, user, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
-import {and, count, countDistinct, desc, eq, getTableColumns, gt, gte, inArray, isNull, like, SQL, sql} from "drizzle-orm";
+import {and, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, like, SQL, sql} from "drizzle-orm";
 
 
 const BULK_IMPORT_GRACE_MONTHS = 2;
@@ -133,23 +133,12 @@ export class UpdateHistoryRepository {
         const likelyBulkMonths = excludeBulkImports ? this._likelyBulkImportUserMonths() : null;
         if (likelyBulkMonths) conditions.push(isNull(likelyBulkMonths.userId));
 
-        const summaryQuery = getDbClient()
+        const updatesQuery = getDbClient()
             .select({
-                lastUpdateAt: sql<string | null>`max(${userMediaUpdate.timestamp})`,
-                firstUpdateAt: sql<string | null>`min(${userMediaUpdate.timestamp})`,
-                activeDays: countDistinct(sql`date(${userMediaUpdate.timestamp})`).mapWith(Number),
-            })
-            .from(userMediaUpdate)
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.active, true),
-                eq(userMediaSettings.userId, userMediaUpdate.userId),
-                eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
-            ))
-            .$dynamic();
-
-        const updateTypesQuery = getDbClient()
-            .select({
-                value: count(),
+                mediaId: userMediaUpdate.mediaId,
+                timestamp: userMediaUpdate.timestamp,
+                mediaName: userMediaUpdate.mediaName,
+                mediaType: userMediaUpdate.mediaType,
                 updateType: userMediaUpdate.updateType,
             })
             .from(userMediaUpdate)
@@ -157,51 +146,59 @@ export class UpdateHistoryRepository {
                 eq(userMediaSettings.active, true),
                 eq(userMediaSettings.userId, userMediaUpdate.userId),
                 eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
-            ))
-            .$dynamic();
-
-        const mostTouchedQuery = getDbClient()
-            .select({
-                updates: count(),
-                mediaId: userMediaUpdate.mediaId,
-                mediaName: userMediaUpdate.mediaName,
-                mediaType: userMediaUpdate.mediaType,
-            })
-            .from(userMediaUpdate)
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.active, true),
-                eq(userMediaSettings.userId, userMediaUpdate.userId),
-                eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
-            ))
-            .$dynamic();
+            )).$dynamic();
 
         if (likelyBulkMonths) {
-            const bulkJoin = and(
+            updatesQuery.leftJoin(likelyBulkMonths, and(
                 eq(userMediaUpdate.userId, likelyBulkMonths.userId),
                 eq(sql<string>`strftime('%Y-%m', ${userMediaUpdate.timestamp})`, likelyBulkMonths.monthBucket),
-            );
-            summaryQuery.leftJoin(likelyBulkMonths, bulkJoin);
-            updateTypesQuery.leftJoin(likelyBulkMonths, bulkJoin);
-            mostTouchedQuery.leftJoin(likelyBulkMonths, bulkJoin);
+            ));
         }
 
-        const where = conditions.length > 0 ? and(...conditions) : undefined;
-        const [summary, updateTypes, mostTouched] = await Promise.all([
-            summaryQuery.where(where).get(),
-            updateTypesQuery.where(where).groupBy(userMediaUpdate.updateType).orderBy(desc(count())),
-            mostTouchedQuery
-                .where(where)
-                .groupBy(userMediaUpdate.mediaType, userMediaUpdate.mediaId, userMediaUpdate.mediaName)
-                .orderBy(desc(count()))
-                .get(),
-        ]);
+        const [result] = getDbClient().all<{
+            activeDays: number;
+            updateTypes: string;
+            mostTouched: string | null;
+            lastUpdateAt: string | null;
+            firstUpdateAt: string | null;
+        }>(sql`
+            WITH fingerprint_updates AS MATERIALIZED (
+                ${updatesQuery.where(and(...conditions)).getSQL()}
+            )
+            SELECT
+                MAX(timestamp) AS lastUpdateAt,
+                MIN(timestamp) AS firstUpdateAt,
+                COUNT(DISTINCT date(timestamp)) AS activeDays,
+                (
+                    SELECT json_group_array(json_object('value', value, 'updateType', update_type))
+                    FROM (
+                        SELECT update_type, COUNT(*) AS value
+                        FROM fingerprint_updates
+                        GROUP BY update_type
+                        ORDER BY value DESC
+                    )
+                ) AS updateTypes,
+                (
+                    SELECT json_object('updates', COUNT(*), 'mediaId', media_id, 'mediaName', media_name, 'mediaType', media_type)
+                    FROM fingerprint_updates
+                    GROUP BY media_type, media_id, media_name
+                    ORDER BY COUNT(*) DESC
+                    LIMIT 1
+                ) AS mostTouched
+            FROM fingerprint_updates
+        `);
 
         return {
-            updateTypes,
-            mostTouched: mostTouched ?? null,
-            activeDays: summary?.activeDays ?? 0,
-            lastUpdateAt: summary?.lastUpdateAt ?? null,
-            firstUpdateAt: summary?.firstUpdateAt ?? null,
+            activeDays: result.activeDays,
+            lastUpdateAt: result.lastUpdateAt,
+            firstUpdateAt: result.firstUpdateAt,
+            updateTypes: JSON.parse(result.updateTypes) as { value: number; updateType: UpdateType }[],
+            mostTouched: result.mostTouched === null ? null : JSON.parse(result.mostTouched) as {
+                updates: number;
+                mediaId: number;
+                mediaName: string;
+                mediaType: MediaType;
+            },
         };
     }
 
@@ -216,9 +213,9 @@ export class UpdateHistoryRepository {
                 .select({ ...getTableColumns(userMediaUpdate) })
                 .from(userMediaUpdate)
                 .innerJoin(userMediaSettings, and(
+                    eq(userMediaSettings.active, true),
                     eq(userMediaSettings.userId, userMediaUpdate.userId),
                     eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
-                    eq(userMediaSettings.active, true),
                 ))
                 .where(eq(userMediaUpdate.userId, userId))
                 .orderBy(desc(userMediaUpdate.timestamp), desc(userMediaUpdate.id))
@@ -317,8 +314,8 @@ export class UpdateHistoryRepository {
             .from(bulkUpdate)
             .innerJoin(user, eq(user.id, bulkUpdate.userId))
             .where(and(
-                gte(sql<string>`strftime('%Y-%m', ${bulkUpdate.timestamp})`, sql<string>`strftime('%Y-%m', ${user.createdAt})`),
-                sql`strftime('%Y-%m', ${bulkUpdate.timestamp}) < strftime('%Y-%m', date(${user.createdAt}, 'start of month', '+' || ${BULK_IMPORT_GRACE_MONTHS} || ' months'))`,
+                gte(bulkUpdate.timestamp, sql<string>`date(${user.createdAt}, 'start of month')`),
+                sql`${bulkUpdate.timestamp} < date(${user.createdAt}, 'start of month', '+' || ${BULK_IMPORT_GRACE_MONTHS} || ' months')`,
             ))
             .groupBy(bulkUpdate.userId, sql`strftime('%Y-%m', ${bulkUpdate.timestamp})`)
             .having(gt(count(), BULK_IMPORT_UPDATE_THRESHOLD))

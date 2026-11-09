@@ -6,7 +6,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {TopAffinity, TopAffinityDefinition} from "@/lib/types/stats.types";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {and, asc, count, countDistinct, desc, eq, exists, gte, inArray, isNotNull, ne, sql} from "drizzle-orm";
+import {and, asc, count, countDistinct, desc, eq, gte, inArray, isNotNull, ne, sql} from "drizzle-orm";
 
 
 type AffinityResults<TDefinition extends AnyServerMediaDefinition> = {
@@ -33,13 +33,12 @@ export const getMediaStatsUserScope = (listUserId: SQLiteColumn, mediaType: Medi
         return eq(listUserId, userId);
     }
 
-    return exists(
+    return inArray(listUserId,
         getDbClient()
-            .select({ value: sql<number>`1` })
+            .select({ userId: userMediaSettings.userId })
             .from(userMediaSettings)
             .where(and(
                 eq(userMediaSettings.active, true),
-                eq(userMediaSettings.userId, listUserId),
                 eq(userMediaSettings.mediaType, mediaType),
             )),
     );
@@ -246,7 +245,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
             .where(and(forUser, isNotNull(metricNameCol), ...filters))
             .groupBy(metricNameCol)
             .having(gte(sql`COUNT(${metricNameCol})`, minRatingCount))
-            .orderBy(desc(affinityExpr))
+            .orderBy(desc(affinityExpr), asc(metricNameCol))
             .limit(limit);
 
         return results.map((row) => ({

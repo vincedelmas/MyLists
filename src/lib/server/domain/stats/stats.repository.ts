@@ -6,8 +6,8 @@ import {UserMediaStats} from "@/lib/types/user-media.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {getPublishedMediaSettings} from "@/lib/utils/media/list-activation";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
-import {and, count, countDistinct, eq, gt, inArray, SQL, sql, sum} from "drizzle-orm";
 import {user, userMediaSettings, userMediaStatsHistory} from "@/lib/server/database/schema";
+import {and, count, countDistinct, eq, exists, gt, inArray, SQL, sql, sum} from "drizzle-orm";
 
 
 export class StatsRepository {
@@ -227,13 +227,15 @@ export class StatsRepository {
 
         // Get Total Count for Pagination
         const totalCounter = getDbClient()
-            .with(allUsersRanked)
-            .select({ count: sql<number>`count(*)` })
-            .from(allUsersRanked);
-
-        if (search) {
-            totalCounter.where(sql`lower(${allUsersRanked.name}) LIKE lower(${`%${search}%`})`);
-        }
+            .select({ count: count() })
+            .from(user)
+            .where(and(
+                search ? sql`lower(${user.name}) LIKE lower(${`%${search}%`})` : undefined,
+                exists(getDbClient()
+                    .select({ id: userMediaSettings.id })
+                    .from(userMediaSettings)
+                    .where(eq(userMediaSettings.userId, user.id))),
+            ));
 
         const totalResult = totalCounter.get();
         const total = totalResult?.count ?? 0;

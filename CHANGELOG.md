@@ -1,5 +1,33 @@
 # Changelog
 
+## [3.19.1](https://github.com/vincedelmas/MyLists/compare/v3.19.0...v3.19.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **admin:** remove task history deletion confirmation ([923748f](https://github.com/vincedelmas/MyLists/commit/923748f146674df03e1247ee814d713221c8d9b6))
+* **admin:** streamline log viewer controls and increase height ([1ce74b9](https://github.com/vincedelmas/MyLists/commit/1ce74b9eec1fb880827693b1d12b31985fbff474))
+* **stats:** avoid division by zero for all-planned lists ([5eaf1d8](https://github.com/vincedelmas/MyLists/commit/5eaf1d8e1fbed2eb0fb072bd557f4aa6a450a97c))
+
+
+### Performance Improvements
+
+* reduce redundant queries and duplicate search work ([5db0b2b](https://github.com/vincedelmas/MyLists/commit/5db0b2b92033f2911396873dedf7d9e01b94f5f9))
+* **stats:** reduce repeated scans and ranking work ([505d9ac](https://github.com/vincedelmas/MyLists/commit/505d9ac6198bd239d72ab76345caff1cfbd47070))
+* streamline media queries and shared search logic ([260b2ae](https://github.com/vincedelmas/MyLists/commit/260b2ae251a6f636662cd18abbc98e8d30df0440))
+
+
+### Code Refactoring
+
+* clarify media ownership and consolidate shared workflows ([7134e5c](https://github.com/vincedelmas/MyLists/commit/7134e5c1cc12eac6170728dadde17a3caf755af0))
+* colocate media val and consolidate app setup ([4475766](https://github.com/vincedelmas/MyLists/commit/4475766a12bd6f3e46388bf3938ce78393738406))
+* consolidate import matching and remove redundant work ([b84db42](https://github.com/vincedelmas/MyLists/commit/b84db42be1e02767a57becf76c0d9fa1b93c2045))
+* group media modules and consolidate stats flows ([a2975dd](https://github.com/vincedelmas/MyLists/commit/a2975ddb1103d8dd88c2eacd9bb417bc5707a247))
+* **media:** colocate media contracts and presentation ([444d5f5](https://github.com/vincedelmas/MyLists/commit/444d5f531345f1358e92e0f9e05b86f825780768))
+* **media:** consolidate import pipelines and activity adapters ([94ac36b](https://github.com/vincedelmas/MyLists/commit/94ac36b7d97da409770e1dd90236dbf78114b995))
+* **media:** remove remaining status-handling redundancy ([5460c17](https://github.com/vincedelmas/MyLists/commit/5460c17a521273c0cdc8dbdf8a5d4337ee6407ed))
+* **media:** unify statuses and simplify status handling ([acab6f9](https://github.com/vincedelmas/MyLists/commit/acab6f93ad84113c545cbe6ee729b2e1c0779076))
+
 ## [3.19.0](https://github.com/vincedelmas/MyLists/compare/v3.18.0...v3.19.0) (2026-11-05)
 
 

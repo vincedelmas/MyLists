@@ -1,6 +1,7 @@
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
+import {getThemeColor} from "@/lib/client/theme";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {buttonVariants} from "@/lib/client/components/ui/button";
@@ -13,6 +14,7 @@ import {ArrowUpRight, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
 import {AggregateRating} from "@/lib/client/components/media/base/AggregateRating";
 import {MediaFollowCard} from "@/lib/client/components/media/base/MediaFollowCard";
 import {mediaCommunityActivityOptions} from "@/lib/client/react-query/query-options";
+import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
@@ -38,7 +40,7 @@ export const MediaCommunityActivity = ({ mediaId, mediaType, queryOptions }: Com
     const visibleItems = isBelowSm ? apiData.items.slice(0, 4) : apiData.items;
 
     return (
-        <section className="space-y-4">
+        <section>
             <MediaSectionTitle title="Community Activity" className="justify-start gap-2">
                 <InfoPopover side="top" label="Community activity visibility note">
                     These data include only community profiles.
@@ -46,28 +48,30 @@ export const MediaCommunityActivity = ({ mediaId, mediaType, queryOptions }: Com
                 </InfoPopover>
             </MediaSectionTitle>
 
-            <CommunityActivityStats
-                stats={apiData.stats}
-                mediaType={mediaType}
-            />
+            <div className="flex flex-col gap-4">
+                <CommunityActivityStats
+                    stats={apiData.stats}
+                    mediaType={mediaType}
+                />
 
-            <CommunityActivityList
-                items={visibleItems}
-                mediaType={mediaType}
-            />
+                <CommunityActivityList
+                    items={visibleItems}
+                    mediaType={mediaType}
+                />
 
-            {apiData.total > visibleItems.length &&
-                <div className="text-end -mt-2">
-                    <Link
-                        params={{ mediaType, mediaId }}
-                        to="/details/$mediaType/$mediaId/community"
-                        className={buttonVariants({ variant: "hover", size: "sm" })}
-                    >
-                        View all
-                        <ArrowUpRight data-icon="inline-end"/>
-                    </Link>
-                </div>
-            }
+                {apiData.total > visibleItems.length &&
+                    <div className="text-end -mt-2">
+                        <Link
+                            params={{ mediaType, mediaId }}
+                            to="/details/$mediaType/$mediaId/community"
+                            className={buttonVariants({ variant: "hover", size: "sm" })}
+                        >
+                            View all
+                            <ArrowUpRight data-icon="inline-end"/>
+                        </Link>
+                    </div>
+                }
+            </div>
         </section>
     );
 };
@@ -89,15 +93,10 @@ export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivitySt
         ? formatMinutes(extraValue)
         : formatNumber(extraValue, { locale: "en", notation: "compact", maximumFractionDigits: 1 });
 
-    const extraLabel = activityConfig.extraMetric === "totalPlaytime"
-        ? "playtime"
-        : activityConfig.countLabel === "Read" ? "reread" : "rewatched";
-
     const items = [
         {
-            icon: Star,
-            label: "community avg.",
-            iconColor: "text-rating fill-rating",
+            label: "Avg. rating",
+            icon: <Star className="size-4"/>,
             value: (
                 <AggregateRating label="community rating">
                     {formatNumber(stats.averageRating, { locale: "en", fractionDigits: 1 })}
@@ -105,39 +104,29 @@ export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivitySt
             ),
         },
         {
-            icon: Eye,
-            label: "tracked",
-            iconColor: "text-muted-foreground",
+            label: "Tracked",
+            icon: <Eye className="size-4"/>,
             value: formatNumber(stats.total, { locale: "en", notation: "compact", maximumFractionDigits: 1 }),
         },
         {
-            icon: Heart,
-            label: "favorites",
-            iconColor: "text-muted-foreground",
+            label: "Favorites",
+            icon: <Heart className="size-4"/>,
             value: formatNumber(stats.likedCount),
         },
         {
-            label: extraLabel,
             value: formattedExtraValue,
-            iconColor: "text-muted-foreground",
-            icon: activityConfig.extraMetric === "totalPlaytime" ? Clock : RotateCcw,
+            label: activityConfig.extraLabel,
+            icon: activityConfig.extraMetric === "totalPlaytime"
+                ? <Clock className="size-4"/>
+                : <RotateCcw className="size-4"/>,
         },
     ];
 
     return (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pb-1 text-sm text-muted-foreground">
-            {items.map(({ icon: Icon, label, value, iconColor }) =>
-                <div key={label} className="flex min-w-0 items-center gap-1.5">
-                    <Icon className={`size-4 shrink-0 ${iconColor}`}/>
-                    <span className="font-semibold text-foreground">
-                        {value}
-                    </span>
-                    <span className="truncate">
-                        {label}
-                    </span>
-                </div>
-            )}
-        </div>
+        <CompactStatsGrid
+            items={items}
+            color={getThemeColor(mediaType)}
+        />
     );
 };
 
@@ -151,9 +140,9 @@ interface CommunityActivityListProps {
 
 export const CommunityActivityList = ({ items, mediaType, variant = "details" }: CommunityActivityListProps) => {
     return (
-        <div className={cn("grid gap-2", variant === "viewAll" ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+        <div className={cn("grid items-start gap-2", variant === "viewAll" ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2")}>
             {items.map((follow) =>
-                <div key={follow.id} className="rounded-lg border bg-popover/20">
+                <div key={follow.id} className="min-w-0 rounded-lg border bg-popover/20">
                     <MediaFollowCard
                         showComment={false}
                         mediaType={mediaType}

@@ -1,8 +1,8 @@
 import {Activity} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
-import {Card} from "@/lib/client/components/ui/card";
 import {MediaFollowsDetails} from "@/lib/types/query.options.types";
 import {MediaFollowCard} from "@/lib/client/components/media/base/MediaFollowCard";
+import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
 
 interface MediaFollowsSectionProps {
@@ -14,18 +14,20 @@ interface MediaFollowsSectionProps {
 
 export function MediaFollowsSection({ followsData, mediaType, isAnonymous }: MediaFollowsSectionProps) {
     return (
-        <Card className="bg-popover p-0 h-fit min-w-0">
-            <div className="p-4 border-b">
-                <h3 className="flex items-center gap-2 text-foreground font-semibold">
-                    <Activity className="size-5 text-brand"/>
-                    Follows Activity ({followsData.length})
-                </h3>
-            </div>
-            <div className="overflow-y-auto scrollbar-thin max-h-90 space-y-1 p-2 mb-3">
+        <Card className="h-fit min-w-0 gap-0 bg-popover py-0">
+            <CardHeader className="border-b p-4">
+                <CardTitle className="text-sm leading-5 font-semibold">
+                    <h3 className="flex items-center gap-2">
+                        <Activity className="size-5 text-brand"/>
+                        Follows Activity ({followsData.length})
+                    </h3>
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-90 overflow-y-auto p-2 scrollbar-thin">
                 {followsData.length > 0 ?
                     followsData.map((follow) =>
                         <MediaFollowCard
-                            key={follow.name}
+                            key={follow.id}
                             followData={follow}
                             mediaType={mediaType}
                         />
@@ -40,7 +42,7 @@ export function MediaFollowsSection({ followsData, mediaType, isAnonymous }: Med
                             None of your follows track this media yet.
                         </div>
                 }
-            </div>
+            </CardContent>
         </Card>
     );
 }

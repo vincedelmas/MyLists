@@ -1,29 +1,22 @@
+import {Check} from "lucide-react";
 import {Link} from "@tanstack/react-router";
-import {useTable, type ColumnDef} from "@tanstack/react-table";
 import type {MediaType} from "@/lib/utils/enums";
-import {formatDate} from "@/lib/utils/formatting/date";
 import {toItemKey} from "@/lib/utils/media/item-key";
+import {formatDate} from "@/lib/utils/formatting/date";
+import {useTable, type ColumnDef} from "@tanstack/react-table";
 import {DataTable} from "@/lib/client/components/general/DataTable";
-import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
+import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
-import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
+import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
-import {
-    MediaCard,
-    MediaCardDetails,
-    MediaCardFooter,
-    MediaCardLeftCorner,
-    MediaCardMeta,
-    MediaCardRightCorner,
-    MediaCardTitle,
-} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardLeftCorner, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 interface MediaBrowseItem {
     title: string;
     mediaId: number;
-    mediaType: MediaType;
     inUserList: boolean;
+    mediaType: MediaType;
     imageCover: string | null;
     releaseDate: string | null;
 }
@@ -37,10 +30,17 @@ interface MediaBrowseResultsProps {
 
 
 export const MediaBrowseResults = ({ items, display, showMembership = false }: MediaBrowseResultsProps) => {
-    if (display === "table") return <MediaBrowseTable items={items} showMembership={showMembership}/>;
+    if (display === "table") {
+        return (
+            <MediaBrowseTable
+                items={items}
+                showMembership={showMembership}
+            />
+        );
+    }
 
     return (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        <MediaListGrid>
             {items.map(item =>
                 <MediaCard
                     key={toItemKey(item)}
@@ -51,14 +51,14 @@ export const MediaBrowseResults = ({ items, display, showMembership = false }: M
                         <MediaTypeIcon mediaType={item.mediaType}/>
                         <MediaTypeText mediaType={item.mediaType}/>
                     </MediaCardLeftCorner>
-                    {item.inUserList &&
-                        <MediaCardRightCorner>
-                            <DisplayInUserListCheck/>
-                        </MediaCardRightCorner>
-                    }
                     <MediaCardFooter>
-                        <MediaCardTitle lines={2}>
-                            {item.title}
+                        <MediaCardTitle title={item.title} className="flex items-center gap-1.5 tracking-tight">
+                            <span className="truncate">
+                                {item.title}
+                            </span>
+                            {item.inUserList &&
+                                <Check aria-label="In your list" className="ml-auto size-4 shrink-0 text-brand"/>
+                            }
                         </MediaCardTitle>
                         <MediaCardMeta>
                             <MediaCardDetails>
@@ -68,7 +68,7 @@ export const MediaBrowseResults = ({ items, display, showMembership = false }: M
                     </MediaCardFooter>
                 </MediaCard>
             )}
-        </div>
+        </MediaListGrid>
     );
 };
 

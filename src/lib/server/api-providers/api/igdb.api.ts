@@ -4,10 +4,10 @@ import {notFound} from "@tanstack/react-router";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {apiTokens} from "@/lib/server/database/schema";
 import {GameAdvancedSearchFilters} from "@/lib/schemas";
-import {coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
 import {getContainer} from "@/lib/server/core/container";
-import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {
     GameAdvancedSearchOptions,
@@ -33,9 +33,10 @@ type IgdbApiConfig = ApiClientConfig & {
 };
 
 
-const MAX_SEARCH_QUERY_LENGTH = 100;
 const IGDB_QUERY_LIMIT = 500;
-const TRENDING_GAMES_LIMIT = 15;
+const TRENDING_GAMES_LIMIT = 18;
+const MAX_SEARCH_QUERY_LENGTH = 100;
+
 const TRENDING_GAME_TYPE_IDS = [0, 8] as const; // Main Game and Remake
 const TRENDING_RELEASE_WINDOW_SECONDS = 90 * 24 * 60 * 60; // 90 days
 const TRENDING_POPULARITY_TYPE_IDS = [1, 2, 3, 4] as const; // Visits and IGDB list additions

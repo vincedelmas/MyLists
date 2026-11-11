@@ -48,7 +48,7 @@ export const MoviesExtraSections = ({ mediaType, media }: MoviesDetailsProps<typ
             {collection.length > 0 &&
                 <section>
                     <MediaSectionTitle title="In The Same Series"/>
-                    <div className="flex flex-nowrap gap-2 overflow-x-auto pb-4 scrollbar-thin sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible">
+                    <div className="flex flex-nowrap gap-3 overflow-x-auto pb-4 scrollbar-thin sm:grid sm:grid-cols-5 sm:gap-y-6 sm:overflow-visible">
                         {visibleCollection.map((item) =>
                             <div key={item.mediaId} className="w-32 flex-none sm:w-full">
                                 <SimilarMediaCard
@@ -60,12 +60,14 @@ export const MoviesExtraSections = ({ mediaType, media }: MoviesDetailsProps<typ
                     </div>
 
                     {!isBelowSm && collection.length > INITIAL_COUNT &&
-                        <Button variant="hover" size="sm" onClick={() => setIsExpanded((prev) => !prev)}>
-                            {isExpanded
-                                ? <>Show Less <ChevronUp/></>
-                                : <>Show More <ChevronDown/></>
-                            }
-                        </Button>
+                        <div className="text-end -mt-1">
+                            <Button variant="hover" size="sm" onClick={() => setIsExpanded((prev) => !prev)}>
+                                {isExpanded
+                                    ? <>Show Less <ChevronUp/></>
+                                    : <>Show More <ChevronDown/></>
+                                }
+                            </Button>
+                        </div>
                     }
                 </section>
             }

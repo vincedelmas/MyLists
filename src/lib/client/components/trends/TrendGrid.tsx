@@ -3,6 +3,7 @@ import {TrendsMedia} from "@/lib/types/provider.types";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {TrendCard} from "@/lib/client/components/trends/TrendCard";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 
 
 export const TrendGrid = ({ data }: { data: TrendsMedia[] }) => {
@@ -25,14 +26,14 @@ export const TrendGrid = ({ data }: { data: TrendsMedia[] }) => {
                     message="No trending data available right now."
                 />
                 :
-                <div className="grid grid-cols-2 gap-x-4 gap-y-6 pt-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 md:gap-x-6">
+                <MediaListGrid className="pt-5">
                     {data.map((media) =>
                         <TrendCard
                             media={media}
                             key={`${media.mediaType}-${media.apiId}`}
                         />
                     )}
-                </div>
+                </MediaListGrid>
             }
         </section>
     );

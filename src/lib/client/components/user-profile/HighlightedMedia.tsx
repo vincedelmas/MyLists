@@ -1,10 +1,9 @@
 import {HeartOff, TrendingUp} from "lucide-react";
-import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
-import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {PROFILE_MAX_HIGHLIGHTED_MEDIA, ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
+import {MediaCard, MediaCardBadge, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 interface HighlightedMediaProps {
@@ -14,9 +13,7 @@ interface HighlightedMediaProps {
 
 
 export const HighlightedMedia = ({ config, showMediaType = false }: HighlightedMediaProps) => {
-    const isBelowLg = useBreakpoint("lg");
-    const isSmallScreen = useBreakpoint("sm");
-    const itemsToDisplay = config.items.slice(0, isBelowLg && !isSmallScreen ? 4 : 7);
+    const itemsToDisplay = config.items.slice(0, PROFILE_MAX_HIGHLIGHTED_MEDIA);
 
     if (config.mode === "disabled") return null;
 
@@ -37,20 +34,22 @@ export const HighlightedMedia = ({ config, showMediaType = false }: HighlightedM
                     message="No Media Highlighted Yet."
                 />
                 :
-                <div className="grid grid-cols-7 gap-2 max-lg:grid-cols-4 max-sm:grid-flow-col max-sm:grid-cols-none max-sm:auto-cols-[calc((100%-1.5rem)*0.375)] max-sm:overflow-x-auto max-sm:pb-2 scrollbar-thin">
+                <div className="grid grid-cols-6 gap-x-3 gap-y-6 max-lg:grid-cols-3 max-sm:grid-flow-col max-sm:grid-cols-none
+                max-sm:auto-cols-[calc((100%-1.5rem)*0.375)] max-sm:overflow-x-auto max-sm:pb-2 scrollbar-thin">
                     {itemsToDisplay.map((item) =>
                         <MediaCard key={`${item.mediaType}-${item.mediaId}`} item={item} mediaType={item.mediaType}>
+                            {showMediaType &&
+                                <MediaCardBadge className="capitalize">
+                                    <MediaTypeIcon mediaType={item.mediaType}/>
+                                    {item.mediaType}
+                                </MediaCardBadge>
+                            }
                             <MediaCardFooter>
-                                <MediaCardTitle title={item.mediaName}>
+                                <MediaCardTitle title={item.mediaName} className="tracking-tight">
                                     {item.mediaName}
                                 </MediaCardTitle>
                                 <MediaCardMeta>
                                     <MediaCardDetails>
-                                        {showMediaType &&
-                                            <MediaTypeIcon
-                                                mediaType={item.mediaType}
-                                            />
-                                        }
                                         <MediaReleaseDate
                                             precision="year"
                                             date={item.releaseDate}

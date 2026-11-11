@@ -5,19 +5,21 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
+import {CalendarDays, History, LayoutGrid, Plus} from "lucide-react";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
 import type {ActivitySort, MonthlyActivitySearch} from "@/lib/schemas";
-import {CalendarDays, History, LayoutGrid, Plus} from "lucide-react";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {formatMonth, formatMonthYear} from "@/lib/utils/formatting/date";
 import {formatMinutes, formatNumber} from "@/lib/utils/formatting/number";
+import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
@@ -25,13 +27,13 @@ import {MonthlyActivityTable} from "@/lib/client/components/activity/MonthlyActi
 import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
 import type {MonthlyActivityEditor, MonthlyActivityOccurrence} from "@/lib/types/activity.types";
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
-import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
 import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
 import {monthlyActivityOptions, monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options";
 import {YearlyActivityOccurrencesDialog} from "@/lib/client/components/activity/YearlyActivityOccurrencesDialog";
 import {
     MediaCard,
+    MediaCardBadge,
     MediaCardDetails,
     MediaCardFooter,
     MediaCardLeftCorner,
@@ -235,7 +237,7 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                 }
 
                 {apiData.items.length > 0 && display === "grid" &&
-                    <div className="grid grid-cols-2 gap-4 pt-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    <MediaListGrid className="pt-5">
                         {apiData.items.map((row) =>
                             <MediaCard key={row.id} mediaType={row.mediaType} item={row}>
                                 {row.mediaType !== MediaType.MOVIES && row.mediaType !== MediaType.GAMES &&
@@ -243,6 +245,11 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                                         {formatNumber(row.progressGained)} {getMediaDefinition(row.mediaType).progress.unit.short}
                                     </MediaCardLeftCorner>
                                 }
+
+                                <MediaCardBadge className="capitalize">
+                                    <MediaTypeIcon mediaType={row.mediaType}/>
+                                    {row.mediaType}
+                                </MediaCardBadge>
 
                                 {view === "month" && canEdit &&
                                     <MediaCardRightCorner>
@@ -269,22 +276,15 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                                 }
 
                                 <MediaCardFooter>
-                                    <MediaCardTitle title={row.mediaName}>
+                                    <MediaCardTitle title={row.mediaName} className="tracking-tight">
                                         {row.mediaName}
                                     </MediaCardTitle>
-                                    <MediaCardMeta>
+                                    <MediaCardMeta className="justify-start">
+                                        <MediaCardSignals className="ml-0">
+                                            <MonthlyActivityStatusIcons row={row}/>
+                                            <span aria-hidden="true" className="text-muted-foreground">•</span>
+                                        </MediaCardSignals>
                                         <MediaCardDetails>
-                                            {activeTab === "all" &&
-                                                <span className="flex min-w-0 items-center gap-1 capitalize">
-                                                    <MediaTypeIcon mediaType={row.mediaType}/>
-                                                    {view === "month" &&
-                                                        <span className="truncate">
-                                                            {row.mediaType}
-                                                        </span>
-                                                    }
-                                                </span>
-                                            }
-
                                             {formatMinutes(row.timeGained)}
 
                                             {view === "year" && row.occurrences?.length === 1 &&
@@ -293,16 +293,11 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                                                 </span>
                                             }
                                         </MediaCardDetails>
-                                        <MediaCardSignals>
-                                            <MonthlyActivityStatusIcons
-                                                row={row}
-                                            />
-                                        </MediaCardSignals>
                                     </MediaCardMeta>
                                 </MediaCardFooter>
                             </MediaCard>
                         )}
-                    </div>
+                    </MediaListGrid>
                 }
 
                 <Pagination

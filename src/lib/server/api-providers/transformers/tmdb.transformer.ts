@@ -254,7 +254,7 @@ const transformMoviesTrends = async (
         moviesTrends.push(mediaData);
     }
 
-    return moviesTrends.slice(0, 15);
+    return moviesTrends.slice(0, 18);
 };
 
 
@@ -287,7 +287,7 @@ const transformTvTrends = async (
         tvTrends.push(mediaData);
     }
 
-    return tvTrends.slice(0, 15);
+    return tvTrends.slice(0, 18);
 };
 
 

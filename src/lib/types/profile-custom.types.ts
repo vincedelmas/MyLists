@@ -2,8 +2,9 @@ import {MediaType} from "@/lib/utils/enums";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 
 
-export type HighlightedMediaTab = "overview" | MediaType;
 type HighlightedMediaMode = "random" | "curated" | "disabled";
+
+export type HighlightedMediaTab = "overview" | MediaType;
 export type ProfileCustomKey = keyof ProfileCustomSettingsByKey;
 
 
@@ -13,7 +14,7 @@ export type ProfileCustomSettingsByKey = {
 };
 
 
-export const PROFILE_MAX_HIGHLIGHTED_MEDIA = 7;
+export const PROFILE_MAX_HIGHLIGHTED_MEDIA = 6;
 
 export const HIGHLIGHTED_MEDIA_DEFAULT_TITLE = "Highlighted Media";
 

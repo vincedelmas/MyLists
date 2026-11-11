@@ -22,3 +22,4 @@
   in the dev database. Prefer this workflow for troubleshooting existing users and media. Stop any dev server you started when finished.
 
 - Automated browser tests use `bun run test:e2e`. Stop any dev server you started when finished.
+- Be critic about me choices, I don't need a yes man, but I don't want a devil advocate neither!

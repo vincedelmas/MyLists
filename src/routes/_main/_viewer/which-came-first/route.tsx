@@ -14,13 +14,13 @@ import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
 import {WCF_MAX_ROUNDS, WCF_MEDIA_TYPES} from "@/lib/schemas/wcf.schema";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
 import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
+import {MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 import {dateFromUTCInput, extractDate, formatDate} from "@/lib/utils/formatting/date";
 import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {WcfLeaderboard} from "@/lib/client/components/which-came-first/WcfLeaderboard";
 import {whichCameFirstOptions} from "@/lib/client/react-query/query-options/wcf.options";
-import {MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {useAbandonWCFRunMutation, useAnswerWCFRoundMutation, useResetWCFStatsMutation, useStartWCFRunMutation} from "@/lib/client/react-query/query-mutations/wcf.mutations";
 import {
@@ -544,7 +544,8 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
             <div className="absolute inset-0 bg-linear-to-t from-black via-black/10 to-black/15"/>
 
             {state !== "neutral" &&
-                <MediaCardRightCorner>
+                <div className="absolute right-1.5 top-1.5 z-10 @min-[128px]/media-card:right-2 @min-[128px]/media-card:top-2
+                @min-[250px]/media-card:right-3 @min-[250px]/media-card:top-3">
                     <div className={cn(
                         "flex size-7 animate-in zoom-in-75 items-center justify-center rounded-full shadow-lg max-sm:size-8",
                         state === "correct"
@@ -553,7 +554,7 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
                     )}>
                         {state === "correct" ? <Check/> : <X/>}
                     </div>
-                </MediaCardRightCorner>
+                </div>
             }
             <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5
                 @min-[200px]/media-card:gap-3 @min-[200px]/media-card:p-3 @min-[250px]/media-card:p-4">

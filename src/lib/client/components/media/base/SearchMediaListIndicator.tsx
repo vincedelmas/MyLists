@@ -3,20 +3,12 @@ import {CircleCheck} from "lucide-react";
 
 interface SearchMediaListIndicatorProps {
     mediaName: string;
-    presentation?: "row" | "corner" | "inline";
+    presentation?: "row" | "inline";
 }
 
 
 export const SearchMediaListIndicator = ({ mediaName, presentation = "row" }: SearchMediaListIndicatorProps) => {
     const label = `${mediaName} is already in your list`;
-
-    if (presentation === "corner") {
-        return (
-            <span className="pointer-events-none" title="Already in your list" aria-label={label}>
-                <CircleCheck className="text-success"/>
-            </span>
-        );
-    }
 
     return (
         <span

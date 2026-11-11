@@ -37,11 +37,11 @@ export const ContinuePreview = ({ items, isCurrent }: { items: ContinueItem[]; i
                     </Link>
                 }
             </div>
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-5 max-sm:grid-flow-col max-sm:grid-cols-none max-sm:auto-cols-[calc((100%-0.5rem)/2)] max-sm:overflow-x-auto max-sm:pb-2 scrollbar-thin">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-6 lg:grid-cols-5 max-sm:grid-flow-col max-sm:grid-cols-none
+            max-sm:auto-cols-[calc((100%-0.75rem)/2)] max-sm:overflow-x-auto max-sm:pb-2 scrollbar-thin">
                 {active.slice(0, 5).map(item =>
                     <ContinueCard
                         item={item}
-                        compact={true}
                         readOnly={!isCurrent}
                         key={`${item.mediaType}-${item.mediaId}`}
                     />

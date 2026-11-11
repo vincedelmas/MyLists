@@ -84,8 +84,9 @@ export const MediaListResults = (props: MediaListResultsProps) => {
                     {isConnected &&
                         <MediaCardRightCorner>
                             <QuickAddMedia
-                                mediaId={item.mediaId}
+                                rounded={true}
                                 onAdded={onEdited}
+                                mediaId={item.mediaId}
                                 mediaType={item.mediaType}
                                 allStatuses={getMediaDefinition(item.mediaType).statuses}
                                 isMediaTypeActive={activeMediaTypes.includes(item.mediaType)}
@@ -94,7 +95,7 @@ export const MediaListResults = (props: MediaListResultsProps) => {
                     }
 
                     <MediaCardFooter>
-                        <MediaCardTitle lines={2}>
+                        <MediaCardTitle title={item.mediaName} className="tracking-tight">
                             {item.mediaName}
                         </MediaCardTitle>
                         <MediaCardMeta>

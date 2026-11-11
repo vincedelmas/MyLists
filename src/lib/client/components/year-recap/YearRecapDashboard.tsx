@@ -1,12 +1,13 @@
 import {Link} from "@tanstack/react-router";
 import {getThemeColor} from "@/lib/client/theme";
+import {formatRating} from "@/lib/client/ratings";
 import {YearRecap} from "@/lib/types/year-recap.types";
 import {capitalize} from "@/lib/utils/formatting/text";
-import {formatRating} from "@/lib/client/ratings";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {StatsHero} from "@/lib/client/components/media-stats/StatsHero";
 import {extractYear, formatMonthYear} from "@/lib/utils/formatting/date";
+import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorite";
 import {StatsRecordList} from "@/lib/client/components/media-stats/StatsRecordList";
@@ -17,7 +18,16 @@ import {formatHours, formatNumber, formatPercent} from "@/lib/utils/formatting/n
 import {YearRecapShareCard} from "@/lib/client/components/year-recap/YearRecapShareCard";
 import {StatsSectionHeader} from "@/lib/client/components/media-stats/StatsSectionHeader";
 import {ArrowRight, CalendarCheck2, CalendarRange, CheckCircle2, Clock3, Flame, LibraryBig, RefreshCcw, Trophy,} from "lucide-react";
-import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardLeftCorner, MediaCardMeta, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {
+    MediaCard,
+    MediaCardBadge,
+    MediaCardDetails,
+    MediaCardFooter,
+    MediaCardLeftCorner,
+    MediaCardMeta,
+    MediaCardSignals,
+    MediaCardTitle
+} from "@/lib/client/components/media/base/MediaCard";
 
 
 interface YearRecapDashboardProps {
@@ -29,6 +39,7 @@ interface YearRecapDashboardProps {
 
 export function YearRecapDashboard({ recap, canGenerateImage = false, showHero = true }: YearRecapDashboardProps) {
     const color = recap.scope === "all" ? "var(--brand)" : getThemeColor(recap.scope);
+
     const activeMedia = recap.media[0];
     const averageActiveMonth = recap.totals.activeMonths > 0
         ? recap.totals.hours / recap.totals.activeMonths
@@ -132,21 +143,21 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                             },
                             {
                                 label: "Active months",
-                                icon: <CalendarCheck2 className="size-4"/>,
-                                value: `${recap.totals.activeMonths} / 12`,
                                 note: "months with recorded activity",
+                                value: `${recap.totals.activeMonths} / 12`,
+                                icon: <CalendarCheck2 className="size-4"/>,
                             },
                             {
                                 label: "Longest active streak",
+                                note: "consecutive active months",
                                 icon: <Flame className="size-4"/>,
                                 value: `${recap.totals.longestActiveStreak} months`,
-                                note: "consecutive active months",
                             },
                             {
                                 label: "Average active month",
-                                icon: <CalendarRange className="size-4"/>,
-                                value: formatHours(averageActiveMonth),
                                 note: "time per active month",
+                                value: formatHours(averageActiveMonth),
+                                icon: <CalendarRange className="size-4"/>,
                             },
                         ]}
                     />
@@ -168,40 +179,37 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                     <>
                         <div className="rounded-xl border p-5 shadow-xs sm:p-6">
                             <div className="flex h-5 overflow-hidden rounded-sm bg-muted">
-                            {recap.media.map((media) =>
-                                <div
-                                    key={media.mediaType}
-                                    title={`${capitalize(media.mediaType)}: ${formatPercent(media.share)}`}
-                                    style={{
-                                        width: `${media.share}%`,
-                                        backgroundColor: getThemeColor(media.mediaType),
-                                    }}
-                                />
-                            )}
+                                {recap.media.map((media) =>
+                                    <div
+                                        key={media.mediaType}
+                                        title={`${capitalize(media.mediaType)}: ${formatPercent(media.share)}`}
+                                        style={{ width: `${media.share}%`, backgroundColor: getThemeColor(media.mediaType) }}
+                                    />
+                                )}
                             </div>
                             <div className="mt-6 grid gap-x-7 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-                            {recap.media.map((media) =>
-                                <div key={media.mediaType} className="border-l pl-4" style={{ borderColor: getThemeColor(media.mediaType) }}>
-                                    <div className="flex items-center gap-2">
-                                        <MainThemeIcon type={media.mediaType} size={17}/>
-                                        <div className="text-sm font-bold capitalize">
-                                            {media.mediaType}
+                                {recap.media.map((media) =>
+                                    <div key={media.mediaType} className="border-l pl-4" style={{ borderColor: getThemeColor(media.mediaType) }}>
+                                        <div className="flex items-center gap-2">
+                                            <MainThemeIcon type={media.mediaType} size={17}/>
+                                            <div className="text-sm font-bold capitalize">
+                                                {media.mediaType}
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 flex items-end justify-between gap-3">
+                                            <div className="text-2xl font-black">
+                                                {formatHours(media.hours)}
+                                            </div>
+                                            <div className="text-sm font-bold" style={{ color: getThemeColor(media.mediaType) }}>
+                                                {formatPercent(media.share, { fractionDigits: 0 })}
+                                            </div>
+                                        </div>
+                                        <div className="mt-1 text-xs text-muted-foreground">
+                                            {formatNumber(media.titleCount)} titles
+                                            · {formatNumber(media.progress, { fractionDigits: media.progress < 10 ? 1 : 0 })} {media.progressUnit}
                                         </div>
                                     </div>
-                                    <div className="mt-3 flex items-end justify-between gap-3">
-                                        <div className="text-2xl font-black">
-                                            {formatHours(media.hours)}
-                                        </div>
-                                        <div className="text-sm font-bold" style={{ color: getThemeColor(media.mediaType) }}>
-                                            {formatPercent(media.share, { fractionDigits: 0 })}
-                                        </div>
-                                    </div>
-                                    <div className="mt-1 text-xs text-muted-foreground">
-                                        {formatNumber(media.titleCount)} titles
-                                        · {formatNumber(media.progress, { fractionDigits: media.progress < 10 ? 1 : 0 })} {media.progressUnit}
-                                    </div>
-                                </div>
-                            )}
+                                )}
                             </div>
                         </div>
                     </>
@@ -240,19 +248,19 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                     index="03"
                     color={color}
                     title="Top titles"
-                    description="New titles appear before repeats, with favorites, higher ratings, and more time tracked listed first."
+                    description="New titles first, then favorites, ratings, and watch time."
                     aside={recap.mostRepeatedTitle &&
                         <div className="text-left sm:text-right">
-                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                Most repeated
+                            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                                Most repeated ({recap.mostRepeatedTitle.repeats}×)
                             </div>
-                            <div className="max-w-56 truncate font-bold">
-                                {recap.mostRepeatedTitle.name} · {recap.mostRepeatedTitle.repeats}×
+                            <div className="font-bold">
+                                {recap.mostRepeatedTitle.name}
                             </div>
                         </div>
                     }
                 />
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-6">
+                <MediaListGrid>
                     {recap.topTitles.map((title, index) => {
                         const rating = formatRating(recap.user.ratingSystem, title.rating, true);
 
@@ -263,23 +271,27 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                                 item={{ mediaId: title.mediaId, mediaName: title.name, imageCover: title.imageCover }}
                             >
                                 <MediaCardLeftCorner>
-                                    {String(index + 1).padStart(2, "0")}
+                                    #{String(index + 1)}
                                 </MediaCardLeftCorner>
+                                {recap.scope === "all" &&
+                                    <MediaCardBadge>
+                                        {capitalize(title.mediaType)}
+                                    </MediaCardBadge>
+                                }
                                 <MediaCardFooter>
-                                    <div className="flex min-w-0 items-end justify-between gap-1.5">
-                                        <MediaCardTitle lines={2} title={title.name}>
-                                            {title.name}
-                                        </MediaCardTitle>
-                                        {rating !== null &&
-                                            <div className="shrink-0">
-                                                <DisplayRating rating={rating}/>
-                                            </div>
-                                        }
-                                    </div>
+                                    <MediaCardTitle title={title.name} className="tracking-tight">
+                                        {title.name}
+                                    </MediaCardTitle>
                                     <MediaCardMeta>
                                         <MediaCardDetails>
-                                            <span>{extractYear(title.releaseDate)}</span>
-                                            {recap.scope === "all" && <span>{capitalize(title.mediaType)}</span>}
+                                            {rating !== null &&
+                                                <span className="font-semibold text-foreground [&>div]:text-xs [&_svg]:size-3!">
+                                                    <DisplayRating rating={rating}/>
+                                                </span>
+                                            }
+                                            <span>
+                                                {extractYear(title.releaseDate)}
+                                            </span>
                                         </MediaCardDetails>
                                         {title.favorite &&
                                             <MediaCardSignals>
@@ -291,7 +303,7 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                             </MediaCard>
                         );
                     })}
-                </div>
+                </MediaListGrid>
                 <div className="mt-6 flex justify-end">
                     <Link
                         to="/activity/$username"
@@ -307,7 +319,10 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
 
             {canGenerateImage &&
                 <section className="mt-12 rounded-xl border p-5 shadow-xs sm:mt-16 sm:p-7">
-                    <YearRecapShareCard recap={recap} color={color}/>
+                    <YearRecapShareCard
+                        recap={recap}
+                        color={color}
+                    />
                 </section>
             }
         </div>

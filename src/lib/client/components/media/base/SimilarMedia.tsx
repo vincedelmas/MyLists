@@ -26,7 +26,7 @@ export const SimilarMedia = ({ mediaType, similarMedia }: { mediaType: MediaType
     return (
         <section>
             <MediaSectionTitle title={`Similar ${capitalize(mediaType)}`}/>
-            <div className="flex flex-nowrap gap-2 overflow-x-auto pb-4 scrollbar-thin sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible">
+            <div className="flex flex-nowrap gap-3 overflow-x-auto pb-4 scrollbar-thin sm:grid sm:grid-cols-5 sm:gap-y-6 sm:overflow-visible">
                 {visibleMedia.map((item) =>
                     <div key={item.mediaId} className="w-32 flex-none sm:w-full">
                         <SimilarMediaCard
@@ -38,7 +38,7 @@ export const SimilarMedia = ({ mediaType, similarMedia }: { mediaType: MediaType
             </div>
 
             {!isBelowSm && similarMedia.length > INITIAL_COUNT &&
-                <div className="text-end -mt-2">
+                <div className="text-end -mt-1">
                     <Button variant="hover" size="sm" onClick={handleToggle}>
                         {isExpanded
                             ? <>Show Less <ChevronUp/></>
@@ -56,7 +56,7 @@ export const SimilarMediaCard = ({ mediaType, item }: { mediaType: MediaType; it
     return (
         <MediaCard item={item} mediaType={mediaType}>
             <MediaCardFooter>
-                <MediaCardTitle title={item.mediaName}>
+                <MediaCardTitle title={item.mediaName} className="tracking-tight">
                     {item.mediaName}
                 </MediaCardTitle>
                 <MediaCardMeta>

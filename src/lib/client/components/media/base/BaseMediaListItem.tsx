@@ -1,7 +1,6 @@
 import {Check} from "lucide-react";
 import React, {useState} from "react";
 import {MediaType, Status} from "@/lib/utils/enums";
-import {Badge} from "@/lib/client/components/ui/badge";
 import {canShowProgress} from "@/lib/utils/media/status";
 import type {UserMediaItem} from "@/lib/types/query.options.types";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
@@ -13,6 +12,7 @@ import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaE
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
 import {
     MediaCard,
+    MediaCardBadge,
     MediaCardFooter,
     MediaCardLeftCorner,
     MediaCardMeta,
@@ -45,17 +45,18 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
 
     const {
         rank, rating, onEdited, mediaType, userMedia, isCurrent, annotation, redoDisplay, isConnected,
-        allStatuses, showMediaType, ratingDisplay, isMediaTypeActive, mediaDetailsDisplay
+        allStatuses, showMediaType, ratingDisplay, isMediaTypeActive, mediaDetailsDisplay,
     } = props;
 
     const isCommon = isMediaTypeActive && userMedia.common;
+    const showMediaDetails = mediaDetailsDisplay && canShowProgress(userMedia.status);
+
     const hasMetadata = userMedia.rating !== null || !!(annotation || userMedia.comment || userMedia.favorite)
         || ("redo" in userMedia && !!userMedia.redo);
-    const showMediaDetails = mediaDetailsDisplay && canShowProgress(userMedia.status);
 
     return (
         <>
-            <MediaCard item={userMedia} mediaType={mediaType} layout="poster">
+            <MediaCard item={userMedia} mediaType={mediaType}>
                 {(rank !== undefined || showMediaDetails) &&
                     <MediaCardLeftCorner>
                         {rank !== undefined && <span>#{rank}</span>}
@@ -72,7 +73,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                             />
                             :
                             <QuickAddMedia
-                                rounded
+                                rounded={true}
                                 onAdded={onEdited}
                                 mediaType={mediaType}
                                 allStatuses={allStatuses}
@@ -83,28 +84,32 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                     </MediaCardRightCorner>
                 }
 
-                <div className="pointer-events-none absolute inset-x-0 top-0 flex aspect-2/3 items-end p-1.5">
-                    <Badge variant="overlay" className="h-6 max-w-full gap-1.5 border-white/10 bg-black/70 px-2 text-[11px] shadow-sm backdrop-blur-md">
-                        {showMediaType && <MediaTypeIcon mediaType={mediaType}/>}
-                        {userMedia.status}
-                    </Badge>
-                </div>
+                <MediaCardBadge>
+                    {showMediaType &&
+                        <MediaTypeIcon mediaType={mediaType}/>
+                    }
+                    {userMedia.status}
+                </MediaCardBadge>
 
                 <MediaCardFooter>
                     <MediaCardTitle title={userMedia.mediaName} className="flex items-center gap-1.5 tracking-tight">
-                        <span className="truncate">{userMedia.mediaName}</span>
+                        <span className="truncate">
+                            {userMedia.mediaName}
+                        </span>
                         {isConnected && !isCurrent && isCommon &&
-                            <Check className="ml-auto size-4 shrink-0 text-brand"/>
+                            <Check aria-label="In your list" className="ml-auto size-4 shrink-0 text-brand"/>
                         }
                     </MediaCardTitle>
                     {hasMetadata &&
                         <MediaCardMeta className="min-h-4">
-                            <div className="pointer-events-auto shrink-0 font-semibold tabular-nums text-foreground [&>div]:text-xs [&>button]:text-xs [&_svg]:size-3! @min-[128px]/media-card:[&_svg]:size-3! @min-[200px]/media-card:[&_svg]:size-3!">
+                            <div className="pointer-events-auto shrink-0 font-semibold tabular-nums text-foreground [&>div]:text-xs
+                            [&>button]:text-xs [&_svg]:size-3! @min-[128px]/media-card:[&_svg]:size-3! @min-[200px]/media-card:[&_svg]:size-3!">
                                 {ratingDisplay ?? (rating &&
                                     <DisplayRating rating={rating}/>
                                 )}
                             </div>
-                            <MediaCardSignals className="gap-2 @min-[128px]/media-card:gap-2 @min-[200px]/media-card:gap-2 [&_svg]:size-3! @min-[128px]/media-card:[&_svg]:size-3! @min-[200px]/media-card:[&_svg]:size-3!">
+                            <MediaCardSignals className="gap-2 @min-[128px]/media-card:gap-2 @min-[200px]/media-card:gap-2 [&_svg]:size-3!
+                            @min-[128px]/media-card:[&_svg]:size-3! @min-[200px]/media-card:[&_svg]:size-3!">
                                 {annotation &&
                                     <span role="group" aria-label="Collection note">
                                         <DisplayComment content={annotation}/>

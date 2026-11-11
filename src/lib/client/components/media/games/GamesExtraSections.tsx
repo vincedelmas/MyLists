@@ -41,7 +41,7 @@ export const GamesExtraSections = ({ media }: GamesDetailsProps<typeof MediaType
             {collection.length > 0 &&
                 <section>
                     <MediaSectionTitle title="In The Same Series"/>
-                    <div className="flex flex-nowrap gap-2 overflow-x-auto pb-4 scrollbar-thin sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible">
+                    <div className="flex flex-nowrap gap-3 overflow-x-auto pb-4 scrollbar-thin sm:grid sm:grid-cols-5 sm:gap-y-6 sm:overflow-visible">
                         {visibleCollection.map((item) =>
                             <div key={item.mediaId} className="w-32 flex-none sm:w-full">
                                 <SimilarMediaCard

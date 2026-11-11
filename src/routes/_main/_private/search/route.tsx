@@ -17,13 +17,13 @@ import {AdvancedSearchFilters, globalSearchSchema} from "@/lib/schemas";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
 import {useSearchAnalytics} from "@/lib/client/hooks/use-search-analytics";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
+import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/media/advanced-search";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
-import {SearchMediaListIndicator} from "@/lib/client/components/media/base/SearchMediaListIndicator";
-import {ChevronLeft, ChevronRight, Database, PencilLine, ScanSearch, Search, SearchX} from "lucide-react";
+import {Check, ChevronLeft, ChevronRight, Database, PencilLine, ScanSearch, Search, SearchX} from "lucide-react";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCard, MediaCardBadge, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 export const Route = createFileRoute("/_main/_private/search")({
@@ -365,14 +365,14 @@ const SearchResults = ({ data, page, hasNextPage, onPageChange }: SearchResultsP
                 </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <MediaListGrid>
                 {data.map((item) =>
                     <SearchResultCard
                         item={item}
                         key={`${item.itemType}-${item.id}`}
                     />
                 )}
-            </div>
+            </MediaListGrid>
 
             {(page > 1 || hasNextPage) &&
                 <div className="flex justify-end pt-2">
@@ -402,20 +402,22 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
                 item={{ mediaId: item.id, mediaName: item.name, imageCover: item.image }}
                 onClick={() => captureEvent("search_result_selected", { surface: "search_page", result_type: item.itemType })}
             >
-                {item.inCurrentUserList &&
-                    <MediaCardRightCorner>
-                        <SearchMediaListIndicator mediaName={item.name} presentation="corner"/>
-                    </MediaCardRightCorner>
-                }
+                <MediaCardBadge>
+                    <MediaTypeIcon mediaType={mediaType}/>
+                    <MediaTypeText mediaType={mediaType}/>
+                </MediaCardBadge>
                 <MediaCardFooter>
-                    <MediaCardTitle title={item.name}>
-                        {item.name}
+                    <MediaCardTitle title={item.name} className="flex items-center gap-1.5 tracking-tight">
+                        <span className="truncate">{item.name}</span>
+                        {item.inCurrentUserList &&
+                            <span className="ml-auto shrink-0" title="Already in your list" aria-label={`${item.name} is already in your list`}>
+                                <Check className="size-4 text-success"/>
+                            </span>
+                        }
                     </MediaCardTitle>
                     {item.date &&
                         <MediaCardMeta>
                             <MediaCardDetails>
-                                <MediaTypeIcon mediaType={mediaType}/>
-                                <MediaTypeText mediaType={mediaType}/>
                                 {formatDate(item.date)}
                             </MediaCardDetails>
                         </MediaCardMeta>
@@ -427,7 +429,8 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
 
     return (
         <article
-            className="overflow-hidden rounded-lg border bg-muted transition-colors hover:border-brand/50 focus-within:border-brand/50 focus-within:ring-2 focus-within:ring-brand/30">
+            className="overflow-hidden rounded-lg border bg-muted transition-colors hover:border-brand/50 focus-within:border-brand/50
+            focus-within:ring-2 focus-within:ring-brand/30">
             <Link
                 to="/profile/$username"
                 params={{ username: item.name }}
@@ -440,10 +443,7 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
                     src={item.image}
                     className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                 />
-                <div
-                    className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 via-black/70 to-transparent px-3
-                    pb-3 pt-10 text-white"
-                >
+                <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 via-black/70 to-transparent px-3 pb-3 pt-10 text-white">
                     <div className="truncate font-medium">
                         {item.name}
                     </div>

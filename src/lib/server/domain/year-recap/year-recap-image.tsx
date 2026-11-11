@@ -9,7 +9,6 @@ import {getImageFilename} from "@/lib/server/core/images/image-url";
 import {YearRecap, YearRecapTitle} from "@/lib/types/year-recap.types";
 import {getMediaTheme} from "@/lib/client/components/media/media-theme";
 import {formatContinuousTime, formatHours, formatNumber, formatPercent} from "@/lib/utils/formatting/number";
-import {MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardStatic, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 const WIDTH = 1080;
@@ -177,55 +176,63 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
             </div>
             <div className="mt-3.5 flex gap-3">
                 {topTitles.map((title) =>
-                    <MediaCardStatic
+                    <article
                         key={`${title.mediaType}-${title.mediaId}`}
                         className="relative h-52.5 w-37.25 flex-[0_0_149px] overflow-hidden rounded-[10px] border text-white"
                         style={{
                             borderColor: YEAR_RECAP_PALETTE.mediaCard,
                             backgroundColor: YEAR_RECAP_PALETTE.mediaCard,
                         }}
-                        item={{
-                            mediaName: title.name,
-                            mediaId: title.mediaId,
-                            imageCover: title.coverDataUrl ?? undefined,
-                        }}
                     >
+                        {title.coverDataUrl &&
+                            <img
+                                alt={title.name}
+                                src={title.coverDataUrl}
+                                className="size-full object-cover"
+                            />
+                        }
                         {title.ratingLabel &&
                             <span
-                                style={{ backgroundColor: YEAR_RECAP_PALETTE.overlay, borderColor: getMediaTheme(title.mediaType).recapColor }}
                                 className="absolute left-2 top-2 z-20 rounded-full border px-2 py-1 text-[10px] font-bold leading-none text-white"
+                                style={{
+                                    backgroundColor: YEAR_RECAP_PALETTE.overlay,
+                                    borderColor: getMediaTheme(title.mediaType).recapColor,
+                                }}
                             >
                                 {title.ratingLabel}
                             </span>
                         }
-                        <MediaCardFooter
+                        <div
                             className="absolute inset-x-0 bottom-0 flex flex-col gap-1 px-2.5 pb-2.75 pt-9"
                             style={{
                                 backgroundImage: `linear-gradient(to top, ${YEAR_RECAP_PALETTE.overlayStrong} 12%,
                                 ${YEAR_RECAP_PALETTE.overlay} 58%, transparent 100%)`,
                             }}
                         >
-                            <MediaCardTitle title={title.name} className="min-w-0 truncate text-[11px] font-bold leading-[1.15]">
+                            <h3 title={title.name} className="min-w-0 truncate text-[11px] font-bold leading-[1.15]">
                                 {title.name}
-                            </MediaCardTitle>
-                            <MediaCardMeta
+                            </h3>
+                            <div
                                 style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}
                                 className="flex items-center justify-between gap-1.25 text-[9px] font-bold"
                             >
-                                <MediaCardDetails
+                                <div
                                     className="flex items-center gap-1 tracking-[0.7px]"
                                     style={{ color: getMediaTheme(title.mediaType).recapColor }}
                                 >
                                     {recap.scope === "all" &&
                                         <span>{title.mediaType.toUpperCase()}</span>
                                     }
+                                    {recap.scope === "all" && title.releaseDate &&
+                                        <span aria-hidden="true" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>•</span>
+                                    }
                                     {title.releaseDate &&
                                         <span>{title.releaseDate.slice(0, 4)}</span>
                                     }
-                                </MediaCardDetails>
-                            </MediaCardMeta>
-                        </MediaCardFooter>
-                    </MediaCardStatic>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
                 )}
             </div>
 

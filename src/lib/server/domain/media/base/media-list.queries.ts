@@ -107,7 +107,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
         },
 
         async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<TRepoDef["tables"]["listTable"]["$inferSelect"]>> {
-            const { page, perPage, offset, limit } = resolvePagination({ page: args.page, perPage: args.perPage });
+            const { page, perPage, offset, limit } = resolvePagination({ page: args.page, perPage: args.perPage, defaultPerPage: 24 });
             const sortKeyName = resolveSorting(args.sorting, Object.keys(listQuery.sorts), listQuery.defaultSort);
             const selectedSort = listQuery.sorts[sortKeyName];
             const filterArgs = { ...args, currentUserId, userId };

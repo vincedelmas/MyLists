@@ -1,7 +1,8 @@
+import {Check} from "lucide-react";
 import React, {useState} from "react";
 import {MediaType, Status} from "@/lib/utils/enums";
-import {canShowProgress} from "@/lib/utils/media/status";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {canShowProgress} from "@/lib/utils/media/status";
 import type {UserMediaItem} from "@/lib/types/query.options.types";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
@@ -10,10 +11,8 @@ import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorit
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
-import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
 import {
     MediaCard,
-    MediaCardDetails,
     MediaCardFooter,
     MediaCardLeftCorner,
     MediaCardMeta,
@@ -50,11 +49,13 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     } = props;
 
     const isCommon = isMediaTypeActive && userMedia.common;
+    const hasMetadata = userMedia.rating !== null || !!(annotation || userMedia.comment || userMedia.favorite)
+        || ("redo" in userMedia && !!userMedia.redo);
     const showMediaDetails = mediaDetailsDisplay && canShowProgress(userMedia.status);
 
     return (
         <>
-            <MediaCard item={userMedia} mediaType={mediaType}>
+            <MediaCard item={userMedia} mediaType={mediaType} layout="poster">
                 {(rank !== undefined || showMediaDetails) &&
                     <MediaCardLeftCorner>
                         {rank !== undefined && <span>#{rank}</span>}
@@ -62,7 +63,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                     </MediaCardLeftCorner>
                 }
 
-                {isConnected &&
+                {isConnected && (isCurrent || !isCommon) &&
                     <MediaCardRightCorner>
                         {isCurrent ?
                             <MediaCardEditAction
@@ -70,60 +71,63 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                                 onClick={() => setDialogOpen(true)}
                             />
                             :
-                            isConnected && (isCommon ?
-                                    <DisplayInUserListCheck/>
-                                    :
-                                    <QuickAddMedia
-                                        mediaType={mediaType}
-                                        onAdded={onEdited}
-                                        allStatuses={allStatuses}
-                                        mediaId={userMedia.mediaId}
-                                        isMediaTypeActive={isMediaTypeActive}
-                                    />
-                            )
+                            <QuickAddMedia
+                                rounded
+                                onAdded={onEdited}
+                                mediaType={mediaType}
+                                allStatuses={allStatuses}
+                                mediaId={userMedia.mediaId}
+                                isMediaTypeActive={isMediaTypeActive}
+                            />
                         }
                     </MediaCardRightCorner>
                 }
 
+                <div className="pointer-events-none absolute inset-x-0 top-0 flex aspect-2/3 items-end p-1.5">
+                    <Badge variant="overlay" className="h-6 max-w-full gap-1.5 border-white/10 bg-black/70 px-2 text-[11px] shadow-sm backdrop-blur-md">
+                        {showMediaType && <MediaTypeIcon mediaType={mediaType}/>}
+                        {userMedia.status}
+                    </Badge>
+                </div>
+
                 <MediaCardFooter>
-                    <div className="flex min-w-0 items-center justify-between gap-2">
-                        <MediaCardTitle className="grow" title={userMedia.mediaName}>
-                            {userMedia.mediaName}
-                        </MediaCardTitle>
-                        <div className="shrink-0">
-                            {ratingDisplay ?? (rating &&
-                                <DisplayRating
-                                    rating={rating}
-                                />
-                            )}
-                        </div>
-                    </div>
-                    <MediaCardMeta>
-                        <MediaCardDetails>
-                            <Badge variant="overlay" className="shrink-0">
-                                {showMediaType && <MediaTypeIcon mediaType={mediaType}/>}
-                                {userMedia.status}
-                            </Badge>
-                        </MediaCardDetails>
-                        <MediaCardSignals>
-                            {annotation &&
-                                <span role="group" aria-label="Collection note">
-                                    <DisplayComment content={annotation}/>
-                                </span>
-                            }
-                            {userMedia.comment &&
-                                <DisplayComment
-                                    content={userMedia.comment}
-                                />
-                            }
-                            {userMedia.favorite &&
-                                <DisplayFavorite
-                                    isFavorite={userMedia.favorite}
-                                />
-                            }
-                            {redoDisplay}
-                        </MediaCardSignals>
-                    </MediaCardMeta>
+                    <MediaCardTitle title={userMedia.mediaName} className="flex items-center gap-1.5 tracking-tight">
+                        <span className="truncate">{userMedia.mediaName}</span>
+                        {isConnected && !isCurrent && isCommon &&
+                            <Check className="ml-auto size-4 shrink-0 text-brand"/>
+                        }
+                    </MediaCardTitle>
+                    {hasMetadata &&
+                        <MediaCardMeta className="min-h-4">
+                            <div className="pointer-events-auto shrink-0 font-semibold tabular-nums text-foreground [&>div]:text-xs [&>button]:text-xs [&_svg]:size-3! @min-[128px]/media-card:[&_svg]:size-3! @min-[200px]/media-card:[&_svg]:size-3!">
+                                {ratingDisplay ?? (rating &&
+                                    <DisplayRating rating={rating}/>
+                                )}
+                            </div>
+                            <MediaCardSignals className="gap-2 @min-[128px]/media-card:gap-2 @min-[200px]/media-card:gap-2 [&_svg]:size-3! @min-[128px]/media-card:[&_svg]:size-3! @min-[200px]/media-card:[&_svg]:size-3!">
+                                {annotation &&
+                                    <span role="group" aria-label="Collection note">
+                                        <DisplayComment content={annotation}/>
+                                    </span>
+                                }
+                                {userMedia.comment &&
+                                    <DisplayComment
+                                        content={userMedia.comment}
+                                    />
+                                }
+                                {userMedia.favorite &&
+                                    <DisplayFavorite
+                                        isFavorite={userMedia.favorite}
+                                    />
+                                }
+                                {redoDisplay &&
+                                    <div className="flex items-center text-xs text-muted-foreground [&>button]:text-xs [&>div]:text-xs">
+                                        {redoDisplay}
+                                    </div>
+                                }
+                            </MediaCardSignals>
+                        </MediaCardMeta>
+                    }
                 </MediaCardFooter>
             </MediaCard>
 

@@ -11,6 +11,7 @@ import {Popover, PopoverContent, PopoverTitle, PopoverTrigger} from "@/lib/clien
 
 
 interface TvSeasonPopoverProps {
+    compact?: boolean;
     userId: number;
     mediaId: number;
     value: number | null;
@@ -20,7 +21,7 @@ interface TvSeasonPopoverProps {
 }
 
 
-export const TvSeasonPopover = ({ kind, value, mediaType, mediaId, userId, ratingSystem }: TvSeasonPopoverProps) => {
+export const TvSeasonPopover = ({ kind, value, mediaType, mediaId, userId, ratingSystem, compact = false }: TvSeasonPopoverProps) => {
     const [open, setOpen] = useState(false);
     const query = useQuery({ ...tvSeasonsOptions(mediaType, mediaId, userId), enabled: open });
 
@@ -41,7 +42,7 @@ export const TvSeasonPopover = ({ kind, value, mediaType, mediaId, userId, ratin
                 <span>
                     {kind === "rating"
                         ? formatRating(ratingSystem, value)
-                        : `${value} S.`
+                        : compact ? value : `${value} S.`
                     }
                 </span>
             </PopoverTrigger>

@@ -24,6 +24,7 @@ export const TvListItem = (props: TvListItemProps<TvMediaType>) => {
             }
             redoDisplay={
                 <TvSeasonPopover
+                    compact
                     kind="redo"
                     mediaType={props.mediaType}
                     value={props.userMedia.redo}

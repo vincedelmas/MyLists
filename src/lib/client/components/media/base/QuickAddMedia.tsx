@@ -1,5 +1,5 @@
 import React from "react";
-import {CirclePlus} from "lucide-react";
+import {CirclePlus, Plus} from "lucide-react";
 import {captureEvent} from "@/lib/client/analytics";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
@@ -10,6 +10,7 @@ import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutation
 
 
 interface QuickAddMediaProps {
+    rounded?: boolean;
     mediaId: number;
     mediaType: MediaType;
     isMediaTypeActive: boolean;
@@ -18,7 +19,7 @@ interface QuickAddMediaProps {
 }
 
 
-export const QuickAddMedia = ({ mediaType, mediaId, isMediaTypeActive, allStatuses, onAdded }: QuickAddMediaProps) => {
+export const QuickAddMedia = ({ mediaType, mediaId, isMediaTypeActive, allStatuses, onAdded, rounded = false }: QuickAddMediaProps) => {
     const addToListMutation = useAddMediaToListMutation("quick_add");
 
     const loading = useDelayedLoading(addToListMutation.isPending);
@@ -42,8 +43,14 @@ export const QuickAddMedia = ({ mediaType, mediaId, isMediaTypeActive, allStatus
                         variant="ghost"
                         aria-label="Add media to list"
                         isLoading={addToListMutation.isPending}
-                        className="opacity-70 hover:opacity-100"
-                        icon={<CirclePlus data-icon="inline-start"/>}
+                        className={rounded
+                            ? "transition-opacity [@media(hover:hover)_and_(pointer:fine)]:opacity-0 " +
+                            "[@media(hover:hover)_and_(pointer:fine)]:pointer-events-none " +
+                            "group-hover:opacity-100 group-hover:pointer-events-auto " +
+                            "group-focus-within:opacity-100 group-focus-within:pointer-events-auto " +
+                            "data-popup-open:opacity-100 data-popup-open:pointer-events-auto motion-reduce:transition-none"
+                            : "opacity-70 hover:opacity-100"}
+                        icon={rounded ? <Plus data-icon="inline-start"/> : <CirclePlus data-icon="inline-start"/>}
                     />
                 }
             />

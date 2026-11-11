@@ -18,6 +18,7 @@ interface MediaCardBaseProps {
     mediaType: MediaType;
     children: React.ReactNode;
     "aria-labelledby"?: string;
+    layout?: "overlay" | "poster";
     onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
@@ -43,6 +44,7 @@ type MediaCardProps = MediaCardBaseProps & (
 const MediaCardContext = React.createContext(false);
 const MediaCardMetaContext = React.createContext(false);
 const MediaCardFooterContext = React.createContext(false);
+const MediaCardLayoutContext = React.createContext("overlay");
 
 
 const useRequiredMediaCardContext = (context: React.Context<boolean>, component: string, parent: string) => {
@@ -58,8 +60,7 @@ const MediaCardFrame = ({ children, className, ...props }: React.ComponentProps<
             data-slot="media-card"
             className={cn(
                 "@container/media-card group relative aspect-2/3 h-full overflow-hidden rounded-xl border bg-muted text-white " +
-                "transition-all duration-300 hover:border-brand/50 focus-within:border-brand/50 focus-within:ring-2 " +
-                "focus-within:ring-brand/30",
+                "transition-all duration-300 hover:border-brand/50",
                 className,
             )}
             {...props}
@@ -71,36 +72,43 @@ const MediaCardFrame = ({ children, className, ...props }: React.ComponentProps<
 
 
 export const MediaCard = (props: MediaCardProps) => {
-    const { children, mediaType, className } = props;
+    const { children, mediaType, className, layout = "overlay" } = props;
 
     return (
         <MediaCardContext.Provider value={true}>
-            <MediaCardFrame className={className} aria-labelledby={props["aria-labelledby"]}>
-                {props.external ?
-                    <Link
-                        onClick={props.onClick}
-                        to="/details/$mediaType/external/$apiId"
-                        className="absolute inset-0 outline-none"
-                        aria-label={`View ${props.item.mediaName}`}
-                        params={{ mediaType, apiId: props.item.mediaId.toString() }}
-                    >
-                        <MediaCardImage
-                            item={props.item}
-                        />
-                    </Link>
-                    :
-                    <Link
-                        onClick={props.onClick}
-                        to="/details/$mediaType/$mediaId"
-                        className="absolute inset-0 outline-none"
-                        aria-label={`View ${props.item.mediaName}`}
-                        params={{ mediaType, mediaId: props.item.mediaId }}
-                    >
-                        <MediaCardImage item={props.item}/>
-                    </Link>
-                }
-                {children}
-            </MediaCardFrame>
+            <MediaCardLayoutContext.Provider value={layout}>
+                <MediaCardFrame
+                    aria-labelledby={props["aria-labelledby"]}
+                    className={cn(layout === "poster"
+                        && "aspect-auto h-auto overflow-visible rounded-none border-0 bg-transparent text-foreground", className)}
+                >
+                    {props.external ?
+                        <Link
+                            onClick={props.onClick}
+                            to="/details/$mediaType/external/$apiId"
+                            className="absolute inset-0 rounded-xl outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted-foreground"
+                            aria-label={`View ${props.item.mediaName}`}
+                            params={{ mediaType, apiId: props.item.mediaId.toString() }}
+                        >
+                            <MediaCardImage
+                                item={props.item}
+                            />
+                        </Link>
+                        :
+                        <Link
+                            onClick={props.onClick}
+                            to="/details/$mediaType/$mediaId"
+                            className="absolute inset-0 rounded-xl outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted-foreground"
+                            aria-label={`View ${props.item.mediaName}`}
+                            params={{ mediaType, mediaId: props.item.mediaId }}
+                        >
+                            <MediaCardImage item={props.item}/>
+                        </Link>
+                    }
+                    {layout === "poster" && <div aria-hidden="true" className="pointer-events-none aspect-2/3"/>}
+                    {children}
+                </MediaCardFrame>
+            </MediaCardLayoutContext.Provider>
         </MediaCardContext.Provider>
     );
 };
@@ -122,37 +130,52 @@ export const MediaCardStatic = ({ children, fallback, item, ...props }: MediaCar
 
 
 const MediaCardImage = ({ item }: { item: MediaCardItem }) => {
+    const layout = React.useContext(MediaCardLayoutContext);
     return (
         <img
             loading="lazy"
             alt={item.mediaName}
             src={item.imageCover ?? item.mediaCover}
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
+            className={cn(
+                "size-full object-cover transition-transform duration-500 group-hover:scale-[1.025]",
+                layout === "poster" && "aspect-2/3 h-auto rounded-lg shadow-sm transition-[box-shadow,filter] duration-300 group-hover:scale-100 group-hover:shadow-lg group-hover:shadow-black/20 group-hover:brightness-105 motion-reduce:transition-none",
+            )}
         />
     );
 };
 
 
 export const MediaCardRightCorner = ({ children, className, ...props }: React.ComponentProps<"div">) => {
+    const layout = React.useContext(MediaCardLayoutContext);
     return (
         <>
             <div
                 aria-hidden="true"
                 data-slot="media-card-right-corner-background"
-                className="absolute right-0 top-0 rounded-tr-md border-solid border-t-0 border-r-44 border-b-44
-                border-l-0 border-[transparent_var(--background)] opacity-70 @min-[128px]/media-card:border-r-54
-                @min-[128px]/media-card:border-b-54 @min-[200px]/media-card:border-r-55
-                @min-[200px]/media-card:border-b-55 @min-[250px]/media-card:border-r-64
-                @min-[250px]/media-card:border-b-64"
+                className={cn(
+                    "absolute right-0 top-0 border-solid border-t-0 border-l-0 border-[transparent_var(--background)] opacity-70",
+                    layout === "poster"
+                        ? "hidden"
+                        : "rounded-tr-md border-r-44 border-b-44 @min-[128px]/media-card:border-r-54 " +
+                        "@min-[128px]/media-card:border-b-54 @min-[200px]/media-card:border-r-55 " +
+                        "@min-[200px]/media-card:border-b-55 @min-[250px]/media-card:border-r-64 " +
+                        "@min-[250px]/media-card:border-b-64",
+                )}
             />
             <div
                 data-slot="media-card-right-corner"
                 className={cn(
-                    "absolute right-1.5 top-1.5 z-10 flex max-w-[calc(100%-0.75rem)] items-start gap-1 " +
-                    "[&_svg]:size-3.5! @min-[128px]/media-card:right-2 @min-[128px]/media-card:top-2 " +
-                    "@min-[128px]/media-card:max-w-[calc(100%-1rem)] @min-[128px]/media-card:gap-1.5 " +
-                    "@min-[128px]/media-card:[&_svg]:size-4! @min-[250px]/media-card:right-3 " +
-                    "@min-[250px]/media-card:top-3 @min-[250px]/media-card:[&_svg]:size-5!",
+                    "absolute z-10 flex items-start gap-1",
+                    layout === "poster"
+                        ? "right-1.5 top-1.5 max-w-[calc(100%-0.75rem)] items-center text-white " +
+                        "[&>button]:flex [&>button]:size-7 [&>button]:items-center [&>button]:justify-center " +
+                        "[&>button]:rounded-full [&>button]:border [&>button]:border-white/15 " +
+                        "[&>button]:bg-black/55 [&>button]:backdrop-blur-md [&>button]:hover:bg-black/80 [&_svg]:size-3!"
+                        : "right-1.5 top-1.5 max-w-[calc(100%-0.75rem)] [&_svg]:size-3.5! " +
+                        "@min-[128px]/media-card:right-2 @min-[128px]/media-card:top-2 " +
+                        "@min-[128px]/media-card:max-w-[calc(100%-1rem)] @min-[128px]/media-card:gap-1.5 " +
+                        "@min-[128px]/media-card:[&_svg]:size-4! @min-[250px]/media-card:right-3 " +
+                        "@min-[250px]/media-card:top-3 @min-[250px]/media-card:[&_svg]:size-5!",
                     className,
                 )}
                 {...props}
@@ -165,6 +188,7 @@ export const MediaCardRightCorner = ({ children, className, ...props }: React.Co
 
 
 export const MediaCardLeftCorner = ({ children, className, ...props }: React.ComponentProps<"div">) => {
+    const layout = React.useContext(MediaCardLayoutContext);
     return (
         <div
             data-slot="media-card-left-corner"
@@ -173,15 +197,21 @@ export const MediaCardLeftCorner = ({ children, className, ...props }: React.Com
                 "@min-[128px]/media-card:left-2 @min-[128px]/media-card:top-2 " +
                 "@min-[128px]/media-card:max-w-[calc(100%-1rem)] @min-[128px]/media-card:gap-1.5 " +
                 "@min-[250px]/media-card:left-3 @min-[250px]/media-card:top-3",
+                layout === "poster" && "@min-[128px]/media-card:left-1.5 @min-[128px]/media-card:top-1.5 " +
+                "@min-[250px]/media-card:left-1.5 @min-[250px]/media-card:top-1.5 " +
+                "@min-[128px]/media-card:max-w-[calc(100%-0.75rem)]",
                 className,
             )}
             {...props}
         >
             <Badge
                 variant="overlay"
-                className="h-4 gap-0.5 px-1.5 text-[10px] [&>svg]:size-2.5! @min-[128px]/media-card:h-5
-                @min-[128px]/media-card:gap-1 @min-[128px]/media-card:px-2 @min-[128px]/media-card:text-xs
-                @min-[128px]/media-card:[&>svg]:size-3!"
+                className={cn(
+                    "h-4 gap-0.5 px-1.5 text-[10px] [&>svg]:size-2.5! @min-[128px]/media-card:h-5 " +
+                    "@min-[128px]/media-card:gap-1 @min-[128px]/media-card:px-2 @min-[128px]/media-card:text-xs " +
+                    "@min-[128px]/media-card:[&>svg]:size-3!",
+                    layout === "poster" && "text-[11px] @min-[128px]/media-card:text-[11px]",
+                )}
             >
                 {children}
             </Badge>
@@ -192,6 +222,7 @@ export const MediaCardLeftCorner = ({ children, className, ...props }: React.Com
 
 export const MediaCardFooter = ({ children, className, ...props }: React.ComponentProps<"div">) => {
     useRequiredMediaCardContext(MediaCardContext, "MediaCardFooter", "MediaCard");
+    const layout = React.useContext(MediaCardLayoutContext);
 
     return (
         <MediaCardFooterContext.Provider value={true}>
@@ -201,9 +232,13 @@ export const MediaCardFooter = ({ children, className, ...props }: React.Compone
                     "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex min-w-0 flex-col gap-1 " +
                     "bg-linear-to-t from-black/95 via-black/65 to-transparent p-2 pt-8 " +
                     "@min-[128px]/media-card:gap-1.5 @min-[128px]/media-card:p-2.5 @min-[128px]/media-card:pt-9 " +
-                    "@min-[200px]/media-card:p-3 @min-[200px]/media-card:pt-10 @min-[250px]/media-card:gap-2 " +
-                    "@min-[250px]/media-card:p-4 @min-[250px]/media-card:pt-12 " +
+                    "@min-[200px]/media-card:p-3 @min-[200px]/media-card:pt-10 " +
+                    "@min-[250px]/media-card:gap-2 @min-[250px]/media-card:p-4 @min-[250px]/media-card:pt-12 " +
                     "**:data-[slot=media-card-signals]:pointer-events-auto",
+                    layout === "poster" && "relative inset-auto gap-1.5 bg-none px-0.5 pt-2 pb-0 " +
+                    "@min-[128px]/media-card:px-0.5 @min-[128px]/media-card:pt-2 @min-[128px]/media-card:pb-0 " +
+                    "@min-[200px]/media-card:px-0.5 @min-[200px]/media-card:pt-2 @min-[200px]/media-card:pb-0 " +
+                    "@min-[250px]/media-card:px-0.5 @min-[250px]/media-card:pt-2 @min-[250px]/media-card:pb-0",
                     className,
                 )}
                 {...props}
@@ -220,7 +255,8 @@ export const MediaCardTitle = ({ children, lines = 1, className, ...props }: Med
         <h3
             data-slot="media-card-title"
             className={cn(
-                "min-w-0 text-xs font-semibold leading-tight @min-[128px]/media-card:text-sm " +
+                "min-w-0 text-xs font-semibold leading-tight " +
+                "@min-[128px]/media-card:text-sm " +
                 "@min-[250px]/media-card:text-lg",
                 lines === 1 ? "truncate" : "line-clamp-2",
                 className,
@@ -234,6 +270,7 @@ export const MediaCardTitle = ({ children, lines = 1, className, ...props }: Med
 
 
 export const MediaCardMeta = ({ children, className, ...props }: React.ComponentProps<"div">) => {
+    const layout = React.useContext(MediaCardLayoutContext);
     useRequiredMediaCardContext(MediaCardFooterContext, "MediaCardMeta", "MediaCardFooter");
 
     return (
@@ -243,6 +280,7 @@ export const MediaCardMeta = ({ children, className, ...props }: React.Component
                 className={cn(
                     "flex min-w-0 items-center justify-between gap-1 text-[10px] font-medium text-white/70 " +
                     "@min-[128px]/media-card:gap-1.5 @min-[128px]/media-card:text-xs @min-[200px]/media-card:gap-2",
+                    layout === "poster" && "text-muted-foreground",
                     className,
                 )}
                 {...props}
@@ -262,9 +300,9 @@ export const MediaCardDetails = ({ className, children, ...props }: React.Compon
         <div
             data-slot="media-card-details"
             className={cn(
-                "flex min-w-0 items-center gap-1 [&_svg]:size-3! @min-[128px]/media-card:gap-1.5 " +
-                "@min-[128px]/media-card:[&_svg]:size-3.5! @min-[200px]/media-card:gap-2 " +
-                "@min-[200px]/media-card:[&_svg]:size-4!",
+                "flex min-w-0 items-center gap-1 [&_svg]:size-3! " +
+                "@min-[128px]/media-card:gap-1.5 @min-[128px]/media-card:[&_svg]:size-3.5! " +
+                "@min-[200px]/media-card:gap-2 @min-[200px]/media-card:[&_svg]:size-4!",
                 className,
             )}
             {...props}

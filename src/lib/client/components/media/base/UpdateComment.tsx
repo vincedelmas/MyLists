@@ -1,10 +1,9 @@
 import {useState} from "react";
-import {Maximize2} from "lucide-react";
 import {UpdateType} from "@/lib/utils/enums";
+import {Maximize2, Pencil} from "lucide-react";
 import {COMMENT_MAX_LENGTH} from "@/lib/utils/constants";
 import {Button} from "@/lib/client/components/ui/button";
 import {Textarea} from "@/lib/client/components/ui/textarea";
-import {Separator} from "@/lib/client/components/ui/separator";
 import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {StructuredComment} from "@/lib/client/components/media/base/StructuredComment";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
@@ -69,28 +68,20 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
     };
 
     return (
-        <div className="mt-4">
-            <h4 className="text-md flex justify-between items-center font-medium">
-                <span>Comment</span>
+        <div className="mt-5 border-t pt-4">
+            <h4 className="mb-1 flex items-center justify-between text-sm font-medium">
+                <span>Your comment</span>
                 <div className="flex items-center gap-1 text-muted-foreground">
                     {shouldShowExpandedReader && !isEditing &&
                         <Button variant="ghost" size="xs" onClick={handleOpenExpandedReader}>
                             <Maximize2/>
                         </Button>
                     }
-                    <Button
-                        size="bare"
-                        type="button"
-                        variant="ghost"
-                        disabled={disabled}
-                        className="text-xs"
-                        onClick={handleEditToggle}
-                    >
-                        {content ? "Edit" : "Add"}
+                    <Button type="button" size="icon-sm" variant="ghost" disabled={disabled} onClick={handleEditToggle}>
+                        <Pencil/>
                     </Button>
                 </div>
             </h4>
-            <Separator/>
             {isEditing ?
                 <div className="space-y-2">
                     <Textarea
@@ -125,7 +116,7 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
                     </div>
                 </div>
                 :
-                <div className="mt-1 text-muted-foreground text-sm wrap-break-word max-h-37 overflow-y-auto scrollbar-thin pr-1">
+                <div className="mt-1 text-muted-foreground text-xs leading-relaxed wrap-break-word max-h-37 overflow-y-auto scrollbar-thin pr-1">
                     {content
                         ? <StructuredComment content={content}/>
                         : "No comments added yet."
@@ -134,7 +125,7 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
             }
 
             <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogContent className="max-h-[90vh] gap-3 overflow-hidden sm:max-w-2xl">
+                <DialogContent className="max-h-[90vh] gap-3 overflow-hidden sm:max-w-xl">
                     <DialogHeader>
                         <div className="flex items-center justify-between gap-3 pr-6">
                             <DialogTitle>Comment</DialogTitle>
@@ -182,7 +173,7 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
                             </div>
                         </div>
                         :
-                        <div className="-mr-3 max-h-[70vh] overflow-y-auto pr-4 text-sm leading-relaxed scrollbar-thin sm:text-base">
+                        <div className="-mr-3 max-h-[70vh] overflow-y-auto pr-4 text-sm leading-relaxed scrollbar-thin sm:text-sm">
                             {content &&
                                 <StructuredComment
                                     content={content}

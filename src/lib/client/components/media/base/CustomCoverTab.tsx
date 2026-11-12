@@ -104,8 +104,8 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
                         />
                     </div>
                     :
-                    <div className="h-52 w-35 flex flex-col gap-2 px-2 justify-center text-center items-center rounded-md border
-                    border-dashed text-sm text-muted-foreground">
+                    <div className="h-52 w-35 flex flex-col gap-2 px-3 justify-center text-center items-center rounded-md border
+                    border-dashed text-xs text-muted-foreground">
                         <ImageOff className="size-6"/>
                         No custom cover set for this media
                     </div>
@@ -113,7 +113,7 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
             </div>
 
             <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4 border-b pb-6">
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-3">
                     <FieldSet disabled={onUpdateMutation.isPending}>
                         <FieldGroup>
                             <CoverSourceFields

@@ -47,7 +47,7 @@ export const OverviewTab = (props: OverviewTabProps) => {
         : getFeelingIcon(rating, { size: 22, className: "mt-0.5" });
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-10">
             <section className="overflow-hidden rounded-xl border shadow-xs">
                 <div className="p-5 sm:p-6">
                     <CompactStatsGrid
@@ -109,17 +109,17 @@ export const OverviewTab = (props: OverviewTabProps) => {
                 </DistributionContainer>
             </section>
 
+            <ProfilePinnedItems
+                pins={profilePins}
+                isCurrent={isCurrent}
+            />
+
             {showContinue &&
                 <ContinuePreview
                     isCurrent={isCurrent}
                     items={inProgressMedia}
                 />
             }
-
-            <ProfilePinnedItems
-                pins={profilePins}
-                isCurrent={isCurrent}
-            />
 
             <HighlightedMedia
                 showMediaType={true}

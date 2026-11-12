@@ -33,11 +33,11 @@ export const CoverSourceFields = ({ mode, onModeChange, disabled }: CoverSourceF
                 }}
             >
                 <ToggleGroupItem value="link">
-                    <Link2 data-icon="inline-start"/>{" "}
+                    <Link2 data-icon="inline-start"/>
                     Image link
                 </ToggleGroupItem>
                 <ToggleGroupItem value="upload">
-                    <UploadCloud data-icon="inline-start"/>{" "}
+                    <UploadCloud data-icon="inline-start"/>
                     Upload image
                 </ToggleGroupItem>
             </ToggleGroup>
@@ -47,7 +47,7 @@ export const CoverSourceFields = ({ mode, onModeChange, disabled }: CoverSourceF
                     control={form.control}
                     render={({ field, fieldState }) =>
                         <Field data-invalid={fieldState.invalid} data-disabled={disabled}>
-                            <FieldLabel htmlFor={`${fieldId}-image-url`}>
+                            <FieldLabel htmlFor={`${fieldId}-image-url`} className="text-xs">
                                 Image URL
                             </FieldLabel>
                             <Input
@@ -56,7 +56,6 @@ export const CoverSourceFields = ({ mode, onModeChange, disabled }: CoverSourceF
                                 id={`${fieldId}-image-url`}
                                 aria-invalid={fieldState.invalid}
                                 placeholder="https://example.com/cover.jpg"
-                                aria-describedby={fieldState.invalid ? `${fieldId}-image-url-error` : undefined}
                                 onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
                             />
                             <FieldError
@@ -72,7 +71,7 @@ export const CoverSourceFields = ({ mode, onModeChange, disabled }: CoverSourceF
                     control={form.control}
                     render={({ field: { onChange, onBlur, name, ref }, fieldState }) =>
                         <Field data-invalid={fieldState.invalid} data-disabled={disabled}>
-                            <FieldLabel htmlFor={`${fieldId}-image-file`}>
+                            <FieldLabel htmlFor={`${fieldId}-image-file`} className="text-xs">
                                 Upload image
                             </FieldLabel>
                             <Input

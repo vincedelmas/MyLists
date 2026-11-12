@@ -24,7 +24,8 @@ export const ProfilePinnedItems = ({ pins, isCurrent }: ProfilePinnedItemsProps)
             <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col gap-1">
                     <h2 id="profile-pinned-items-title" className="flex items-center gap-2 text-sm font-semibold">
-                        <Pin className="size-3.5 text-brand" aria-hidden="true"/> Pinned lists & collections
+                        <Pin className="size-3.5 text-brand" aria-hidden="true"/>
+                        Pinned lists & collections
                     </h2>
                     <p className="text-xs text-muted-foreground">
                         Quick access to selected lists and collections

@@ -1,4 +1,3 @@
-import {useId, useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
@@ -7,6 +6,7 @@ import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
+import {type ReactElement, useId, useState} from "react";
 import {DialogRootChangeEventDetails} from "@base-ui/react";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
@@ -23,10 +23,11 @@ interface TagsDialogProps {
     tags: Tag[];
     mediaId: number;
     mediaType: MediaType;
+    trigger?: ReactElement;
 }
 
 
-export const TagsDialog = ({ mediaType, mediaId, tags }: TagsDialogProps) => {
+export const TagsDialog = ({ mediaType, mediaId, tags, trigger }: TagsDialogProps) => {
     const fieldId = useId();
     const { currentUser } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
@@ -64,9 +65,13 @@ export const TagsDialog = ({ mediaType, mediaId, tags }: TagsDialogProps) => {
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogTrigger render={<Button type="button" size="bare" variant="ghost" className="text-xs text-muted-foreground"/>}>
-                Manage
-            </DialogTrigger>
+            <DialogTrigger
+                render={trigger ??
+                    <Button type="button" size="bare" variant="ghost" className="text-xs text-muted-foreground">
+                        Manage
+                    </Button>
+                }
+            />
             <MembershipDialogContent
                 title="Manage Tags"
                 isLoading={isLoading}

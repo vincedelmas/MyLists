@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.20.0](https://github.com/vincedelmas/MyLists/compare/v3.19.1...v3.20.0) (2026-11-12)
+
+
+### Features
+
+* **media:** modernize poster cards across the app ([4083753](https://github.com/vincedelmas/MyLists/commit/40837530ee205dde22e26cfa31946027d9f72801))
+* refresh user media activity panel and refine feed separators ([1c28f0c](https://github.com/vincedelmas/MyLists/commit/1c28f0c0ca424c9903d6d1a34bbd8a4c433eaa69))
+
 ## [3.19.1](https://github.com/vincedelmas/MyLists/compare/v3.19.0...v3.19.1) (2026-11-09)
 
 

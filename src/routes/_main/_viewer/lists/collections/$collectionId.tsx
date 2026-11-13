@@ -17,9 +17,9 @@ import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {postRecordCollectionView} from "@/lib/server/functions/collections";
 import {collectionBrowseSearchSchema, collectionIdSchema} from "@/lib/schemas";
 import {CollectionStats} from "@/lib/client/components/collections/CollectionStats";
-import {MediaListResults} from "@/lib/client/components/media/base/MediaListResults";
 import {ArrowLeft, Copy, Heart, Layers3, List, ListOrdered, Pin} from "lucide-react";
 import {CollectionActions} from "@/lib/client/components/collections/CollectionActions";
+import {CollectionResults} from "@/lib/client/components/collections/CollectionResults";
 import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
@@ -107,13 +107,13 @@ function CollectionViewer() {
             return;
         }
 
-        handleFilterChange({ ...removeMediaBrowseFilter(filters, key, value, scope), ...(key === "mediaType" && { sorting: undefined }) });
+        void handleFilterChange({ ...removeMediaBrowseFilter(filters, key, value, scope), ...(key === "mediaType" && { sorting: undefined }) });
     };
 
     const handleLibraryChange = (library: string) => {
         const availableSorting = getMediaSortOptions(selectedMediaTypes, !isAnonymous && library === "in");
 
-        handleFilterChange({
+        void handleFilterChange({
             tags: undefined,
             status: undefined,
             comment: undefined,
@@ -130,7 +130,7 @@ function CollectionViewer() {
     };
 
     const handleResetFilters = () => {
-        handleFilterChange({
+        void handleFilterChange({
             tags: undefined,
             genres: undefined,
             status: undefined,
@@ -166,12 +166,14 @@ function CollectionViewer() {
         <div className="mb-8 flex min-w-0 flex-col pt-8">
             <PageHeader
                 asideIcon={Layers3}
-                title={<span className="flex items-center gap-2 [overflow-wrap:anywhere]">
-                    {collection.profilePosition !== null && <Pin className="size-5 shrink-0 fill-brand/20 text-brand" aria-hidden="true"/>}
-                    {collection.title}
-                </span>}
                 asideLabel="In this collection"
                 asideValue={<>{formatNumber(collection.itemsCount)} media</>}
+                title={
+                    <span className="flex items-center gap-2 wrap:anywhere">
+                        {collection.profilePosition !== null && <Pin className="size-5 shrink-0 fill-brand/20 text-brand" aria-hidden="true"/>}
+                        {collection.title}
+                    </span>
+                }
                 eyebrow={fromCommunity ?
                     <Link
                         search={fromCommunity}
@@ -354,12 +356,10 @@ function CollectionViewer() {
                     }
                 />
                 :
-                <MediaListResults
+                <CollectionResults
                     onEdited={handleEdited}
-                    isCurrent={!isAnonymous}
                     isConnected={!isAnonymous}
                     display={isGrid ? "grid" : "table"}
-                    username={currentUser?.name ?? collection.ownerName}
                     activeMediaTypes={getActiveMediaTypes(currentUser?.settings)}
                     items={items.map(item => ({
                         ...item,

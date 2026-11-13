@@ -1,5 +1,4 @@
 import {alias} from "drizzle-orm/sqlite-core";
-import {toItemKey} from "@/lib/utils/media/item-key";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {paginate} from "@/lib/server/database/pagination";
@@ -11,18 +10,13 @@ import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import type {ScopedMediaFilterOptions} from "@/lib/types/media-list.types";
 import type {CollectionFilterSearch} from "@/lib/schemas/collections.schema";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
-import type {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
 import {Actor, profileCollectionVisibilityCondition} from "@/lib/server/authorization";
-import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {mediaTags, collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
 import {and, asc, count, desc, eq, getTableColumns, inArray, isNotNull, isNull, like, max, or, sql, type SQL} from "drizzle-orm";
 import {collectionContainsMediaType, getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
 import {getMediaMetadataFilterOptions, searchMediaMetadataFilterOptions} from "@/lib/server/domain/media/base/media-filters.queries";
-
-
-type CollectionTrackingItem = MediaListDataByType[MediaType]["items"][number];
 
 
 const communityCollectionOrder = [desc(collections.likeCount), desc(collections.viewCount), desc(collections.id)];
@@ -172,14 +166,9 @@ export class CollectionsRepository {
             return db
                 .select({
                     ...getTableColumns(collectionItems),
-                    status: browse.selection.status.as("status"),
-                    rating: browse.selection.rating.as("rating"),
-                    addedAt: browse.selection.addedAt.as("added_at"),
                     mediaId: browse.selection.mediaId.as("media_id"),
-                    favorite: browse.selection.favorite.as("favorite"),
                     mediaName: browse.selection.mediaName.as("media_name"),
                     inUserList: browse.selection.inUserList.as("in_user_list"),
-                    lastUpdated: browse.selection.lastUpdated.as("last_updated"),
                     releaseDate: browse.selection.releaseDate.as("release_date"),
                     imageCover: sql<string>`COALESCE(${listTable.customCover}, ${mediaTable.imageCover})`.as("image_cover"),
                     sortValue: sql`${sort ? definition.repository.sortColumns[sort.field]! : collectionItems.orderIndex}`.as("sort_value"),
@@ -224,31 +213,6 @@ export class CollectionsRepository {
                     .offset(offset)
                 : Promise.resolve([]),
         });
-
-        const trackingById = new Map<string, CollectionTrackingItem>();
-        if (viewerId !== undefined) {
-            for (const mediaType of new Set(result.items.map(item => item.mediaType))) {
-                const definition = getServerMediaDefinition(mediaType);
-                const { listTable, mediaTable } = definition.repository.tables;
-                const mediaIds = result.items.filter(item => item.mediaType === mediaType).map(item => item.mediaId);
-
-                const tracked = db
-                    .select(getMediaListSelection(definition.repository))
-                    .from(listTable)
-                    .innerJoin(user, eq(user.id, listTable.userId))
-                    .innerJoin(mediaTable, eq(mediaTable.id, listTable.mediaId))
-                    .where(and(eq(listTable.userId, viewerId), inArray(listTable.mediaId, mediaIds)))
-                    .all();
-
-                for (const item of tracked) {
-                    trackingById.set(toItemKey({ mediaType, mediaId: item.mediaId }), {
-                        ...item,
-                        common: false,
-                        imageCover: getImageUrl(definition.identity.coverDirectory, item.customCover ?? item.imageCover),
-                    } as CollectionTrackingItem);
-                }
-            }
-        }
 
         const filterOptions: { tags: string[]; genres: string[]; mediaTypes: MediaType[]; mediaFilters: ScopedMediaFilterOptions } = {
             tags: [], genres: [], mediaTypes, mediaFilters: {},
@@ -321,7 +285,6 @@ export class CollectionsRepository {
             filterOptions,
             items: result.items.map(({ imageCover, sortValue: _sortValue, ...item }) => ({
                 ...item,
-                userMedia: trackingById.get(toItemKey(item)) ?? null,
                 mediaCover: getImageUrl(getServerMediaDefinition(item.mediaType).identity.coverDirectory, imageCover),
             })),
         };

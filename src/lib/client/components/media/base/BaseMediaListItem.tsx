@@ -1,4 +1,3 @@
-import {Check} from "lucide-react";
 import React, {useState} from "react";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {canShowProgress} from "@/lib/utils/media/status";
@@ -8,6 +7,7 @@ import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorite";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {MediaListIndicator} from "@/lib/client/components/media/base/MediaListIndicator";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
 import {
@@ -85,9 +85,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                 }
 
                 <MediaCardBadge>
-                    {showMediaType &&
-                        <MediaTypeIcon mediaType={mediaType}/>
-                    }
+                    {showMediaType && <MediaTypeIcon mediaType={mediaType}/>}
                     {userMedia.status}
                 </MediaCardBadge>
 
@@ -97,7 +95,11 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                             {userMedia.mediaName}
                         </span>
                         {isConnected && !isCurrent && isCommon &&
-                            <Check aria-label="In your list" className="ml-auto size-4 shrink-0 text-brand"/>
+                            <MediaListIndicator
+                                presentation="icon"
+                                className="ml-auto"
+                                mediaName={userMedia.mediaName}
+                            />
                         }
                     </MediaCardTitle>
                     {hasMetadata &&

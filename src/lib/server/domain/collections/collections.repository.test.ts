@@ -245,17 +245,17 @@ describe("collection media references", () => {
         dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.COMPLETED, rating: 10, customCover: "owner-private.jpg" }).run();
         const viewer = toActor({ id: 2, role: RoleType.USER });
         const tracked = await service.getCollectionDetails(collectionId, "read", viewer, { library: "in" });
-        expect(tracked).toMatchObject({ total: 1, items: [{ mediaType: MediaType.MOVIES, mediaId: 1, inUserList: true, rating: 9 }] });
+        expect(tracked).toMatchObject({ total: 1, items: [{ mediaType: MediaType.MOVIES, mediaId: 1, inUserList: true }] });
         expect(tracked.items[0].mediaCover).toBe("https://mylists.example.invalid/static/movies-covers/viewer.jpg");
         const untracked = await service.getCollectionDetails(collectionId, "read", viewer, { library: "out" });
         expect(untracked.total).toBe(2);
         expect(untracked.items.map(item => item.mediaType)).toEqual([MediaType.BOOKS, MediaType.GAMES]);
-        expect(untracked.items.every(item => item.status === null && item.rating === null && !item.inUserList)).toBe(true);
+        expect(untracked.items.every(item => !item.inUserList)).toBe(true);
         expect(untracked.items[0].mediaCover).not.toContain("owner-private");
         await expect(service.getCollectionDetails(collectionId, "read", toActor(), { library: "in" })).rejects.toThrow("Sign in");
     });
 
-it("hydrates the viewer's display tracking rows for every media type without exposing another user's data", async () => {
+    it("returns viewer membership and collection notes without personal tracking details for every media type", async () => {
         const collectionId = service.createCollection({
             ...collectionData,
             items: Object.values(MediaType).map(mediaType => ({ mediaType, mediaId: 1, annotation: `Note ${mediaType}` })),
@@ -279,39 +279,24 @@ it("hydrates the viewer's display tracking rows for every media type without exp
         const viewer = await service.getCollectionDetails(collectionId, "read", toActor({ id: 2, role: RoleType.USER }));
         expect(viewer.items).toHaveLength(6);
         for (const item of viewer.items) {
-            expect(item.userMedia).toMatchObject({
-                userId: 2, mediaId: 1, status: Status.COMPLETED, rating: 8, favorite: true,
-                comment: "Viewer note", ratingSystem: RatingSystemType.FEELING,
-            });
+            expect(item.inUserList).toBe(true);
             expect(item.annotation).toBe(`Note ${item.mediaType}`);
-        }
-        const byType = new Map(viewer.items.map(item => [item.mediaType, item.userMedia]));
-        expect(byType.get(MediaType.MOVIES)).toMatchObject({ redo: 3 });
-        expect(byType.get(MediaType.BOOKS)).toMatchObject({
-            actualPage: 123, pages: 200, redo: 2,
-            imageCover: "https://mylists.example.invalid/static/books-covers/viewer-book.jpg",
-        });
-        expect(byType.get(MediaType.GAMES)).toMatchObject({ playtime: 120 });
-        expect(byType.get(MediaType.MANGA)).toMatchObject({ currentChapter: 7, chapters: 10 });
-        expect(byType.get(MediaType.SERIES)).toMatchObject({ currentEpisode: 4 });
-        expect(byType.get(MediaType.ANIME)).toMatchObject({ currentEpisode: 5 });
-
-        for (const item of viewer.items) {
-            for (const field of ["id", "addedAt", "lastUpdated", "total", "releaseNotificationsEnabled", "platform", "tags", "epsPerSeason"]) {
-                expect(item.userMedia).not.toHaveProperty(field);
+            for (const field of ["userMedia", "status", "rating", "favorite", "comment", "addedAt", "lastUpdated", "actualPage", "currentChapter", "currentEpisode", "redo", "playtime"]) {
+                expect(item).not.toHaveProperty(field);
             }
         }
+        expect(viewer.items.find(item => item.mediaType === MediaType.BOOKS)!.mediaCover)
+            .toBe("https://mylists.example.invalid/static/books-covers/viewer-book.jpg");
 
         const anonymous = await service.getCollectionDetails(collectionId, "read", toActor());
-        expect(anonymous.items.every(item => item.userMedia === null)).toBe(true);
+        expect(anonymous.items.every(item => !item.inUserList)).toBe(true);
         expect(JSON.stringify(anonymous.items)).not.toContain("Viewer note");
         expect(JSON.stringify(anonymous.items)).not.toContain("Owner private");
 
         const owner = await service.getCollectionDetails(collectionId, "read", actor);
-        expect(owner.items.filter(item => item.userMedia)).toHaveLength(1);
-        expect(owner.items.find(item => item.mediaType === MediaType.BOOKS)!.userMedia).toMatchObject({
-            userId: 1, actualPage: 99, comment: "Owner private note",
-        });
+        expect(owner.items.filter(item => item.inUserList)).toHaveLength(1);
+        expect(owner.items.find(item => item.mediaType === MediaType.BOOKS)!.inUserList).toBe(true);
+        expect(JSON.stringify(owner.items)).not.toContain("Owner private note");
     });
 
     it("scopes personal filter options to the viewer's tracked collection items independently of runtime filters", async () => {

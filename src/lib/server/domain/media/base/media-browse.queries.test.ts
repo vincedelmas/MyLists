@@ -87,17 +87,17 @@ it("uses the viewer's tracking data for collection filters and never the collect
         const completed = await collections.getCollectionDetails(collectionId, "read", viewer, { status: Status.COMPLETED });
         expect(completed.items.map(item => item.mediaId)).toEqual([1]);
         const favorite = await collections.getCollectionDetails(collectionId, "read", viewer, { favorite: true, minRating: 8, tags: ["Viewer tag"] });
-        expect(favorite.items).toMatchObject([{ mediaId: 55, status: Status.DROPPED, rating: 9, favorite: true }]);
+        expect(favorite.items).toMatchObject([{ mediaId: 55, inUserList: true }]);
         const nonFavorites = await collections.getCollectionDetails(collectionId, "read", viewer, { favorite: false });
         expect(nonFavorites.total).toBe(54);
-        expect(nonFavorites.items.some(item => item.mediaId === 1 && item.favorite === false)).toBe(true);
+        expect(nonFavorites.items.some(item => item.mediaId === 1 && item.inUserList)).toBe(true);
         expect(nonFavorites.items.some(item => item.mediaId === 2 && !item.inUserList)).toBe(true);
-        expect(nonFavorites.items.every(item => item.favorite !== true)).toBe(true);
+        expect(nonFavorites.items.some(item => item.mediaId === 55)).toBe(false);
         const foreignTag = await collections.getCollectionDetails(collectionId, "read", viewer, { tags: ["Owner secret"] });
         expect(foreignTag.total).toBe(0);
         const out = await collections.getCollectionDetails(collectionId, "read", viewer, { library: "out" });
         expect(out.total).toBe(53);
-        expect(out.items[0]).toMatchObject({ mediaId: 2, inUserList: false, status: null, rating: null, favorite: null });
+        expect(out.items[0]).toMatchObject({ mediaId: 2, inUserList: false });
     });
 
     it("shares metadata facets with lists before pagination and lazily exposes source-scoped options", async () => {

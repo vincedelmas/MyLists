@@ -1,4 +1,3 @@
-import {Check} from "lucide-react";
 import {Link} from "@tanstack/react-router";
 import type {MediaType} from "@/lib/utils/enums";
 import {toItemKey} from "@/lib/utils/media/item-key";
@@ -8,6 +7,7 @@ import {DataTable} from "@/lib/client/components/general/DataTable";
 import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
+import {MediaListIndicator} from "@/lib/client/components/media/base/MediaListIndicator";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardLeftCorner, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
@@ -57,12 +57,18 @@ export const MediaBrowseResults = ({ items, display, showMembership = false }: M
                                 {item.title}
                             </span>
                             {item.inUserList &&
-                                <Check aria-label="In your list" className="ml-auto size-4 shrink-0 text-brand"/>
+                                <MediaListIndicator
+                                    presentation="icon"
+                                    className="ml-auto"
+                                    mediaName={item.title}
+                                />
                             }
                         </MediaCardTitle>
                         <MediaCardMeta>
                             <MediaCardDetails>
-                                <MediaReleaseDate date={item.releaseDate}/>
+                                <MediaReleaseDate
+                                    date={item.releaseDate}
+                                />
                             </MediaCardDetails>
                         </MediaCardMeta>
                     </MediaCardFooter>

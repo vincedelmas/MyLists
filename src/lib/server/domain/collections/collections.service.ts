@@ -50,12 +50,6 @@ export class CollectionsService {
             const media = mediaMap.get(toItemKey(item))!;
 
             return {
-                userMedia: null,
-                status: null,
-                rating: null,
-                addedAt: null,
-                favorite: null,
-                lastUpdated: null,
                 mediaId: item.mediaId,
                 mediaName: media.name,
                 mediaType: item.mediaType,

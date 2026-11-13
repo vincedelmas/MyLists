@@ -19,7 +19,7 @@ import {useSearchAnalytics} from "@/lib/client/hooks/use-search-analytics";
 import {MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
-import {SearchMediaListIndicator} from "@/lib/client/components/media/base/SearchMediaListIndicator";
+import {MediaListIndicator} from "@/lib/client/components/media/base/MediaListIndicator";
 import {ArrowRight, ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal} from "lucide-react";
 import {getSearchProviderItems, getSearchResultLink} from "@/lib/client/components/navbar/navbar-search";
 
@@ -194,7 +194,7 @@ export const MobileSearch = () => {
                                                             }
                                                         </span>
                                                         {item.inCurrentUserList &&
-                                                            <SearchMediaListIndicator
+                                                            <MediaListIndicator
                                                                 mediaName={item.name}
                                                                 presentation="inline"
                                                             />
@@ -205,7 +205,10 @@ export const MobileSearch = () => {
                                                             </span>
                                                         }
                                                     </div>
-                                                    <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true"/>
+                                                    <ChevronRight
+                                                        aria-hidden="true"
+                                                        className="size-5 shrink-0 text-muted-foreground"
+                                                    />
                                                 </Link>
                                             </li>
                                         );

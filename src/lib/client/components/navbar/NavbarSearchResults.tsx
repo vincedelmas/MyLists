@@ -13,8 +13,8 @@ import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
 import {getSearchResultLink} from "@/lib/client/components/navbar/navbar-search";
 import {ArrowRight, ChevronLeft, ChevronRight, Plus, Search} from "lucide-react";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
+import {MediaListIndicator} from "@/lib/client/components/media/base/MediaListIndicator";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
-import {SearchMediaListIndicator} from "@/lib/client/components/media/base/SearchMediaListIndicator";
 
 
 interface NavbarSearchResultsProps {
@@ -212,7 +212,9 @@ const MediaResult = ({ item, onNavigate }: MediaResultProps) => {
                     </div>
                 </div>
                 {item.inCurrentUserList &&
-                    <SearchMediaListIndicator mediaName={item.name}/>
+                    <MediaListIndicator
+                        mediaName={item.name}
+                    />
                 }
             </ResultLink>
         </div>

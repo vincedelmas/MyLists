@@ -120,12 +120,6 @@ function ContinuePage() {
                     ]}
                 />
 
-                <Pagination
-                    currentPage={data.pagination.page}
-                    totalPages={data.pagination.totalPages}
-                    onChangePage={page => void navigate({ search: prev => ({ ...prev, page }) })}
-                />
-
                 {items.length > 0 ?
                     isGrid ?
                         <ContinueGrid
@@ -185,6 +179,12 @@ function ContinuePage() {
                         }
                     </Empty>
                 }
+
+                <Pagination
+                    currentPage={data.pagination.page}
+                    totalPages={data.pagination.totalPages}
+                    onChangePage={page => void navigate({ search: prev => ({ ...prev, page }) })}
+                />
             </div>
         </div>
     );

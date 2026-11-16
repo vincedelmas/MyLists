@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.21.0](https://github.com/vincedelmas/MyLists/compare/v3.20.1...v3.21.0) (2026-11-16)
+
+
+### Features
+
+* **continue:** add unified browsing controls and stable progress views ([f10c38a](https://github.com/vincedelmas/MyLists/commit/f10c38a43844dae31e729063e0b4329958be74ec))
+
+
+### Bug Fixes
+
+* **continue:** move pagination below results ([8859b19](https://github.com/vincedelmas/MyLists/commit/8859b19ec23238286295c3377780e517706061e8))
+* stabilize media card badge positioning in Safari ([00accbe](https://github.com/vincedelmas/MyLists/commit/00accbeffbb169605cd4d18da3d27eefca5ddf13))
+
+
+### Code Refactoring
+
+* unify media card layout and responsive spacing ([f6f6e07](https://github.com/vincedelmas/MyLists/commit/f6f6e0742a1e7ab0e63c954337564f6ca1471228))
+
 ## [3.20.1](https://github.com/vincedelmas/MyLists/compare/v3.20.0...v3.20.1) (2026-11-13)
 
 

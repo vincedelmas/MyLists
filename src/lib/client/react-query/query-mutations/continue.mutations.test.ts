@@ -50,6 +50,30 @@ afterEach(() => queryClient.clear());
 
 describe("Continue quick updates", () => {
 
+    it("keeps the current sorted page until navigation after a progress update", async () => {
+        const options = continueOptions("alice", { sorting: "modified_oldest", page: 2 });
+        const refresh = vi.fn().mockResolvedValue({ ...initial, items: [] });
+        queryClient.setQueryData(options.queryKey, initial);
+        const observer = new QueryObserver(queryClient, { queryKey: options.queryKey, queryFn: refresh });
+        const unsubscribe = observer.subscribe(() => {});
+
+        try {
+            const updatedItem = { ...item, currentChapter: 8 };
+            mocks.save.mockResolvedValueOnce({ item: updatedItem, completed: false });
+            await useContinueMediaMutation(item).mutateAsync();
+            expect(refresh).not.toHaveBeenCalled();
+            expect(queryClient.getQueryData(options.queryKey)?.items).toEqual([updatedItem]);
+            expect(queryClient.getQueryState(options.queryKey)?.isInvalidated).toBe(true);
+
+            await queryClient.query({ ...options, queryFn: refresh, staleTime: Infinity });
+            expect(refresh).toHaveBeenCalledOnce();
+            expect(queryClient.getQueryData(options.queryKey)?.items).toEqual([]);
+        }
+        finally {
+            unsubscribe();
+        }
+    });
+
     it("allows the next save while the feed is still loading and ignores an older Continue response", async () => {
         const staleContinue = Promise.withResolvers<typeof initial>();
         const slowFeed = Promise.withResolvers<string[]>();
@@ -83,7 +107,7 @@ describe("Continue quick updates", () => {
         unsubscribe();
     });
 
-it("removes a completed card and offers its details without changing another user's preview", async () => {
+    it("removes a completed card and offers its details without changing another user's preview", async () => {
         queryClient.setQueryData(continueOptions("bob").queryKey, initial);
         mocks.save.mockResolvedValueOnce({ item: null, completed: true });
         await useContinueMediaMutation(item).mutateAsync();
@@ -95,18 +119,37 @@ it("removes a completed card and offers its details without changing another use
         expect(mocks.navigate).toHaveBeenCalledWith({ to: "/details/$mediaType/$mediaId", params: { mediaType: MediaType.MANGA, mediaId: 1 } });
     });
 
-    it("updates every cached page and preview and removes newly finished titles only from previews", async () => {
+    it("keeps ready titles on the current page while refilling the preview and removing them from active views", async () => {
         const pageKey = continueOptions("alice", { activeTab: MediaType.MANGA, page: 2 }).queryKey;
         const previewKey = continueOptions("alice", { preview: true }).queryKey;
+        const activeKey = continueOptions("alice", { progress: "active" }).queryKey;
         queryClient.setQueryData(pageKey, initial);
         queryClient.setQueryData(previewKey, initial);
-        const updatedItem = { ...item, currentChapter: 100 };
-        mocks.save.mockResolvedValueOnce({ item: updatedItem, completed: false });
-        await useContinueMediaMutation(item).mutateAsync();
-        expect(queryClient.getQueryData(pageKey)?.items).toEqual([updatedItem]);
-        expect(queryClient.getQueryData(previewKey)?.items).toEqual([]);
-        expect(queryClient.getQueryState(pageKey)?.isInvalidated).toBe(true);
-        expect(queryClient.getQueryState(previewKey)?.isInvalidated).toBe(true);
+        queryClient.setQueryData(activeKey, initial);
+        const nextItem = { ...item, mediaId: 2 };
+        const refreshPage = vi.fn().mockResolvedValue({ ...initial, items: [] });
+        const refreshPreview = vi.fn().mockResolvedValue({ ...initial, items: [nextItem] });
+        const pageObserver = new QueryObserver(queryClient, { queryKey: pageKey, queryFn: refreshPage });
+        const previewObserver = new QueryObserver(queryClient, { queryKey: previewKey, queryFn: refreshPreview });
+        const unsubscribePage = pageObserver.subscribe(() => {});
+        const unsubscribePreview = previewObserver.subscribe(() => {});
+
+        try {
+            const updatedItem = { ...item, currentChapter: 100 };
+            mocks.save.mockResolvedValueOnce({ item: updatedItem, completed: false });
+            await useContinueMediaMutation(item).mutateAsync();
+            await vi.waitFor(() => expect(refreshPreview).toHaveBeenCalledOnce());
+            expect(refreshPage).not.toHaveBeenCalled();
+            expect(queryClient.getQueryData(pageKey)?.items).toEqual([updatedItem]);
+            expect(queryClient.getQueryData(previewKey)?.items).toEqual([nextItem]);
+            expect(queryClient.getQueryData(activeKey)?.items).toEqual([]);
+            expect(queryClient.getQueryState(pageKey)?.isInvalidated).toBe(true);
+            expect(queryClient.getQueryState(activeKey)?.isInvalidated).toBe(true);
+        }
+        finally {
+            unsubscribePage();
+            unsubscribePreview();
+        }
     });
 
     it("preserves saved progress when the request fails", async () => {

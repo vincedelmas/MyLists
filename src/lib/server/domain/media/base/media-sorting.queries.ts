@@ -23,7 +23,10 @@ export const getCommonMediaSortColumns = ({ mediaTable, listTable }: Pick<BaseMe
 }
 
 
-export const createMediaSortOrder = (key: MediaSortKey, columns: MediaSortColumns) => {
+export const createMediaSortOrder = <TKey extends MediaSortKey>(
+    key: TKey,
+    columns: Pick<MediaSortColumns, typeof MEDIA_SORT_DEFINITIONS[TKey]["field"]> & Partial<MediaSortColumns>,
+) => {
     const sort = MEDIA_SORT_DEFINITIONS[key];
     const direction = sort.direction === "asc" ? sql`ASC` : sql`DESC`;
 

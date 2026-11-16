@@ -3,7 +3,7 @@ import {getContinueMedia} from "@/lib/server/functions/continue";
 import type {ContinueSearch} from "@/lib/schemas/continue.schema";
 
 
-export const continueOptions = (username: string, search: ContinueSearch & { preview?: boolean } = {}) => queryOptions({
+export const continueOptions = (username: string, search: Omit<ContinueSearch, "display"> & { preview?: boolean } = {}) => queryOptions({
     queryKey: ["continue", username, search] as const,
     queryFn: () => getContinueMedia({ data: { username, ...search } }),
 });

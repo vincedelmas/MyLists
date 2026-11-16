@@ -29,16 +29,8 @@ interface MediaBrowseToolbarProps {
 
 export const MediaBrowseToolbar = (props: MediaBrowseToolbarProps) => {
     const {
-        search,
-        isGrid,
-        actions,
-        trailing,
-        onGridClick,
-        selects = [],
-        onFiltersClick,
-        onSearchChange,
-        searchLabel = "Search media",
-        searchPlaceholder = "Search titles...",
+        search, isGrid, actions, trailing, onGridClick, selects = [], onFiltersClick,
+        onSearchChange, searchLabel = "Search media", searchPlaceholder = "Search titles...",
     } = props;
 
     return (

@@ -79,7 +79,7 @@ function ReleaseCalendarPage() {
                 description="Explore release dates for your movies, games and next episodes."
             />
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 -mt-2">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-1">

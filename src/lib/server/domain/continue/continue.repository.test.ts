@@ -25,27 +25,27 @@ beforeEach(() => {
 afterEach(() => { sqlite.close(); dbContext.db = undefined; });
 
 it("bounds the preview and page response while retaining totals and non-overlapping pages", async () => {
-    const first = await getContinueItems(1, [MediaType.GAMES]);
-    const second = await getContinueItems(1, [MediaType.GAMES], { page: 2 });
-    const preview = await getContinueItems(1, [MediaType.GAMES], { preview: true });
+    const first = await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES], data: {} });
+    const second = await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES], data: { page: 2 } });
+    const preview = await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES], data: { preview: true } });
     expect(first.items).toHaveLength(12);
     expect(preview.items).toHaveLength(5);
     expect(first.pagination).toEqual({ page: 1, perPage: 12, totalItems: 1000, totalPages: 84 });
     expect(second.items[0].mediaId).toBe(13);
     expect(second.items.some(item => first.items.some(previous => previous.mediaId === item.mediaId))).toBe(false);
     expect(first.counts).toEqual({ games: 1000 });
-    expect((await getContinueItems(1, [MediaType.GAMES], { page: 999 })).items).toHaveLength(4);
-    expect(await getContinueItems(1, [])).toMatchObject({ items: [], pagination: { totalItems: 0 } });
+    expect((await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES], data: { page: 999 } })).items).toHaveLength(4);
+    expect(await getContinueItems({ userId: 1, mediaTypes: [], data: {} })).toMatchObject({ items: [], pagination: { totalItems: 0 } });
 });
 
 it("sorts across media types before limiting and keeps tab counts independent of the selected tab", async () => {
     dbContext.db.insert(schema.books).values({ id: 1, apiId: "book", name: "Most recent", imageCover: "book.jpg", pages: 100 }).run();
     dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.IN_PROGRESS, lastUpdated: "2099-01-01" }).run();
-    const mixed = await getContinueItems(1, [MediaType.GAMES, MediaType.BOOKS]);
+    const mixed = await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES, MediaType.BOOKS], data: {} });
     expect(mixed.items).toHaveLength(12);
     expect(mixed.items[0]).toMatchObject({ mediaId: 1, mediaType: MediaType.BOOKS });
     expect(mixed.counts).toEqual({ games: 1000, books: 1 });
-    const books = await getContinueItems(1, [MediaType.GAMES, MediaType.BOOKS], { activeTab: MediaType.BOOKS });
+    const books = await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES, MediaType.BOOKS], data: { activeTab: MediaType.BOOKS } });
     expect(books.items).toHaveLength(1);
     expect(books.pagination.totalItems).toBe(1);
     expect(books.counts).toEqual(mixed.counts);
@@ -85,12 +85,40 @@ it("filters finished books, manga, and TV using the shared completion rules befo
         ]).run();
     }
     for (const mediaType of [MediaType.BOOKS, MediaType.MANGA, MediaType.SERIES, MediaType.ANIME]) {
-        const full = await getContinueItems(1, [mediaType]);
-        const preview = await getContinueItems(1, [mediaType], { preview: true });
+        const full = await getContinueItems({ userId: 1, mediaTypes: [mediaType], data: {} });
+        const preview = await getContinueItems({ userId: 1, mediaTypes: [mediaType], data: { preview: true } });
+        const ready = await getContinueItems({ userId: 1, mediaTypes: [mediaType], data: { progress: "ready" } });
+        const finished = full.items.filter(item => getMediaDefinition(item.mediaType).continue.getUpdate(item)?.type === UpdateType.STATUS);
+        expect(ready.items.map(item => item.mediaId)).toEqual(finished.map(item => item.mediaId));
+        expect(ready.pagination.totalItems).toBe(finished.length);
         const active = full.items.filter(item => getMediaDefinition(item.mediaType).continue.getUpdate(item)?.type !== UpdateType.STATUS);
         expect(preview.items.map(item => item.mediaId)).toEqual(active.slice(0, 5).map(item => item.mediaId));
     }
-    const combined = await getContinueItems(1, [MediaType.GAMES, MediaType.BOOKS, MediaType.MANGA, MediaType.SERIES, MediaType.ANIME], { preview: true });
+    const combined = await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES, MediaType.BOOKS, MediaType.MANGA, MediaType.SERIES, MediaType.ANIME], data: { preview: true } });
     expect(combined.items).toHaveLength(5);
     expect(combined.pagination.totalItems).toBe(1010);
+});
+
+
+it("searches and sorts before pagination, treating search wildcards as literal text", async () => {
+    const result = await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES], data: { search: "Game 00", sorting: "title_desc", page: 2 } });
+    expect(result.pagination.totalItems).toBe(99);
+    expect(result.items[0].mediaName).toBe("Game 0087");
+    expect((await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES], data: { search: "%" } })).items).toEqual([]);
+    expect((await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES], data: { progress: "ready" } })).pagination.totalItems).toBe(0);
+});
+
+
+it("orders mixed SQLite and ISO timestamps chronologically in both directions", async () => {
+    sqlite.query("UPDATE games_list SET last_updated = NULL, added_at = NULL").run();
+    sqlite.query("UPDATE games_list SET last_updated = ?, added_at = ? WHERE media_id = 1")
+        .run("2026-01-01 12:00:00", "2026-01-01 12:00:00");
+    sqlite.query("UPDATE games_list SET last_updated = ?, added_at = ? WHERE media_id = 2")
+        .run("2026-01-01T09:00:00Z", "2026-01-01T09:00:00Z");
+
+    for (const sorting of ["modified_newest", "added_newest", "modified_oldest", "added_oldest"] as const) {
+        const result = await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES], data: { sorting } });
+        expect(result.items.slice(0, 2).map(item => item.mediaId))
+            .toEqual(sorting.endsWith("newest") ? [1, 2] : [2, 1]);
+    }
 });

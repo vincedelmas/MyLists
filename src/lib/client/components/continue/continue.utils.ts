@@ -26,7 +26,7 @@ export const formatContinueProgress = (position: string, remainingMinutes: numbe
 
     const estimate = remainingMinutes < 60
         ? "< 1h"
-        : `~ ${Math.round(remainingMinutes / 60)}h`;
+        : `${Math.round(remainingMinutes / 60)}h`;
 
     return `${position} · ${estimate} left`;
 };

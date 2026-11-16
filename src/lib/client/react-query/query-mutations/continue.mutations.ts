@@ -6,8 +6,8 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {getContinueMedia, postContinueMedia} from "@/lib/server/functions/continue";
-import {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
 import {historyOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import type {ContinueItem, continueOptions} from "@/lib/client/react-query/query-options/continue.options";
 import {invalidateUserProgressQueries, userMediaEditKey} from "@/lib/client/react-query/query-mutations/user-media-cache";
 
 
@@ -28,10 +28,11 @@ export const useContinueMediaMutation = ({ mediaType, mediaId, mediaName }: Cont
 
             // Refetching started during save must not overwrite result
             await queryClient.cancelQueries({ queryKey });
+            const readyToComplete = item !== null && getMediaDefinition(mediaType).continue.getUpdate(item)?.type === UpdateType.STATUS;
 
             for (const [key] of queryClient.getQueriesData({ queryKey })) {
-                const preview = (key[2] as { preview?: boolean } | undefined)?.preview;
-                const hideItem = !item || (preview && getMediaDefinition(mediaType).continue.getUpdate(item)?.type === UpdateType.STATUS);
+                const filters = key[2] as ReturnType<typeof continueOptions>["queryKey"][2] | undefined;
+                const hideItem = !item || ((filters?.preview || filters?.progress === "active") && readyToComplete);
 
                 queryClient.setQueryData<Awaited<ReturnType<typeof getContinueMedia>>>(key, oldData => {
                     if (!oldData) return;
@@ -44,9 +45,8 @@ export const useContinueMediaMutation = ({ mediaType, mediaId, mediaName }: Cont
                 });
             }
 
-            // Removing an item can expose next page candidate and changes totals
-            if (completed || (item && getMediaDefinition(mediaType).continue.getUpdate(item)?.type === UpdateType.STATUS)) {
-                void queryClient.invalidateQueries({ queryKey });
+            if (readyToComplete) {
+                void queryClient.invalidateQueries({ queryKey: [...queryKey, { preview: true }] });
             }
 
             // Refresh visible feed, secondary views reload their stale data when revisited
@@ -56,7 +56,8 @@ export const useContinueMediaMutation = ({ mediaType, mediaId, mediaName }: Cont
                 queryClient.invalidateQueries({ queryKey: ["userList", mediaType], refetchType: "none" }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId], refetchType: "none" }),
                 queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey, refetchType: "none" }),
-                invalidateUserProgressQueries(queryClient, currentUser!.name, { refetchContinue: false, refetchSecondary: false }),
+                // Keep the current page in place while clicking; navigation reloads its stale ordering.
+                invalidateUserProgressQueries(queryClient, currentUser!.name, { refetchContinue: completed, refetchSecondary: false }),
                 queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey, refetchType: "none" }),
             ]);
 

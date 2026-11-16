@@ -1,16 +1,19 @@
 import {Link} from "@tanstack/react-router";
+import {UpdateType} from "@/lib/utils/enums";
 import {ArrowUpRight, Play} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {toItemKey} from "@/lib/utils/media/item-key";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ContinueCard} from "@/lib/client/components/continue/ContinueCard";
-import {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
-import {useContinueOrder, groupContinueItems} from "@/lib/client/components/continue/continue-items";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {useContinueOrder} from "@/lib/client/components/continue/continue-items";
+import type {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
 
 
 export const ContinuePreview = ({ items, isCurrent }: { items: ContinueItem[]; isCurrent: boolean }) => {
     const { currentUser } = useAuth();
     const orderedItems = useContinueOrder(items);
-    const { active } = groupContinueItems(orderedItems);
+    const active = orderedItems.filter(item => getMediaDefinition(item.mediaType).continue.getUpdate(item)?.type !== UpdateType.STATUS);
 
     if (active.length === 0) return null;
 
@@ -43,7 +46,7 @@ export const ContinuePreview = ({ items, isCurrent }: { items: ContinueItem[]; i
                     <ContinueCard
                         item={item}
                         readOnly={!isCurrent}
-                        key={`${item.mediaType}-${item.mediaId}`}
+                        key={toItemKey(item)}
                     />
                 )}
             </div>

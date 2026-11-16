@@ -1,51 +1,37 @@
 import {useId} from "react";
-import {ArrowUp} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, UpdateType} from "@/lib/utils/enums";
 import {getMediaConfig} from "@/lib/client/components/media/media-config";
-import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
+import {ContinueAction} from "@/lib/client/components/continue/ContinueAction";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
-import {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
-import {useContinueMediaMutation} from "@/lib/client/react-query/query-mutations/continue.mutations";
-import {MediaCard, MediaCardFooter, MediaCardRightCorner, MediaCardTitle, MediaCardType} from "@/lib/client/components/media/base/MediaCard";
+import type {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
+import {MediaCard, MediaCardFooter, MediaCardRightCorner, MediaCardStatus, MediaCardTitle, MediaCardType} from "@/lib/client/components/media/base/MediaCard";
 
 
 export const ContinueCard = ({ item, readOnly = false }: { item: ContinueItem; readOnly?: boolean }) => {
     const titleId = useId();
-    const update = useContinueMediaMutation(item);
+    const definition = getMediaDefinition(item.mediaType);
     const config = getMediaConfig(item.mediaType).continue;
-    const unit = getMediaDefinition(item.mediaType).progress.unit;
 
+    const unit = definition.progress.unit;
     const progress = config.getProgress(item);
 
     const remaining = item.mediaType !== MediaType.GAMES && progress.total !== null
         ? Math.max(0, progress.total - progress.value)
         : null;
+
     const remainingLabel = remaining === null ? null : `${remaining} ${remaining === 1 ? unit.singular : unit.plural} left`;
 
     return (
         <MediaCard item={item} mediaType={item.mediaType} aria-labelledby={titleId}>
             <MediaCardType mediaType={item.mediaType}/>
+            {definition.continue.getUpdate(item)?.type === UpdateType.STATUS &&
+                <MediaCardStatus title="Ready to mark completed">
+                    Complete
+                </MediaCardStatus>
+            }
             {!readOnly &&
                 <MediaCardRightCorner>
-                    <Tooltip>
-                        <TooltipTrigger
-                            render={
-                                <LoadingButton
-                                    size="bare"
-                                    variant="ghost"
-                                    icon={<ArrowUp/>}
-                                    disabled={!progress.update}
-                                    isLoading={update.isPending}
-                                    onClick={() => update.mutate()}
-                                    aria-label={`${progress.actionLabel} · ${item.mediaName}`}
-                                />
-                            }
-                        />
-                        <TooltipContent>
-                            {progress.actionLabel}
-                        </TooltipContent>
-                    </Tooltip>
+                    <ContinueAction item={item}/>
                 </MediaCardRightCorner>
             }
             <MediaCardFooter>
@@ -63,7 +49,7 @@ export const ContinueCard = ({ item, readOnly = false }: { item: ContinueItem; r
                     </span>
                     {remaining !== null &&
                         <span className="shrink-0 whitespace-nowrap" aria-label={remainingLabel ?? undefined}>
-                            <span aria-hidden="true">· </span>{remaining} {unit.short} left
+                            <span aria-hidden="true">· </span>{remaining} left
                         </span>
                     }
                 </div>

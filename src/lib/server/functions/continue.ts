@@ -17,7 +17,7 @@ export const getContinueMedia = createServerFn({ method: "GET" })
 
         return {
             mediaTypes,
-            ...await getContinueItems(user.id, mediaTypes, data),
+            ...await getContinueItems({ userId: user.id, mediaTypes, data }),
         };
     });
 

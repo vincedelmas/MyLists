@@ -131,14 +131,16 @@ export const MediaCardStatus = ({ children, className, ...props }: React.Compone
     <div
         data-slot="media-card-status"
         className="pointer-events-none relative col-start-1 row-start-1 m-1.5 flex min-w-0 max-w-[calc(100%-0.75rem)]
-        self-end justify-self-start group-has-[[data-slot=media-card-type]]:max-w-[calc(50%-0.75rem)]"
+        self-end justify-self-start group-has-[[data-slot=media-card-type]]:max-w-[calc(100%-0.75rem)]"
     >
         <Badge
             variant="overlay"
             className={cn(coverBadgeClassName, className)}
             {...props}
         >
-            <span className="truncate">{children}</span>
+            <span className="truncate">
+                {children}
+            </span>
         </Badge>
     </div>
 );

@@ -19,16 +19,8 @@ interface PageHeaderProps {
 
 export const PageHeader = (props: PageHeaderProps) => {
     const {
-        title,
-        eyebrow,
-        className,
-        asideLabel,
-        asideValue,
-        navigation,
-        description,
-        eyebrowClassName,
-        asideIcon: AsideIcon,
-        eyebrowIcon: EyebrowIcon,
+        title, eyebrow, className, asideLabel, asideValue, navigation, description,
+        eyebrowClassName, asideIcon: AsideIcon, eyebrowIcon: EyebrowIcon,
     } = props;
 
     const hasAside = asideLabel !== undefined || asideValue !== undefined;

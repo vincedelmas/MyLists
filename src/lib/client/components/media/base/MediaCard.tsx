@@ -126,7 +126,7 @@ export const MediaCardLeftCorner = ({ children, className, ...props }: React.Com
 
 
 export const MediaCardBadge = ({ className, ...props }: React.ComponentProps<typeof Badge>) => (
-    <div className="pointer-events-none absolute inset-x-0 top-0 flex aspect-2/3 items-end p-1.5">
+    <div className="pointer-events-none absolute left-0 top-0 flex aspect-2/3 w-full items-end p-1.5">
         <Badge
             variant="overlay"
             className={cn("h-6 max-w-full gap-1.5 border-white/10 bg-black/70 px-2 text-[11px] shadow-sm backdrop-blur-md", className)}

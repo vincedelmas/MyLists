@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.20.1](https://github.com/vincedelmas/MyLists/compare/v3.20.0...v3.20.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **collections:** show membership without tracking details ([fafd038](https://github.com/vincedelmas/MyLists/commit/fafd0387f6b3b43e3f82084df401be3add6c67f2))
+
 ## [3.20.0](https://github.com/vincedelmas/MyLists/compare/v3.19.1...v3.20.0) (2026-11-12)
 
 

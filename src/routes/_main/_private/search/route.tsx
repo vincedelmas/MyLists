@@ -19,11 +19,11 @@ import {useSearchAnalytics} from "@/lib/client/hooks/use-search-analytics";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
+import {MediaListIndicator} from "@/lib/client/components/media/base/MediaListIndicator";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/media/advanced-search";
-import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
-import {Check, ChevronLeft, ChevronRight, Database, PencilLine, ScanSearch, Search, SearchX} from "lucide-react";
+import {ChevronLeft, ChevronRight, Database, PencilLine, ScanSearch, Search, SearchX} from "lucide-react";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {MediaCard, MediaCardBadge, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle, MediaCardType} from "@/lib/client/components/media/base/MediaCard";
 
 
 export const Route = createFileRoute("/_main/_private/search")({
@@ -402,17 +402,18 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
                 item={{ mediaId: item.id, mediaName: item.name, imageCover: item.image }}
                 onClick={() => captureEvent("search_result_selected", { surface: "search_page", result_type: item.itemType })}
             >
-                <MediaCardBadge>
-                    <MediaTypeIcon mediaType={mediaType}/>
-                    <MediaTypeText mediaType={mediaType}/>
-                </MediaCardBadge>
+                <MediaCardType mediaType={mediaType}/>
                 <MediaCardFooter>
                     <MediaCardTitle title={item.name} className="flex items-center gap-1.5 tracking-tight">
-                        <span className="truncate">{item.name}</span>
+                        <span className="truncate">
+                            {item.name}
+                        </span>
                         {item.inCurrentUserList &&
-                            <span className="ml-auto shrink-0" title="Already in your list" aria-label={`${item.name} is already in your list`}>
-                                <Check className="size-4 text-success"/>
-                            </span>
+                            <MediaListIndicator
+                                presentation="icon"
+                                className="ml-auto"
+                                mediaName={item.name}
+                            />
                         }
                     </MediaCardTitle>
                     {item.date &&

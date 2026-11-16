@@ -18,7 +18,6 @@ import {formatMinutes, formatNumber} from "@/lib/utils/formatting/number";
 import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
-import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
@@ -33,14 +32,14 @@ import {monthlyActivityOptions, monthlyActivityStatsOptions} from "@/lib/client/
 import {YearlyActivityOccurrencesDialog} from "@/lib/client/components/activity/YearlyActivityOccurrencesDialog";
 import {
     MediaCard,
-    MediaCardBadge,
     MediaCardDetails,
     MediaCardFooter,
     MediaCardLeftCorner,
     MediaCardMeta,
     MediaCardRightCorner,
     MediaCardSignals,
-    MediaCardTitle
+    MediaCardTitle,
+    MediaCardType,
 } from "@/lib/client/components/media/base/MediaCard";
 
 
@@ -246,10 +245,7 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                                     </MediaCardLeftCorner>
                                 }
 
-                                <MediaCardBadge className="capitalize">
-                                    <MediaTypeIcon mediaType={row.mediaType}/>
-                                    {row.mediaType}
-                                </MediaCardBadge>
+                                <MediaCardType mediaType={row.mediaType}/>
 
                                 {view === "month" && canEdit &&
                                     <MediaCardRightCorner>

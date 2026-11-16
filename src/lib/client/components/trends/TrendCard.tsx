@@ -1,7 +1,6 @@
 import {TrendsMedia} from "@/lib/types/provider.types";
-import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
-import {MediaCard, MediaCardBadge, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle, MediaCardType} from "@/lib/client/components/media/base/MediaCard";
 
 
 export const TrendCard = ({ media }: { media: TrendsMedia }) => {
@@ -13,10 +12,7 @@ export const TrendCard = ({ media }: { media: TrendsMedia }) => {
 
     return (
         <MediaCard item={item} mediaType={media.mediaType} external={true}>
-            <MediaCardBadge className="capitalize">
-                <MediaTypeIcon mediaType={media.mediaType}/>
-                {media.mediaType}
-            </MediaCardBadge>
+            <MediaCardType mediaType={media.mediaType}/>
             <MediaCardFooter>
                 <MediaCardTitle title={media.displayName} className="tracking-tight">
                     {media.displayName}

@@ -3,6 +3,7 @@ import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 
 
 interface MediaCardItem {
@@ -53,7 +54,7 @@ export const MediaCard = (props: MediaCardProps) => {
         <article
             data-slot="media-card"
             aria-labelledby={props["aria-labelledby"]}
-            className={cn("@container/media-card group relative min-w-0 text-foreground", className)}
+            className={cn("@container/media-card group relative grid min-w-0 grid-cols-1 grid-rows-[auto_1fr] text-foreground", className)}
         >
             {props.external ?
                 <Link
@@ -78,9 +79,10 @@ export const MediaCard = (props: MediaCardProps) => {
                     {cover}
                 </Link>
             }
+            {/* All cover overlays share this row; the footer occupies the next row. */}
             <div
                 aria-hidden="true"
-                className="pointer-events-none aspect-2/3"
+                className="pointer-events-none col-start-1 row-start-1 aspect-2/3"
             />
             {children}
         </article>
@@ -88,11 +90,14 @@ export const MediaCard = (props: MediaCardProps) => {
 };
 
 
+const coverBadgeClassName = "h-5 min-w-0 max-w-full gap-1 px-1.5 text-[11px] shadow-sm [&_svg]:size-3!";
+
+
 export const MediaCardRightCorner = ({ className, ...props }: React.ComponentProps<"div">) => (
     <div
         data-slot="media-card-right-corner"
         className={cn(
-            "absolute right-1.5 top-1.5 z-10 flex max-w-[calc(100%-0.75rem)] items-center gap-1 text-white " +
+            "relative col-start-1 row-start-1 z-10 m-1.5 flex max-w-[calc(100%-0.75rem)] self-start justify-self-end items-center gap-1 text-white " +
             "[&>button]:flex [&>button]:size-7 [&>button]:items-center [&>button]:justify-center " +
             "[&>button]:rounded-full [&>button]:border [&>button]:border-white/15 " +
             "[&>button]:bg-black/55 [&>button]:backdrop-blur-md [&>button]:hover:bg-black/80 [&_svg]:size-3!",
@@ -107,17 +112,14 @@ export const MediaCardLeftCorner = ({ children, className, ...props }: React.Com
     <div
         data-slot="media-card-left-corner"
         className={cn(
-            "pointer-events-none absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-0.75rem)] items-start gap-1 " +
-            "@min-[128px]/media-card:gap-1.5",
+            "pointer-events-none relative col-start-1 row-start-1 z-10 m-1.5 flex min-w-0 max-w-[calc(100%-3.5rem)] self-start justify-self-start",
             className,
         )}
         {...props}
     >
         <Badge
             variant="overlay"
-            className="h-4 gap-0.5 px-1.5 text-[11px] [&>svg]:size-2.5!
-            @min-[128px]/media-card:h-5 @min-[128px]/media-card:gap-1
-            @min-[128px]/media-card:px-2 @min-[128px]/media-card:[&>svg]:size-3!"
+            className={coverBadgeClassName}
         >
             {children}
         </Badge>
@@ -125,13 +127,35 @@ export const MediaCardLeftCorner = ({ children, className, ...props }: React.Com
 );
 
 
-export const MediaCardBadge = ({ className, ...props }: React.ComponentProps<typeof Badge>) => (
-    <div className="pointer-events-none absolute left-0 top-0 flex aspect-2/3 w-full items-end p-1.5">
+export const MediaCardStatus = ({ children, className, ...props }: React.ComponentProps<typeof Badge>) => (
+    <div
+        data-slot="media-card-status"
+        className="pointer-events-none relative col-start-1 row-start-1 m-1.5 flex min-w-0 max-w-[calc(100%-0.75rem)]
+        self-end justify-self-start group-has-[[data-slot=media-card-type]]:max-w-[calc(50%-0.75rem)]"
+    >
         <Badge
             variant="overlay"
-            className={cn("h-6 max-w-full gap-1.5 border-white/10 bg-black/70 px-2 text-[11px] shadow-sm backdrop-blur-md", className)}
+            className={cn(coverBadgeClassName, className)}
             {...props}
-        />
+        >
+            <span className="truncate">{children}</span>
+        </Badge>
+    </div>
+);
+
+
+export const MediaCardType = ({ mediaType }: { mediaType: MediaType }) => (
+    <div
+        data-slot="media-card-type"
+        className="pointer-events-none relative col-start-1 row-start-1 m-1.5 flex min-w-0 max-w-[calc(100%-0.75rem)]
+        self-end justify-self-end group-has-[[data-slot=media-card-status]]:max-w-[calc(50%-0.75rem)]"
+    >
+        <Badge variant="overlay" className={coverBadgeClassName}>
+            <span aria-hidden="true" className="inline-flex shrink-0">
+                <MediaTypeIcon mediaType={mediaType}/>
+            </span>
+            <MediaTypeText mediaType={mediaType} className="truncate"/>
+        </Badge>
     </div>
 );
 
@@ -140,7 +164,7 @@ export const MediaCardFooter = ({ className, ...props }: React.ComponentProps<"d
     <div
         data-slot="media-card-footer"
         className={cn(
-            "pointer-events-none relative z-10 flex min-w-0 flex-col gap-1.5 px-0.5 pt-2 " +
+            "pointer-events-none relative col-start-1 row-start-2 z-10 flex min-w-0 flex-col gap-1.5 px-0.5 pt-2 " +
             "@min-[250px]/media-card:gap-2 **:data-[slot=media-card-signals]:pointer-events-auto",
             className,
         )}

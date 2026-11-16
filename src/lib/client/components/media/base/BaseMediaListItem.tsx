@@ -6,19 +6,19 @@ import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorite";
-import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {MediaListIndicator} from "@/lib/client/components/media/base/MediaListIndicator";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
 import {
     MediaCard,
-    MediaCardBadge,
+    MediaCardStatus,
     MediaCardFooter,
     MediaCardLeftCorner,
     MediaCardMeta,
     MediaCardRightCorner,
     MediaCardSignals,
     MediaCardTitle,
+    MediaCardType,
 } from "@/lib/client/components/media/base/MediaCard";
 
 
@@ -59,8 +59,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
             <MediaCard item={userMedia} mediaType={mediaType}>
                 {(rank !== undefined || showMediaDetails) &&
                     <MediaCardLeftCorner>
-                        {rank !== undefined && <span>#{rank}</span>}
-                        {showMediaDetails && mediaDetailsDisplay}
+                        {rank !== undefined ? <>#{rank}</> : mediaDetailsDisplay}
                     </MediaCardLeftCorner>
                 }
 
@@ -84,10 +83,11 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                     </MediaCardRightCorner>
                 }
 
-                <MediaCardBadge>
-                    {showMediaType && <MediaTypeIcon mediaType={mediaType}/>}
+                <MediaCardStatus>
                     {userMedia.status}
-                </MediaCardBadge>
+                </MediaCardStatus>
+
+                {showMediaType && <MediaCardType mediaType={mediaType}/>}
 
                 <MediaCardFooter>
                     <MediaCardTitle title={userMedia.mediaName} className="flex items-center gap-1.5 tracking-tight">
@@ -102,6 +102,11 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                             />
                         }
                     </MediaCardTitle>
+                    {rank !== undefined && showMediaDetails &&
+                        <div className="flex min-w-0 items-center gap-1 text-xs tabular-nums text-muted-foreground [&_svg]:size-3!">
+                            {mediaDetailsDisplay}
+                        </div>
+                    }
                     {hasMetadata &&
                         <MediaCardMeta className="min-h-4">
                             <div className="pointer-events-auto shrink-0 font-semibold tabular-nums text-foreground [&>div]:text-xs

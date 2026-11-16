@@ -20,13 +20,13 @@ import {StatsSectionHeader} from "@/lib/client/components/media-stats/StatsSecti
 import {ArrowRight, CalendarCheck2, CalendarRange, CheckCircle2, Clock3, Flame, LibraryBig, RefreshCcw, Trophy,} from "lucide-react";
 import {
     MediaCard,
-    MediaCardBadge,
     MediaCardDetails,
     MediaCardFooter,
     MediaCardLeftCorner,
     MediaCardMeta,
     MediaCardSignals,
-    MediaCardTitle
+    MediaCardTitle,
+    MediaCardType,
 } from "@/lib/client/components/media/base/MediaCard";
 
 
@@ -274,9 +274,7 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                                     #{String(index + 1)}
                                 </MediaCardLeftCorner>
                                 {recap.scope === "all" &&
-                                    <MediaCardBadge>
-                                        {capitalize(title.mediaType)}
-                                    </MediaCardBadge>
+                                    <MediaCardType mediaType={title.mediaType}/>
                                 }
                                 <MediaCardFooter>
                                     <MediaCardTitle title={title.name} className="tracking-tight">

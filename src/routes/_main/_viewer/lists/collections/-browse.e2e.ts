@@ -96,6 +96,35 @@ test("creates, ranks, annotates and copies a collection across every media type 
     await expect(collectionSearch).toHaveValue("");
     await expect(page).not.toHaveURL(/search=/);
 
+    // The overlays must follow the cover, even when the grid gains columns after rotation.
+    const cards = page.locator('[data-slot="media-card"]');
+    await expect(cards).toHaveCount(6);
+    for (const { width, height, columns } of [
+        { width: 390, height: 844, columns: 2 },
+        { width: 1024, height: 768, columns: 5 },
+        { width: 1280, height: 832, columns: 6 },
+    ]) {
+        await page.setViewportSize({ width, height });
+        const grid = cards.first().locator("..");
+        expect(await grid.evaluate(element => getComputedStyle(element).gridTemplateColumns.split(" ").length)).toBe(columns);
+        for (const card of await cards.all()) {
+            const cover = await card.locator("img").boundingBox();
+            const typeBadge = await card.locator('[data-slot="media-card-type"] [data-slot="badge"]').boundingBox();
+            const rank = await card.locator('[data-slot="media-card-left-corner"] [data-slot="badge"]').boundingBox();
+            const action = await card.locator('[data-slot="media-card-right-corner"]').boundingBox();
+            expect(cover).not.toBeNull();
+            expect(typeBadge).not.toBeNull();
+            expect(rank).not.toBeNull();
+            expect(action).not.toBeNull();
+            expect(Math.abs(typeBadge!.y + typeBadge!.height - (cover!.y + cover!.height - 6))).toBeLessThan(1);
+            expect(Math.abs(typeBadge!.x + typeBadge!.width - (cover!.x + cover!.width - 6))).toBeLessThan(1);
+            expect(Math.abs(rank!.y - (cover!.y + 6))).toBeLessThan(1);
+            expect(rank!.x + rank!.width).toBeLessThanOrEqual(action!.x);
+        }
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+
     const controls = page.getByRole("group", { name: "Media browsing controls", exact: true });
     await controls.getByRole("button", { name: "Table view", exact: true }).click();
     const table = page.getByRole("table", { name: "Media results", exact: true });

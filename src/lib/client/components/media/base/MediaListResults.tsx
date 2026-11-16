@@ -8,7 +8,6 @@ import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment"
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {MediaListResultsTable} from "@/lib/client/components/media/base/MediaListResultsTable";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
-import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {
     MediaCard,
     MediaCardDetails,
@@ -18,6 +17,7 @@ import {
     MediaCardRightCorner,
     MediaCardSignals,
     MediaCardTitle,
+    MediaCardType,
 } from "@/lib/client/components/media/base/MediaCard";
 
 
@@ -73,13 +73,14 @@ export const MediaListResults = (props: MediaListResultsProps) => {
                 />
                 :
                 <MediaCard key={toItemKey(item)} item={item} mediaType={item.mediaType}>
-                    <MediaCardLeftCorner>
-                        <MediaTypeIcon mediaType={item.mediaType}/>
-                        {item.rank !== undefined
-                            ? `#${item.rank}`
-                            : <MediaTypeText mediaType={item.mediaType}/>
-                        }
-                    </MediaCardLeftCorner>
+                    {item.rank !== undefined &&
+                        <MediaCardLeftCorner>
+                            #{item.rank}
+                        </MediaCardLeftCorner>
+                    }
+                    <MediaCardType
+                        mediaType={item.mediaType}
+                    />
 
                     {isConnected &&
                         <MediaCardRightCorner>

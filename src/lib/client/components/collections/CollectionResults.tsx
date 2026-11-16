@@ -7,7 +7,6 @@ import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseD
 import {MediaListIndicator} from "@/lib/client/components/media/base/MediaListIndicator";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {CollectionResultsTable} from "@/lib/client/components/collections/CollectionResultsTable";
-import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {
     MediaCard,
     MediaCardDetails,
@@ -17,6 +16,7 @@ import {
     MediaCardRightCorner,
     MediaCardSignals,
     MediaCardTitle,
+    MediaCardType,
 } from "@/lib/client/components/media/base/MediaCard";
 
 
@@ -56,13 +56,10 @@ export const CollectionResults = (props: CollectionResultsProps) => {
         <MediaListGrid>
             {items.map(item =>
                 <MediaCard key={toItemKey(item)} item={item} mediaType={item.mediaType}>
-                    <MediaCardLeftCorner>
-                        <MediaTypeIcon mediaType={item.mediaType}/>
-                        {item.rank !== undefined
-                            ? `#${item.rank}`
-                            : <MediaTypeText mediaType={item.mediaType}/>
-                        }
-                    </MediaCardLeftCorner>
+                    {item.rank !== undefined &&
+                        <MediaCardLeftCorner>#{item.rank}</MediaCardLeftCorner>
+                    }
+                    <MediaCardType mediaType={item.mediaType}/>
 
                     {isConnected && !item.inUserList &&
                         <MediaCardRightCorner>

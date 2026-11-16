@@ -8,8 +8,7 @@ import {MediaListGrid} from "@/lib/client/components/media/base/MediaListGrid";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
 import {MediaListIndicator} from "@/lib/client/components/media/base/MediaListIndicator";
-import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
-import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardLeftCorner, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 interface MediaBrowseItem {
@@ -47,10 +46,6 @@ export const MediaBrowseResults = ({ items, display, showMembership = false }: M
                     mediaType={item.mediaType}
                     item={{ mediaId: item.mediaId, mediaName: item.title, imageCover: item.imageCover ?? undefined }}
                 >
-                    <MediaCardLeftCorner>
-                        <MediaTypeIcon mediaType={item.mediaType}/>
-                        <MediaTypeText mediaType={item.mediaType}/>
-                    </MediaCardLeftCorner>
                     <MediaCardFooter>
                         <MediaCardTitle title={item.title} className="flex items-center gap-1.5 tracking-tight">
                             <span className="truncate">
@@ -88,16 +83,6 @@ const MediaBrowseTable = ({ items, showMembership }: Omit<MediaBrowseResultsProp
                 <Link to="/details/$mediaType/$mediaId" params={{ mediaType: original.mediaType, mediaId: original.mediaId }}>
                     {original.title}
                 </Link>
-            ),
-        },
-        {
-            id: "mediaType",
-            header: "Media type",
-            cell: ({ row: { original } }) => (
-                <div className="flex items-center gap-2">
-                    <MediaTypeIcon mediaType={original.mediaType}/>
-                    <MediaTypeText mediaType={original.mediaType}/>
-                </div>
             ),
         },
         {

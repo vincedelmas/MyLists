@@ -22,7 +22,6 @@ const tables = {
     listTable: booksList,
     genreTable: booksGenre,
     tagTable: booksTags,
-    deleteDependents: [booksAuthors, booksGenre, booksTags],
 };
 
 

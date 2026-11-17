@@ -19,7 +19,6 @@ const tables = {
     networkTable: animeNetwork,
     seasonStateTable: animeListSeasons,
     epsPerSeasonTable: animeEpisodesPerSeason,
-    deleteDependents: [animeEpisodesPerSeason, animeNetwork, animeActors, animeGenre, animeTags],
 };
 
 

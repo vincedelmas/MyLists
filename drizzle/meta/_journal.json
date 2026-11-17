@@ -484,6 +484,13 @@
       "when": 1794921864399,
       "tag": "0068_simplify_favorites_and_rating_summaries",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "6",
+      "when": 1794922630581,
+      "tag": "0069_delete_media_details_with_titles",
+      "breakpoints": true
     }
   ]
 }

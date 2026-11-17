@@ -14,7 +14,6 @@ const tables = {
     listTable: mangaList,
     genreTable: mangaGenre,
     tagTable: mangaTags,
-    deleteDependents: [mangaAuthors, mangaGenre, mangaTags],
 };
 
 

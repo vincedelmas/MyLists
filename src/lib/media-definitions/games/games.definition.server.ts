@@ -5,8 +5,8 @@ import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
+import {games, gamesCompanies, gamesGenre, gamesList, gamesTags} from "@/lib/server/database/schema/media/games.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
 
 
 const tables = {
@@ -14,7 +14,6 @@ const tables = {
     listTable: gamesList,
     genreTable: gamesGenre,
     tagTable: gamesTags,
-    deleteDependents: [gamesCompanies, gamesPlatforms, gamesGenre, gamesTags],
 };
 
 

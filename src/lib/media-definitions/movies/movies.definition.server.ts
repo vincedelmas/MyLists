@@ -14,7 +14,6 @@ const tables = {
     listTable: moviesList,
     genreTable: moviesGenre,
     tagTable: moviesTags,
-    deleteDependents: [moviesActors, moviesGenre, moviesTags],
 };
 
 

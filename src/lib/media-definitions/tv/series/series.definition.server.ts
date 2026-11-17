@@ -28,7 +28,6 @@ const tables = {
     actorTable: seriesActors,
     networkTable: seriesNetwork,
     epsPerSeasonTable: seriesEpisodesPerSeason,
-    deleteDependents: [seriesEpisodesPerSeason, seriesNetwork, seriesActors, seriesGenre, seriesTags],
 };
 
 

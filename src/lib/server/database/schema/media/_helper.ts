@@ -59,7 +59,7 @@ export const commonMediaListIndexes = (table: {
 export const commonGenericCols = (modelMediaId: SQLiteColumn) => {
     return {
         id: integer().primaryKey().notNull(),
-        mediaId: integer().notNull().references(() => modelMediaId),
+        mediaId: integer().notNull().references(() => modelMediaId, { onDelete: "cascade" }),
         name: text("name").notNull(),
     };
 };
@@ -77,7 +77,7 @@ export const commonMediaTagsCols = (modelMediaId: SQLiteColumn) => {
     return {
         id: integer().primaryKey().notNull(),
         userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
-        mediaId: integer().notNull().references(() => modelMediaId),
+        mediaId: integer().notNull().references(() => modelMediaId, { onDelete: "cascade" }),
         tagId: integer().notNull().references(() => mediaTags.id, { onDelete: "cascade" }),
     };
 };
@@ -95,7 +95,7 @@ export const commonMediaTagsIndexes = (table: { userId: SQLiteColumn; mediaId: S
 export const commMediaEpsCols = (modelMediaId: SQLiteColumn) => {
     return {
         id: integer().primaryKey().notNull(),
-        mediaId: integer().notNull().references(() => modelMediaId),
+        mediaId: integer().notNull().references(() => modelMediaId, { onDelete: "cascade" }),
         season: integer().notNull(),
         episodes: integer().notNull(),
     };

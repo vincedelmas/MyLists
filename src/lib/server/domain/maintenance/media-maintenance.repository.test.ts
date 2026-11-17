@@ -125,9 +125,9 @@ describe("MediaMaintenanceRepository", () => {
         await expect(MediaMaintenanceRepository.getCoverFilenames(MediaType.BOOKS)).resolves.toEqual([]);
     });
 
-    it("rolls dependent deletions back with the caller transaction when media deletion fails", () => {
+    it("keeps the title and its details when deletion fails", () => {
         db.insert(moviesActors).values({ mediaId: 100, name: "Actor" }).run();
-        sqlite.run(`CREATE TRIGGER fail_media_delete BEFORE DELETE ON movies
+        sqlite.run(`CREATE TRIGGER fail_media_delete AFTER DELETE ON movies
             WHEN OLD.id = 100 BEGIN SELECT RAISE(ABORT, 'deletion failed'); END`);
 
         expect(() => withTransaction(() => {

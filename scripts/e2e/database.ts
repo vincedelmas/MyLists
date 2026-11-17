@@ -33,10 +33,9 @@ const hashedPassword = await hashPassword(password);
 db.transaction(() => {
     db.delete(schema.user).run();
 
-    // Route fixtures also create media and season metadata; clear them between tests.
+    // Clear titles and their attached details between tests.
     for (const mediaType of Object.values(MediaType)) {
         const { tables } = getServerMediaDefinition(mediaType).repository;
-        for (const table of tables.deleteDependents) db.delete(table).run();
         db.delete(tables.mediaTable).run();
     }
 

@@ -7,8 +7,8 @@ import type {MyListsCSVImport} from "@/lib/server/domain/imports/mylists-format"
 import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {MediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
-import type {AnySQLiteColumn, AnySQLiteTable, SelectedFieldsFlat} from "drizzle-orm/sqlite-core";
 import type {MediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+import type {AnySQLiteColumn, AnySQLiteTable, SelectedFieldsFlat} from "drizzle-orm/sqlite-core";
 
 
 type NotNullColumn<T> = AnySQLiteColumn<{ data: T; notNull: true }>;
@@ -82,7 +82,6 @@ export type BaseMediaTables<
     listTable: TListTable;
     genreTable: TGenreTable;
     tagTable: TTagTable;
-    deleteDependents: readonly (AnySQLiteTable & { mediaId: NotNullColumn<number> | NullableColumn<number> })[];
 };
 
 

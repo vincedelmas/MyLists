@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.21.1](https://github.com/vincedelmas/MyLists/compare/v3.21.0...v3.21.1) (2026-11-17)
+
+
+### Code Refactoring
+
+* **db:** delete title details automatically ([739c95d](https://github.com/vincedelmas/MyLists/commit/739c95deb57ae7343ce69fd67586c29008266d84))
+* **db:** let tags exist without media assignments ([bd15a1b](https://github.com/vincedelmas/MyLists/commit/bd15a1b7100f95439272375494678b09d0e056e2))
+* **db:** remove redundant achievement IDs ([01d1720](https://github.com/vincedelmas/MyLists/commit/01d1720b2fe4a53d9301432b430185d4a79ef6a6))
+* **db:** simplify favorites and rating summaries ([9c2e80d](https://github.com/vincedelmas/MyLists/commit/9c2e80dc46111ebdafc7fb94632c1b3b333cc250))
+
 ## [3.21.0](https://github.com/vincedelmas/MyLists/compare/v3.20.1...v3.21.0) (2026-11-16)
 
 

@@ -72,9 +72,7 @@ it.each([false, true])("keeps existing data and removes a deleted title's detail
         const indexesBefore = db.query("SELECT name, tbl_name FROM sqlite_schema WHERE type = 'index' ORDER BY name").all();
 
         db.transaction(() => {
-            for (const migration of migrations.slice(index)) {
-                for (const statement of migration.sql) db.run(statement);
-            }
+            for (const statement of migrations[index].sql) db.run(statement);
         })();
 
         for (const [table, rows] of before) {

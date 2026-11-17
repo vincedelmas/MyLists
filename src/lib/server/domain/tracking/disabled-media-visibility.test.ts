@@ -202,8 +202,8 @@ async function seedUserData(db: BunSQLiteDatabase<typeof schema>) {
         { id: 2, achievementId: 2, difficulty: AchievementDifficulty.BRONZE, criteria: { count: 1 } },
     ]);
     await db.insert(userAchievement).values([
-        { id: 1, userId: 42, achievementId: 1, tierId: 1, completed: true, completedAt: "2026-04-01 00:00:00" },
-        { id: 2, userId: 42, achievementId: 2, tierId: 2, completed: true, completedAt: "2026-04-02 00:00:00" },
+        { id: 1, userId: 42, tierId: 1, completed: true, completedAt: "2026-04-01 00:00:00" },
+        { id: 2, userId: 42, tierId: 2, completed: true, completedAt: "2026-04-02 00:00:00" },
     ]);
 
     await db.insert(anime).values({

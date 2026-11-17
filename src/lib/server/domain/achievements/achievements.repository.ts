@@ -99,7 +99,7 @@ export class AchievementsRepository {
             })
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .innerJoin(achievement, eq(achievementTier.achievementId, achievement.id))
             .innerJoin(userMediaSettings, and(
                 eq(userMediaSettings.userId, userAchievement.userId),
                 eq(userMediaSettings.mediaType, achievement.mediaType),
@@ -119,7 +119,7 @@ export class AchievementsRepository {
             .select({ count: count() })
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .innerJoin(achievement, eq(achievementTier.achievementId, achievement.id))
             .innerJoin(userMediaSettings, and(
                 eq(userMediaSettings.userId, userAchievement.userId),
                 eq(userMediaSettings.mediaType, achievement.mediaType),
@@ -147,18 +147,18 @@ export class AchievementsRepository {
         const subq = getDbClient()
             .select({
                 mediaType: achievement.mediaType,
-                achievementId: userAchievement.achievementId,
+                achievementId: achievementTier.achievementId,
                 maxTierOrder: max(tierOrder).as("maxTierOrder"),
             })
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .innerJoin(achievement, eq(achievementTier.achievementId, achievement.id))
             .where(and(
                 eq(userAchievement.userId, userId),
                 eq(userAchievement.completed, true),
                 inArray(achievement.mediaType, activeMediaTypes),
             ))
-            .groupBy(achievement.mediaType, userAchievement.achievementId)
+            .groupBy(achievement.mediaType, achievementTier.achievementId)
             .as("subq");
 
         const completedResult = await getDbClient()
@@ -229,7 +229,8 @@ export class AchievementsRepository {
 
                 SELECT existing_progress.user_id, 0
                 FROM ${userAchievement} AS existing_progress
-                WHERE existing_progress.achievement_id = ${achievementData.id}
+                INNER JOIN ${achievementTier} ON ${achievementTier.id} = existing_progress.tier_id
+                WHERE ${achievementTier.achievementId} = ${achievementData.id}
             ),
             resolved_progress(user_id, value) AS (
                 SELECT user_id, MAX(value)
@@ -238,7 +239,6 @@ export class AchievementsRepository {
             )
             INSERT INTO ${userAchievement} (
                 user_id,
-                achievement_id,
                 tier_id,
                 count,
                 progress,
@@ -248,7 +248,6 @@ export class AchievementsRepository {
             )
             SELECT
                 resolved_progress.user_id,
-                ${achievementData.id},
                 ${achievementTier.id},
                 resolved_progress.value,
                 CASE
@@ -267,7 +266,6 @@ export class AchievementsRepository {
             CROSS JOIN ${achievementTier}
             WHERE ${achievementTier.achievementId} = ${achievementData.id}
             ON CONFLICT (user_id, tier_id) DO UPDATE SET
-                achievement_id = excluded.achievement_id,
                 count = excluded.count,
                 progress = excluded.progress,
                 completed = excluded.completed,

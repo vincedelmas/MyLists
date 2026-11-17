@@ -32,7 +32,6 @@ export const achievementTier = sqliteTable("achievement_tier", {
 export const userAchievement = sqliteTable("user_achievement", {
     id: integer().primaryKey().notNull(),
     userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
-    achievementId: integer().notNull().references(() => achievement.id, { onDelete: "cascade" }),
     tierId: integer().notNull().references(() => achievementTier.id, { onDelete: "cascade" }),
     progress: real(),
     count: real(),
@@ -41,7 +40,7 @@ export const userAchievement = sqliteTable("user_achievement", {
     lastCalculatedAt: text(),
 }, (table) => [
     uniqueIndex("user_achievement_user_tier_unique_idx").on(table.userId, table.tierId),
-    index("ix_user_achievement_achievement_user").on(table.achievementId, table.userId),
+    index("ix_user_achievement_tier_user").on(table.tierId, table.userId),
     index("ix_user_achievement_user_completed_at").on(table.userId, table.completedAt).where(sql`${table.completed} = 1`),
     index("ix_user_achievement_completed_tier").on(table.tierId).where(sql`${table.completed} = 1`),
     check("user_achievement_progress_range_check", sql`${table.progress} IS NULL OR (${table.progress} >= 0 AND ${table.progress} <= 100)`),
@@ -53,7 +52,6 @@ export const userAchievement = sqliteTable("user_achievement", {
 
 export const achievementRelations = relations(achievement, ({ many }) => ({
     tiers: many(achievementTier),
-    userAchievements: many(userAchievement),
 }));
 
 
@@ -70,10 +68,6 @@ export const userAchievementRelations = relations(userAchievement, ({ one }) => 
     achievementTier: one(achievementTier, {
         fields: [userAchievement.tierId],
         references: [achievementTier.id]
-    }),
-    achievement: one(achievement, {
-        fields: [userAchievement.achievementId],
-        references: [achievement.id]
     }),
     user: one(user, {
         fields: [userAchievement.userId],

@@ -107,7 +107,7 @@ it("uses the viewer's tracking data for collection filters and never the collect
         const filters: MediaBrowseFilters = { mediaFilters: { movies: { actors: ["Rare actor"], directors: ["Test director"] } } };
         const result = await collections.getCollectionDetails(collectionId, "read", viewer, filters);
         expect(result).toMatchObject({ total: 1, items: [{ mediaId: 55, orderIndex: 55 }], filterOptions: { mediaFilters: {} } });
-        const ordinary = await createMediaListQueries(moviesServerDefinition.repository).getMediaList(undefined, 2, filters.mediaFilters!.movies!);
+        const ordinary = await createMediaListQueries(moviesServerDefinition).getMediaList(undefined, 2, filters.mediaFilters!.movies!);
         expect(ordinary.items.map(item => item.mediaId)).toEqual([55]);
 
         const before = CollectionsRepository.getCollectionById(collectionId)!.viewCount;

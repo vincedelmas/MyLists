@@ -6,6 +6,8 @@ import {describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 import {dynamicListSpecSchema} from "@/lib/schemas/dynamic-lists.schema";
 import {getDynamicListResults} from "./dynamic-lists.queries";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
@@ -15,6 +17,64 @@ vi.mock("@/env/server", () => ({ serverEnv: { UPLOADS_DIR_NAME: "static" } }));
 
 
 describe("stable dynamic-list tag migration", () => {
+    it("preserves tags and real assignments while removing empty-tag placeholders for every media type", () => {
+        const sqlite = new Database(":memory:");
+        const migrations = readMigrationFiles({ migrationsFolder: "./drizzle" });
+        const index = migrations.findIndex(migration => migration.sql.some(statement =>
+            statement.includes('FROM `series_tags` WHERE "media_id" IS NOT NULL'),
+        ));
+        const db = drizzle(sqlite, { schema, casing: "snake_case" });
+
+        try {
+            expect(index).toBeGreaterThan(0);
+            sqlite.transaction(() => {
+                for (const migration of migrations.slice(0, index)) {
+                    for (const statement of migration.sql) sqlite.run(statement);
+                }
+            })();
+            sqlite.run("PRAGMA foreign_keys = ON");
+            sqlite.run("INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (1, 'owner', 'owner@example.invalid', 1, '2026-01-01', '2026-01-01')");
+            for (const mediaType of ALL_MEDIA_TYPES) {
+                const extraColumns = mediaType === "books" ? ", pages"
+                    : mediaType === "movies" ? ", duration"
+                    : mediaType === "series" || mediaType === "anime" ? ", duration, total_seasons, total_episodes" : "";
+                const extraValues = mediaType === "books" || mediaType === "movies" ? ", 100"
+                    : mediaType === "series" || mediaType === "anime" ? ", 24, 1, 12" : "";
+                sqlite.run(`INSERT INTO ${mediaType} (id, api_id, name, image_cover${extraColumns}) VALUES (1, 1, 'Title', 'default.jpg'${extraValues})`);
+                const [empty, assigned] = db.insert(schema.mediaTags).values([
+                    { userId: 1, mediaType, name: "Empty" },
+                    { userId: 1, mediaType, name: "Assigned" },
+                ]).returning().all();
+                sqlite.query(`INSERT INTO ${mediaType}_tags (id, user_id, media_id, tag_id) VALUES (1, 1, NULL, ?), (2, 1, 1, ?), (3, 1, NULL, ?)`)
+                    .run(empty.id, assigned.id, assigned.id);
+            }
+            const tagsBefore = db.select().from(schema.mediaTags).orderBy(schema.mediaTags.id).all();
+
+            sqlite.transaction(() => {
+                for (const migration of migrations.slice(index)) {
+                    for (const statement of migration.sql) sqlite.run(statement);
+                }
+            })();
+
+            expect(db.select().from(schema.mediaTags).orderBy(schema.mediaTags.id).all()).toEqual(tagsBefore);
+            for (const mediaType of ALL_MEDIA_TYPES) {
+                const { tagTable } = getServerMediaDefinition(mediaType).repository.tables;
+                const tagId = tagsBefore.find(tag => tag.mediaType === mediaType && tag.name === "Assigned")!.id;
+                expect(db.select().from(tagTable).all()).toEqual([{ id: 2, userId: 1, mediaId: 1, tagId }]);
+                expect(() => sqlite.query(`INSERT INTO ${mediaType}_tags (user_id, media_id, tag_id) VALUES (1, NULL, ?)`).run(tagId))
+                    .toThrow("NOT NULL constraint failed");
+                expect(() => db.insert(tagTable).values({ userId: 1, mediaId: 1, tagId }).run())
+                    .toThrow();
+                expect(sqlite.query(`SELECT name FROM sqlite_schema WHERE type = 'index' AND tbl_name = '${mediaType}_tags' AND name LIKE '%placeholder%'`).all())
+                    .toEqual([]);
+            }
+            expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);
+        }
+        finally {
+            sqlite.close();
+        }
+    });
+
     it("preserves independent global and scoped tag conditions, pins, and matching across renames", () => {
         const sqlite = new Database(":memory:");
         const migrations = readMigrationFiles({ migrationsFolder: "./drizzle" });

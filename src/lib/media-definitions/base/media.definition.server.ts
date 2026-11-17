@@ -48,7 +48,7 @@ type TagTableColumns = {
     id: NotNullColumn<number>;
     tagId: NotNullColumn<number>;
     userId: NotNullColumn<number>;
-    mediaId: NullableColumn<number>;
+    mediaId: NotNullColumn<number>;
 };
 
 

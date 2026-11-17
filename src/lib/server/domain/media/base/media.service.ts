@@ -38,7 +38,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
 
     const tagQueries = createMediaTagQueries(definition);
     const communityQueries = createMediaCommunityQueries(definition);
-    const listQueries = createMediaListQueries(definition.repository);
+    const listQueries = createMediaListQueries(definition);
 
     const updateHandlers: MediaUpdateHandlers<TDef> = {
         [UpdateType.RATING]: createSimpleUpdateHandler("rating"),

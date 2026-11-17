@@ -303,7 +303,7 @@ it("ANDs filters, matches any requested tag, and scopes tags to the owner", () =
         } }).total).toBe(0);
 
         for (const mediaType of ALL_MEDIA_TYPES) {
-            const list = await createMediaListQueries(getServerMediaDefinition(mediaType).repository)
+            const list = await createMediaListQueries(getServerMediaDefinition(mediaType))
                 .getMediaList(undefined, 1, mediaFilters[mediaType]!);
             expect(list.items.map(item => item.mediaId)).toEqual([1]);
         }
@@ -324,7 +324,7 @@ it("loads small facets and searches tracking-list names on demand", async () => 
         const editorOptions = getDynamicListEditorFilterOptions(1, [MediaType.MOVIES]);
         expect(editorOptions.mediaFilters.movies).not.toHaveProperty("actors");
         expect(editorOptions.mediaFilters.movies?.langs).toEqual([{ name: "en" }]);
-        const listQueries = createMediaListQueries(getServerMediaDefinition(MediaType.MOVIES).repository);
+        const listQueries = createMediaListQueries(getServerMediaDefinition(MediaType.MOVIES));
         const ordinary = await listQueries.getListFilters(1);
         expect(ordinary).not.toHaveProperty("actors");
         expect(await listQueries.getListFilters(1, ["langs"])).not.toHaveProperty("actors");
@@ -410,7 +410,7 @@ it("matches all requested tags and excludes any owner tag while ignoring other u
         expect(getDynamicListResults(1, dynamicListsRepository.get(1, id).spec).total).toBe(3);
     });
 
-    it("cleans movie rules when the final tag assignment is removed", () => {
+    it("keeps a tag and its saved rules when the final assignment is removed", async () => {
         const mediaType = MediaType.MOVIES;
         addEntry(mediaType, 1);
         seedMediaTags(dbContext.db, mediaType, { userId: 1, mediaId: 1, name: "Temporary" });
@@ -418,12 +418,23 @@ it("matches all requested tags and excludes any owner tag while ignoring other u
         const list = dynamicListsRepository.create(1, { ...spec, filters: {
             mediaFilters: { [mediaType]: { tagRules: [{ tags: [id] }] } },
         } });
-        createMediaTagQueries(getServerMediaDefinition(mediaType)).editUserTag(1, { name: "Temporary" }, TagAction.DELETE_ONE, 1);
-        expect(dynamicListsRepository.get(1, list.id).spec.filters.mediaFilters?.[mediaType]?.tagRules).toEqual([]);
-        expect(dbContext.db.select().from(schema.mediaTags).where(eq(schema.mediaTags.id, id)).all()).toEqual([]);
+        const tags = createMediaTagQueries(getServerMediaDefinition(mediaType));
+        tags.editUserTag(1, { name: "Temporary" }, TagAction.DELETE_ONE, 1);
+        const saved = dynamicListsRepository.get(1, list.id);
+        expect(saved.spec.filters.mediaFilters?.[mediaType]?.tagRules).toEqual([{ tags: [id] }]);
+        expect(tagId(mediaType, "Temporary")).toBe(id);
+        expect(await tags.getTagNames(1)).toEqual([{ name: "Temporary" }]);
+        expect(await tags.getTagsView(1)).toEqual([{ tagName: "Temporary", totalCount: 0 }]);
+        expect((await createMediaListQueries(getServerMediaDefinition(mediaType)).getListFilters(1)).tags)
+            .toEqual([{ name: "Temporary" }]);
+        expect(getDynamicListResults(1, saved.spec).total).toBe(0);
+
+        tags.editUserTag(1, { name: "Temporary" }, TagAction.ADD, 1);
+        expect(tagId(mediaType, "Temporary")).toBe(id);
+        expect(getDynamicListResults(1, saved.spec).items.map(item => item.mediaId)).toEqual([1]);
     });
 
-    it("cleans saved tag rules when a tracked movie is removed", () => {
+    it("keeps saved tag rules when a tracked movie is removed", () => {
         const mediaType = MediaType.MOVIES;
         addEntry(mediaType, 1);
         const tags = createMediaTagQueries(getServerMediaDefinition(mediaType));
@@ -435,14 +446,20 @@ it("matches all requested tags and excludes any owner tag while ignoring other u
 
         createMediaQueries(getServerMediaDefinition(mediaType)).removeMediaFromUserList(1, 1);
 
-        expect(dynamicListsRepository.get(1, list.id).spec.filters.mediaFilters?.[mediaType]?.tagRules).toEqual([]);
-        expect(dbContext.db.select().from(schema.mediaTags).where(eq(schema.mediaTags.id, id)).all()).toEqual([]);
+        expect(dynamicListsRepository.get(1, list.id).spec.filters.mediaFilters?.[mediaType]?.tagRules).toEqual([{ excludeTags: [id] }]);
+        expect(tagId(mediaType, "Temporary")).toBe(id);
+        expect(dbContext.db.select().from(schema.moviesTags).all()).toEqual([]);
     });
 
     it("keeps an explicitly created empty tag and its rules after removing its final media assignment", async () => {
         addEntry(MediaType.MOVIES, 1);
         const tags = createMediaTagQueries(getServerMediaDefinition(MediaType.MOVIES));
         tags.editUserTag(1, { name: "Keep" }, TagAction.ADD);
+        expect(dbContext.db.select().from(schema.moviesTags).all()).toEqual([]);
+        expect(await tags.getTagNames(1)).toEqual([{ name: "Keep" }]);
+        expect(await tags.getTagNames(2)).toEqual([]);
+        expect(await createMediaTagQueries(getServerMediaDefinition(MediaType.BOOKS)).getTagNames(1)).toEqual([]);
+        expect(await tags.getTagsView(1)).toEqual([{ tagName: "Keep", totalCount: 0 }]);
         tags.editUserTag(1, { name: "Keep" }, TagAction.ADD, 1);
         const id = tagId(MediaType.MOVIES, "Keep");
         const saved = dynamicListsRepository.create(1, { ...spec, filters: {
@@ -457,7 +474,7 @@ it("matches all requested tags and excludes any owner tag while ignoring other u
         expect(getDynamicListResults(1, dynamicListsRepository.get(1, saved.id).spec).total).toBe(0);
     });
 
-    it("rolls back tag and tracking deletion if cleaning saved rules fails", () => {
+    it("rolls back explicit tag deletion if cleaning saved rules fails", () => {
         addEntry(MediaType.MOVIES, 1);
         const definition = getServerMediaDefinition(MediaType.MOVIES);
         const tags = createMediaTagQueries(definition);
@@ -470,7 +487,6 @@ it("matches all requested tags and excludes any owner tag while ignoring other u
         sqlite.run("CREATE TRIGGER fail_tag_rule_cleanup BEFORE UPDATE ON smart_views BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END");
 
         expect(() => tags.editUserTag(1, { name: "Keep" }, TagAction.DELETE_ALL)).toThrow("cleanup failed");
-        expect(() => createMediaQueries(definition).removeMediaFromUserList(1, 1)).toThrow("cleanup failed");
         expect(tagId(MediaType.MOVIES, "Keep")).toBe(id);
         expect(dbContext.db.select().from(schema.moviesTags).all()).toHaveLength(1);
         expect(dbContext.db.select().from(schema.moviesList).all()).toHaveLength(1);

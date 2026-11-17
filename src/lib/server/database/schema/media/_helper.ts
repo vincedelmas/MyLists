@@ -76,7 +76,7 @@ export const commonMediaTagsCols = (modelMediaId: SQLiteColumn) => {
     return {
         id: integer().primaryKey().notNull(),
         userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
-        mediaId: integer().references(() => modelMediaId),
+        mediaId: integer().notNull().references(() => modelMediaId),
         tagId: integer().notNull().references(() => mediaTags.id, { onDelete: "cascade" }),
     };
 };
@@ -85,11 +85,7 @@ export const commonMediaTagsCols = (modelMediaId: SQLiteColumn) => {
 export const commonMediaTagsIndexes = (table: { userId: SQLiteColumn; mediaId: SQLiteColumn; tagId: SQLiteColumn }, mediaTypeName: MediaType) => {
     return [
         uniqueIndex(`ux_${mediaTypeName}_tags_user_media_tag`)
-            .on(table.userId, table.mediaId, table.tagId)
-            .where(sql`${table.mediaId} IS NOT NULL`),
-        uniqueIndex(`ux_${mediaTypeName}_tags_user_placeholder_tag`)
-            .on(table.userId, table.tagId)
-            .where(sql`${table.mediaId} IS NULL`),
+            .on(table.userId, table.mediaId, table.tagId),
         index(`ix_${mediaTypeName}_tags_user_tag_media`).on(table.userId, table.tagId, table.mediaId),
     ];
 };

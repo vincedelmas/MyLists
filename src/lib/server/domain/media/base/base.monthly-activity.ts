@@ -65,7 +65,7 @@ export const createMediaMonthlyActivity = ({ definition, repository, durationCol
     const progressDefinition = getMediaDefinition(mediaType).progress;
 
     const timing = progressDefinition.timing;
-    const listQueries = createMediaListQueries(definition.repository);
+    const listQueries = createMediaListQueries(definition);
 
     function progressToMinutes(progressGained: number, duration?: number | null) {
         switch (timing.kind) {

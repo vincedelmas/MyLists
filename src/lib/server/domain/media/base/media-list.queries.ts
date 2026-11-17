@@ -6,7 +6,7 @@ import {getMediaTagNames} from "@/lib/server/domain/media/base/media-tag.queries
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import type {ExpandedListFilters, MediaListData} from "@/lib/types/media-list.types";
 import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.registry";
-import type {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import type {AnyMediaRepositoryDefinition, AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {
     getMediaCommonFilterConditions,
     getMediaMetadataFilterConditions,
@@ -31,7 +31,8 @@ export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinit
 };
 
 
-export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
+export const createMediaListQueries = <TDef extends AnyServerMediaDefinition>(serverDefinition: TDef) => {
+    const { repository: definition, identity: { mediaType } } = serverDefinition;
     const { listQuery, tables: { listTable, mediaTable, genreTable } } = definition;
 
     return {
@@ -46,7 +47,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
                 : [];
 
             const tagsPromise = definition.filters.common.tags
-                ? getMediaTagNames(definition.tables.tagTable, userId)
+                ? getMediaTagNames(mediaType, userId)
                 : [];
 
             const [genres, tags] = await Promise.all([genresPromise, tagsPromise]);
@@ -106,7 +107,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
                 .limit(limit);
         },
 
-        async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<TRepoDef["tables"]["listTable"]["$inferSelect"]>> {
+        async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<TDef["repository"]["tables"]["listTable"]["$inferSelect"]>> {
             const { page, perPage, offset, limit } = resolvePagination({ page: args.page, perPage: args.perPage, defaultPerPage: 24 });
             const sortKeyName = resolveSorting(args.sorting, Object.keys(listQuery.sorts), listQuery.defaultSort);
             const selectedSort = listQuery.sorts[sortKeyName];
@@ -177,7 +178,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
             }));
 
             return {
-                items: processedResults as MediaListData<TRepoDef["tables"]["listTable"]["$inferSelect"]>["items"],
+                items: processedResults as MediaListData<TDef["repository"]["tables"]["listTable"]["$inferSelect"]>["items"],
                 pagination: {
                     page,
                     perPage,

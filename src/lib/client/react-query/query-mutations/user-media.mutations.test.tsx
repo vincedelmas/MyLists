@@ -432,11 +432,12 @@ describe("media identity cache synchronization", () => {
         const list = { results: { ...initialList.results, items: [{ ...item, tags: [{ id: 7, name: "Keep" }] }] } };
         queryClient.setQueryData(detailsKey, details);
         queryClient.setQueryData(queryKey, list);
-        server.editTag.mockResolvedValueOnce({ tag, tagNames: action === TagAction.ADD ? [tag] : [] });
+        server.editTag.mockResolvedValueOnce({ tag, tagNames: [tag] });
 
         await useEditTagMutation(MediaType.SERIES, 1).mutateAsync({ tag, action });
 
         expect(queryClient.getQueryData<typeof details>(detailsKey)?.userMedia.tags).toEqual(action === TagAction.ADD ? [tag] : []);
+        expect(queryClient.getQueryData(tagNamesOptions(MediaType.SERIES, false).queryKey)).toEqual([tag]);
         expect(queryClient.getQueryData<typeof list>(queryKey)?.results.items[0].tags).toEqual([{ id: 7, name: "Keep" }]);
         expect(fetchList).not.toHaveBeenCalled();
         await closeDialog();
@@ -569,9 +570,9 @@ describe("authoritative editor caches", () => {
         const stopNames = new QueryObserver(queryClient, { queryKey: namesKey, queryFn: fetchNames }).subscribe(() => {});
         const stopTags = new QueryObserver(queryClient, { queryKey: tagsKey, queryFn: fetchTags }).subscribe(() => {});
         try {
-            server.editTag.mockResolvedValueOnce({ tagNames: [] });
+            server.editTag.mockResolvedValueOnce({ tagNames: [tag] });
             await useEditTagMutation(MediaType.SERIES, 1).mutateAsync({ tag, action: TagAction.DELETE_ONE });
-            expect(queryClient.getQueryData(namesKey)).toEqual([]);
+            expect(queryClient.getQueryData(namesKey)).toEqual([tag]);
             expect(queryClient.getQueryData<{ userMedia: { tags: unknown[] } }>(detailsKey)?.userMedia.tags).toEqual([]);
             expect(queryClient.getQueryState(tagsKey)?.isInvalidated).toBe(true);
             expect(fetchNames).not.toHaveBeenCalled();

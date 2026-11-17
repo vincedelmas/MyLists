@@ -1,12 +1,12 @@
 import {MediaType, Status} from "@/lib/utils/enums";
 import {SQLiteColumn} from "drizzle-orm/sqlite-core";
 import {toHistogramBins} from "@/lib/utils/stats/histogram";
-import {userMediaSettings} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {mediaTags, userMediaSettings} from "@/lib/server/database/schema";
 import {TopAffinity, TopAffinityDefinition} from "@/lib/types/stats.types";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {and, asc, count, desc, eq, gte, inArray, isNotNull, ne, sql} from "drizzle-orm";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {and, asc, count, countDistinct, desc, eq, gte, inArray, isNotNull, ne, sql} from "drizzle-orm";
 
 
 type AffinityResults<TDefinition extends AnyServerMediaDefinition> = {
@@ -47,13 +47,13 @@ export const getMediaStatsUserScope = (listUserId: SQLiteColumn, mediaType: Medi
 
 const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinition>(definition: TDefinition) => {
     const computeTotalTags = async (userId?: number) => {
-        const { tagTable } = definition.repository.tables;
-        const forUser = getMediaStatsUserScope(tagTable.userId, definition.identity.mediaType, userId);
+        const { mediaType } = definition.identity;
+        const forUser = getMediaStatsUserScope(mediaTags.userId, mediaType, userId);
 
         const result = getDbClient()
-            .select({ count: countDistinct(tagTable.tagId) })
-            .from(tagTable)
-            .where(and(forUser))
+            .select({ count: count() })
+            .from(mediaTags)
+            .where(and(forUser, eq(mediaTags.mediaType, mediaType)))
             .get();
 
         return result?.count ?? 0;

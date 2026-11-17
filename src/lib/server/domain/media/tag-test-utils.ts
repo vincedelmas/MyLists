@@ -8,7 +8,7 @@ type TagSeed = {
     id?: number;
     name: string;
     userId: number;
-    mediaId?: number | null;
+    mediaId?: number;
 };
 
 
@@ -29,8 +29,10 @@ export const seedMediaTags = (db: BunSQLiteDatabase<typeof schema>, mediaType: M
             }).returning({ id: schema.mediaTags.id })
             .get()!;
 
-        db.insert(tagTable)
-            .values({ ...assignment, tagId: tag.id })
-            .run();
+        if (assignment.mediaId !== undefined) {
+            db.insert(tagTable)
+                .values({ ...assignment, mediaId: assignment.mediaId, tagId: tag.id })
+                .run();
+        }
     }
 };

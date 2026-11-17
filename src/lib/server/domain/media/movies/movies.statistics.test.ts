@@ -115,6 +115,19 @@ it("computes the pre-computed totals owned by the statistics component", async (
         expect(db.select().from(userMediaSettings).where(eq(userMediaSettings.mediaType, MediaType.BOOKS)).get()).toEqual(beforeBooks);
     });
 
+    it("counts empty tags while keeping user, media type, and active-list boundaries", async () => {
+        seedMediaTags(db, MediaType.MOVIES, [
+            { userId: 1, name: "Empty" },
+            { userId: 2, name: "Inactive empty" },
+        ]);
+        seedMediaTags(db, MediaType.BOOKS, { userId: 1, name: "Book tag" });
+
+        const statistics = createMoviesStatistics();
+        expect(await statistics.computeTotalTags(1)).toBe(2);
+        expect(await statistics.computeTotalTags(2)).toBe(2);
+        expect(await statistics.computeTotalTags()).toBe(2);
+    });
+
     it("excludes inactive movie lists from platform statistics", async () => {
         const stats = await createMoviesStatistics().calculateAdvancedMediaStats(7);
 

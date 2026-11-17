@@ -63,7 +63,6 @@ export type UserMediaStats = {
     totalEntries: number;
     entriesRated: number;
     totalSpecific: number;
-    averageRating: number;
     sumEntriesRated: number;
     entriesFavorites: number;
     entriesCommented: number;

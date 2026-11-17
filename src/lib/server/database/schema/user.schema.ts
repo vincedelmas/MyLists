@@ -94,7 +94,6 @@ export const userMediaSettings = sqliteTable("user_media_settings", {
     totalSpecific: integer().default(0).notNull(),
     statusCounts: customJson<Record<Status, number>>("status_counts").default(sql`'{}'`).notNull(),
     releaseNotificationsEnabled: integer("release_notifications_enabled", { mode: "boolean" }).default(true).notNull(),
-    averageRating: real(),
 }, (table) => [
     index("ix_user_media_settings_media_type").on(table.mediaType),
     uniqueIndex("ux_user_id_media_type").on(table.userId, table.mediaType),
@@ -123,7 +122,6 @@ export const userMediaStatsHistory = sqliteTable("user_media_stats_history", {
     entriesFavorites: integer().default(0).notNull(),
     totalSpecific: integer().default(0).notNull(),
     statusCounts: customJson<Record<Status, number>>("status_counts").default(sql`'{}'`).notNull(),
-    averageRating: real(),
     timestamp: text().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
     mediaId: integer().notNull(),
 }, (table) => [

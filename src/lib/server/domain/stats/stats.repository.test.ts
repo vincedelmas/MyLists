@@ -167,6 +167,27 @@ it("clamps time until maintenance without changing other users or media types", 
         expect(await statsService.userPreComputedStatsSummary(1)).toMatchObject({ totalEntriesNoPlan: 0, percentRated: null });
     });
 
+    it("calculates the profile average from rating totals, including zero and removed ratings", async () => {
+        tracking.addMediaToList({ ...action, status: Status.COMPLETED });
+        tracking.addMediaToList({ ...action, mediaId: 2, status: Status.COMPLETED });
+        expect((await statsService.userPerMediaSummaryStats(1))[0].avgRated).toBeNull();
+
+        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.RATING, rating: 0 } });
+        expect((await statsService.userPerMediaSummaryStats(1))[0].avgRated).toBe(0);
+
+        tracking.updateUserMedia({ ...action, mediaId: 2, payload: { type: UpdateType.RATING, rating: 8.5 } });
+        expect((await statsService.userPerMediaSummaryStats(1))[0].avgRated).toBe(4.25);
+
+        tracking.updateUserMedia({ ...action, payload: { type: UpdateType.RATING, rating: null } });
+        expect((await statsService.userPerMediaSummaryStats(1))[0].avgRated).toBe(8.5);
+
+        withTransaction(() => StatsRepository.updateAllUsersPreComputedStats(MediaType.MOVIES, createMoviesStatistics().computeAllUsersStats()));
+        expect((await statsService.userPerMediaSummaryStats(1))[0].avgRated).toBe(8.5);
+
+        tracking.removeMediaFromList({ ...action, mediaId: 2 });
+        expect((await statsService.userPerMediaSummaryStats(1))[0].avgRated).toBeNull();
+    });
+
     it("does not write statistics snapshots when changing existing comment text", () => {
         tracking.addMediaToList({ ...action, status: Status.COMPLETED });
         tracking.updateUserMedia({ ...action, payload: { type: UpdateType.COMMENT, comment: "First comment" } });

@@ -75,7 +75,7 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
         expect(seasons().map(s => s.rating)).toEqual([8, 8, 8]);
         update({ type: UpdateType.RATING, seasonRating: { season: 1, rating: 9 } });
         expect(read().rating).toBe(8.3);
-        expect(stats()).toMatchObject({ entriesRated: 1, sumEntriesRated: 8.3, averageRating: 8.3 });
+        expect(stats()).toMatchObject({ entriesRated: 1, sumEntriesRated: 8.3 });
         update({ type: UpdateType.RATING, seasonRating: { season: 3, rating: 7 } });
         expect(read().rating).toBe(8);
         update({ type: UpdateType.RATING, rating: 8 });
@@ -105,7 +105,7 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
         expect(seasons()).toContainEqual({ season: 2, episodes: null, rating: 9, redo: 2 });
         expect(seasons()).toContainEqual({ season: 4, episodes: 8, rating: null, redo: 0 });
         expect(read()).toMatchObject({ rating: 6, redo: 0 });
-        expect(stats()).toMatchObject({ averageRating: 6, sumEntriesRated: 6, totalRedo: 0 });
+        expect(stats()).toMatchObject({ entriesRated: 1, sumEntriesRated: 6, totalRedo: 0 });
         expect(() => update({ type: UpdateType.RATING, seasonRating: { season: 2, rating: 5 } })).toThrow("no longer available");
         refresh([1, 2, 3, 4]);
         expect(read()).toMatchObject({ rating: 7, redo: 2 });

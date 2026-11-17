@@ -82,18 +82,6 @@ export class StatsRepository {
             setUpdates.statusCounts = jsonUpdateSql;
         }
 
-        const deltaEntriesRated = delta.entriesRated ?? 0;
-        const deltaSumEntriesRated = delta.sumEntriesRated ?? 0;
-        if (deltaEntriesRated !== 0 || deltaSumEntriesRated !== 0) {
-            setUpdates.averageRating = sql<number | null>`
-                CASE
-                    WHEN COALESCE(${userMediaSettings.entriesRated}, 0) + ${deltaEntriesRated} <= 0
-                    THEN NULL
-                    ELSE (ROUND(COALESCE(${userMediaSettings.sumEntriesRated}, 0) + ${deltaSumEntriesRated}, 10) /
-                    (COALESCE(${userMediaSettings.entriesRated}, 0) + ${deltaEntriesRated}))
-                END`;
-        }
-
         if (Object.keys(setUpdates).length === 0) {
             return;
         }

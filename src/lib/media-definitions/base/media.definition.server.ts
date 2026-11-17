@@ -37,7 +37,7 @@ type ListTableColumns = {
     mediaId: NotNullColumn<number>;
     comment: NullableColumn<string>;
     addedAt: NullableColumn<string>;
-    favorite: NullableColumn<boolean>;
+    favorite: NotNullColumn<boolean>;
     lastUpdated: NullableColumn<string>;
     customCover: NullableColumn<string | null>;
     releaseNotificationsEnabled: NotNullColumn<boolean>;

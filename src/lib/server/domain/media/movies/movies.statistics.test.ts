@@ -52,7 +52,6 @@ it("computes the pre-computed totals owned by the statistics component", async (
             totalEntries: 3,
             entriesRated: 2,
             totalSpecific: 4,
-            averageRating: 7,
             sumEntriesRated: 14,
             entriesFavorites: 1,
             entriesCommented: 1,
@@ -92,7 +91,7 @@ it("computes the pre-computed totals owned by the statistics component", async (
         db.delete(moviesList).where(eq(moviesList.userId, 2)).run();
         db.update(userMediaSettings).set({
             timeSpent: 30, totalEntries: 1, totalRedo: 2, totalSpecific: 3,
-            entriesRated: 1, sumEntriesRated: 8, averageRating: 8,
+            entriesRated: 1, sumEntriesRated: 8,
             entriesFavorites: 1, entriesCommented: 1, views: 12,
             statusCounts: { [Status.COMPLETED]: 1 } as Record<Status, number>,
         }).where(eq(userMediaSettings.userId, 2)).run();
@@ -108,7 +107,7 @@ it("computes the pre-computed totals owned by the statistics component", async (
         expect(settings[0]).toMatchObject({ userId: 1, timeSpent: 480, totalEntries: 3 });
         expect(settings[1]).toMatchObject({
             userId: 2, active: false, views: 12, timeSpent: 0, totalEntries: 0, totalRedo: 0,
-            totalSpecific: 0, entriesRated: 0, sumEntriesRated: 0, averageRating: 0,
+            totalSpecific: 0, entriesRated: 0, sumEntriesRated: 0,
             entriesFavorites: 0, entriesCommented: 0,
             statusCounts: { [Status.COMPLETED]: 0, [Status.PLANNED]: 0 },
         });

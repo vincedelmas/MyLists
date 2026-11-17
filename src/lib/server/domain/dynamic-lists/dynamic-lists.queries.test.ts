@@ -50,7 +50,7 @@ describe("dynamic list live queries", () => {
 
     function addEntry(mediaType: MediaType, mediaId: number, options: Partial<{
         userId: number; title: string; status: Status; addedAt: string | null; lastUpdated: string | null;
-        rating: number | null; favorite: boolean | null; customCover: string | null; releaseDate: string | null; comment: string | null;
+        rating: number | null; favorite: boolean; customCover: string | null; releaseDate: string | null; comment: string | null;
     }> = {}) {
         const commonMedia = { id: mediaId, apiId: mediaId, name: options.title ?? `Media ${mediaId}`, imageCover: `${mediaId}.jpg`, releaseDate: options.releaseDate };
         switch (mediaType) {

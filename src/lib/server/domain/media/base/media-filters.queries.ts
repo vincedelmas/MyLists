@@ -109,7 +109,7 @@ const createArrayFilter = ({ argName, entityTable, filterColumn, mediaTable, opt
                 ? row.name.split(",").map(name => name.trim())
                 : [row.name]
             );
-            
+
             const matches = [...new Set(names.filter(name => name && (!normalizedQuery || name.toLowerCase().includes(normalizedQuery))))]
                 .sort((a, b) => a.localeCompare(b));
 
@@ -140,6 +140,7 @@ export const defineMediaFilterDefinitions = <const TDef extends Pick<MediaDefini
         favorite: {
             personal: true,
             isActive: (args) => args.favorite !== undefined,
+            // Titles not in current user list count as not favorites (of course, like in collections)
             getCondition: (args) => sql`COALESCE(${listTable.favorite}, 0) = ${Number(args.favorite)}`,
         },
         comment: {

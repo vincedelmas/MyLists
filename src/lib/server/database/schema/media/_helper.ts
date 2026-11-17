@@ -28,7 +28,7 @@ export const commonMediaListCols = (modelMediaId: SQLiteColumn, mediaTypeName: M
         mediaId: integer("media_id").notNull().references(() => modelMediaId),
         status: text("status").$type<Status>().notNull(),
         releaseNotificationsEnabled: integer("release_notifications_enabled", { mode: "boolean" }).default(true).notNull(),
-        favorite: integer("favorite", { mode: "boolean" }),
+        favorite: integer("favorite", { mode: "boolean" }).default(false).notNull(),
         comment: text("comment"),
         rating: real("rating"),
         customCover: nullableImageUrl("custom_cover", `${mediaTypeName}-covers`),
@@ -51,6 +51,7 @@ export const commonMediaListIndexes = (table: {
         index(`ix_${mediaTypeName}_list_user_media_rated`).on(table.userId, table.mediaId).where(sql`${table.rating} IS NOT NULL`),
         index(`ix_${mediaTypeName}_list_media_user_rated`).on(table.mediaId, table.userId).where(sql`${table.rating} IS NOT NULL`),
         check(`${mediaTypeName}_list_rating_check`, sql`${table.rating} IS NULL OR (${table.rating} >= 0 AND ${table.rating} <= 10)`),
+        check(`${mediaTypeName}_list_favorite_check`, sql`${table.favorite} IN (0, 1)`),
     ];
 };
 

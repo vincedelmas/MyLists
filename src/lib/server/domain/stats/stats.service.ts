@@ -109,7 +109,6 @@ export class StatsService {
                 statusList: statusList,
                 totalNoPlan: totalNoPlan,
                 mediaType: setting.mediaType,
-                avgRated: setting.averageRating,
                 timeSpent: setting.timeSpent / 60,
                 noData: setting.totalEntries === 0,
                 totalEntries: setting.totalEntries,
@@ -117,7 +116,12 @@ export class StatsService {
                 totalSpecific: setting.totalSpecific,
                 timeSpentDays: setting.timeSpent / 1440,
                 entriesFavorites: setting.entriesFavorites,
-                percentRated: (setting.entriesRated === 0 || totalNoPlan === 0) ? null : (setting.entriesRated / totalNoPlan) * 100,
+                avgRated: setting.entriesRated === 0
+                    ? null
+                    : setting.sumEntriesRated / setting.entriesRated,
+                percentRated: (setting.entriesRated === 0 || totalNoPlan === 0)
+                    ? null
+                    : (setting.entriesRated / totalNoPlan) * 100,
             };
 
             data.push(summary);

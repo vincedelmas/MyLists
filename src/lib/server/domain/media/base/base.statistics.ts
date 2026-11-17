@@ -86,9 +86,6 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
                 totalEntries: count(listTable.mediaId).as("totalEntries"),
                 entriesRated: count(listTable.rating).as("entriesRated"),
                 sumEntriesRated: sql<number>`COALESCE(SUM(${listTable.rating}), 0)`.as("sumEntriesRated"),
-                averageRating: sql<number>`
-                    COALESCE(SUM(${listTable.rating}) * 1.0 / NULLIF(COUNT(${listTable.rating}), 0), 0.0)
-                `.as("averageRating"),
             })
             // Include empty lists so maintenance clears any kept stats
             .from(userMediaSettings)
@@ -109,7 +106,6 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
                 totalEntries: Number(row.totalEntries) || 0,
                 entriesRated: Number(row.entriesRated) || 0,
                 totalSpecific: Number(row.totalSpecific) || 0,
-                averageRating: Number(row.averageRating) || 0,
                 sumEntriesRated: Number(row.sumEntriesRated) || 0,
                 entriesFavorites: Number(row.entriesFavorites) || 0,
                 entriesCommented: Number(row.entriesCommented) || 0,

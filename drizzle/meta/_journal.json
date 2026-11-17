@@ -477,6 +477,13 @@
       "when": 1794920915900,
       "tag": "0067_independent_media_tags",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "6",
+      "when": 1794921864399,
+      "tag": "0068_simplify_favorites_and_rating_summaries",
+      "breakpoints": true
     }
   ]
 }

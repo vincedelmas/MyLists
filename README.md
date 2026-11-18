@@ -319,13 +319,11 @@ node node_modules/@playwright/test/cli.js install chromium
 bun run test:e2e
 ```
 
-Playwright runs on Node (CI uses Node 24), the app, database fixtures, and import worker run on Bun. The runner creates and removes a
-temp workspace. Two parallel workers each have their own SQLite db, uploads and dev server (ports 4173 and 4174).
-Each worker applies the migrations and resets its fixtures before every test. Separate Vite caches in `node_modules/.vite-e2e/`
-are retained between runs. Use `--workers=1` for a sequential run. Email, social OAuth,
-external media providers, and Redis are disabled for browser tests. Use `bun run test:e2e --headed` to watch, or
-`bun run test:e2e --grep 'signs in'` to run one journey. Failed runs keep traces and screenshots in `test-results/`, with an HTML report
-in `playwright-report/`.
+Playwright runs three smoke tests covering login, media tracking, and MCP consent and revocation. It runs on Node and starts the app
+with Bun and Vite. The runner uses a temporary SQLite database and uploads directory and resets fixtures before each test.
+Email, social OAuth, external media providers, and Redis are disabled. Use `bun run test:e2e --headed` to watch, or add
+`--grep 'signs in'` to run one journey. Failed runs keep traces and screenshots in `test-results/`, with an HTML report in
+`playwright-report/`.
 
 Browser tests live with the routes as `-*.e2e.ts`. The prefix keeps them out of the generated route tree. Vitest only discovers
 `src/**/*.test.{ts,tsx}`.

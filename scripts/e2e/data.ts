@@ -43,29 +43,3 @@ export const movies = {
         name: "Private movie sentinel",
     },
 } as const;
-
-
-export const privateCollection = {
-    id: 31,
-    title: "Private collection sentinel",
-    description: "Private collection description sentinel",
-};
-
-
-export const publicCollection = {
-    id: 32,
-    title: "Public collection sentinel",
-};
-
-
-export const privateImport = {
-    id: 41,
-    name: "Private import row sentinel",
-    reason: "Private import reason sentinel",
-};
-
-
-export const series = {
-    id: 201,
-    name: "Browser test series",
-} as const;

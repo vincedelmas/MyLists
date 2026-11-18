@@ -7,7 +7,7 @@ import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {movies, password, privateCollection, privateImport, publicCollection, series, users} from "./data";
+import {movies, password, users} from "./data";
 
 
 // This script can reset data only in test runner temp dir
@@ -84,16 +84,6 @@ db.transaction(() => {
             followerId: users.follower.id,
         }).run();
 
-    db.insert(schema.series).values({
-        ...series,
-        apiId: series.id,
-        duration: 30,
-        totalSeasons: 2,
-        totalEpisodes: 16,
-        imageCover: "series.jpg",
-    }).run();
-    db.insert(schema.seriesEpisodesPerSeason).values([1, 2].map(season => ({ mediaId: series.id, season, episodes: 8 }))).run();
-
     db.insert(schema.movies)
         .values(Object.values(movies).map(movie => ({
             ...movie,
@@ -110,49 +100,6 @@ db.transaction(() => {
             mediaId: movies.private.id,
             status: Status.PLANNED,
         }))).run();
-
-    db.insert(schema.collections)
-        .values([
-            {
-                ...privateCollection,
-                privacy: "private",
-                ownerId: users.owner.id,
-            },
-            {
-                ...publicCollection,
-                privacy: "public",
-                ownerId: users.owner.id,
-            },
-        ]).run();
-
-    db.insert(schema.collectionItems)
-        .values({
-            orderIndex: 0,
-            mediaId: movies.editable.id,
-            mediaType: MediaType.MOVIES,
-            collectionId: privateCollection.id,
-        }).run();
-
-    db.insert(schema.importJobs)
-        .values({
-            totalCount: 1,
-            failedCount: 1,
-            processedCount: 1,
-            source: "mylists",
-            id: privateImport.id,
-            userId: users.owner.id,
-            status: "completed_with_errors",
-        }).run();
-
-    db.insert(schema.importItems)
-        .values({
-            payload: {},
-            rowNumber: 2,
-            status: "failed",
-            jobId: privateImport.id,
-            name: privateImport.name,
-            statusReason: privateImport.reason,
-        }).run();
 });
 
 

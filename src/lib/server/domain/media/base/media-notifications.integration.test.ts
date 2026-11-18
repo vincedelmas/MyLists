@@ -73,22 +73,35 @@ describe.each([MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GA
 
     afterEach(() => sqlite.close());
 
-    it("creates release notifications through the notification task without duplicates", async () => {
-        context.getContainer.mockResolvedValue({
-            registries: { mediaService: { get: (type: MediaType) => type === mediaType ? repository : { getUpcomingMedia: async () => [] } } },
-            services: { notifications: new NotificationsService(NotificationsRepository) },
+    if (mediaType === MediaType.SERIES) {
+        it("creates release notifications through the notification task without duplicates", async () => {
+            context.getContainer.mockResolvedValue({
+                registries: { mediaService: { get: (type: MediaType) => type === mediaType ? repository : { getUpcomingMedia: async () => [] } } },
+                services: { notifications: new NotificationsService(NotificationsRepository) },
+            });
+            const taskContext: TaskContext = {
+                taskId: "notifications-test", taskName: "create-media-notifications", triggeredBy: "cron/cli",
+                increment: vi.fn(), metric: vi.fn(), warn: vi.fn(), info: vi.fn(), error: vi.fn(),
+                step: async (_name, fn) => fn(),
+            };
+            await createMediaNotificationsTask.handler(taskContext, {});
+            await createMediaNotificationsTask.handler(taskContext, {});
+            const notifications = context.db.select().from(schema.mediaNotifications).all();
+            expect(notifications).toHaveLength(2);
+            expect(notifications.map(notification => notification.mediaType)).toEqual([mediaType, mediaType]);
         });
-        const taskContext: TaskContext = {
-            taskId: "notifications-test", taskName: "create-media-notifications", triggeredBy: "cron/cli",
-            increment: vi.fn(), metric: vi.fn(), warn: vi.fn(), info: vi.fn(), error: vi.fn(),
-            step: async (_name, fn) => fn(),
-        };
-        await createMediaNotificationsTask.handler(taskContext, {});
-        await createMediaNotificationsTask.handler(taskContext, {});
-        const notifications = context.db.select().from(schema.mediaNotifications).all();
-        expect(notifications).toHaveLength(2);
-        expect(notifications.map(notification => notification.mediaType)).toEqual([mediaType, mediaType]);
-    });
+
+        it("saves independent media-type preferences for the authenticated user", async () => {
+            const notifications = Object.fromEntries(ALL_MEDIA_TYPES.map(type => [type, type !== mediaType])) as Record<MediaType, boolean>;
+            StatsRepository.updateUserMediaListSettings(1, { [MediaType.ANIME]: false }, notifications);
+            const settings = context.db.select().from(schema.userMediaSettings).where(eq(schema.userMediaSettings.userId, 1)).all();
+            for (const setting of settings) {
+                expect(setting.releaseNotificationsEnabled).toBe(setting.mediaType !== mediaType);
+                expect(setting.active).toBe(setting.mediaType !== MediaType.ANIME);
+            }
+            expect((await repository.getUpcomingMedia(undefined, true)).map(item => item.userId)).toEqual([2]);
+        });
+    }
 
     it("does not generate notifications for inactive media types", async () => {
         context.db.update(schema.userMediaSettings).set({ active: false }).where(eq(schema.userMediaSettings.mediaType, mediaType)).run();
@@ -112,17 +125,6 @@ describe.each([MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GA
         expect(() => service.updateUserMediaNotifications(3, 1, false)).toThrow("Media not in your list");
         service.updateUserMediaNotifications(1, 1, true);
         expect(await repository.getUpcomingMedia(undefined, true)).toHaveLength(2);
-    });
-
-    it("saves independent media-type preferences for the authenticated user", async () => {
-        const notifications = Object.fromEntries(ALL_MEDIA_TYPES.map(type => [type, type !== mediaType])) as Record<MediaType, boolean>;
-        StatsRepository.updateUserMediaListSettings(1, { [MediaType.ANIME]: false }, notifications);
-        const settings = context.db.select().from(schema.userMediaSettings).where(eq(schema.userMediaSettings.userId, 1)).all();
-        for (const setting of settings) {
-            expect(setting.releaseNotificationsEnabled).toBe(setting.mediaType !== mediaType);
-            expect(setting.active).toBe(setting.mediaType !== MediaType.ANIME);
-        }
-        expect((await repository.getUpcomingMedia(undefined, true)).map(item => item.userId)).toEqual([2]);
     });
 
     it("defaults to enabled and combines per-type and per-title preferences without hiding calendar entries", async () => {

@@ -74,14 +74,32 @@ export function TasteShelf({ mediaType, categories }: TasteShelfProps) {
                                     </div>
                                 </div>
                                 <div className="mt-5 flex flex-wrap gap-2">
-                                    {rest.slice(0, 6).map((item, index) =>
-                                        <span key={item.name} className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
-                                            {index + 2}. {capitalize(item.name)}{" "}
-                                            <span className="ml-1 font-semibold text-foreground">
-                                                {item.value}
+                                    {rest.slice(0, 6).map((item, idx) => {
+                                        const className = "rounded-full border px-2.5 py-1 text-xs text-muted-foreground";
+
+                                        const content = (
+                                            <>
+                                                {idx + 2}. {capitalize(item.name)}{" "}
+                                                <span className="ml-1 font-semibold text-foreground">
+                                                    {item.value}
+                                                </span>
+                                            </>
+                                        );
+
+                                        return category.job ?
+                                            <Link
+                                                key={item.name}
+                                                to="/details/$mediaType/$job/$name"
+                                                params={{ mediaType, job: category.job, name: item.name }}
+                                                className={`${className} hover:text-brand`}
+                                            >
+                                                {content}
+                                            </Link>
+                                            :
+                                            <span key={item.name} className={className}>
+                                                {content}
                                             </span>
-                                        </span>
-                                    )}
+                                    })}
                                 </div>
                             </>
                         }

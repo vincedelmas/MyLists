@@ -85,14 +85,19 @@ export const TagAction = {
 export type TagAction = (typeof TagAction)[keyof typeof TagAction];
 
 
-export const JobType = {
+export const MediaCategory = {
     ACTOR: "actor",
+    GENRE: "genre",
+    ENGINE: "engine",
     CREATOR: "creator",
+    COUNTRY: "country",
     PLATFORM: "platform",
+    LANGUAGE: "language",
     PUBLISHER: "publisher",
     COMPOSITOR: "compositor",
+    PERSPECTIVE: "perspective",
 } as const;
-export type JobType = (typeof JobType)[keyof typeof JobType];
+export type MediaCategory = (typeof MediaCategory)[keyof typeof MediaCategory];
 
 
 export const GamesPlatformsEnum = {

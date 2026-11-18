@@ -19,7 +19,7 @@ export const BooksOverTitle = ({ mediaType, media }: BooksDetailsProps) => {
         <>
             {media.authors?.slice(0, 3).map((author) =>
                 <Badge key={author.id} variant="overlay">
-                    <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: author.name }}>
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "creator", name: author.name }}>
                         {author.name}
                     </Link>
                 </Badge>
@@ -54,7 +54,7 @@ export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps) => {
             <MediaInfoGridItem label="Authored By">
                 {media.authors && media.authors.length > 0 ?
                     media.authors.slice(0, 3).map((author) =>
-                        <Link key={author.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: author.name }}>
+                        <Link key={author.name} to="/details/$mediaType/$category/$name" params={{ mediaType, category: "creator", name: author.name }}>
                             <div>{author.name}</div>
                         </Link>
                     )
@@ -62,13 +62,23 @@ export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps) => {
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Published By">
-                {media.publishers ?? DEFAULT_DASH_FALLBACK}
+                {media.publishers ?
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "publisher", name: media.publishers }}>
+                        {media.publishers}
+                    </Link>
+                    : DEFAULT_DASH_FALLBACK
+                }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Release Date">
                 {extractYear(media.releaseDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Language">
-                {formatLocaleName(media.language, "language")}
+                {media.language ?
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "language", name: media.language }}>
+                        {formatLocaleName(media.language, "language")}
+                    </Link>
+                    : DEFAULT_DASH_FALLBACK
+                }
             </MediaInfoGridItem>
             <MediaInfoGridItem label={`Total ${capitalize(booksProgressUnit.plural)}`}>
                 {media.pages ?? DEFAULT_DASH_FALLBACK} {booksProgressUnit.short}

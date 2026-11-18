@@ -82,6 +82,7 @@ function MediaDetailsPage() {
 
                     <MediaSynopsis
                         media={media}
+                        mediaType={mediaType}
                     />
 
                     <MediaComponent

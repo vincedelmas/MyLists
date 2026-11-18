@@ -1,6 +1,6 @@
 import type z from "zod";
 import type {MediaSortKey} from "@/lib/media-definitions/base/media-sorting";
-import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import type {ApiProviderType, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import type {ContinueDefinition} from "@/lib/media-definitions/base/continue.definition";
 import type {commonMediaFilters, MediaFilterSchemas} from "@/lib/media-definitions/base/media-filters";
 
@@ -13,9 +13,9 @@ type MediaProgressTiming =
 
 type MediaStatsDefinition = Readonly<{
     affinities: ReadonlyArray<Readonly<{
-        key: `${string}Stats`;
         label: string;
-        job?: JobType;
+        key: `${string}Stats`;
+        category: MediaCategory;
     }>>;
     repeat: Readonly<{
         label: string;

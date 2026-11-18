@@ -1,11 +1,11 @@
-import {JobType, MediaType} from "@/lib/utils/enums";
+import {MediaCategory, MediaType} from "@/lib/utils/enums";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatLocaleName} from "@/lib/utils/formatting/text";
 import {formatCurrency, formatNumber} from "@/lib/utils/formatting/number";
 import {MovieListItem} from "@/lib/client/components/media/movies/MovieListItem";
 import {moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
 import {defineMediaConfig} from "@/lib/client/components/media/media-config.types";
-import {Clapperboard, DollarSign, Music2, UserRound, XLineTop} from "lucide-react";
+import {Clapperboard, DollarSign, Languages, Music2, UserRound, XLineTop} from "lucide-react";
 import {MovieFollowCard} from "@/lib/client/components/media/movies/MovieFollowCard";
 import {getMoviesColumns} from "@/lib/client/components/media/movies/MoviesListColumns";
 import {MoviesUserDetails} from "@/lib/client/components/media/movies/MoviesUserDetails";
@@ -31,22 +31,29 @@ export const moviesMediaConfig = defineMediaConfig({
         directors: { title: "Directors", type: "search" },
         langs: { title: "Languages", type: "checkbox", render: name => formatLocaleName(name, "language") },
     },
-    jobs: {
-        [JobType.ACTOR]: {
+    categories: {
+        [MediaCategory.LANGUAGE]: {
+            label: "Language",
+            icon: Languages,
+            sectionTitle: "Catalogue",
+            descriptionVerb: "in",
+            descriptionSuffix: "",
+        },
+        [MediaCategory.ACTOR]: {
             label: "Actor",
             icon: UserRound,
             sectionTitle: "Filmography",
             descriptionVerb: "featuring",
             descriptionSuffix: " in the cast",
         },
-        [JobType.CREATOR]: {
+        [MediaCategory.CREATOR]: {
             label: "Director",
             icon: Clapperboard,
             descriptionSuffix: "",
             sectionTitle: "Filmography",
             descriptionVerb: "directed by",
         },
-        [JobType.COMPOSITOR]: {
+        [MediaCategory.COMPOSITOR]: {
             icon: Music2,
             label: "Composer",
             descriptionSuffix: "",

@@ -1,3 +1,5 @@
+import {Link} from "@tanstack/react-router";
+import type {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {MediaDetails} from "@/lib/types/query.options.types";
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
@@ -5,10 +7,11 @@ import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetails
 
 interface MediaSynopsisProps {
     media: MediaDetails;
+    mediaType: MediaType;
 }
 
 
-export const MediaSynopsis = ({ media }: MediaSynopsisProps) => {
+export const MediaSynopsis = ({ media, mediaType }: MediaSynopsisProps) => {
     return (
         <div className="space-y-4">
             <section>
@@ -26,7 +29,9 @@ export const MediaSynopsis = ({ media }: MediaSynopsisProps) => {
             <section className="flex flex-wrap gap-2">
                 {media.genres.map((genre) =>
                     <Badge key={genre.id} variant="overlay">
-                        {genre.name}
+                        <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "genre", name: genre.name }}>
+                            {genre.name}
+                        </Link>
                     </Badge>
                 )}
             </section>

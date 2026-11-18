@@ -1,3 +1,4 @@
+import {MediaCategory} from "@/lib/utils/enums";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
@@ -37,4 +38,11 @@ export const formatLocaleName = (code: string | undefined | null, type: "languag
 
 export const formatHtmlText = (input: string) => {
     return input?.replace(/<[^>]*>?/gm, "") ?? "";
+};
+
+
+export const formatMediaCategoryName = (category: MediaCategory, name: string) => {
+    if (category === MediaCategory.LANGUAGE) return formatLocaleName(name, "language");
+    if (category === MediaCategory.COUNTRY) return formatLocaleName(name, "region");
+    return name;
 };

@@ -1,12 +1,12 @@
-import type {InferSelectModel} from "drizzle-orm";
 import type z from "zod";
 import type {SQL} from "drizzle-orm";
+import type {InferSelectModel} from "drizzle-orm";
 import type {CoverType} from "@/lib/types/media-common.types";
 import type {TopAffinityDefinition} from "@/lib/types/stats.types";
 import type {MediaEditFieldByType} from "@/lib/schemas/media-details.schema";
 import type {MyListsCSVImport} from "@/lib/server/domain/imports/mylists-format";
 import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
-import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {MediaCategory, type ApiProviderType, type MediaType, type Status} from "@/lib/utils/enums";
 import type {MediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import type {MediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import type {AnySQLiteColumn, AnySQLiteTable, SelectedFieldsFlat} from "drizzle-orm/sqlite-core";
@@ -103,7 +103,8 @@ type BaseSelection = Omit<ListTableColumns, "redo"> & SelectedFieldsFlat & {
 };
 
 
-type JobDefinition = {
+type MediaCategoryDefinition = {
+    matchExact?: boolean;
     sourceTable: AnySQLiteTable;
     getFilter?: (name: string) => SQL;
     mediaIdColumn: NotNullColumn<number>;
@@ -122,7 +123,7 @@ interface MediaRepositoryDefinition<
     readonly sortColumns: TSortColumns;
     readonly continuePreviewCondition?: SQL;
     readonly filters: MediaFilterDefinitions;
-    readonly jobs: Partial<Record<JobType, JobDefinition>>;
+    readonly categories: Partial<Record<MediaCategory, MediaCategoryDefinition>>;
     readonly popularity?: {
         readonly eligibility: SQL;
     };
@@ -214,7 +215,7 @@ export type AnyMediaRepositoryDefinition = {
     readonly continuePreviewCondition?: SQL;
     readonly filters: MediaFilterDefinitions;
     readonly popularity?: { readonly eligibility: SQL };
-    readonly jobs: Partial<Record<JobType, JobDefinition>>;
+    readonly categories: Partial<Record<MediaCategory, MediaCategoryDefinition>>;
     readonly communityActivity: {
         readonly aggregates: Partial<Record<"totalRedo" | "totalSpecific" | "totalPlaytime", SQL<number>>>;
     };
@@ -259,7 +260,21 @@ export const defineServerMediaDefinition = <
     const TSortColumns extends MediaSortColumns,
     const TSelection extends BaseSelection,
 >(definition: ServerMediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion, TSortColumns, TSelection>) => {
-    return definition;
+    return {
+        ...definition,
+        repository: {
+            ...definition.repository,
+            categories: {
+                [MediaCategory.GENRE]: {
+                    matchExact: true,
+                    sourceTable: definition.repository.tables.genreTable,
+                    nameColumn: definition.repository.tables.genreTable.name,
+                    mediaIdColumn: definition.repository.tables.genreTable.mediaId,
+                },
+                ...definition.repository.categories,
+            },
+        },
+    };
 }
 
 

@@ -18,7 +18,7 @@ export const MoviesOverTitle = ({ mediaType, media }: MoviesDetailsProps) => {
         <>
             {media.directorName &&
                 <Badge variant="overlay">
-                    <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: media.directorName }}>
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "creator", name: media.directorName }}>
                         {media.directorName}
                     </Link>
                 </Badge>
@@ -51,7 +51,7 @@ export const MoviesInfoGrid = ({ mediaType, media }: MoviesDetailsProps) => {
         <>
             <MediaInfoGridItem label="Directed By">
                 {media.directorName ?
-                    <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: media.directorName }}>
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "creator", name: media.directorName }}>
                         {media.directorName}
                     </Link>
                     : DEFAULT_DASH_FALLBACK
@@ -59,7 +59,7 @@ export const MoviesInfoGrid = ({ mediaType, media }: MoviesDetailsProps) => {
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Composed By">
                 {media.compositorName ?
-                    <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "compositor", name: media.compositorName }}>
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "compositor", name: media.compositorName }}>
                         {media.compositorName}
                     </Link>
                     : DEFAULT_DASH_FALLBACK
@@ -69,7 +69,12 @@ export const MoviesInfoGrid = ({ mediaType, media }: MoviesDetailsProps) => {
                 {formatDate(media.releaseDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Original Lang.">
-                {formatLocaleName(media.originalLanguage, "language")}
+                {media.originalLanguage ?
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "language", name: media.originalLanguage }}>
+                        {formatLocaleName(media.originalLanguage, "language")}
+                    </Link>
+                    : DEFAULT_DASH_FALLBACK
+                }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Runtime">
                 {media.duration ?? DEFAULT_DASH_FALLBACK} min

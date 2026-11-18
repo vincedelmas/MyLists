@@ -23,8 +23,8 @@ export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<TvMediaType
                         {actors.map((actor) =>
                             <Link
                                 key={actor.name}
-                                to="/details/$mediaType/$job/$name"
-                                params={{ mediaType, job: "actor", name: actor.name }}
+                                to="/details/$mediaType/$category/$name"
+                                params={{ mediaType, category: "actor", name: actor.name }}
                             >
                                 <MediaExtraGrid
                                     subname="Actor"

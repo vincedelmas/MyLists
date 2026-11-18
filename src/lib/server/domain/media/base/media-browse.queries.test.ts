@@ -5,7 +5,7 @@ import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
-import {GamesPlatformsEnum, MediaType, PrivacyType, RoleType, Status} from "@/lib/utils/enums";
+import {GamesPlatformsEnum, MediaCategory, MediaType, PrivacyType, RoleType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
 import {AuthorizationService, toActor} from "@/lib/server/authorization";
 import type {SocialService} from "@/lib/server/domain/social/social.service";
@@ -13,6 +13,7 @@ import type {MediaServiceRegistry} from "@/lib/server/domain/media/media.registr
 import {CollectionsService} from "@/lib/server/domain/collections/collections.service";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {createMediaQueries} from "./media.queries";
 import {createMediaListQueries} from "./media-list.queries";
@@ -28,7 +29,7 @@ vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "https://mylists.ex
 vi.mock("@/env/server", () => ({ serverEnv: { UPLOADS_DIR_NAME: "static" } }));
 
 
-describe("collection and job media browsing", () => {
+describe("collection and category media browsing", () => {
     let sqlite: Database;
     let collections: CollectionsService;
     let collectionId: number;
@@ -82,6 +83,82 @@ describe("collection and job media browsing", () => {
     });
 
     afterEach(() => sqlite.close());
+
+    it.each(Object.values(MediaType))("supports every stats category for %s", async (mediaType) => {
+        const definition = getServerMediaDefinition(mediaType);
+        const queries = createMediaQueries(definition);
+        for (const { category } of getMediaDefinition(mediaType).statistics.affinities) {
+            const result = await queries.getMediaCategoryDetails(category, "Absent category value", {});
+            expect(result.total).toBe(0);
+        }
+    });
+
+    it("keeps creator pagination and explicit library filters working", async () => {
+        const secondPage = await movies.getMediaCategoryDetails(MediaCategory.CREATOR, "Test director", { page: 2 });
+        expect(secondPage).toMatchObject({ total: 55, pages: 3 });
+        expect(secondPage.items).toHaveLength(24);
+        expect(secondPage.items[0].mediaId).toBe(25);
+
+        const library = await movies.getMediaCategoryDetails(MediaCategory.CREATOR, "Test director", { library: "in" }, 2);
+        expect(library).toMatchObject({ total: 2, items: [{ mediaId: 1 }, { mediaId: 55 }] });
+        await expect(movies.getMediaCategoryDetails(MediaCategory.CREATOR, "Test director", { library: "in" }))
+            .rejects.toThrow("Sign in");
+        await expect(movies.getMediaCategoryDetails(MediaCategory.ENGINE, "Unity", {}))
+            .rejects.toMatchObject({ isNotFound: true });
+    });
+
+    it("browses catalogue genres independently of the viewer and matches the full genre name", async () => {
+        dbContext.db.insert(schema.moviesGenre).values({ mediaId: 2, name: "Drama documentary" }).run();
+
+        const result = await movies.getMediaCategoryDetails(MediaCategory.GENRE, "Drama", {}, 1);
+        expect(result).toMatchObject({ total: 1, items: [{ mediaId: 1, inUserList: false }] });
+    });
+
+    it("matches complete metadata values while keeping locale codes as query values", async () => {
+        dbContext.db.update(schema.movies).set({ originalLanguage: "fr" }).where(eq(schema.movies.id, 1)).run();
+        dbContext.db.update(schema.movies).set({ originalLanguage: "fr-CA" }).where(eq(schema.movies.id, 2)).run();
+        dbContext.db.insert(schema.books).values([
+            { id: 1, apiId: "book-1", name: "Book one", imageCover: "1.jpg", pages: 100, language: "fr", publishers: "Publisher" },
+            { id: 2, apiId: "book-2", name: "Book two", imageCover: "2.jpg", pages: 100, language: "fr-CA", publishers: "Publisher Extra" },
+        ]).run();
+        dbContext.db.insert(schema.games).values([
+            { id: 1, apiId: 1, name: "Game one", imageCover: "1.jpg", gameEngine: "Engine", playerPerspective: "First person" },
+            { id: 2, apiId: 2, name: "Game two", imageCover: "2.jpg", gameEngine: "Engine Extra", playerPerspective: "First person Extra" },
+        ]).run();
+
+        const cases = [
+            [MediaType.MOVIES, MediaCategory.LANGUAGE, "fr"],
+            [MediaType.BOOKS, MediaCategory.LANGUAGE, "fr"],
+            [MediaType.BOOKS, MediaCategory.PUBLISHER, "Publisher"],
+            [MediaType.GAMES, MediaCategory.ENGINE, "Engine"],
+            [MediaType.GAMES, MediaCategory.PERSPECTIVE, "First person"],
+        ] as const;
+        for (const [mediaType, category, name] of cases) {
+            const queries = createMediaQueries(getServerMediaDefinition(mediaType));
+            const result = await queries.getMediaCategoryDetails(category, name, {});
+            expect(result).toMatchObject({ total: 1, items: [{ mediaId: 1, inUserList: false }] });
+        }
+    });
+
+    it("resolves a platform from profile stats against catalogue aliases", async () => {
+        dbContext.db.insert(schema.games).values([
+            { id: 1, apiId: 1, name: "Windows game", imageCover: "1.jpg" },
+            { id: 2, apiId: 2, name: "Switch game", imageCover: "2.jpg" },
+        ]).run();
+        dbContext.db.insert(schema.gamesPlatforms).values([
+            { mediaId: 1, name: "PC (Microsoft Windows)" },
+            { mediaId: 2, name: "Nintendo Switch" },
+        ]).run();
+        dbContext.db.insert(schema.gamesList).values({
+            mediaId: 2, userId: 1, status: Status.COMPLETED, platform: GamesPlatformsEnum.PC,
+        }).run();
+        const games = createMediaQueries(getServerMediaDefinition(MediaType.GAMES));
+
+        const fromStats = await games.getMediaCategoryDetails(MediaCategory.PLATFORM, GamesPlatformsEnum.PC, {});
+        const fromDetails = await games.getMediaCategoryDetails(MediaCategory.PLATFORM, "PC (Microsoft Windows)", {});
+        expect(fromStats).toMatchObject({ total: 1, items: [{ mediaId: 1 }] });
+        expect(fromDetails).toEqual(fromStats);
+    });
 
 it("uses the viewer's tracking data for collection filters and never the collection owner's", async () => {
         const completed = await collections.getCollectionDetails(collectionId, "read", viewer, { status: Status.COMPLETED });

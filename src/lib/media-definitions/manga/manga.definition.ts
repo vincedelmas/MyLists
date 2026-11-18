@@ -1,7 +1,7 @@
 import * as z from "zod";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
-import {ApiProviderType, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {ApiProviderType, MediaCategory, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {commonEditableFields, metadataTextSchema, metadataIntegerSchema, blankMetadataFieldSchema} from "@/lib/media-definitions/base/media-metadata";
 
@@ -82,9 +82,9 @@ export const mangaDefinition = defineMediaDefinition({
     },
     statistics: {
         affinities: [
-            { key: "authorsStats", label: "Authors", job: JobType.CREATOR },
-            { key: "genresStats", label: "Genres" },
-            { key: "publishersStats", label: "Publishers", job: JobType.PUBLISHER },
+            { key: "authorsStats", label: "Authors", category: MediaCategory.CREATOR },
+            { key: "genresStats", label: "Genres", category: MediaCategory.GENRE },
+            { key: "publishersStats", label: "Publishers", category: MediaCategory.PUBLISHER },
         ],
         repeat: {
             label: "Rereads",

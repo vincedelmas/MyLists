@@ -11,7 +11,7 @@ import {requiredMediaReadMiddleware, requiredMediaWriteMiddleware, optionalMedia
 import {
     editMediaDetailsSchema,
     externalMediaResolveSchema,
-    jobDetailsSchema,
+    mediaCategoryDetailsSchema,
     mediaCommunityActivitySchema,
     mediaDetailsSchema,
     mediaDetailsToEditSchema,
@@ -60,13 +60,13 @@ export const resolveExternalMedia = createServerFn({ method: "POST" })
     });
 
 
-export const getJobDetails = createServerFn({ method: "GET" })
+export const getMediaCategoryDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(jobDetailsSchema)
-    .handler(async ({ data: { mediaType, job, name, filters }, context: { currentUser } }) => {
+    .validator(mediaCategoryDetailsSchema)
+    .handler(async ({ data: { mediaType, category, name, filters }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.getMediaJobDetails(job, name, filters, currentUser?.id);
+        return mediaService.getMediaCategoryDetails(category, name, filters, currentUser?.id);
     });
 
 

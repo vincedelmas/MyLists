@@ -1,12 +1,14 @@
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
-import {and, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {getDbClient} from "@/lib/server/database/async-storage";
+import {and, eq, getTableColumns, inArray, like, ne, sql} from "drizzle-orm";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
+import {normalizeGamePlatform} from "@/lib/server/domain/media/games/platforms";
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
+import {ApiProviderType, GamesPlatformsEnum, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
-import {games, gamesCompanies, gamesGenre, gamesList, gamesTags} from "@/lib/server/database/schema/media/games.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
 
 
 const tables = {
@@ -62,8 +64,38 @@ export const gamesServerDefinition = defineServerMediaDefinition({
                 totalPlaytime: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0)`,
             },
         },
-        jobs: {
-            [JobType.CREATOR]: {
+        categories: {
+            [MediaCategory.PLATFORM]: {
+                sourceTable: gamesPlatforms,
+                nameColumn: gamesPlatforms.name,
+                mediaIdColumn: gamesPlatforms.mediaId,
+                getFilter: (name) => {
+                    if (!Object.values<string>(GamesPlatformsEnum).includes(name)) {
+                        return eq(gamesPlatforms.name, name);
+                    }
+
+                    const aliases = getDbClient()
+                        .selectDistinct({ name: gamesPlatforms.name })
+                        .from(gamesPlatforms).all()
+                        .filter(platform => normalizeGamePlatform(platform.name) === name)
+                        .map(platform => platform.name);
+
+                    return inArray(gamesPlatforms.name, [name, ...aliases]);
+                },
+            },
+            [MediaCategory.ENGINE]: {
+                matchExact: true,
+                sourceTable: games,
+                mediaIdColumn: games.id,
+                nameColumn: games.gameEngine,
+            },
+            [MediaCategory.PERSPECTIVE]: {
+                matchExact: true,
+                sourceTable: games,
+                mediaIdColumn: games.id,
+                nameColumn: games.playerPerspective,
+            },
+            [MediaCategory.CREATOR]: {
                 sourceTable: gamesCompanies,
                 nameColumn: gamesCompanies.name,
                 mediaIdColumn: gamesCompanies.mediaId,
@@ -71,7 +103,7 @@ export const gamesServerDefinition = defineServerMediaDefinition({
                     return and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.developer, true))!;
                 },
             },
-            [JobType.PUBLISHER]: {
+            [MediaCategory.PUBLISHER]: {
                 sourceTable: gamesCompanies,
                 nameColumn: gamesCompanies.name,
                 mediaIdColumn: gamesCompanies.mediaId,

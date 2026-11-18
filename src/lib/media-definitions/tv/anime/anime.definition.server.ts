@@ -1,13 +1,22 @@
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {getTableColumns, not, notInArray, sql} from "drizzle-orm";
 import type {EpsPerSeasonType} from "@/lib/types/media-list.types";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {animeMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
+import {ApiProviderType, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {ANIME_FALLBACK_DURATION, animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, animeListSeasons, animeNetwork, animeTags} from "@/lib/server/database/schema/media/anime.schema";
+import {
+    anime,
+    animeActors,
+    animeEpisodesPerSeason,
+    animeGenre,
+    animeList,
+    animeListSeasons,
+    animeNetwork,
+    animeTags
+} from "@/lib/server/database/schema/media/anime.schema";
 
 
 const tables = {
@@ -94,18 +103,24 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
             },
         },
-        jobs: {
-            [JobType.ACTOR]: {
+        categories: {
+            [MediaCategory.COUNTRY]: {
+                matchExact: true,
+                sourceTable: anime,
+                mediaIdColumn: anime.id,
+                nameColumn: anime.originCountry,
+            },
+            [MediaCategory.ACTOR]: {
                 sourceTable: animeActors,
                 nameColumn: animeActors.name,
                 mediaIdColumn: animeActors.mediaId,
             },
-            [JobType.PLATFORM]: {
+            [MediaCategory.PLATFORM]: {
                 sourceTable: animeNetwork,
                 nameColumn: animeNetwork.name,
                 mediaIdColumn: animeNetwork.mediaId,
             },
-            [JobType.CREATOR]: {
+            [MediaCategory.CREATOR]: {
                 sourceTable: anime,
                 mediaIdColumn: anime.id,
                 nameColumn: anime.createdBy,

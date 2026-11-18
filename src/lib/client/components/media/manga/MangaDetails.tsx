@@ -27,7 +27,7 @@ export const MangaOverTitle = ({ mediaType, media }: MangaDetailsProps) => {
                     <span className="text-muted-foreground">•</span>
                     {media.authors?.slice(0, 2).map((author) =>
                         <Badge key={author.id} variant="overlay">
-                            <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: author.name }}>
+                            <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "creator", name: author.name }}>
                                 {author.name}
                             </Link>
                         </Badge>
@@ -70,7 +70,7 @@ export const MangaInfoGrid = ({ mediaType, media }: MangaDetailsProps) => {
             <MediaInfoGridItem label="Authored By">
                 {media.authors && media.authors.length > 0 ?
                     media.authors.slice(0, 3).map((author) =>
-                        <Link key={author.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: author.name }}>
+                        <Link key={author.name} to="/details/$mediaType/$category/$name" params={{ mediaType, category: "creator", name: author.name }}>
                             <div>{author.name}</div>
                         </Link>
                     )
@@ -79,7 +79,7 @@ export const MangaInfoGrid = ({ mediaType, media }: MangaDetailsProps) => {
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Published By">
                 {media.publishers ?
-                    <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "publisher", name: media.publishers }}>
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "publisher", name: media.publishers }}>
                         {media.publishers}
                     </Link>
                     : DEFAULT_DASH_FALLBACK

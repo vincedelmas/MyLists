@@ -1,5 +1,5 @@
 import {commonMediaFilters} from "@/lib/media-definitions/base/media-filters";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import {tvContinueDefinition, tvMetadataFilters, tvMetadataSchema} from "@/lib/media-definitions/tv/tv.definition";
 
@@ -66,10 +66,10 @@ export const animeDefinition = defineMediaDefinition({
     },
     statistics: {
         affinities: [
-            { key: "networksStats", label: "Networks", job: JobType.PLATFORM },
-            { key: "genresStats", label: "Genres" },
-            { key: "actorsStats", label: "Actors", job: JobType.ACTOR },
-            { key: "countriesStats", label: "Countries" },
+            { key: "networksStats", label: "Networks", category: MediaCategory.PLATFORM },
+            { key: "genresStats", label: "Genres", category: MediaCategory.GENRE },
+            { key: "actorsStats", label: "Actors", category: MediaCategory.ACTOR },
+            { key: "countriesStats", label: "Countries", category: MediaCategory.COUNTRY },
         ],
         repeat: {
             label: "Rewatches",

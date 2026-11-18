@@ -1,6 +1,6 @@
-import {JobType, MediaType} from "@/lib/utils/enums";
+import {MediaCategory, MediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
-import {Building2, Gamepad2, XLineTop} from "lucide-react";
+import {Building2, Cpu, Eye, Gamepad2, XLineTop} from "lucide-react";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {GameListItem} from "@/lib/client/components/media/games/GameListItem";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
@@ -16,15 +16,36 @@ import {GamesInfoGrid, GamesOverTitle, GamesUnderTitle, GamesUpComingAlert} from
 
 export const gamesMediaConfig = defineMediaConfig({
     mediaType: MediaType.GAMES,
-    jobs: {
-        [JobType.CREATOR]: {
+    categories: {
+        [MediaCategory.PLATFORM]: {
+            label: "Platform",
+            icon: Gamepad2,
+            sectionTitle: "Catalogue",
+            descriptionVerb: "available on",
+            descriptionSuffix: "",
+        },
+        [MediaCategory.ENGINE]: {
+            label: "Engine",
+            icon: Cpu,
+            sectionTitle: "Catalogue",
+            descriptionVerb: "built with",
+            descriptionSuffix: "",
+        },
+        [MediaCategory.PERSPECTIVE]: {
+            label: "Perspective",
+            icon: Eye,
+            sectionTitle: "Catalogue",
+            descriptionVerb: "with the",
+            descriptionSuffix: " perspective",
+        },
+        [MediaCategory.CREATOR]: {
             icon: Gamepad2,
             label: "Developer",
             descriptionSuffix: "",
             sectionTitle: "Catalogue",
             descriptionVerb: "developed by",
         },
-        [JobType.PUBLISHER]: {
+        [MediaCategory.PUBLISHER]: {
             icon: Building2,
             label: "Publisher",
             descriptionSuffix: "",

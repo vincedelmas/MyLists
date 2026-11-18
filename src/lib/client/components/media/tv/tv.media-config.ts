@@ -1,18 +1,18 @@
 import {ColumnDef} from "@tanstack/react-table";
 import {MediaStatsFor} from "@/lib/types/stats.types";
 import {formatNumber} from "@/lib/utils/formatting/number";
-import {formatLocaleName} from "@/lib/utils/formatting/text";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {formatLocaleName} from "@/lib/utils/formatting/text";
 import {ExtractListByType} from "@/lib/types/query.options.types";
-import {JobType, MediaType, TvMediaType} from "@/lib/utils/enums";
 import {TvListItem} from "@/lib/client/components/media/tv/TvListItem";
+import {MediaCategory, MediaType, TvMediaType} from "@/lib/utils/enums";
 import {TvFollowCard} from "@/lib/client/components/media/tv/TvFollowCard";
 import {getTvColumns} from "@/lib/client/components/media/tv/TvListColumns";
 import {TvUserDetails} from "@/lib/client/components/media/tv/TvUserDetails";
 import {TvExtraSections} from "@/lib/client/components/media/tv/TvExtraSections";
 import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
-import {Clapperboard, RadioTower, SquareStack, UserRound, XLineTop} from "lucide-react";
 import {getTvContinueProgress} from "@/lib/client/components/media/tv/continue-progress";
+import {Clapperboard, Globe, RadioTower, SquareStack, UserRound, XLineTop} from "lucide-react";
 import {TvInfoGrid, TvOverTitle, TvUnderTitle, TvUpComingAlert} from "@/lib/client/components/media/tv/TvDetails";
 import {defineMediaConfig, MediaClientConfig, MediaStatCardDefinition} from "@/lib/client/components/media/media-config.types";
 
@@ -66,22 +66,29 @@ const createTvMediaConfig = <T extends TvMediaType>(mediaType: T) => defineMedia
         extraMetric: "totalRedo",
         extraLabel: "Rewatched seasons",
     },
-    jobs: {
-        [JobType.ACTOR]: {
+    categories: {
+        [MediaCategory.COUNTRY]: {
+            icon: Globe,
+            label: "Country",
+            descriptionSuffix: "",
+            descriptionVerb: "from",
+            sectionTitle: "Catalogue",
+        },
+        [MediaCategory.ACTOR]: {
             label: "Actor",
             icon: UserRound,
             sectionTitle: "Filmography",
             descriptionVerb: "featuring",
             descriptionSuffix: " in the cast",
         },
-        [JobType.CREATOR]: {
+        [MediaCategory.CREATOR]: {
             label: "Creator",
             icon: Clapperboard,
             descriptionSuffix: "",
             sectionTitle: "Catalogue",
             descriptionVerb: "created by",
         },
-        [JobType.PLATFORM]: {
+        [MediaCategory.PLATFORM]: {
             label: "Network",
             icon: RadioTower,
             descriptionSuffix: "",

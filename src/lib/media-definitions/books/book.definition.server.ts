@@ -1,6 +1,6 @@
 import {getTableColumns, ne, not, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import {booksMyListsCSVRowSchema} from "@/lib/server/domain/media/books/books.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
@@ -68,8 +68,20 @@ export const booksServerDefinition = defineServerMediaDefinition({
                 totalSpecific: sql<number>`COALESCE(SUM(${booksList.total}), 0)`,
             },
         },
-        jobs: {
-            [JobType.CREATOR]: {
+        categories: {
+            [MediaCategory.LANGUAGE]: {
+                matchExact: true,
+                sourceTable: books,
+                mediaIdColumn: books.id,
+                nameColumn: books.language,
+            },
+            [MediaCategory.PUBLISHER]: {
+                matchExact: true,
+                sourceTable: books,
+                mediaIdColumn: books.id,
+                nameColumn: books.publishers,
+            },
+            [MediaCategory.CREATOR]: {
                 sourceTable: booksAuthors,
                 nameColumn: booksAuthors.name,
                 mediaIdColumn: booksAuthors.mediaId,

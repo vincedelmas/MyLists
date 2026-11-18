@@ -1,4 +1,5 @@
 import React, {useState} from "react";
+import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {ChevronDown, ChevronUp} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
@@ -11,7 +12,7 @@ import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/b
 type GamesDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
-export const GamesExtraSections = ({ media }: GamesDetailsProps<typeof MediaType.GAMES>) => {
+export const GamesExtraSections = ({ mediaType, media }: GamesDetailsProps<typeof MediaType.GAMES>) => {
     const isBelowSm = useBreakpoint("sm");
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -28,12 +29,18 @@ export const GamesExtraSections = ({ media }: GamesDetailsProps<typeof MediaType
                     <MediaSectionTitle title="Game Platforms"/>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 overflow-y-auto max-h-50 scrollbar-thin">
                         {sortedPlatforms.map((plat) =>
-                            <MediaExtraGrid
+                            <Link
                                 key={plat.name}
-                                name={plat.name}
-                                subname="Platform"
-                                initials={plat.name[0] + plat.name[1]}
-                            />
+                                to="/details/$mediaType/$category/$name"
+                                params={{ mediaType, category: "platform", name: plat.name }}
+                            >
+                                <MediaExtraGrid
+                                    clickable
+                                    name={plat.name}
+                                    subname="Platform"
+                                    initials={plat.name[0] + plat.name[1]}
+                                />
+                            </Link>
                         )}
                     </div>
                 </section>

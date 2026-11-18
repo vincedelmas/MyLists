@@ -1,17 +1,17 @@
 import {getThemeIcon} from "@/lib/client/theme";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {mediaDetailsJobSchema} from "@/lib/schemas";
-import {capitalize} from "@/lib/utils/formatting/text";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {mediaCategoryParamsSchema} from "@/lib/schemas";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
-import {jobDetailsOptions} from "@/lib/client/react-query/query-options";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {getMediaConfig} from "@/lib/client/components/media/media-config";
+import {capitalize, formatMediaCategoryName} from "@/lib/utils/formatting/text";
+import {mediaCategoryDetailsOptions} from "@/lib/client/react-query/query-options";
 import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
 import {MediaBrowseResults} from "@/lib/client/components/media/browse/MediaBrowseResults";
@@ -20,45 +20,46 @@ import {MEDIA_BROWSE_LIBRARY_OPTIONS} from "@/lib/client/components/media/browse
 import {mediaCatalogBrowseSearchSchema, type MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
 
 
-export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$name")({
+export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$category/$name")({
     params: {
         parse: (params) => {
-            const result = mediaDetailsJobSchema.safeParse(params);
+            const result = mediaCategoryParamsSchema.safeParse(params);
             return result.success ? result.data : false;
         },
     },
     validateSearch: mediaCatalogBrowseSearchSchema,
     loaderDeps: ({ search: { display: _display, ...filters } }) => ({ filters }),
-    context: ({ params: { mediaType, job, name }, deps: { filters } }) => ({
-        jobDetailsQueryOptions: jobDetailsOptions(mediaType, job, name, filters),
+    context: ({ params: { mediaType, category, name }, deps: { filters } }) => ({
+        mediaCategoryDetailsQueryOptions: mediaCategoryDetailsOptions(mediaType, category, name, filters),
     }),
     loader: ({ context }) => {
-        return context.queryClient.query({ ...context.jobDetailsQueryOptions, staleTime: "static" });
+        return context.queryClient.query({ ...context.mediaCategoryDetailsQueryOptions, staleTime: "static" });
     },
-    head: ({ params: { name, mediaType } }) => ({
-        meta: [{ title: `${name}'s ${capitalize(mediaType)} - MyLists` }],
+    head: ({ params: { name, mediaType, category } }) => ({
+        meta: [{ title: `${formatMediaCategoryName(category, name)} · ${capitalize(mediaType)} - MyLists` }],
     }),
-    component: JobInfoPage,
+    component: MediaCategoryPage,
 });
 
 
-function JobInfoPage() {
+function MediaCategoryPage() {
     const filters = Route.useSearch();
     const { isAnonymous } = useAuth();
     const navigate = Route.useNavigate();
     const searchInput = useSearchNavigate(filters);
-    const { mediaType, job, name } = Route.useParams();
-    const { jobDetailsQueryOptions } = Route.useRouteContext();
-    const apiData = useSuspenseQuery(jobDetailsQueryOptions).data;
+    const { mediaType, category, name } = Route.useParams();
+    const { mediaCategoryDetailsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(mediaCategoryDetailsQueryOptions).data;
 
-    const isGrid = filters.display !== "table";
     const MediaIcon = getThemeIcon(mediaType);
+    const isGrid = filters.display !== "table";
 
+    const title = formatMediaCategoryName(category, name);
     const sortingOptions = getMediaSortOptions([mediaType], false);
-    const { label, icon: JobIcon, sectionTitle, descriptionVerb, descriptionSuffix } = getMediaConfig(mediaType).jobs[job]!;
+    const { label, icon: CategoryIcon, sectionTitle, descriptionVerb, descriptionSuffix } = getMediaConfig(mediaType).categories[category]!;
 
     const handleFilterChange = (patch: Partial<MediaCatalogBrowseFilters>) => {
-        searchInput.updateFilters({ ...patch, page: 1 });
+        void searchInput.updateFilters({ ...patch, page: 1 });
     };
 
     const handleRemoveFilter = (key: MediaBrowseFilterKey) => {
@@ -76,12 +77,12 @@ function JobInfoPage() {
     return (
         <div className="mb-8 flex min-w-0 flex-col pt-8">
             <PageHeader
-                title={name}
+                title={title}
                 asideIcon={MediaIcon}
-                eyebrowIcon={JobIcon}
+                eyebrowIcon={CategoryIcon}
                 eyebrow={`${label} · ${capitalize(mediaType)}`}
                 asideLabel={`In this ${sectionTitle.toLowerCase()}`}
-                description={`${capitalize(mediaType)} ${descriptionVerb} ${name}${descriptionSuffix}.`}
+                description={`${capitalize(mediaType)} ${descriptionVerb} ${title}${descriptionSuffix}.`}
                 asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "title" : "titles"}</>}
             />
 
@@ -90,12 +91,9 @@ function JobInfoPage() {
                     isGrid={isGrid}
                     search={searchInput.localSearch}
                     searchLabel={"Search these titles"}
+                    searchPlaceholder="Search these titles..."
                     onSearchChange={searchInput.handleInputChange}
-                    searchPlaceholder={`Search this ${sectionTitle.toLowerCase()}...`}
-                    onGridClick={() => void navigate({
-                        replace: true,
-                        search: prev => ({ ...prev, display: isGrid ? "table" : "grid" }),
-                    })}
+                    onGridClick={() => void navigate({ search: prev => ({ ...prev, display: isGrid ? "table" : "grid" }), replace: true })}
                     selects={[
                         ...(!isAnonymous ? [
                             {
@@ -135,7 +133,7 @@ function JobInfoPage() {
                 />
                 :
                 <EmptyState
-                    icon={JobIcon}
+                    icon={CategoryIcon}
                     className="rounded-xl border py-16"
                     message="No titles match these filters."
                 />

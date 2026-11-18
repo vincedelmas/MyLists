@@ -1,14 +1,14 @@
 import {Link} from "@tanstack/react-router";
-import {TopAffinity} from "@/lib/types/stats.types";
-import {JobType, MediaType} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/client/theme";
-import {capitalize} from "@/lib/utils/formatting/text";
+import {TopAffinity} from "@/lib/types/stats.types";
 import {CircleOff, Heart, Play, Star} from "lucide-react";
+import {MediaCategory, MediaType} from "@/lib/utils/enums";
+import {formatMediaCategoryName} from "@/lib/utils/formatting/text";
 
 
 type TasteShelfCategory = {
     title: string;
-    job?: JobType;
+    category: MediaCategory;
     topAffinity: TopAffinity;
 };
 
@@ -24,13 +24,13 @@ export function TasteShelf({ mediaType, categories }: TasteShelfProps) {
 
     return (
         <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
-            {categories.map((category) => {
-                const [first, ...rest] = category.topAffinity;
+            {categories.map(({ title, category, topAffinity }) => {
+                const [first, ...rest] = topAffinity;
 
                 return (
-                    <div key={category.title} className="min-w-0 border-l pl-5" style={{ borderColor: color }}>
+                    <div key={title} className="min-w-0 border-l pl-5" style={{ borderColor: color }}>
                         <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                            {category.title}
+                            {title}
                         </div>
                         {!first ?
                             <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
@@ -41,16 +41,13 @@ export function TasteShelf({ mediaType, categories }: TasteShelfProps) {
                                 <div className="mt-4 flex items-start justify-between gap-4">
                                     <div className="min-w-0">
                                         <div className="truncate text-lg font-bold">
-                                            {category.job ?
-                                                <Link
-                                                    to="/details/$mediaType/$job/$name"
-                                                    params={{ mediaType, job: category.job, name: first.name }}
-                                                >
-                                                    {capitalize(first.name)}
-                                                </Link>
-                                                :
-                                                capitalize(first.name)
-                                            }
+                                            <Link
+                                                className="hover:text-brand"
+                                                to="/details/$mediaType/$category/$name"
+                                                params={{ mediaType, category, name: first.name }}
+                                            >
+                                                {formatMediaCategoryName(category, first.name)}
+                                            </Link>
                                         </div>
                                         {first.metadata &&
                                             <div className="mt-2 flex gap-3 text-[10px] text-muted-foreground">
@@ -74,32 +71,19 @@ export function TasteShelf({ mediaType, categories }: TasteShelfProps) {
                                     </div>
                                 </div>
                                 <div className="mt-5 flex flex-wrap gap-2">
-                                    {rest.slice(0, 6).map((item, idx) => {
-                                        const className = "rounded-full border px-2.5 py-1 text-xs text-muted-foreground";
-
-                                        const content = (
-                                            <>
-                                                {idx + 2}. {capitalize(item.name)}{" "}
-                                                <span className="ml-1 font-semibold text-foreground">
-                                                    {item.value}
-                                                </span>
-                                            </>
-                                        );
-
-                                        return category.job ?
-                                            <Link
-                                                key={item.name}
-                                                to="/details/$mediaType/$job/$name"
-                                                params={{ mediaType, job: category.job, name: item.name }}
-                                                className={`${className} hover:text-brand`}
-                                            >
-                                                {content}
-                                            </Link>
-                                            :
-                                            <span key={item.name} className={className}>
-                                                {content}
+                                    {rest.slice(0, 6).map((item, idx) =>
+                                        <Link
+                                            key={item.name}
+                                            to="/details/$mediaType/$category/$name"
+                                            params={{ mediaType, category, name: item.name }}
+                                            className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground hover:text-brand"
+                                        >
+                                            {idx + 2}. {formatMediaCategoryName(category, item.name)}{" "}
+                                            <span className="ml-1 font-semibold text-foreground">
+                                                {item.value}
                                             </span>
-                                    })}
+                                        </Link>
+                                    )}
                                 </div>
                             </>
                         }

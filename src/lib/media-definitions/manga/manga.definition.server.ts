@@ -1,6 +1,6 @@
 import {getTableColumns, ne, not, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/manga.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {MANGA_FIXED_DURATION_MIN, mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
@@ -65,13 +65,13 @@ export const mangaServerDefinition = defineServerMediaDefinition({
                 totalSpecific: sql<number>`COALESCE(SUM(${mangaList.total}), 0)`,
             },
         },
-        jobs: {
-            [JobType.CREATOR]: {
+        categories: {
+            [MediaCategory.CREATOR]: {
                 sourceTable: mangaAuthors,
                 nameColumn: mangaAuthors.name,
                 mediaIdColumn: mangaAuthors.mediaId,
             },
-            [JobType.PUBLISHER]: {
+            [MediaCategory.PUBLISHER]: {
                 sourceTable: manga,
                 mediaIdColumn: manga.id,
                 nameColumn: manga.publishers,

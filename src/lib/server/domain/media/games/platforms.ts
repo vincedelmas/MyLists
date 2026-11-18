@@ -158,7 +158,7 @@ const platformAliases: Record<string, GamesPlatformsEnum> = {
 };
 
 
-const normalizeGamePlatform = (platform: string) => {
+export const normalizeGamePlatform = (platform: string) => {
     if (!platform) return null;
 
     const key = platform

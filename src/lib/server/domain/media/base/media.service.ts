@@ -258,12 +258,12 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         findUserMediaIds: repository.findUserMediaIds,
         getUpcomingMedia: repository.getUpcomingMedia,
         getUserFavorites: listQueries.getUserFavorites,
-        getMediaJobDetails: repository.getMediaJobDetails,
         getPopularMediaRefs: repository.getPopularMediaRefs,
         bulkInsertUserMedia: repository.bulkInsertUserMedia,
         getMediaDetailsByIds: repository.getMediaDetailsByIds,
         searchUserListByName: listQueries.searchUserListByName,
         getSearchListFilters: listQueries.getSearchListFilters,
+        getMediaCategoryDetails: repository.getMediaCategoryDetails,
         getReleaseCalendarMedia: repository.getReleaseCalendarMedia,
         searchMediadleSuggestion: repository.searchMediadleSuggestion,
     };

@@ -1,5 +1,5 @@
-import {PenLine, XLineTop} from "lucide-react";
-import {JobType, MediaType} from "@/lib/utils/enums";
+import {Languages, Library, PenLine, XLineTop} from "lucide-react";
+import {MediaCategory, MediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatLocaleName} from "@/lib/utils/formatting/text";
@@ -35,8 +35,22 @@ export const booksMediaConfig = defineMediaConfig({
         extraLabel: "Rereads",
         extraMetric: "totalRedo",
     },
-    jobs: {
-        [JobType.CREATOR]: {
+    categories: {
+        [MediaCategory.LANGUAGE]: {
+            icon: Languages,
+            label: "Language",
+            descriptionVerb: "in",
+            descriptionSuffix: "",
+            sectionTitle: "Catalogue",
+        },
+        [MediaCategory.PUBLISHER]: {
+            icon: Library,
+            label: "Publisher",
+            descriptionSuffix: "",
+            sectionTitle: "Catalogue",
+            descriptionVerb: "published by",
+        },
+        [MediaCategory.CREATOR]: {
             icon: PenLine,
             label: "Author",
             descriptionSuffix: "",

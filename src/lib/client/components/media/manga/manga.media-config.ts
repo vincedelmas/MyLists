@@ -1,6 +1,6 @@
-import {JobType, MediaType} from "@/lib/utils/enums";
 import {Building2, PenLine, XLineTop} from "lucide-react";
 import {formatNumber} from "@/lib/utils/formatting/number";
+import {MediaCategory, MediaType} from "@/lib/utils/enums";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {MangaListItem} from "@/lib/client/components/media/manga/MangaListItem";
 import {defineMediaConfig} from "@/lib/client/components/media/media-config.types";
@@ -32,15 +32,15 @@ export const mangaMediaConfig = defineMediaConfig({
         extraLabel: "Rereads",
         extraMetric: "totalRedo",
     },
-    jobs: {
-        [JobType.CREATOR]: {
+    categories: {
+        [MediaCategory.CREATOR]: {
             icon: PenLine,
             label: "Author",
             descriptionSuffix: "",
             sectionTitle: "Bibliography",
             descriptionVerb: "authored by",
         },
-        [JobType.PUBLISHER]: {
+        [MediaCategory.PUBLISHER]: {
             icon: Building2,
             label: "Publisher",
             descriptionSuffix: "",

@@ -45,7 +45,7 @@ export const TvOverTitle = ({ mediaType, media }: TvDetailsProps) => {
                     <span className="text-muted-foreground">•</span>
                     {media.networks?.slice(0, 2).map((net) =>
                         <Badge key={net.id} variant="overlay">
-                            <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "platform", name: net.name }}>
+                            <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "platform", name: net.name }}>
                                 {net.name}
                             </Link>
                         </Badge>
@@ -90,7 +90,7 @@ export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps) => {
             <MediaInfoGridItem label="Created By">
                 {creators.length > 0 ?
                     creators.map((c) =>
-                        <Link key={c.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: c.name }}>
+                        <Link key={c.name} to="/details/$mediaType/$category/$name" params={{ mediaType, category: "creator", name: c.name }}>
                             <div key={c.name}>
                                 {c.name}
                             </div>
@@ -105,7 +105,12 @@ export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps) => {
                 {formatDate(media.lastAirDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Origin">
-                {formatLocaleName(media.originCountry, "region")}
+                {media.originCountry ?
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "country", name: media.originCountry }}>
+                        {formatLocaleName(media.originCountry, "region")}
+                    </Link>
+                    : DEFAULT_DASH_FALLBACK
+                }
             </MediaInfoGridItem>
             <MediaInfoGridItem label={<EpsDurationLabel/>}>
                 {media.duration ?? DEFAULT_DASH_FALLBACK} min

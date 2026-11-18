@@ -1,7 +1,7 @@
 import * as z from "zod";
 import {PLAYTIME_MAX_MINUTES} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
-import {ApiProviderType, GamesPlatformsEnum, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {ApiProviderType, GamesPlatformsEnum, MediaCategory, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {commonMediaFilters, MAX_MEDIA_FILTER_VALUES, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {commonEditableFields, metadataTextSchema, nullableMetadataNumberSchema} from "@/lib/media-definitions/base/media-metadata";
 
@@ -75,12 +75,12 @@ export const gamesDefinition = defineMediaDefinition({
     },
     statistics: {
         affinities: [
-            { key: "developersStats", label: "Developers", job: JobType.CREATOR },
-            { key: "platformsStats", label: "Platforms" },
-            { key: "genresStats", label: "Genres" },
-            { key: "publishersStats", label: "Publishers" },
-            { key: "enginesStats", label: "Engines" },
-            { key: "perspectivesStats", label: "Perspectives" },
+            { key: "developersStats", label: "Developers", category: MediaCategory.CREATOR },
+            { key: "platformsStats", label: "Platforms", category: MediaCategory.PLATFORM },
+            { key: "genresStats", label: "Genres", category: MediaCategory.GENRE },
+            { key: "publishersStats", label: "Publishers", category: MediaCategory.PUBLISHER },
+            { key: "enginesStats", label: "Engines", category: MediaCategory.ENGINE },
+            { key: "perspectivesStats", label: "Perspectives", category: MediaCategory.PERSPECTIVE },
         ],
         repeat: {
             label: "Replays",

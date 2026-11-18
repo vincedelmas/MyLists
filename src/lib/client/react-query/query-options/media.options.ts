@@ -1,6 +1,6 @@
 import {SimpleSearch} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
-import {JobType, MediaType} from "@/lib/utils/enums";
+import {MediaCategory, MediaType} from "@/lib/utils/enums";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
 import type {MediaFilterSearchSource} from "@/lib/types/media-list.types";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
@@ -12,7 +12,7 @@ import type {MediaMetadataFilterKey} from "@/lib/media-definitions/definition.re
 import {
     checkGameHltb,
     getGameCompatiblePlatforms,
-    getJobDetails,
+    getMediaCategoryDetails,
     getMediaCommunityActivity,
     getMediaDetails,
     getMediaDetailsToEdit,
@@ -88,9 +88,9 @@ export const editMediaDetailsOptions = (mediaType: MediaType, mediaId: number) =
 });
 
 
-export const jobDetailsOptions = (mediaType: MediaType, job: JobType, name: string, filters: MediaCatalogBrowseFilters) => queryOptions({
-    queryKey: ["jobDetails", mediaType, job, name, filters],
-    queryFn: () => getJobDetails({ data: { mediaType, job, name, filters } }),
+export const mediaCategoryDetailsOptions = (mediaType: MediaType, category: MediaCategory, name: string, filters: MediaCatalogBrowseFilters) => queryOptions({
+    queryKey: ["mediaCategoryDetails", mediaType, category, name, filters],
+    queryFn: () => getMediaCategoryDetails({ data: { mediaType, category, name, filters } }),
 });
 
 

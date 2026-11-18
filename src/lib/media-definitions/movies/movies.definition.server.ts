@@ -1,6 +1,6 @@
 import {getTableColumns, ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/movies.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {MOVIES_FALLBACK_DURATION, moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
@@ -65,18 +65,24 @@ export const moviesServerDefinition = defineServerMediaDefinition({
                 totalSpecific: sql<number>`COALESCE(SUM(${moviesList.total}), 0)`,
             },
         },
-        jobs: {
-            [JobType.ACTOR]: {
+        categories: {
+            [MediaCategory.LANGUAGE]: {
+                matchExact: true,
+                sourceTable: movies,
+                mediaIdColumn: movies.id,
+                nameColumn: movies.originalLanguage,
+            },
+            [MediaCategory.ACTOR]: {
                 sourceTable: moviesActors,
                 nameColumn: moviesActors.name,
                 mediaIdColumn: moviesActors.mediaId,
             },
-            [JobType.CREATOR]: {
+            [MediaCategory.CREATOR]: {
                 sourceTable: movies,
                 mediaIdColumn: movies.id,
                 nameColumn: movies.directorName,
             },
-            [JobType.COMPOSITOR]: {
+            [MediaCategory.COMPOSITOR]: {
                 sourceTable: movies,
                 mediaIdColumn: movies.id,
                 nameColumn: movies.compositorName,

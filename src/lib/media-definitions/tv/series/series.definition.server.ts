@@ -1,7 +1,7 @@
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {getTableColumns, not, notInArray, sql} from "drizzle-orm";
 import type {EpsPerSeasonType} from "@/lib/types/media-list.types";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import {seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {SERIES_FALLBACK_DURATION, seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
@@ -103,13 +103,19 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                 totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
             },
         },
-        jobs: {
-            [JobType.ACTOR]: {
+        categories: {
+            [MediaCategory.COUNTRY]: {
+                sourceTable: series,
+                mediaIdColumn: series.id,
+                nameColumn: series.originCountry,
+                matchExact: true,
+            },
+            [MediaCategory.ACTOR]: {
                 sourceTable: seriesActors,
                 nameColumn: seriesActors.name,
                 mediaIdColumn: seriesActors.mediaId,
             },
-            [JobType.CREATOR]: {
+            [MediaCategory.CREATOR]: {
                 mediaIdColumn: series.id,
                 sourceTable: series,
                 nameColumn: series.createdBy,
@@ -123,7 +129,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                     ).values(),
                 ),
             },
-            [JobType.PLATFORM]: {
+            [MediaCategory.PLATFORM]: {
                 sourceTable: seriesNetwork,
                 nameColumn: seriesNetwork.name,
                 mediaIdColumn: seriesNetwork.mediaId,

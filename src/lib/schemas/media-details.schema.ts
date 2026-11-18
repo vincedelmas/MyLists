@@ -1,5 +1,5 @@
 import * as z from "zod";
-import {JobType, type MediaType} from "@/lib/utils/enums";
+import {MediaCategory, type MediaType} from "@/lib/utils/enums";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
@@ -73,14 +73,14 @@ export const updateBookCoverSchema = z.object({
 });
 
 
-export const mediaDetailsJobSchema = z.object({
+export const mediaCategoryParamsSchema = z.object({
     name: z.string(),
-    job: z.enum(JobType),
+    category: z.enum(MediaCategory),
     mediaType: mediaTypeFieldSchema,
 })
 
 
-export const jobDetailsSchema = mediaDetailsJobSchema.extend({
+export const mediaCategoryDetailsSchema = mediaCategoryParamsSchema.extend({
     filters: mediaCatalogBrowseFiltersSchema.strict(),
 });
 

@@ -49,8 +49,8 @@ export function MediaTypeDashboard({ stats, showHero = true }: MediaTypeDashboar
     const activeMonths = stats.activityByMonth.data.filter(({ total }) => total > 0).length;
 
     const extraStats = mediaConfig.statistics.getStatCards(stats);
-    const affinityCards = mediaStatsDefinition.affinities.map(({ key, label, job }) => ({
-        job,
+    const affinityCards = mediaStatsDefinition.affinities.map(({ key, label, category }) => ({
+        category,
         title: label,
         topAffinity: specificMediaStats.affinityStats[key],
     }));

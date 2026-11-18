@@ -1,13 +1,13 @@
-import type {InferInsertModel, InferSelectModel} from "drizzle-orm";
 import {notFound} from "@tanstack/react-router";
 import {ExportMediaList} from "@/lib/types/media-list.types";
-import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {UpComingMedia} from "@/lib/types/notifications.types";
 import type {MediaInfo} from "@/lib/types/media-common.types";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {UserMediaWithTags} from "@/lib/types/user-media.types";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {resolvePagination} from "@/lib/server/database/pagination";
+import {MediaCategory, MediaType, Status} from "@/lib/utils/enums";
+import type {InferInsertModel, InferSelectModel} from "drizzle-orm";
 import {ReleaseCalendarItem} from "@/lib/types/release-calendar.types";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
 import {mediaTags, user, userMediaSettings} from "@/lib/server/database/schema";
@@ -255,7 +255,9 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         return matches;
     }
 
-    function updateUserMediaDetails(userId: number, mediaId: number, updateData: Partial<TListTableSelect> | { releaseNotificationsEnabled: boolean } | { customCover: string | null }): TListTableSelect {
+    function updateUserMediaDetails(userId: number, mediaId: number, updateData: Partial<TListTableSelect> | { releaseNotificationsEnabled: boolean } | {
+        customCover: string | null
+    }): TListTableSelect {
         const { listTable } = repoDefinition.tables;
 
         const [result] = getDbClient()
@@ -265,7 +267,8 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
                 lastUpdated: sql`datetime('now')`,
             })
             .where(and(eq(listTable.userId, userId), eq(listTable.mediaId, mediaId)))
-            .returning().all();
+            .returning()
+            .all();
 
         return result as TListTableSelect;
     }
@@ -384,18 +387,20 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .orderBy(asc(mediaTable.releaseDate), asc(mediaTable.name));
     }
 
-    async function getMediaJobDetails(job: JobType, name: string, filters: MediaCatalogBrowseFilters, viewerId?: number) {
+    async function getMediaCategoryDetails(category: MediaCategory, name: string, filters: MediaCatalogBrowseFilters, viewerId?: number) {
         const db = getDbClient();
-        const { tables: { mediaTable, listTable }, jobs } = repoDefinition;
+        const { tables: { mediaTable, listTable }, categories } = repoDefinition;
 
-        const jobHandler = jobs[job];
-        if (!jobHandler) throw notFound();
+        const categoryDefinition = categories[category];
+        if (!categoryDefinition) throw notFound();
 
-        const { sourceTable, nameColumn, mediaIdColumn } = jobHandler;
+        const { sourceTable, nameColumn, mediaIdColumn } = categoryDefinition;
 
-        const filterCondition = jobHandler.getFilter
-            ? jobHandler.getFilter(name)
-            : like(nameColumn, `%${name}%`);
+        const filterCondition = categoryDefinition.getFilter?.(name) ?? (
+            categoryDefinition.matchExact
+                ? eq(nameColumn, name)
+                : like(nameColumn, `%${name}%`)
+        );
 
         const sourceCondition = (sourceTable === mediaTable)
             ? filterCondition
@@ -448,13 +453,13 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         findUserMediaIds,
         findSimilarMedia,
         getUpcomingMedia,
-        getMediaJobDetails,
         bulkInsertUserMedia,
         getPopularMediaRefs,
         getMediaDetailsByIds,
         updateUserMediaDetails,
         downloadMediaListAsCSV,
         removeMediaFromUserList,
+        getMediaCategoryDetails,
         getReleaseCalendarMedia,
         searchMediadleSuggestion,
     };

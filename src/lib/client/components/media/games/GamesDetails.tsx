@@ -28,7 +28,7 @@ export const GamesOverTitle = ({ mediaType, media }: GamesDetailsProps) => {
         <>
             {developers.slice(0, 3).map((dev) =>
                 <Badge key={dev.id} variant="overlay">
-                    <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: dev.name }}>
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "creator", name: dev.name }}>
                         {dev.name}
                     </Link>
                 </Badge>
@@ -83,7 +83,7 @@ export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps) => {
             <MediaInfoGridItem label="Developed By">
                 {developers.length > 0 ?
                     developers.slice(0, 3).map((dev) =>
-                        <Link key={dev.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: dev.name }}>
+                        <Link key={dev.name} to="/details/$mediaType/$category/$name" params={{ mediaType, category: "creator", name: dev.name }}>
                             <div>{dev.name}</div>
                         </Link>
                     )
@@ -93,7 +93,7 @@ export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps) => {
             <MediaInfoGridItem label="Published By">
                 {publishers.length > 0 ?
                     publishers.slice(0, 3).map((pub) =>
-                        <Link key={pub.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "publisher", name: pub.name }}>
+                        <Link key={pub.name} to="/details/$mediaType/$category/$name" params={{ mediaType, category: "publisher", name: pub.name }}>
                             <div>{pub.name}</div>
                         </Link>
                     )
@@ -104,10 +104,20 @@ export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps) => {
                 {formatDate(media.releaseDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Perspective">
-                {media.playerPerspective ?? DEFAULT_DASH_FALLBACK}
+                {media.playerPerspective ?
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "perspective", name: media.playerPerspective }}>
+                        {media.playerPerspective}
+                    </Link>
+                    : DEFAULT_DASH_FALLBACK
+                }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Engine">
-                {media.gameEngine ?? DEFAULT_DASH_FALLBACK}
+                {media.gameEngine ?
+                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "engine", name: media.gameEngine }}>
+                        {media.gameEngine}
+                    </Link>
+                    : DEFAULT_DASH_FALLBACK
+                }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="HLTB Main">
                 {isFetching

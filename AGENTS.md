@@ -1,13 +1,13 @@
 # Repository Guidelines
 
 - Generic and shared helpers live in `/src/lib/utils`, grouped by concern where useful (for example `formatting`, `media`, and `stats`).
-- Feature-owned behavior lives beside its feature. Server infrastructure lives in `/src/lib/server/core`; frontend presentation and browser
+- Server infrastructure lives in `/src/lib/server/core`; frontend presentation and browser
   integrations live in `/src/lib/client`.
 - Shared media definitions own media characteristics and allowed statuses; server definitions own persistence, ingestion, and editable-field
-  policy. Keep server dependencies out of shared definitions and utilities.
+  policy.
 - Keep tests beside their modules and use direct imports when moving code; do not leave forwarding modules at the old paths.
 - Do not build the project unless explicitly asked.
-- Create tests only when they are really necessary.
+- Create tests only when they are truly necessary.
 - Avoid creating functions that are used only once when possible. First look for an existing function that already works or can be lightly
   modified to support the use case.
 - Do not use overly defensive programming. Add checks where necessary; otherwise, trust the types.
@@ -22,4 +22,4 @@
   in the dev database. Prefer this workflow for troubleshooting existing users and media. Stop any dev server you started when finished.
 
 - Automated browser tests use `bun run test:e2e`. Stop any dev server you started when finished.
-- Be critic about me choices, I don't need a yes man, but I don't want a devil advocate neither!
+- Be critic about my choices, I don't need a yes man, but I don't want a devil advocate neither!

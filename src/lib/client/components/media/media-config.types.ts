@@ -1,14 +1,14 @@
-import type {LucideIcon} from "lucide-react";
+import {Tags, type LucideIcon} from "lucide-react";
 import type {ComponentType, ReactNode} from "react";
 import type {ColumnDef} from "@tanstack/react-table";
 import type {MediaStatsFor} from "@/lib/types/stats.types";
 import type {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
 import type {MediaFilterKeyFor} from "@/lib/media-definitions/definition.registry";
-import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {ContinueConfig} from "@/lib/client/components/continue/continue.utils";
 import type {AdvancedSearchFilterDefinition} from "@/lib/types/advanced-search.types";
 import type {ColumnConfigProps} from "@/lib/client/components/media/base/BaseListTable";
 import type {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
+import {MediaCategory, type ApiProviderType, type MediaType, type Status} from "@/lib/utils/enums";
 import type {UpdateUserMediaMutationOptions} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import type {ExtractFollowByType, ExtractListByType, ExtractMediaDetailsByType, ExtractUserMediaByType} from "@/lib/types/query.options.types";
 
@@ -65,7 +65,7 @@ export interface MediaStatCardDefinition {
 }
 
 
-interface MediaJobPresentation {
+interface MediaCategoryPresentation {
     label: string;
     icon: LucideIcon;
     sectionTitle: string;
@@ -90,9 +90,9 @@ export interface MediaClientConfig<T extends MediaType> {
     mediaListCard: ComponentType<MediaListCardProps<T>>;
     upComingAlert?: ComponentType<MediaDetailsProps<T>>;
     extraSections?: ComponentType<MediaDetailsProps<T>>;
-    jobs: Partial<Record<JobType, MediaJobPresentation>>;
     mediaFollowCard: ComponentType<MediaFollowCardProps<T>>;
     mediaUserDetails: ComponentType<MediaUserDetailsProps<T>>;
+    categories: Partial<Record<MediaCategory, MediaCategoryPresentation>>;
     metadataFilters: Readonly<Record<MediaFilterKeyFor<T>, MediaFilterPresentation>>;
     continue: ContinueConfig<T> | (T extends typeof MediaType.MOVIES ? null : never);
     mediaListColumns: (props: ColumnConfigProps) => ColumnDef<typeof mediaTableFeatures, ExtractListByType<T>>[];
@@ -113,5 +113,17 @@ export type MediaConfigRegistry = {
 
 
 export const defineMediaConfig = <T extends MediaType>(config: MediaClientConfig<T>) => {
-    return config;
+    return {
+        ...config,
+        categories: {
+            [MediaCategory.GENRE]: {
+                label: "Genre",
+                icon: Tags,
+                sectionTitle: "Catalogue",
+                descriptionVerb: "in the",
+                descriptionSuffix: " genre",
+            },
+            ...config.categories,
+        },
+    };
 }

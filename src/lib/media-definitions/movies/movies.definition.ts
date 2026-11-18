@@ -1,6 +1,6 @@
 import * as z from "zod";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
+import {ApiProviderType, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import {commonMediaFilters, mediaFilterNamesSchema} from "@/lib/media-definitions/base/media-filters";
 import {commonEditableFields, metadataTextSchema, metadataUrlSchema, nullableMetadataNumberSchema, metadataIntegerSchema} from "@/lib/media-definitions/base/media-metadata";
 
@@ -84,10 +84,10 @@ export const moviesDefinition = defineMediaDefinition({
     },
     statistics: {
         affinities: [
-            { key: "directorsStats", label: "Directors", job: JobType.CREATOR },
-            { key: "actorsStats", label: "Actors", job: JobType.ACTOR },
-            { key: "genresStats", label: "Genres" },
-            { key: "langsStats", label: "Languages" },
+            { key: "directorsStats", label: "Directors", category: MediaCategory.CREATOR },
+            { key: "actorsStats", label: "Actors", category: MediaCategory.ACTOR },
+            { key: "genresStats", label: "Genres", category: MediaCategory.GENRE },
+            { key: "langsStats", label: "Languages", category: MediaCategory.LANGUAGE },
         ],
         repeat: {
             label: "Rewatches",

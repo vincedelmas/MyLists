@@ -1,5 +1,5 @@
 import {commonMediaFilters} from "@/lib/media-definitions/base/media-filters";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import {tvContinueDefinition, tvMetadataFilters, tvMetadataSchema} from "@/lib/media-definitions/tv/tv.definition";
 
@@ -60,10 +60,10 @@ export const seriesDefinition = defineMediaDefinition({
             rateLabel: "Rewatch rate",
         },
         affinities: [
-            { key: "genresStats", label: "Genres" },
-            { key: "countriesStats", label: "Countries" },
-            { key: "actorsStats", label: "Actors", job: JobType.ACTOR },
-            { key: "networksStats", label: "Networks", job: JobType.PLATFORM },
+            { key: "genresStats", label: "Genres", category: MediaCategory.GENRE },
+            { key: "countriesStats", label: "Countries", category: MediaCategory.COUNTRY },
+            { key: "actorsStats", label: "Actors", category: MediaCategory.ACTOR },
+            { key: "networksStats", label: "Networks", category: MediaCategory.PLATFORM },
         ],
         timeComparison: {
             referenceHours: 49,

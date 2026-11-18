@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.1.0](https://github.com/vincedelmas/MyLists/compare/v4.0.0...v4.1.0) (2026-11-18)
+
+
+### Features
+
+* **media:** add catalogue pages for media categories ([5818eb6](https://github.com/vincedelmas/MyLists/commit/5818eb646764e8d40bb4033bdcb63385b24f3f1b))
+
+
+### Bug Fixes
+
+* **stats:** link all ranked creators ([24804d4](https://github.com/vincedelmas/MyLists/commit/24804d4e25af459e532639dd5cfff652499fb7ed))
+
 ## [4.0.0](https://github.com/vincedelmas/MyLists/compare/v3.21.1...v4.0.0) (2026-11-18)
 
 

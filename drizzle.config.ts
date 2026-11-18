@@ -3,13 +3,11 @@ import {defineConfig} from "drizzle-kit";
 
 
 export default defineConfig({
-    out: "./drizzle",
-    schema: "./src/lib/server/database/schema/index.ts",
-    breakpoints: true,
     verbose: true,
-    strict: true,
+    out: "./drizzle",
     dialect: "sqlite",
-    casing: "snake_case",
+    breakpoints: true,
+    schema: "./src/lib/server/database/schema/index.ts",
     dbCredentials: {
         url: serverEnv.DATABASE_URL,
     },

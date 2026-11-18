@@ -1,9 +1,9 @@
+import {relations} from "@/lib/server/database/relations";
 import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
-import * as schema from "@/lib/server/database/schema";
 import {importItems, movies, moviesList, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {ImportItemStatus, ImportJobStatus, ImportSource, Status} from "@/lib/utils/enums";
@@ -29,11 +29,11 @@ const { createMoviesIngestionService } = await import("@/lib/server/api-provider
 
 describe("movies import processing", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
 
         migrate(db, { migrationsFolder: "./drizzle" });

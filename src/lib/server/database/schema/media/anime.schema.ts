@@ -1,9 +1,6 @@
 import {sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
-import {relations} from "drizzle-orm/relations";
-import {user} from "@/lib/server/database/schema/auth.schema";
-import {mediaTags} from "@/lib/server/database/schema/media-tags.schema";
-import {check, integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
+import {check, integer, real, snakeCase, text} from "drizzle-orm/sqlite-core";
 import {
     commMediaEpsCols,
     commonGenericCols,
@@ -19,7 +16,7 @@ import {
 } from "@/lib/server/database/schema/media/_helper";
 
 
-export const anime = sqliteTable("anime", {
+export const anime = snakeCase.table("anime", {
     backdropPath: text(),
     originalName: text(),
     lastAirDate: text(),
@@ -41,7 +38,7 @@ export const anime = sqliteTable("anime", {
 });
 
 
-export const animeList = sqliteTable("anime_list", {
+export const animeList = snakeCase.table("anime_list", {
     currentSeason: integer().notNull(),
     currentEpisode: integer().notNull(),
     redo: integer().default(0).notNull(),
@@ -53,92 +50,31 @@ export const animeList = sqliteTable("anime_list", {
 ]);
 
 
-export const animeListSeasons = sqliteTable("anime_list_seasons", {
+export const animeListSeasons = snakeCase.table("anime_list_seasons", {
     ...commonTvSeasonCols(animeList.id),
 }, (table) => commonTvSeasonIndexes(table, "anime_list_seasons"));
 
 
-export const animeGenre = sqliteTable("anime_genre", {
+export const animeGenre = snakeCase.table("anime_genre", {
     ...commonGenericCols(anime.id),
 }, (table) => commonGenericIndexes(table, "anime_genre"));
 
 
-export const animeActors = sqliteTable("anime_actors", {
+export const animeActors = snakeCase.table("anime_actors", {
     ...commonGenericCols(anime.id),
 }, (table) => commonGenericIndexes(table, "anime_actors"));
 
 
-export const animeNetwork = sqliteTable("anime_network", {
+export const animeNetwork = snakeCase.table("anime_network", {
     ...commonGenericCols(anime.id),
 }, (table) => commonGenericIndexes(table, "anime_network"));
 
 
-export const animeEpisodesPerSeason = sqliteTable("anime_episodes_per_season", {
+export const animeEpisodesPerSeason = snakeCase.table("anime_episodes_per_season", {
     ...commMediaEpsCols(anime.id),
 }, (table) => commonMediaEpsIndexes(table, "anime_episodes_per_season"));
 
 
-export const animeTags = sqliteTable("anime_tags", {
+export const animeTags = snakeCase.table("anime_tags", {
     ...commonMediaTagsCols(anime.id),
 }, (table) => commonMediaTagsIndexes(table, MediaType.ANIME));
-
-
-export const animeEpisodesPerSeasonRelations = relations(animeEpisodesPerSeason, ({ one }) => ({
-    anime: one(anime, {
-        fields: [animeEpisodesPerSeason.mediaId],
-        references: [anime.id]
-    }),
-}));
-
-
-export const animeRelations = relations(anime, ({ many }) => ({
-    animeEpisodesPerSeasons: many(animeEpisodesPerSeason),
-    animeGenres: many(animeGenre),
-    animeTags: many(animeTags),
-    animeNetworks: many(animeNetwork),
-    animeLists: many(animeList),
-}));
-
-
-export const animeListRelations = relations(animeList, ({ one }) => ({
-    anime: one(anime, {
-        fields: [animeList.mediaId],
-        references: [anime.id]
-    }),
-    user: one(user, {
-        fields: [animeList.userId],
-        references: [user.id]
-    }),
-}));
-
-
-export const animeGenreRelations = relations(animeGenre, ({ one }) => ({
-    anime: one(anime, {
-        fields: [animeGenre.mediaId],
-        references: [anime.id]
-    }),
-}));
-
-
-export const animeNetworkRelations = relations(animeNetwork, ({ one }) => ({
-    anime: one(anime, {
-        fields: [animeNetwork.mediaId],
-        references: [anime.id]
-    }),
-}));
-
-
-export const animeTagsRelations = relations(animeTags, ({ one }) => ({
-    tag: one(mediaTags, {
-        fields: [animeTags.tagId],
-        references: [mediaTags.id],
-    }),
-    user: one(user, {
-        fields: [animeTags.userId],
-        references: [user.id]
-    }),
-    anime: one(anime, {
-        fields: [animeTags.mediaId],
-        references: [anime.id]
-    }),
-}));

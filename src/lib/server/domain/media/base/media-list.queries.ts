@@ -1,3 +1,4 @@
+import type {InferSelectModel} from "drizzle-orm";
 import {user} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {MediaListArgs} from "@/lib/schemas/media-lists.schema";
@@ -107,7 +108,7 @@ export const createMediaListQueries = <TDef extends AnyServerMediaDefinition>(se
                 .limit(limit);
         },
 
-        async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<TDef["repository"]["tables"]["listTable"]["$inferSelect"]>> {
+        async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<InferSelectModel<TDef["repository"]["tables"]["listTable"]>>> {
             const { page, perPage, offset, limit } = resolvePagination({ page: args.page, perPage: args.perPage, defaultPerPage: 24 });
             const sortKeyName = resolveSorting(args.sorting, Object.keys(listQuery.sorts), listQuery.defaultSort);
             const selectedSort = listQuery.sorts[sortKeyName];
@@ -178,7 +179,7 @@ export const createMediaListQueries = <TDef extends AnyServerMediaDefinition>(se
             }));
 
             return {
-                items: processedResults as MediaListData<TDef["repository"]["tables"]["listTable"]["$inferSelect"]>["items"],
+                items: processedResults as MediaListData<InferSelectModel<TDef["repository"]["tables"]["listTable"]>>["items"],
                 pagination: {
                     page,
                     perPage,

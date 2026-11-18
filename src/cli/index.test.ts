@@ -18,7 +18,7 @@ describe("CLI entry point", () => {
         mkdirSync(join(directory, "instance"));
         databasePath = join(directory, "instance/site.db");
         sqlite = new Database(databasePath);
-        migrate(drizzle(sqlite), { migrationsFolder: resolve(import.meta.dirname, "../../drizzle") });
+        migrate(drizzle({ client: sqlite }), { migrationsFolder: resolve(import.meta.dirname, "../../drizzle") });
         sqlite.run("PRAGMA journal_mode = WAL");
         sqlite.run("PRAGMA foreign_keys = ON");
         sqlite.run("INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (1, 'Import test', 'import@example.invalid', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");

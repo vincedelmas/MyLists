@@ -1,9 +1,9 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import * as schema from "@/lib/server/database/schema";
 import {user, userMediaMonthlyActivity, userMediaSettings} from "@/lib/server/database/schema";
 import {MediaType} from "@/lib/utils/enums";
 
@@ -22,11 +22,11 @@ const {MonthlyActivityRepository} = await import(
 
 describe("MonthlyActivityRepository", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, {schema, casing: "snake_case"});
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
 
         migrate(db, {migrationsFolder: "./drizzle"});

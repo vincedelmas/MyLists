@@ -1,12 +1,11 @@
 import {sql} from "drizzle-orm";
-import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {customJson} from "@/lib/server/database/custom-types";
 import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
-import {check, index, integer, real, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, real, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
-export const achievement = sqliteTable("achievement", {
+export const achievement = snakeCase.table("achievement", {
     id: integer().primaryKey().notNull(),
     name: text().notNull(),
     description: text().notNull(),
@@ -16,7 +15,7 @@ export const achievement = sqliteTable("achievement", {
 });
 
 
-export const achievementTier = sqliteTable("achievement_tier", {
+export const achievementTier = snakeCase.table("achievement_tier", {
     id: integer().primaryKey().notNull(),
     achievementId: integer().notNull().references(() => achievement.id, { onDelete: "cascade" }),
     difficulty: text().$type<AchievementDifficulty>().notNull(),
@@ -29,7 +28,7 @@ export const achievementTier = sqliteTable("achievement_tier", {
 ]);
 
 
-export const userAchievement = sqliteTable("user_achievement", {
+export const userAchievement = snakeCase.table("user_achievement", {
     id: integer().primaryKey().notNull(),
     userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
     tierId: integer().notNull().references(() => achievementTier.id, { onDelete: "cascade" }),
@@ -48,29 +47,3 @@ export const userAchievement = sqliteTable("user_achievement", {
     check("user_achievement_completed_check", sql`${table.completed} IS NULL OR ${table.completed} IN (0, 1)`),
     check("user_achievement_completed_at_check", sql`${table.completed} IS NULL OR ${table.completed} = 0 OR ${table.completedAt} IS NOT NULL`),
 ]);
-
-
-export const achievementRelations = relations(achievement, ({ many }) => ({
-    tiers: many(achievementTier),
-}));
-
-
-export const achievementTierRelations = relations(achievementTier, ({ one, many }) => ({
-    achievement: one(achievement, {
-        fields: [achievementTier.achievementId],
-        references: [achievement.id]
-    }),
-    userAchievements: many(userAchievement),
-}));
-
-
-export const userAchievementRelations = relations(userAchievement, ({ one }) => ({
-    achievementTier: one(achievementTier, {
-        fields: [userAchievement.tierId],
-        references: [achievementTier.id]
-    }),
-    user: one(user, {
-        fields: [userAchievement.userId],
-        references: [user.id]
-    }),
-}));

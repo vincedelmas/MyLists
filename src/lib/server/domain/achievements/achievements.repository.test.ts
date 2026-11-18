@@ -1,14 +1,15 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {and, eq, gt, inArray, sql} from "drizzle-orm";
 import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
 import {AchievementsRepository} from "./achievements.repository";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 
 
 vi.mock("@/lib/server/database/db", () => ({
@@ -31,7 +32,7 @@ describe("achievement progress", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        const db = drizzle(sqlite, { schema, casing: "snake_case" });
+        const db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

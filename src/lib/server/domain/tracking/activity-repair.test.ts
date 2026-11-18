@@ -18,7 +18,7 @@ describe("historical activity repair", () => {
         directory = mkdtempSync(join(tmpdir(), "mylists-activity-repair-"));
         databasePath = join(directory, "site.db");
         db = new Database(databasePath);
-        migrate(drizzle(db), { migrationsFolder: "./drizzle" });
+        migrate(drizzle({ client: db }), { migrationsFolder: "./drizzle" });
         db.run("PRAGMA journal_mode = WAL");
         db.run("PRAGMA foreign_keys = ON");
         db.run("INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (1, 'reader', 'reader@example.invalid', 1, '2025-01-01', '2025-01-01'), (2, 'another-reader', 'other@example.invalid', 1, '2025-01-01', '2025-01-01')");

@@ -75,7 +75,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
                 statusCounts: sql`json_object(${sql.join(expectedStatuses.flatMap(status => [
                     sql`${status}`,
                     sql`COUNT(*) FILTER (WHERE ${listTable.status} = ${status})`,
-                ]), sql`, `)})`.mapWith((value: string): Record<Status, number> => JSON.parse(value)),
+                ]), sql`, `)})`.mapWith((value): Record<Status, number> => JSON.parse(String(value))),
                 entriesFavorites: sql<number>`
                     COALESCE(SUM(CASE WHEN ${listTable.favorite} = 1 THEN 1 ELSE 0 END), 0)
                 `.as("entriesFavorites"),

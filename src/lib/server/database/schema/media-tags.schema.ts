@@ -1,9 +1,9 @@
 import {MediaType} from "@/lib/utils/enums";
 import {user} from "@/lib/server/database/schema/auth.schema";
-import {integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {integer, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
-export const mediaTags = sqliteTable("media_tags", {
+export const mediaTags = snakeCase.table("media_tags", {
     id: integer().primaryKey({ autoIncrement: true }).notNull(),
     userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
     mediaType: text().$type<MediaType>().notNull(),

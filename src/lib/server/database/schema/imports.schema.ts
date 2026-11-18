@@ -1,12 +1,11 @@
 import {sql} from "drizzle-orm";
-import {relations} from "drizzle-orm/relations";
 import {customJson} from "@/lib/server/database/custom-types";
 import {user} from "@/lib/server/database/schema/auth.schema";
-import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {ApiProviderType, ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
 
-export const importJobs = sqliteTable("import_jobs", {
+export const importJobs = snakeCase.table("import_jobs", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     error: text("error"),
@@ -34,7 +33,7 @@ export const importJobs = sqliteTable("import_jobs", {
 ]);
 
 
-export const importItems = sqliteTable("import_items", {
+export const importItems = snakeCase.table("import_items", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     jobId: integer("job_id").notNull().references(() => importJobs.id, { onDelete: "cascade" }),
     name: text("name"),
@@ -55,20 +54,3 @@ export const importItems = sqliteTable("import_items", {
     check("import_items_row_positive_check", sql`${table.rowNumber} >= 1`),
     check("import_items_payload_json_check", sql`json_valid(${table.payload})`),
 ]);
-
-
-export const importJobsRelations = relations(importJobs, ({ many, one }) => ({
-    user: one(user, {
-        fields: [importJobs.userId],
-        references: [user.id],
-    }),
-    items: many(importItems),
-}));
-
-
-export const importItemsRelations = relations(importItems, ({ one }) => ({
-    job: one(importJobs, {
-        fields: [importItems.jobId],
-        references: [importJobs.id],
-    }),
-}));

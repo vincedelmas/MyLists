@@ -1,11 +1,10 @@
 import {sql} from "drizzle-orm";
-import {relations} from "drizzle-orm/relations";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {user} from "@/lib/server/database/schema/auth.schema";
-import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
-export const collections = sqliteTable("collections", {
+export const collections = snakeCase.table("collections", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     ownerId: integer("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     profilePosition: integer("profile_position"),
@@ -28,7 +27,7 @@ export const collections = sqliteTable("collections", {
 ]);
 
 
-export const collectionItems = sqliteTable("collection_items", {
+export const collectionItems = snakeCase.table("collection_items", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     collectionId: integer("collection_id").notNull().references(() => collections.id, { onDelete: "cascade" }),
     annotation: text("annotation"),
@@ -44,7 +43,7 @@ export const collectionItems = sqliteTable("collection_items", {
 ]);
 
 
-export const collectionLikes = sqliteTable("collection_likes", {
+export const collectionLikes = snakeCase.table("collection_likes", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     collectionId: integer("collection_id").notNull().references(() => collections.id, { onDelete: "cascade" }),
@@ -53,33 +52,3 @@ export const collectionLikes = sqliteTable("collection_likes", {
     index("ix_collection_likes_user_id").on(table.userId),
     uniqueIndex("ux_collection_likes_collection_user").on(table.collectionId, table.userId),
 ]);
-
-
-export const collectionsRelations = relations(collections, ({ one, many }) => ({
-    owner: one(user, {
-        references: [user.id],
-        fields: [collections.ownerId],
-    }),
-    items: many(collectionItems),
-    likes: many(collectionLikes),
-}));
-
-
-export const collectionItemsRelations = relations(collectionItems, ({ one }) => ({
-    collection: one(collections, {
-        references: [collections.id],
-        fields: [collectionItems.collectionId],
-    }),
-}));
-
-
-export const collectionLikesRelations = relations(collectionLikes, ({ one }) => ({
-    collection: one(collections, {
-        references: [collections.id],
-        fields: [collectionLikes.collectionId],
-    }),
-    user: one(user, {
-        references: [user.id],
-        fields: [collectionLikes.userId],
-    }),
-}));

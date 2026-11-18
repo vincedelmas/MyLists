@@ -1,7 +1,8 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {and, eq, ne, sql} from "drizzle-orm";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 import {MediaType, Status} from "@/lib/utils/enums";
@@ -22,7 +23,7 @@ import type {TaskContext} from "@/lib/server/tasks/task-context";
 
 
 const context = vi.hoisted(() => ({
-    db: undefined as unknown as BunSQLiteDatabase<typeof schema>,
+    db: undefined as unknown as SQLiteBunDatabase<typeof relations>,
     getContainer: vi.fn(),
 }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return context.db; } }));
@@ -39,7 +40,7 @@ describe.each([MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GA
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        context.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        context.db = drizzle({ client: sqlite, relations });
         migrate(context.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         for (const id of [1, 2]) {

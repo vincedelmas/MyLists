@@ -1,13 +1,14 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {MediaType, UpdateType} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
 import {UpdateHistoryRepository} from "./update-history.repository";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 
 vi.mock("@/lib/server/database/db", () => ({
     get db() { return dbContext.db; },
@@ -18,7 +19,7 @@ describe("update history", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        const db = drizzle(sqlite, { schema, casing: "snake_case" });
+        const db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

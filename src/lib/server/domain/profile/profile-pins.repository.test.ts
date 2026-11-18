@@ -1,6 +1,7 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {PrivacyType, RoleType} from "@/lib/utils/enums";
@@ -11,7 +12,7 @@ import {CollectionsRepository} from "@/lib/server/domain/collections/collections
 import {profilePinsRepository} from "./profile-pins.repository";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return dbContext.db; } }));
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "https://mylists.example.invalid" } }));
 vi.mock("@/env/server", () => ({ serverEnv: { UPLOADS_DIR_NAME: "static" } }));
@@ -27,7 +28,7 @@ describe("shared profile pins", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        dbContext.db = drizzle({ client: sqlite, relations });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         dbContext.db.insert(schema.user).values([1, 2].map(id => ({

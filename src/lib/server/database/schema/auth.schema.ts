@@ -1,9 +1,9 @@
 import {dateAsString, imageUrl} from "@/lib/server/database/custom-types";
-import {index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {index, integer, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {ApiProviderType, PrivacyType, RatingSystemType, RoleType} from "@/lib/utils/enums";
 
 
-export const user = sqliteTable("user", {
+export const user = snakeCase.table("user", {
     id: integer("id").$type<number>().primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
@@ -27,7 +27,7 @@ export const user = sqliteTable("user", {
 ]);
 
 
-export const session = sqliteTable("session", {
+export const session = snakeCase.table("session", {
     id: integer("id").$type<number>().primaryKey(),
     expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
     token: text("token").notNull().unique(),
@@ -41,7 +41,7 @@ export const session = sqliteTable("session", {
 ]);
 
 
-export const account = sqliteTable("account", {
+export const account = snakeCase.table("account", {
     id: integer("id").$type<number>().primaryKey(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
@@ -60,7 +60,7 @@ export const account = sqliteTable("account", {
 ]);
 
 
-export const verification = sqliteTable("verification", {
+export const verification = snakeCase.table("verification", {
     id: integer("id").$type<number>().primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),

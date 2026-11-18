@@ -102,7 +102,7 @@ export function createMoviesRepository(definition: MovieServerDefinition = movie
                             ) AS x
                         )
                     END
-                `.mapWith(JSON.parse),
+                `.mapWith(value => JSON.parse(String(value))),
             }).from(movies)
             .where(eq(movies.id, mediaId))
             .get();

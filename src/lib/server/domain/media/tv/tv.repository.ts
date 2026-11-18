@@ -1,3 +1,4 @@
+import type {InferInsertModel} from "drizzle-orm";
 import {Status} from "@/lib/utils/enums";
 import {EpsPerSeasonType} from "@/lib/types/media-list.types";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
@@ -23,7 +24,7 @@ export function createTvRepository(definition: TvDefinition) {
     const { identity, ingestion, attribution, repository: repoDefinition } = definition;
     const queries = createMediaQueries(definition);
 
-    type TListTableInsert = TvDefinition["repository"]["tables"]["listTable"]["$inferInsert"];
+    type TListTableInsert = InferInsertModel<TvDefinition["repository"]["tables"]["listTable"]>;
 
     async function bulkInsertUserMedia(rows: (TListTableInsert & { seasons?: TvSeasonState[] })[]) {
         const { listTable } = repoDefinition.tables;

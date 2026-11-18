@@ -1,12 +1,12 @@
+import {relations} from "@/lib/server/database/relations";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
-import * as schema from "@/lib/server/database/schema";
 import {movies, moviesActors, moviesGenre, moviesList, user, userMediaSettings} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {type BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {type SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 
@@ -23,11 +23,11 @@ const { createMoviesStatistics } = await import("@/lib/server/domain/media/movie
 
 describe("MoviesStatistics", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
 
         migrate(db, { migrationsFolder: "./drizzle" });
@@ -152,7 +152,7 @@ it("computes the pre-computed totals owned by the statistics component", async (
 });
 
 
-async function seedStatisticsData(db: BunSQLiteDatabase<typeof schema>) {
+async function seedStatisticsData(db: SQLiteBunDatabase<typeof relations>) {
     await db.insert(user).values({
         id: 1,
         name: "stats-user",

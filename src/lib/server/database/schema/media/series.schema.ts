@@ -1,9 +1,6 @@
 import {sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
-import {relations} from "drizzle-orm/relations";
-import {user} from "@/lib/server/database/schema/auth.schema";
-import {mediaTags} from "@/lib/server/database/schema/media-tags.schema";
-import {check, integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
+import {check, integer, real, snakeCase, text} from "drizzle-orm/sqlite-core";
 import {
     commMediaEpsCols,
     commonGenericCols,
@@ -19,7 +16,7 @@ import {
 } from "@/lib/server/database/schema/media/_helper";
 
 
-export const series = sqliteTable("series", {
+export const series = snakeCase.table("series", {
     backdropPath: text(),
     originalName: text(),
     lastAirDate: text(),
@@ -41,7 +38,7 @@ export const series = sqliteTable("series", {
 });
 
 
-export const seriesList = sqliteTable("series_list", {
+export const seriesList = snakeCase.table("series_list", {
     currentSeason: integer().notNull(),
     currentEpisode: integer().notNull(),
     redo: integer().default(0).notNull(),
@@ -53,101 +50,31 @@ export const seriesList = sqliteTable("series_list", {
 ]);
 
 
-export const seriesListSeasons = sqliteTable("series_list_seasons", {
+export const seriesListSeasons = snakeCase.table("series_list_seasons", {
     ...commonTvSeasonCols(seriesList.id),
 }, (table) => commonTvSeasonIndexes(table, "series_list_seasons"));
 
 
-export const seriesGenre = sqliteTable("series_genre", {
+export const seriesGenre = snakeCase.table("series_genre", {
     ...commonGenericCols(series.id),
 }, (table) => commonGenericIndexes(table, "series_genre"));
 
 
-export const seriesActors = sqliteTable("series_actors", {
+export const seriesActors = snakeCase.table("series_actors", {
     ...commonGenericCols(series.id),
 }, (table) => commonGenericIndexes(table, "series_actors"));
 
 
-export const seriesNetwork = sqliteTable("series_network", {
+export const seriesNetwork = snakeCase.table("series_network", {
     ...commonGenericCols(series.id),
 }, (table) => commonGenericIndexes(table, "series_network"));
 
 
-export const seriesEpisodesPerSeason = sqliteTable("series_episodes_per_season", {
+export const seriesEpisodesPerSeason = snakeCase.table("series_episodes_per_season", {
     ...commMediaEpsCols(series.id),
 }, (table) => commonMediaEpsIndexes(table, "series_episodes_per_season"));
 
 
-export const seriesTags = sqliteTable("series_tags", {
+export const seriesTags = snakeCase.table("series_tags", {
     ...commonMediaTagsCols(series.id),
 }, (table) => commonMediaTagsIndexes(table, MediaType.SERIES));
-
-
-export const seriesRelations = relations(series, ({ many }) => ({
-    seriesEpisodesPerSeasons: many(seriesEpisodesPerSeason),
-    seriesGenres: many(seriesGenre),
-    seriesTags: many(seriesTags),
-    seriesNetworks: many(seriesNetwork),
-    seriesLists: many(seriesList),
-    seriesActors: many(seriesActors),
-}));
-
-
-export const seriesListRelations = relations(seriesList, ({ one }) => ({
-    user: one(user, {
-        fields: [seriesList.userId],
-        references: [user.id]
-    }),
-    series: one(series, {
-        fields: [seriesList.mediaId],
-        references: [series.id]
-    }),
-}));
-
-
-export const seriesGenreRelations = relations(seriesGenre, ({ one }) => ({
-    series: one(series, {
-        fields: [seriesGenre.mediaId],
-        references: [series.id]
-    }),
-}));
-
-
-export const seriesEpisodesPerSeasonRelations = relations(seriesEpisodesPerSeason, ({ one }) => ({
-    series: one(series, {
-        fields: [seriesEpisodesPerSeason.mediaId],
-        references: [series.id]
-    }),
-}));
-
-
-export const seriesActorsRelations = relations(seriesActors, ({ one }) => ({
-    series: one(series, {
-        fields: [seriesActors.mediaId],
-        references: [series.id]
-    }),
-}));
-
-
-export const seriesNetworkRelations = relations(seriesNetwork, ({ one }) => ({
-    series: one(series, {
-        fields: [seriesNetwork.mediaId],
-        references: [series.id]
-    }),
-}));
-
-
-export const seriesTagsRelations = relations(seriesTags, ({ one }) => ({
-    series: one(series, {
-        fields: [seriesTags.mediaId],
-        references: [series.id]
-    }),
-    tag: one(mediaTags, {
-        fields: [seriesTags.tagId],
-        references: [mediaTags.id],
-    }),
-    user: one(user, {
-        fields: [seriesTags.userId],
-        references: [user.id]
-    }),
-}));

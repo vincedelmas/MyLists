@@ -1,3 +1,4 @@
+import type {InferSelectModel} from "drizzle-orm";
 import type z from "zod";
 import type {SQL} from "drizzle-orm";
 import type {CoverType} from "@/lib/types/media-common.types";
@@ -151,7 +152,7 @@ interface MediaServicePolicy<
     TMediaType extends MediaType = MediaType,
 > {
     readonly editableFields: readonly MediaEditFieldByType[TMediaType][];
-    readonly progressTotals: (state: TTables["listTable"]["$inferSelect"] | null, media: TTables["mediaTable"]["$inferSelect"]) => ProgressTotals;
+    readonly progressTotals: (state: InferSelectModel<TTables["listTable"]> | null, media: InferSelectModel<TTables["mediaTable"]>) => ProgressTotals;
 }
 
 

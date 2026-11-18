@@ -16,7 +16,7 @@ it("cascades detail deletion for untracked titles and preserves shared tags", ()
     };
 
     try {
-        migrate(drizzle(db), { migrationsFolder: "./drizzle" });
+        migrate(drizzle({ client: db }), { migrationsFolder: "./drizzle" });
         db.run("PRAGMA foreign_keys = ON");
         db.run(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at)
             VALUES (1, 'owner', 'owner@example.invalid', 1, '2026-01-01', '2026-01-01')`);

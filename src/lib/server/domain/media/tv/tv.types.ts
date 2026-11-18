@@ -1,5 +1,5 @@
 import * as z from "zod";
-import {createInsertSchema} from "drizzle-zod";
+import {createInsertSchema} from "drizzle-orm/zod";
 import {MediaType, TvMediaType} from "@/lib/utils/enums";
 import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
 import {anime, animeList, series, seriesList} from "@/lib/server/database/schema";

@@ -1,3 +1,4 @@
+import type {InferSelectModel} from "drizzle-orm";
 import type {SearchType} from "@/lib/schemas";
 import {SocialState, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -96,7 +97,7 @@ export const createMediaCommunityQueries = <TDef extends AnyServerMediaDefinitio
             };
         },
 
-        async getUserFollowsMediaData(userId: number | undefined, mediaId: number): Promise<UserFollowsMediaData<TDef["repository"]["tables"]["listTable"]["$inferSelect"]>[]> {
+        async getUserFollowsMediaData(userId: number | undefined, mediaId: number): Promise<UserFollowsMediaData<InferSelectModel<TDef["repository"]["tables"]["listTable"]>>[]> {
             if (!userId) return [];
 
             const inFollowsLists = await getDbClient()
@@ -118,7 +119,7 @@ export const createMediaCommunityQueries = <TDef extends AnyServerMediaDefinitio
                 .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED), eq(listTable.mediaId, mediaId)))
                 .orderBy(asc(user.name));
 
-            return inFollowsLists;
+            return inFollowsLists as UserFollowsMediaData<InferSelectModel<TDef["repository"]["tables"]["listTable"]>>[];
         },
     };
 };

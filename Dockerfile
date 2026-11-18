@@ -46,6 +46,7 @@ COPY --from=production-deps --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=build --chown=bun:bun /app/dist ./dist
 COPY --chown=bun:bun package.json bun.lock drizzle.config.ts tsconfig.json ./
 COPY --chown=bun:bun src ./src
+COPY --chown=bun:bun scripts/dk.ts ./scripts/dk.ts
 COPY --chown=bun:bun drizzle ./drizzle
 COPY --chown=bun:bun public ./public
 RUN mkdir -p /data/database /data/images /data/logs && chown -R bun:bun /data

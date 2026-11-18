@@ -8,6 +8,7 @@ import {jwt} from "better-auth/plugins";
 import {db} from "@/lib/server/database/db";
 import {betterAuth} from "better-auth/minimal";
 import {logger} from "@/lib/server/core/logger";
+import * as schema from "@/lib/server/database/schema";
 import {sendEmail} from "@/lib/server/core/mail-sender";
 import {createServerOnlyFn} from "@tanstack/react-start";
 import {usernameSchema} from "@/lib/schemas/common.schema";
@@ -45,15 +46,13 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
     appName: "MyLists",
     baseURL: clientEnv.VITE_BASE_URL,
     secret: serverEnv.BETTER_AUTH_SECRET,
+    database: drizzleAdapter(db, { schema, provider: "sqlite" }),
     telemetry: {
         enabled: false,
     },
     onAPIError: {
         errorURL: new URL("/login", clientEnv.VITE_BASE_URL).toString(),
     },
-    database: drizzleAdapter(db, {
-        provider: "sqlite",
-    }),
     rateLimit: {
         customRules: {
             "/send-verification-email": { max: 3, window: 5 * 60 },

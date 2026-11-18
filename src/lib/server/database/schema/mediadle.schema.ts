@@ -1,11 +1,10 @@
 import {sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
-import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
-import {check, integer, real, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, integer, real, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
-export const dailyMediadle = sqliteTable("daily_mediadle", {
+export const dailyMediadle = snakeCase.table("daily_mediadle", {
     id: integer().primaryKey().notNull(),
     mediaType: text().$type<MediaType>().notNull(),
     mediaId: integer().notNull(),
@@ -17,7 +16,7 @@ export const dailyMediadle = sqliteTable("daily_mediadle", {
 ]);
 
 
-export const mediadleStats = sqliteTable("mediadle_stats", {
+export const mediadleStats = snakeCase.table("mediadle_stats", {
     id: integer().primaryKey().notNull(),
     userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
     mediaType: text().$type<MediaType>().notNull(),
@@ -41,7 +40,7 @@ export const mediadleStats = sqliteTable("mediadle_stats", {
 ]);
 
 
-export const userMediadleProgress = sqliteTable("user_mediadle_progress", {
+export const userMediadleProgress = snakeCase.table("user_mediadle_progress", {
     id: integer().primaryKey().notNull(),
     userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
     dailyMediadleId: integer().notNull().references(() => dailyMediadle.id),
@@ -54,28 +53,3 @@ export const userMediadleProgress = sqliteTable("user_mediadle_progress", {
     check("user_mediadle_progress_attempts_nonnegative_check", sql`${table.attempts} >= 0`),
     check("user_mediadle_progress_success_completed_check", sql`${table.succeeded} <= ${table.completed}`),
 ]);
-
-
-export const mediadleStatsRelations = relations(mediadleStats, ({ one }) => ({
-    user: one(user, {
-        fields: [mediadleStats.userId],
-        references: [user.id]
-    }),
-}));
-
-
-export const userMediadleProgressRelations = relations(userMediadleProgress, ({ one }) => ({
-    dailyMediadle: one(dailyMediadle, {
-        fields: [userMediadleProgress.dailyMediadleId],
-        references: [dailyMediadle.id]
-    }),
-    user: one(user, {
-        fields: [userMediadleProgress.userId],
-        references: [user.id]
-    }),
-}));
-
-
-export const dailyMediadleRelations = relations(dailyMediadle, ({ many }) => ({
-    userMediadleProgresses: many(userMediadleProgress),
-}));

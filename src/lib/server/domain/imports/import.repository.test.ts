@@ -1,10 +1,10 @@
+import {relations} from "@/lib/server/database/relations";
 import {eq, sql} from "drizzle-orm";
 import Database from "bun:sqlite";
-import * as schema from "@/lib/server/database/schema";
 import {importItems, importJobs, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {ParsedImportItem} from "@/lib/types/imports.types";
-import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
@@ -21,11 +21,11 @@ const { ImportRepository } = await import("@/lib/server/domain/imports/import.re
 
 describe("ImportRepository", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
 
         migrate(db, { migrationsFolder: "./drizzle" });

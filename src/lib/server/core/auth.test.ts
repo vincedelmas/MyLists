@@ -1,3 +1,4 @@
+import {relations} from "@/lib/server/database/relations";
 import path from "node:path";
 import {tmpdir} from "node:os";
 import {eq, ne} from "drizzle-orm";
@@ -6,7 +7,7 @@ import {Readable} from "node:stream";
 import {EventEmitter} from "node:events";
 import {mkdtemp, readFile, rm} from "node:fs/promises";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 import {RoleType} from "@/lib/utils/enums";
@@ -15,7 +16,7 @@ import {MCP_READ_SCOPE, MCP_RESOURCE, MCP_WRITE_SCOPE} from "@/lib/server/core/m
 
 const mailMocks = vi.hoisted(() => ({ sendEmail: vi.fn().mockResolvedValue(undefined) }));
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 const imageMocks = vi.hoisted(() => ({
     lookup: vi.fn(),
     httpsGet: vi.fn(),
@@ -54,7 +55,7 @@ describe("authentication", () => {
     beforeAll(async () => {
         imageMocks.env.BASE_UPLOADS_LOCATION = await mkdtemp(path.join(tmpdir(), "mylists-auth-avatar-test-"));
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        dbContext.db = drizzle({ client: sqlite, relations });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
 

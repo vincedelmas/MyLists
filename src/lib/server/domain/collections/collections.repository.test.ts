@@ -1,8 +1,9 @@
+import {relations} from "@/lib/server/database/relations";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 
@@ -16,7 +17,7 @@ import {CollectionsService} from "@/lib/server/domain/collections/collections.se
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 
 
 vi.mock("@/lib/server/database/db", () => ({
@@ -45,7 +46,7 @@ describe("collection media references", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        const db = drizzle(sqlite, { schema, casing: "snake_case" });
+        const db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

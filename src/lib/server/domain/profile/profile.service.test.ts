@@ -1,15 +1,16 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {ProfileService} from "./profile.service";
 import {ProfileRepository} from "./profile.repository";
 import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {createDefaultHighlightedMediaSettings} from "@/lib/types/profile-custom.types";
 import type {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 
 
 vi.mock("@/lib/server/database/db", () => ({
@@ -23,7 +24,7 @@ describe("profile customization", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        dbContext.db = drizzle({ client: sqlite, relations });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         dbContext.db.insert(schema.user).values([1, 2].map(id => ({

@@ -1,8 +1,5 @@
-import {relations} from "drizzle-orm/relations";
-import {user} from "@/lib/server/database/schema/auth.schema";
 import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";
-import {mediaTags} from "@/lib/server/database/schema/media-tags.schema";
-import {index, integer, real, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {index, integer, real, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {
     commonGenericCols,
     commonGenericIndexes,
@@ -14,7 +11,7 @@ import {
 } from "@/lib/server/database/schema/media/_helper";
 
 
-export const games = sqliteTable("games", {
+export const games = snakeCase.table("games", {
     backdropImageId: text(),
     gameEngine: text(),
     gameModes: text(),
@@ -33,24 +30,24 @@ export const games = sqliteTable("games", {
 });
 
 
-export const gamesList = sqliteTable("games_list", {
+export const gamesList = snakeCase.table("games_list", {
     playtime: integer().default(0),
     platform: text().$type<GamesPlatformsEnum>(),
     ...commonMediaListCols(games.id, MediaType.GAMES),
 }, (table) => commonMediaListIndexes(table, MediaType.GAMES));
 
 
-export const gamesGenre = sqliteTable("games_genre", {
+export const gamesGenre = snakeCase.table("games_genre", {
     ...commonGenericCols(games.id),
 }, (table) => commonGenericIndexes(table, "games_genre"));
 
 
-export const gamesPlatforms = sqliteTable("games_platforms", {
+export const gamesPlatforms = snakeCase.table("games_platforms", {
     ...commonGenericCols(games.id),
 }, (table) => commonGenericIndexes(table, "games_platforms"));
 
 
-export const gamesCompanies = sqliteTable("games_companies", {
+export const gamesCompanies = snakeCase.table("games_companies", {
     ...commonGenericCols(games.id),
     publisher: integer({ mode: "boolean" }).default(false).notNull(),
     developer: integer({ mode: "boolean" }).default(false).notNull(),
@@ -60,67 +57,6 @@ export const gamesCompanies = sqliteTable("games_companies", {
 ]);
 
 
-export const gamesTags = sqliteTable("games_tags", {
+export const gamesTags = snakeCase.table("games_tags", {
     ...commonMediaTagsCols(games.id),
 }, (table) => commonMediaTagsIndexes(table, MediaType.GAMES));
-
-
-export const gamesRelations = relations(games, ({ many }) => ({
-    gamesPlatforms: many(gamesPlatforms),
-    gamesCompanies: many(gamesCompanies),
-    gamesGenres: many(gamesGenre),
-    gamesTags: many(gamesTags),
-    gamesLists: many(gamesList),
-}));
-
-
-export const gamesListRelations = relations(gamesList, ({ one }) => ({
-    user: one(user, {
-        fields: [gamesList.userId],
-        references: [user.id]
-    }),
-    game: one(games, {
-        fields: [gamesList.mediaId],
-        references: [games.id]
-    }),
-}));
-
-
-export const gamesPlatformsRelations = relations(gamesPlatforms, ({ one }) => ({
-    game: one(games, {
-        fields: [gamesPlatforms.mediaId],
-        references: [games.id]
-    }),
-}));
-
-
-export const gamesCompaniesRelations = relations(gamesCompanies, ({ one }) => ({
-    game: one(games, {
-        fields: [gamesCompanies.mediaId],
-        references: [games.id]
-    }),
-}));
-
-
-export const gamesGenreRelations = relations(gamesGenre, ({ one }) => ({
-    game: one(games, {
-        fields: [gamesGenre.mediaId],
-        references: [games.id]
-    }),
-}));
-
-
-export const gamesTagsRelations = relations(gamesTags, ({ one }) => ({
-    game: one(games, {
-        fields: [gamesTags.mediaId],
-        references: [games.id]
-    }),
-    tag: one(mediaTags, {
-        fields: [gamesTags.tagId],
-        references: [mediaTags.id],
-    }),
-    user: one(user, {
-        fields: [gamesTags.userId],
-        references: [user.id]
-    }),
-}));

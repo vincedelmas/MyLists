@@ -1,8 +1,9 @@
+import {relations} from "@/lib/server/database/relations";
 import {createGamesMonthlyActivity} from "@/lib/server/domain/media/games/games.statistics";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
@@ -26,7 +27,7 @@ import {NotificationsRepository} from "@/lib/server/domain/notifications/notific
 import type {MediaMonthlyActivityRegistry, MediaServiceRegistry, MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
 
 
-const context = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const context = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return context.db; } }));
 
 
@@ -57,7 +58,7 @@ describe("progress corrections", () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-09-18T12:00:00Z"));
         sqlite = new Database(":memory:");
-        context.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        context.db = drizzle({ client: sqlite, relations });
         migrate(context.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         context.db.insert(schema.user).values({ id: 1, name: "reader", email: "reader@example.com", emailVerified: true, createdAt: "2025-01-01", updatedAt: "2025-01-01" }).run();
@@ -135,7 +136,7 @@ describe("progress corrections", () => {
         progress(120);
         const before = snapshot();
         sqlite.run("CREATE TRIGGER fail_history BEFORE INSERT ON user_media_update BEGIN SELECT RAISE(ABORT, 'history failure'); END");
-        expect(() => progress(100)).toThrow("history failure");
+        expect(() => progress(100)).toThrow(expect.objectContaining({ cause: expect.objectContaining({ message: "history failure" }) }));
         expect(snapshot()).toEqual(before);
     });
 

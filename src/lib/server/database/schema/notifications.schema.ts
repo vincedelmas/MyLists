@@ -1,12 +1,11 @@
 import {sql} from "drizzle-orm";
 import {user} from "./auth.schema";
-import {relations} from "drizzle-orm/relations";
 import {MediaType, SocialNotifType} from "@/lib/utils/enums";
-import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {featureRequests} from "@/lib/server/database/schema/feature-votes.schema";
 
 
-export const socialNotifications = sqliteTable("social_notifications", {
+export const socialNotifications = snakeCase.table("social_notifications", {
     id: integer().primaryKey().notNull(),
     actorId: integer("actor_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -26,7 +25,7 @@ export const socialNotifications = sqliteTable("social_notifications", {
 ]);
 
 
-export const mediaNotifications = sqliteTable("media_notifications", {
+export const mediaNotifications = snakeCase.table("media_notifications", {
     id: integer().primaryKey().notNull(),
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
@@ -44,19 +43,3 @@ export const mediaNotifications = sqliteTable("media_notifications", {
     index("ix_media_notifications_user_unread").on(table.userId).where(sql`${table.read} = 0`),
     check("media_notifications_season_finale_check", sql`${table.isSeasonFinale} IS NULL OR ${table.isSeasonFinale} IN (0, 1)`),
 ]);
-
-
-export const socialNotificationsRelations = relations(socialNotifications, ({ one }) => ({
-    actor: one(user, {
-        fields: [socialNotifications.actorId],
-        references: [user.id],
-    }),
-    recipient: one(user, {
-        fields: [socialNotifications.userId],
-        references: [user.id],
-    }),
-    featureRequest: one(featureRequests, {
-        fields: [socialNotifications.featureRequestId],
-        references: [featureRequests.id],
-    }),
-}));

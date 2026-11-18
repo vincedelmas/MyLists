@@ -1,3 +1,4 @@
+import type {InferSelectModel} from "drizzle-orm";
 import {notFound} from "@tanstack/react-router";
 import {Actor} from "@/lib/server/authorization";
 import {DeltaStats} from "@/lib/types/stats.types";
@@ -18,14 +19,14 @@ import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/
 
 
 type MediaServiceRepository<TDef extends AnyServerMediaDefinition> = MediaQueries<TDef> & {
-    addMediaToUserList(userId: number, media: TDef["repository"]["tables"]["mediaTable"]["$inferSelect"], status: Status): TDef["repository"]["tables"]["listTable"]["$inferSelect"];
-    findAllAssociatedDetails(mediaId: number): Promise<(TDef["repository"]["tables"]["mediaTable"]["$inferSelect"] & AddedMediaDetails) | undefined>;
+    addMediaToUserList(userId: number, media: InferSelectModel<TDef["repository"]["tables"]["mediaTable"]>, status: Status): InferSelectModel<TDef["repository"]["tables"]["listTable"]>;
+    findAllAssociatedDetails(mediaId: number): Promise<(InferSelectModel<TDef["repository"]["tables"]["mediaTable"]> & AddedMediaDetails) | undefined>;
 };
 
 
 type MediaUpdateHandlers<TDef extends AnyServerMediaDefinition> = Partial<Record<
     UpdateType,
-    UpdateHandlerFn<TDef["repository"]["tables"]["listTable"]["$inferSelect"], any, TDef["repository"]["tables"]["mediaTable"]["$inferSelect"]>
+    UpdateHandlerFn<InferSelectModel<TDef["repository"]["tables"]["listTable"]>, any, InferSelectModel<TDef["repository"]["tables"]["mediaTable"]>>
 >>;
 
 
@@ -161,9 +162,9 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         const mediaWithDetails = await repository.findAllAssociatedDetails(mediaId);
         if (!mediaWithDetails) throw notFound();
 
-        const userMedia = repository.findUserMedia(userId, mediaWithDetails.id);
-        const similarMedia = await repository.findSimilarMedia(mediaWithDetails.id);
-        const followsData = await communityQueries.getUserFollowsMediaData(userId, mediaWithDetails.id);
+        const userMedia = repository.findUserMedia(userId, mediaId);
+        const similarMedia = await repository.findSimilarMedia(mediaId);
+        const followsData = await communityQueries.getUserFollowsMediaData(userId, mediaId);
 
         return {
             userMedia,
@@ -174,9 +175,9 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
     }
 
     function calculateDeltaStats(
-        oldState: UserMediaWithTags<TDef["repository"]["tables"]["listTable"]["$inferSelect"]> | null,
-        newState: TDef["repository"]["tables"]["listTable"]["$inferSelect"] | null,
-        media: TDef["repository"]["tables"]["mediaTable"]["$inferSelect"],
+        oldState: UserMediaWithTags<InferSelectModel<TDef["repository"]["tables"]["listTable"]>> | null,
+        newState: InferSelectModel<TDef["repository"]["tables"]["listTable"]> | null,
+        media: InferSelectModel<TDef["repository"]["tables"]["mediaTable"]>,
     ): DeltaStats {
         const { progressTotals } = servicePolicy;
 

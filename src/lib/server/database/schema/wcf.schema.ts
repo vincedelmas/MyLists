@@ -2,10 +2,10 @@ import {sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {customJson} from "@/lib/server/database/custom-types";
-import {check, index, integer, primaryKey, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, primaryKey, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
-export const whichCameFirstMedia = sqliteTable("which_came_first_media", {
+export const whichCameFirstMedia = snakeCase.table("which_came_first_media", {
     mediaId: integer().notNull(),
     releaseDate: text().notNull(),
     mediaType: text().$type<MediaType>().notNull(),
@@ -15,7 +15,7 @@ export const whichCameFirstMedia = sqliteTable("which_came_first_media", {
 ]);
 
 
-export const whichCameFirstRuns = sqliteTable("which_came_first_runs", {
+export const whichCameFirstRuns = snakeCase.table("which_came_first_runs", {
     id: integer().primaryKey().notNull(),
     userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
     completedAt: text(),
@@ -32,7 +32,7 @@ export const whichCameFirstRuns = sqliteTable("which_came_first_runs", {
 ]);
 
 
-export const whichCameFirstRounds = sqliteTable("which_came_first_rounds", {
+export const whichCameFirstRounds = snakeCase.table("which_came_first_rounds", {
     id: integer().primaryKey().notNull(),
     runId: integer().notNull().references(() => whichCameFirstRuns.id, { onDelete: "cascade" }),
     roundNumber: integer().notNull(),

@@ -1,3 +1,4 @@
+import {relations} from "@/lib/server/database/relations";
 import {join} from "node:path";
 import Database from "bun:sqlite";
 import {drizzle} from "drizzle-orm/bun-sqlite";
@@ -21,7 +22,7 @@ const sqlite = new Database(join(process.env.MYLISTS_E2E_DIR, "site.db"));
 sqlite.run("PRAGMA journal_mode = WAL");
 sqlite.run("PRAGMA busy_timeout = 10000");
 
-const db = drizzle(sqlite, { schema, casing: "snake_case" });
+const db = drizzle({ client: sqlite, relations });
 migrate(db, { migrationsFolder: "./drizzle" });
 
 sqlite.run("PRAGMA foreign_keys = ON");

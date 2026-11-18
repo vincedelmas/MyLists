@@ -1,3 +1,4 @@
+import type {InferInsertModel, InferSelectModel} from "drizzle-orm";
 import {notFound} from "@tanstack/react-router";
 import {ExportMediaList} from "@/lib/types/media-list.types";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
@@ -26,9 +27,9 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
     const { identity, repository: repoDefinition } = definition;
     const tagQueries = createMediaTagQueries(definition);
 
-    type TListTableInsert = TDef["repository"]["tables"]["listTable"]["$inferInsert"];
-    type TListTableSelect = TDef["repository"]["tables"]["listTable"]["$inferSelect"];
-    type TMediaTableSelect = TDef["repository"]["tables"]["mediaTable"]["$inferSelect"];
+    type TListTableInsert = InferInsertModel<TDef["repository"]["tables"]["listTable"]>;
+    type TListTableSelect = InferSelectModel<TDef["repository"]["tables"]["listTable"]>;
+    type TMediaTableSelect = InferSelectModel<TDef["repository"]["tables"]["mediaTable"]>;
 
     async function bulkInsertUserMedia(rows: TListTableInsert[]) {
         const { listTable } = repoDefinition.tables;
@@ -46,7 +47,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
                     .onConflictDoNothing({ target: [listTable.userId, listTable.mediaId] })
                     .returning().all();
 
-                insertedRows.push(...inserted);
+                insertedRows.push(...inserted as TListTableSelect[]);
             }
 
             return insertedRows;
@@ -180,7 +181,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .select()
             .from(mediaTable)
             .where(eq(mediaTable.id, mediaId))
-            .get();
+            .get() as TMediaTableSelect | undefined;
     }
 
     async function findByApiId(apiId: number | string): Promise<TMediaTableSelect | undefined> {
@@ -190,7 +191,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .select()
             .from(mediaTable)
             .where(eq(mediaTable.apiId, apiId))
-            .get()
+            .get() as TMediaTableSelect | undefined;
     }
 
     async function findByApiIds(apiIds: (number | string)[]) {
@@ -254,7 +255,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         return matches;
     }
 
-    function updateUserMediaDetails(userId: number, mediaId: number, updateData: Partial<TListTableSelect>): TListTableSelect {
+    function updateUserMediaDetails(userId: number, mediaId: number, updateData: Partial<TListTableSelect> | { releaseNotificationsEnabled: boolean } | { customCover: string | null }): TListTableSelect {
         const { listTable } = repoDefinition.tables;
 
         const [result] = getDbClient()
@@ -266,7 +267,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .where(and(eq(listTable.userId, userId), eq(listTable.mediaId, mediaId)))
             .returning().all();
 
-        return result;
+        return result as TListTableSelect;
     }
 
     function findUserMedia(userId: number | undefined, mediaId: number): UserMediaWithTags<TListTableSelect> | null {
@@ -296,7 +297,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .orderBy(asc(mediaTags.name)).all();
 
         return {
-            ...mainUserMediaData,
+            ...mainUserMediaData as TListTableSelect & { ratingSystem: typeof mainUserMediaData.ratingSystem },
             tags: associatedTags,
         };
     }
@@ -304,7 +305,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
     async function downloadMediaListAsCSV(userId: number): Promise<(TListTableSelect & ExportMediaList)[]> {
         const { mediaTable, listTable } = repoDefinition.tables;
 
-        return getDbClient()
+        return await getDbClient()
             .select({
                 mediaName: sql<string>`${mediaTable.name}`,
                 externalApiId: sql<string>`${mediaTable.apiId}`,
@@ -313,7 +314,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             })
             .from(listTable)
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-            .where(eq(listTable.userId, userId));
+            .where(eq(listTable.userId, userId)) as (TListTableSelect & ExportMediaList)[];
     }
 
     async function getUpcomingMedia(userId?: number, maxAWeek?: boolean): Promise<UpComingMedia[]> {

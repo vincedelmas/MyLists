@@ -97,7 +97,7 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
                             ) AS x
                         )
                     END
-                `.mapWith(JSON.parse),
+                `.mapWith(value => JSON.parse(String(value))),
             })
             .from(games)
             .where(eq(games.id, mediaId))

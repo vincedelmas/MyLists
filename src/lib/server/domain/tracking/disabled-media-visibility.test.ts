@@ -1,9 +1,9 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {and, eq} from "drizzle-orm";
-import * as schema from "@/lib/server/database/schema";
 import {achievement, achievementTier, anime, animeList, user, userAchievement, userMediaMonthlyActivity, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {AchievementDifficulty, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {toActor} from "@/lib/server/authorization";
@@ -29,11 +29,11 @@ const { AchievementsRepository } = await import("@/lib/server/domain/achievement
 
 describe("disabled media visibility", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
 
         migrate(db, { migrationsFolder: "./drizzle" });
@@ -141,7 +141,7 @@ describe("disabled media visibility", () => {
 });
 
 
-async function seedUserData(db: BunSQLiteDatabase<typeof schema>) {
+async function seedUserData(db: SQLiteBunDatabase<typeof relations>) {
     await db.insert(user).values({
         id: 42,
         emailVerified: true,

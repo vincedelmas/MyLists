@@ -1,7 +1,8 @@
+import {relations} from "@/lib/server/database/relations";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {and, eq} from "drizzle-orm";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
@@ -18,7 +19,7 @@ import {createMediaQueries} from "./media.queries";
 import {createMediaListQueries} from "./media-list.queries";
 import {createMediaBrowseQueryParts} from "./media-browse.queries";
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 vi.mock("@/lib/server/database/db", () => ({
     get db() {
         return dbContext.db;
@@ -37,7 +38,7 @@ describe("collection and job media browsing", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        dbContext.db = drizzle({ client: sqlite, relations });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         dbContext.db.insert(schema.user).values([1, 2].map(id => ({

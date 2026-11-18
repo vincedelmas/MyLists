@@ -84,7 +84,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
                         ))
                     FROM ${animeEpisodesPerSeason}
                     WHERE ${animeEpisodesPerSeason.mediaId} = ${anime.id}
-                )`.mapWith((value): EpsPerSeasonType[] => JSON.parse(value)),
+                )`.mapWith((value): EpsPerSeasonType[] => JSON.parse(String(value))),
                 ...getTableColumns(animeList),
             },
         },

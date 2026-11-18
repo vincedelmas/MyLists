@@ -91,7 +91,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                         ))
                     FROM ${seriesEpisodesPerSeason}
                     WHERE ${seriesEpisodesPerSeason.mediaId} = ${series.id}
-                )`.mapWith((value): EpsPerSeasonType[] => JSON.parse(value)),
+                )`.mapWith((value): EpsPerSeasonType[] => JSON.parse(String(value))),
                 ...getTableColumns(seriesList),
             },
             defaultSort: getMediaSortLabel(seriesDefinition, seriesDefinition.sorting.default),

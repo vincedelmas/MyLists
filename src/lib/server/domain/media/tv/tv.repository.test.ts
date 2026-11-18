@@ -1,9 +1,9 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {eq, getTableName, sql} from "drizzle-orm";
 import {Status} from "@/lib/utils/enums";
-import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/formatting/date";
 import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
@@ -25,13 +25,13 @@ const { createMediaIngestionService } = await import("@/lib/server/api-providers
 
 describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaType repository", definition => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
     const repository = createTvRepository(definition);
     const { mediaTable, listTable, epsPerSeasonTable } = definition.repository.tables;
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
@@ -91,12 +91,12 @@ it("filters next calendar episodes by range, owner and eligible status", async (
 
 describe("TvRepository season refresh", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
     let repository: ReturnType<typeof createTvRepository>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
         repository = createTvRepository(seriesServerDefinition);
 

@@ -1,5 +1,5 @@
 import * as z from "zod";
-import {createInsertSchema} from "drizzle-zod";
+import {createInsertSchema} from "drizzle-orm/zod";
 import {emptyStringToNull} from "@/lib/utils/formatting/text";
 import {games, gamesList} from "@/lib/server/database/schema";
 import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";

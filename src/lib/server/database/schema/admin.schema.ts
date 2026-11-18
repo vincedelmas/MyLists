@@ -4,10 +4,10 @@ import {TaskResult} from "@/lib/types/tasks.types";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 import {customJson, dateAsString} from "@/lib/server/database/custom-types";
-import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
-export const taskHistory = sqliteTable("task_history", {
+export const taskHistory = snakeCase.table("task_history", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     taskId: text("task_id").notNull(),
     userId: integer("user_id").references(() => user.id, { onDelete: "cascade" }),
@@ -26,7 +26,7 @@ export const taskHistory = sqliteTable("task_history", {
 ]);
 
 
-export const yearRecapRelease = sqliteTable("year_recap_release", {
+export const yearRecapRelease = snakeCase.table("year_recap_release", {
     year: integer("year").primaryKey().notNull(),
     mode: text("mode").$type<YearRecapReleaseMode>().default("automatic").notNull(),
     updatedAt: dateAsString("updated_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
@@ -35,7 +35,7 @@ export const yearRecapRelease = sqliteTable("year_recap_release", {
 ]);
 
 
-export const inactiveAccountDeletion = sqliteTable("inactive_account_deletion", {
+export const inactiveAccountDeletion = snakeCase.table("inactive_account_deletion", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     deletedAt: text("deleted_at"),
     userId: integer("user_id").notNull(),
@@ -60,7 +60,7 @@ export const inactiveAccountDeletion = sqliteTable("inactive_account_deletion", 
 ]);
 
 
-export const mediaRefreshLog = sqliteTable("media_refresh_log", {
+export const mediaRefreshLog = snakeCase.table("media_refresh_log", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     mediaType: text("media_type").$type<MediaType>().notNull(),
@@ -73,7 +73,7 @@ export const mediaRefreshLog = sqliteTable("media_refresh_log", {
 ]);
 
 
-export const apiCallRollup = sqliteTable("api_call_rollup", {
+export const apiCallRollup = snakeCase.table("api_call_rollup", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     provider: text("provider").notNull(),
     bucketStartMs: integer("bucket_start_ms").notNull(),

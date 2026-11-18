@@ -1,15 +1,16 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {type BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {type SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {HltbApi} from "@/lib/server/api-providers/api/hltb.api";
 import type {IgdbApi} from "@/lib/server/api-providers/api/igdb.api";
 import type {IgdbGameDetails} from "@/lib/types/provider.types";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as BunSQLiteDatabase<typeof schema> | undefined }));
+const dbContext = vi.hoisted(() => ({ db: undefined as SQLiteBunDatabase<typeof relations> | undefined }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return dbContext.db; } }));
 vi.mock("@/lib/server/core/images/image-saver", () => ({ saveImageFromUrl: vi.fn().mockResolvedValue("game.jpg") }));
 
@@ -40,7 +41,7 @@ const gameDetails: IgdbGameDetails = {
 
 describe("IGDB game ingestion", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -49,7 +50,7 @@ describe("IGDB game ingestion", () => {
         hltb.search.mockResolvedValue({ name: gameDetails.name, mainStory: "12.5", mainExtra: "24", completionist: "36" });
 
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

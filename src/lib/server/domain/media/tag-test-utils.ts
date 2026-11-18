@@ -1,6 +1,7 @@
+import {relations} from "@/lib/server/database/relations";
 import type {MediaType} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
-import type {BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import type {SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
 
@@ -12,7 +13,7 @@ type TagSeed = {
 };
 
 
-export const seedMediaTags = (db: BunSQLiteDatabase<typeof schema>, mediaType: MediaType, rows: TagSeed | TagSeed[]) => {
+export const seedMediaTags = (db: SQLiteBunDatabase<typeof relations>, mediaType: MediaType, rows: TagSeed | TagSeed[]) => {
     const { tagTable } = getServerMediaDefinition(mediaType).repository.tables;
 
     for (const { name, ...assignment } of Array.isArray(rows) ? rows : [rows]) {

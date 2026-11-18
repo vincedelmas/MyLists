@@ -1,3 +1,4 @@
+import {relations} from "@/lib/server/database/relations";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
@@ -5,7 +6,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {createMediaEditPayloadSchema} from "@/lib/schemas/media-details.schema";
 import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {type BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {type SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
@@ -41,12 +42,12 @@ const services = {
 
 describe("validated metadata edits", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
 
     beforeEach(async () => {
         vi.clearAllMocks();
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

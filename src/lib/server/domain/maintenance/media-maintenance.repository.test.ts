@@ -1,10 +1,11 @@
+import {relations} from "@/lib/server/database/relations";
 import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {MediaType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
 import {collectionItems, collections, dailyMediadle, movies, moviesActors, moviesList, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 
@@ -24,11 +25,11 @@ const { withTransaction } = await import("@/lib/server/database/async-storage");
 
 describe("MediaMaintenanceRepository", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

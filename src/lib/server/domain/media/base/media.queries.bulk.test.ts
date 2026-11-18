@@ -1,12 +1,12 @@
+import {relations} from "@/lib/server/database/relations";
 import {MediaType} from "@/lib/utils/enums";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {Status} from "@/lib/utils/enums";
-import * as schema from "@/lib/server/database/schema";
 import {movies, moviesList, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 
@@ -24,13 +24,13 @@ const { createMoviesService } = await import("@/lib/server/domain/media/movies/m
 
 describe("Shared media persistence and list queries", () => {
     let sqlite: Database;
-    let db: BunSQLiteDatabase<typeof schema>;
+    let db: SQLiteBunDatabase<typeof relations>;
     let repository: ReturnType<typeof createMoviesRepository>;
     let service: ReturnType<typeof createMoviesService>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        db = drizzle({ client: sqlite, relations });
         dbContext.db = db;
         repository = createMoviesRepository();
         service = createMoviesService(repository);

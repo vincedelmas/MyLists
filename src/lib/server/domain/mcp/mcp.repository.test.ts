@@ -1,14 +1,15 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 import {MCP_READ_SCOPE, MCP_RESOURCE, MCP_WRITE_SCOPE} from "@/lib/server/core/mcp/config";
 import {getMcpAccess, revokeMcpConnection} from "./mcp.repository";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 
 vi.mock("@/lib/server/database/db", () => ({ get db() { return dbContext.db; } }));
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "http://localhost:3000" } }));
@@ -22,7 +23,7 @@ describe("MCP live authorization", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        dbContext.db = drizzle({ client: sqlite, relations });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         dbContext.db.insert(schema.user).values([1, 2].map(id => ({

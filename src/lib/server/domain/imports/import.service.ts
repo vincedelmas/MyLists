@@ -195,7 +195,7 @@ export class ImportService {
             });
         }
         catch (error) {
-            const message = String(error);
+            const message = String(error instanceof Error ? error.cause ?? error : error);
             if (message.includes("ux_import_jobs_user_active") || message.includes("import_jobs.user_id")) {
                 throw new FormattedError(ACTIVE_IMPORT_ERROR);
             }

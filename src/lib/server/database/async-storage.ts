@@ -1,13 +1,10 @@
 import {db} from "@/lib/server/database/db";
 import {isAsyncFunction} from "node:util/types";
 import {AsyncLocalStorage} from "node:async_hooks";
-import * as schema from "@/lib/server/database/schema";
-import {ExtractTablesWithRelations} from "drizzle-orm";
-import {SQLiteBunTransaction} from "drizzle-orm/bun-sqlite";
 
 
+type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type ActionType<T> = (tx: TransactionClient) => T & (T extends PromiseLike<unknown> ? never : unknown);
-type TransactionClient = SQLiteBunTransaction<typeof schema, ExtractTablesWithRelations<typeof schema>>;
 
 
 const dbTransactionLocalStorage = new AsyncLocalStorage<TransactionClient>();
@@ -43,6 +40,6 @@ export const withTransaction = <T>(action: ActionType<T>) => {
     // Acquire the write lock before reading to avoid snapshot upgrade failures.
     return db
         .transaction((tx) => {
-            return dbTransactionLocalStorage.run(tx, () => run(tx));
-        }, { behavior: "immediate" });
+            return { value: dbTransactionLocalStorage.run(tx, () => run(tx)) };
+        }, { behavior: "immediate" }).value;
 };

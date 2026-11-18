@@ -1,8 +1,9 @@
+import {relations} from "@/lib/server/database/relations";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {and, eq} from "drizzle-orm";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {GamesPlatformsEnum, MediaType, Status, TagAction} from "@/lib/utils/enums";
@@ -19,7 +20,7 @@ import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.qu
 import {getDynamicListEditorFilterOptions, getDynamicListResults, getDynamicListSummaries, getDynamicListSummary} from "./dynamic-lists.queries";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return dbContext.db; } }));
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "https://mylists.example.invalid" } }));
 vi.mock("@/env/server", () => ({ serverEnv: { UPLOADS_DIR_NAME: "static" } }));
@@ -35,7 +36,7 @@ describe("dynamic list live queries", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        dbContext.db = drizzle({ client: sqlite, relations });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         dbContext.db.insert(schema.user).values([1, 2].map(id => ({
@@ -486,7 +487,7 @@ it("matches all requested tags and excludes any owner tag while ignoring other u
         const saved = dynamicListsRepository.create(1, savedSpec);
         sqlite.run("CREATE TRIGGER fail_tag_rule_cleanup BEFORE UPDATE ON smart_views BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END");
 
-        expect(() => tags.editUserTag(1, { name: "Keep" }, TagAction.DELETE_ALL)).toThrow("cleanup failed");
+        expect(() => tags.editUserTag(1, { name: "Keep" }, TagAction.DELETE_ALL)).toThrow(expect.objectContaining({ cause: expect.objectContaining({ message: "cleanup failed" }) }));
         expect(tagId(MediaType.MOVIES, "Keep")).toBe(id);
         expect(dbContext.db.select().from(schema.moviesTags).all()).toHaveLength(1);
         expect(dbContext.db.select().from(schema.moviesList).all()).toHaveLength(1);

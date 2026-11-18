@@ -8,7 +8,7 @@ async function seedBook() {
         import {drizzle} from 'drizzle-orm/bun-sqlite';
         import {books, booksAuthors} from './src/lib/server/database/schema';
         const sqlite = new Database(process.env.DATABASE_URL);
-        const db = drizzle(sqlite, {casing: 'snake_case'});
+        const db = drizzle({ client: sqlite });
         db.insert(books).values({id: 501, name: 'Dune', apiId: 'cover-dune', pages: 400, imageCover: 'default.jpg'}).run();
         db.insert(booksAuthors).values({mediaId: 501, name: 'Frank Herbert'}).run();
         sqlite.close();

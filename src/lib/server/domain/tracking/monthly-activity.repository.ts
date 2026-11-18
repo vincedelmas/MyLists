@@ -231,7 +231,7 @@ export class MonthlyActivityRepository {
             .select({
                 mediaId: userMediaMonthlyActivity.mediaId,
                 mediaType: userMediaMonthlyActivity.mediaType,
-                progressGained: sum(userMediaMonthlyActivity.progressGained).mapWith(Number),
+                progressGained: sql<number>`COALESCE(${sum(userMediaMonthlyActivity.progressGained)}, 0)`.mapWith(Number),
             })
             .from(userMediaMonthlyActivity)
             .innerJoin(userMediaSettings, activeMediaSettingsJoin)
@@ -264,7 +264,7 @@ export class MonthlyActivityRepository {
                 mediaId: userMediaMonthlyActivity.mediaId,
                 mediaType: userMediaMonthlyActivity.mediaType,
                 monthBucket: userMediaMonthlyActivity.monthBucket,
-                progressGained: sum(userMediaMonthlyActivity.progressGained).mapWith(Number),
+                progressGained: sql<number>`COALESCE(${sum(userMediaMonthlyActivity.progressGained)}, 0)`.mapWith(Number),
             })
             .from(userMediaMonthlyActivity)
             .innerJoin(userMediaSettings, activeMediaSettingsJoin)

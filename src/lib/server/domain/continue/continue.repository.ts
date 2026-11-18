@@ -31,7 +31,7 @@ export const getContinueItems = async ({ userId, mediaTypes, data }: ContinueIte
 
     const candidates = mediaTypes.map(mt => {
         const { repository: { tables: { listTable, mediaTable }, continuePreviewCondition } } = getServerMediaDefinition(mt);
-        const conditions = [eq(listTable.userId, userId), eq(listTable.status, Status.IN_PROGRESS)];
+        const conditions: (ReturnType<typeof eq> | undefined)[] = [eq(listTable.userId, userId), eq(listTable.status, Status.IN_PROGRESS)];
 
         if (search) {
             conditions.push(

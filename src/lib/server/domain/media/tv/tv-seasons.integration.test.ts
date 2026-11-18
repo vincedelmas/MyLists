@@ -1,6 +1,7 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {eq, getTableName} from "drizzle-orm";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
@@ -28,7 +29,7 @@ import {convertToCsv} from "@/lib/utils/csv";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import type {MatchedImportItem} from "@/lib/types/imports.types";
 
-const context = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
+const context = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return context.db; } }));
 
 describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaType seasonal tracking", definition => {
@@ -52,7 +53,7 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        context.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        context.db = drizzle({ client: sqlite, relations });
         migrate(context.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         context.db.insert(schema.user).values({ id: 1, name: "season-user", email: "season@example.com", emailVerified: true, createdAt: "2025-01-01", updatedAt: "2025-01-01" }).run();

@@ -90,18 +90,18 @@ export class NotificationsRepository {
     static async getLastNotifications(userId: number, type: NotifTab, limit = 8) {
         if (type === "social") {
             return getDbClient().query.socialNotifications.findMany({
-                where: eq(socialNotifications.userId, userId),
+                where: { userId },
                 with: {
                     featureRequest: { columns: { id: true, title: true } },
                     actor: { columns: { id: true, name: true, image: true } },
                 },
-                orderBy: desc(socialNotifications.createdAt),
+                orderBy: { createdAt: "desc" },
             });
         }
 
         return getDbClient().query.mediaNotifications.findMany({
-            where: eq(mediaNotifications.userId, userId),
-            orderBy: desc(mediaNotifications.createdAt),
+            where: { userId },
+            orderBy: { createdAt: "desc" },
             limit,
         });
     }

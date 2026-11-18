@@ -30,7 +30,7 @@ export const dbMaintenanceTask = defineTask({
         await ctx.step("collect-settings", async () => {
             const pragmas = ["foreign_keys", "journal_mode", "synchronous", "wal_autocheckpoint", "locking_mode", "busy_timeout"];
             for (const name of pragmas) {
-                const result = await db.get(`PRAGMA ${name};`);
+                const result = await db.get<Record<string, number | string>>(`PRAGMA ${name};`);
                 ctx.metric(`sqlite.${name}`, result ? Object.values(result)[0] : "unknown");
             }
         });

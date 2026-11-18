@@ -65,8 +65,8 @@ const previewItemsSelection = sql`(
         ORDER BY ${collectionItems.orderIndex} ASC
         LIMIT 4
     )
-)`.mapWith((value: string) => {
-    return JSON.parse(value) as { mediaId: number; mediaType: MediaType }[];
+)`.mapWith((value) => {
+    return JSON.parse(String(value)) as { mediaId: number; mediaType: MediaType }[];
 });
 
 
@@ -500,7 +500,7 @@ export class CollectionsRepository {
             .set({ likeCount: sql`${collections.likeCount} + 1` })
             .where(eq(collections.id, collectionId))
             .returning({ likeCount: collections.likeCount })
-            .get().likeCount;
+            .get()!.likeCount;
     }
 
     static decrementLikeCount(collectionId: number) {
@@ -510,7 +510,7 @@ export class CollectionsRepository {
                 likeCount: sql`CASE WHEN ${collections.likeCount} > 0 THEN ${collections.likeCount} - 1 ELSE 0 END`,
             }).where(eq(collections.id, collectionId))
             .returning({ likeCount: collections.likeCount })
-            .get().likeCount;
+            .get()!.likeCount;
     }
 
     static incrementCopyCount(collectionId: number) {

@@ -1,9 +1,9 @@
 import {customJson} from "@/lib/server/database/custom-types";
 import {session, user} from "@/lib/server/database/schema/auth.schema";
-import {index, integer, primaryKey, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {index, integer, primaryKey, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
-export const jwks = sqliteTable("jwks", {
+export const jwks = snakeCase.table("jwks", {
     id: integer("id").primaryKey(),
     publicKey: text("public_key").notNull(),
     privateKey: text("private_key").notNull(),
@@ -14,7 +14,7 @@ export const jwks = sqliteTable("jwks", {
 });
 
 
-export const oauthClient = sqliteTable("oauth_client", {
+export const oauthClient = snakeCase.table("oauth_client", {
     id: integer("id").primaryKey(),
     clientId: text("client_id").notNull().unique(),
     clientSecret: text("client_secret"),
@@ -56,7 +56,7 @@ export const oauthClient = sqliteTable("oauth_client", {
 ]);
 
 
-export const oauthResource = sqliteTable("oauth_resource", {
+export const oauthResource = snakeCase.table("oauth_resource", {
     id: integer("id").primaryKey(),
     identifier: text("identifier").notNull().unique(),
     name: text("name").notNull(),
@@ -75,7 +75,7 @@ export const oauthResource = sqliteTable("oauth_resource", {
 });
 
 
-export const oauthClientResource = sqliteTable("oauth_client_resource", {
+export const oauthClientResource = snakeCase.table("oauth_client_resource", {
     id: integer("id").primaryKey(),
     clientId: text("client_id").notNull().references(() => oauthClient.clientId, { onDelete: "cascade" }),
     resourceId: text("resource_id").notNull().references(() => oauthResource.identifier, { onDelete: "cascade" }),
@@ -88,7 +88,7 @@ export const oauthClientResource = sqliteTable("oauth_client_resource", {
 ]);
 
 
-export const oauthRefreshToken = sqliteTable("oauth_refresh_token", {
+export const oauthRefreshToken = snakeCase.table("oauth_refresh_token", {
     id: integer("id").primaryKey(),
     token: text("token").notNull().unique(),
     clientId: text("client_id").notNull().references(() => oauthClient.clientId, { onDelete: "cascade" }),
@@ -115,7 +115,7 @@ export const oauthRefreshToken = sqliteTable("oauth_refresh_token", {
 ]);
 
 
-export const oauthAccessToken = sqliteTable("oauth_access_token", {
+export const oauthAccessToken = snakeCase.table("oauth_access_token", {
     id: integer("id").primaryKey(),
     token: text("token").notNull().unique(),
     clientId: text("client_id").notNull().references(() => oauthClient.clientId, { onDelete: "cascade" }),
@@ -140,7 +140,7 @@ export const oauthAccessToken = sqliteTable("oauth_access_token", {
 ]);
 
 
-export const oauthConsent = sqliteTable("oauth_consent", {
+export const oauthConsent = snakeCase.table("oauth_consent", {
     id: integer("id").primaryKey(),
     clientId: text("client_id").notNull().references(() => oauthClient.clientId, { onDelete: "cascade" }),
     userId: integer("user_id").references(() => user.id, { onDelete: "cascade" }),
@@ -156,13 +156,13 @@ export const oauthConsent = sqliteTable("oauth_consent", {
 ]);
 
 
-export const oauthClientAssertion = sqliteTable("oauth_client_assertion", {
+export const oauthClientAssertion = snakeCase.table("oauth_client_assertion", {
     id: text("id").primaryKey(),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
 });
 
 
-export const mcpRevocation = sqliteTable("mcp_revocation", {
+export const mcpRevocation = snakeCase.table("mcp_revocation", {
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     clientId: text("client_id").notNull().references(() => oauthClient.clientId, { onDelete: "cascade" }),
     revokedAt: integer("revoked_at").notNull(),

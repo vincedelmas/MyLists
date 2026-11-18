@@ -8,8 +8,8 @@ export const getCollectionMediaTypesSelection = () => sql<MediaType[]>`(
     SELECT json_group_array(DISTINCT ${collectionItems.mediaType})
     FROM ${collectionItems}
     WHERE ${collectionItems.collectionId} = ${collections.id}
-)`.mapWith((value: string) => {
-    const mediaTypes: MediaType[] = JSON.parse(value);
+)`.mapWith((value) => {
+    const mediaTypes: MediaType[] = JSON.parse(String(value));
     return ALL_MEDIA_TYPES.filter(mediaType => mediaTypes.includes(mediaType));
 });
 

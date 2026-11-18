@@ -29,8 +29,9 @@ one unified interface.
 Ensure you have [Bun](https://bun.sh) installed on your machine.
 
 MCP insight queries also require the system SQLite shared library (`libsqlite3-0` on Debian/Ubuntu, `sqlite` on Arch Linux).
-Docker includes it. The isolated query process uses this library with memory accounting enabled to enforce its 128 MiB SQLite
-heap limit; Bun's bundled SQLite disables that accounting starting in Bun 1.4.4.
+Docker includes it.
+The isolated query process uses this library with memory accounting enabled to enforce its 128 MiB SQLite heap limit.
+Bun's bundled SQLite disables that accounting starting in Bun 1.4.4.
 
 1. **Clone the repo**
    ```bash
@@ -81,17 +82,18 @@ heap limit; Bun's bundled SQLite disables that accounting starting in Bun 1.4.4.
    bun run dev
    ```
 
-Commit `bun.lock` alongside `package.json` when updating dependencies. Deployment uses the committed lockfile without resolving new
-versions.
+Commit `bun.lock` alongside `package.json` when updating the deps.
+Deployment uses the committed lockfile without resolving new versions.
 
 ### Imports with cron
 
-Imports are processed using the `import-drain` CLI. Schedule it regularly (i.e., every 2 min). Linux `flock` from util-linux prevents
-overlapping drain workers.
+Imports are processed using the `import-drain` CLI.
+Schedule it regularly (i.e., every 2 min).
+Linux `flock` from `util-linux` prevents overlapping drain workers.
 
 ---
 
-### Environment Variables
+### Env Variables
 
 Below is an explanation for each key found in `.env.example`:
 
@@ -180,8 +182,8 @@ A partial pair is treated as a config error.
 
 ### LLM Integration (Optional)
 
-The LLM is **exclusively used to generate genre data for books** since Google Books does not provide genre metadata. You can choose how this
-background task runs:
+The LLM is **exclusively used to generate genre data for books** since Google Books does not provide genre metadata.
+You can choose how this background task runs:
 
 1. **Manually**, by executing it with the CLI
 2. **Automatically**, using a scheduled cron job
@@ -192,22 +194,13 @@ When `LLM_API_KEY` is absent, direct and scheduled enrichment runs are skipped w
 
 ## Database upgrades
 
-Back up your SQLite database before upgrading. The current migration baseline represents
-`0070_simplify_user_achievements`. Databases with `0070` already recorded in
-`__drizzle_migrations` skip the baseline and apply subsequent migrations normally.
+For a new database, run `bun run new:db`.
+For an existing database with migration records, back it up and run `bun run dk migrate`.
 
-If your database or backup has tracked migrations but is older than `0070`, bring it
-up to the cutoff by running `bun run dk migrate` from a separate checkout of
-release `v3.21.1` with `DATABASE_URL` pointing to that database. Then run the
-current migrations from the current release:
+If the last recorded migration is older than `0070`, run `bun run dk migrate` from release `v3.21.1` first,
+then run it again from the current release.
 
-```bash
-bun run dk migrate
-```
-
-Older versions of `new:db` used `drizzle-kit push`, which did not record migration
-history. A populated database without a migration ledger requires a separate schema
-and data review before it can be adopted at the cutoff.
+If the database already has tables but has no migration records, verify its schema and data before upgrading.
 
 ## Assistant connections (MCP)
 

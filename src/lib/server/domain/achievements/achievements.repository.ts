@@ -3,7 +3,7 @@ import {StatsCTE} from "@/lib/types/media-common.types";
 import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
 import {Achievement, AchievementSeedData} from "@/lib/types/achievements.types";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
-import {and, asc, count, desc, eq, inArray, max, notInArray, sql} from "drizzle-orm";
+import {and, count, desc, eq, inArray, max, notInArray, sql} from "drizzle-orm";
 import {achievement, achievementTier, user, userAchievement, userMediaSettings} from "@/lib/server/database/schema";
 
 
@@ -207,13 +207,11 @@ export class AchievementsRepository {
     }
 
     static async getAllAchievements() {
-        const tierOrder = this._getSQLTierOrdering();
-
         return getDbClient().query.achievement.findMany({
-            orderBy: asc(achievement.id),
+            orderBy: { id: "asc" },
             with: {
                 tiers: {
-                    orderBy: tierOrder,
+                    orderBy: tier => this._getSQLTierOrdering(tier.difficulty),
                 },
             },
         });
@@ -302,8 +300,8 @@ export class AchievementsRepository {
             });
     }
 
-    private static _getSQLTierOrdering() {
-        return sql<number>`CASE ${achievementTier.difficulty}
+    private static _getSQLTierOrdering(difficulty = achievementTier.difficulty) {
+        return sql<number>`CASE ${difficulty}
             WHEN 'bronze' THEN 1
             WHEN 'silver' THEN 2
             WHEN 'gold' THEN 3

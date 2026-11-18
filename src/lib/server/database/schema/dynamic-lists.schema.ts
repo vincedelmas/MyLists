@@ -2,11 +2,11 @@ import {sql} from "drizzle-orm";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {customJson} from "@/lib/server/database/custom-types";
 import type {DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
-import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
 // Keep the existing SQLite table and constraints so renaming the feature preserves saved data.
-export const dynamicLists = sqliteTable("smart_views", {
+export const dynamicLists = snakeCase.table("smart_views", {
     id: integer().primaryKey({ autoIncrement: true }).notNull(),
     userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
     profilePosition: integer(),

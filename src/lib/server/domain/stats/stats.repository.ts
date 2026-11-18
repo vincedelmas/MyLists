@@ -361,7 +361,7 @@ export class StatsRepository {
             timeSpentHours: stats.timeSpentHours ?? 0,
             totalFavorites: stats.totalFavorites ?? 0,
             timeSpentDays: (stats.timeSpentHours ?? 0) / 24,
-            avgRated: (!stats.totalRated || stats.totalRated === 0) ? null : (stats.sumOfAllRatings / stats.totalRated),
+            avgRated: (!stats.totalRated || stats.totalRated === 0) ? null : ((stats.sumOfAllRatings ?? 0) / stats.totalRated),
         };
     }
 

@@ -1,3 +1,4 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {drizzle} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
@@ -13,7 +14,7 @@ let sqlite: Database;
 
 beforeEach(() => {
     sqlite = new Database(":memory:");
-    dbContext.db = drizzle(sqlite, { schema, casing: "snake_case" });
+    dbContext.db = drizzle({ client: sqlite, relations });
     migrate(dbContext.db, { migrationsFolder: "./drizzle" });
     sqlite.run("PRAGMA foreign_keys = ON");
     dbContext.db.insert(schema.user).values({ id: 1, name: "reader", email: "reader@example.invalid", emailVerified: true,

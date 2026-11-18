@@ -4,11 +4,11 @@ import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {eq} from "drizzle-orm";
 import {integer, sqliteTable} from "drizzle-orm/sqlite-core";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
+import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase }));
 
 
 vi.mock("@/lib/server/database/db", () => ({
@@ -28,7 +28,7 @@ describe("withTransaction with Bun SQLite", () => {
     beforeEach(() => {
         sqlite = new Database(":memory:");
         sqlite.run("CREATE TABLE entries (id INTEGER PRIMARY KEY)");
-        dbContext.db = drizzle(sqlite);
+        dbContext.db = drizzle({ client: sqlite });
     });
 
     afterEach(() => sqlite.close());
@@ -97,7 +97,7 @@ describe("withTransaction with Bun SQLite", () => {
         sqlite.close();
         sqlite = new Database(filename);
         sqlite.run("PRAGMA journal_mode = WAL; CREATE TABLE entries (id INTEGER PRIMARY KEY)");
-        dbContext.db = drizzle(sqlite);
+        dbContext.db = drizzle({ client: sqlite });
         const other = new Database(filename);
         other.run("PRAGMA busy_timeout = 0");
 

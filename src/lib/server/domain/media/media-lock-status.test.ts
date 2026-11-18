@@ -1,13 +1,13 @@
+import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import * as schema from "@/lib/server/database/schema";
-import {type BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {type SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as BunSQLiteDatabase<typeof schema> | undefined }));
+const dbContext = vi.hoisted(() => ({ db: undefined as SQLiteBunDatabase<typeof relations> | undefined }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return dbContext.db; } }));
 
 const { createMoviesRepository } = await import("./movies/movies.repository");
@@ -29,7 +29,7 @@ describe("media lock defaults", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle(sqlite, { schema, casing: "snake_case" });
+        dbContext.db = drizzle({ client: sqlite, relations });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
     });
 

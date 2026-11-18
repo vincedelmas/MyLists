@@ -7,8 +7,8 @@ import {and, asc, count, desc, eq, inArray, like, sql, type SQL} from "drizzle-o
 import {account, collectionLikes, collections, user, userMediaSettings} from "@/lib/server/database/schema";
 
 
-const orderByMediaType = sql`
-    CASE ${userMediaSettings.mediaType}
+const orderByMediaType = (column = userMediaSettings.mediaType) => sql`
+    CASE ${column}
         WHEN 'series' THEN 1
         WHEN 'anime' THEN 2
         WHEN 'movies' THEN 3
@@ -170,7 +170,7 @@ export class AccountRepository {
             })
             .from(userMediaSettings)
             .where(eq(userMediaSettings.userId, userId))
-            .orderBy(orderByMediaType);
+            .orderBy(orderByMediaType());
     }
 
     static updateUserSettings(userId: number, payload: Partial<typeof user.$inferInsert>) {
@@ -249,10 +249,10 @@ export class AccountRepository {
 
     static async findByUsername(username: string) {
         const userResult = await getDbClient().query.user.findFirst({
-            where: eq(user.name, username),
+            where: { name: username },
             with: {
                 userMediaSettings: {
-                    orderBy: () => [asc(orderByMediaType)],
+                    orderBy: settings => asc(orderByMediaType(settings.mediaType)),
                 },
             },
         });
@@ -270,7 +270,7 @@ export class AccountRepository {
 
     static findById(userId: number) {
         return getDbClient().query.user.findFirst({
-            where: eq(user.id, userId),
+            where: { id: userId },
             with: { userMediaSettings: true },
         }).sync();
     }

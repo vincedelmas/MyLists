@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import {createGamesMonthlyActivity} from "@/lib/server/domain/media/games/games.statistics";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
@@ -27,7 +26,7 @@ import {NotificationsRepository} from "@/lib/server/domain/notifications/notific
 import type {MediaMonthlyActivityRegistry, MediaServiceRegistry, MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
 
 
-const context = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
+const context = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return context.db; } }));
 
 
@@ -58,7 +57,7 @@ describe("progress corrections", () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-09-18T12:00:00Z"));
         sqlite = new Database(":memory:");
-        context.db = drizzle({ client: sqlite, relations });
+        context.db = drizzle({ client: sqlite });
         migrate(context.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         context.db.insert(schema.user).values({ id: 1, name: "reader", email: "reader@example.com", emailVerified: true, createdAt: "2025-01-01", updatedAt: "2025-01-01" }).run();

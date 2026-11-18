@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
@@ -17,7 +16,7 @@ import {CollectionsService} from "@/lib/server/domain/collections/collections.se
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase }));
 
 
 vi.mock("@/lib/server/database/db", () => ({
@@ -46,7 +45,7 @@ describe("collection media references", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        const db = drizzle({ client: sqlite, relations });
+        const db = drizzle({ client: sqlite });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

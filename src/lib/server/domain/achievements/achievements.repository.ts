@@ -3,7 +3,7 @@ import {StatsCTE} from "@/lib/types/media-common.types";
 import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
 import {Achievement, AchievementSeedData} from "@/lib/types/achievements.types";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
-import {and, count, desc, eq, inArray, max, notInArray, sql} from "drizzle-orm";
+import {and, count, desc, eq, getTableColumns, inArray, max, notInArray, sql} from "drizzle-orm";
 import {achievement, achievementTier, user, userAchievement, userMediaSettings} from "@/lib/server/database/schema";
 
 
@@ -21,8 +21,7 @@ export class AchievementsRepository {
                     mediaType: achievementData.mediaType,
                     value: achievementData.value?.toString(),
                     description: achievementData.description,
-                })
-                .onConflictDoUpdate({
+                }).onConflictDoUpdate({
                     target: achievement.codeName,
                     set: {
                         name: achievementData.name,
@@ -30,28 +29,26 @@ export class AchievementsRepository {
                         value: achievementData.value?.toString(),
                         description: achievementData.description,
                     },
-                })
-                .returning().all();
+                }).returning()
+                .all();
 
             const tierDiffs = achievementData.tiers.map((tier) => tier.difficulty);
 
-            tx
-                .delete(achievementTier)
+            tx.delete(achievementTier)
                 .where(and(
                     notInArray(achievementTier.difficulty, tierDiffs),
                     eq(achievementTier.achievementId, syncedAchievement.id),
                 )).run();
 
-            tx
-                .insert(achievementTier)
+            tx.insert(achievementTier)
                 .values(achievementData.tiers.map((tierData) => ({
                     criteria: tierData.criteria,
                     difficulty: tierData.difficulty,
                     achievementId: syncedAchievement.id,
                 })))
                 .onConflictDoUpdate({
-                    target: [achievementTier.achievementId, achievementTier.difficulty],
                     set: { criteria: sql`excluded.criteria` },
+                    target: [achievementTier.achievementId, achievementTier.difficulty],
                 }).run();
         });
 
@@ -61,12 +58,13 @@ export class AchievementsRepository {
         const orphanedAchievementIds = tx
             .select({ id: achievement.id })
             .from(achievement)
-            .where(and(eq(achievement.mediaType, mediaType), notInArray(achievement.codeName, achCodeNames))).all().map((r) => r.id);
+            .where(and(eq(achievement.mediaType, mediaType), notInArray(achievement.codeName, achCodeNames)))
+            .all().map((r) => r.id);
 
         if (orphanedAchievementIds.length > 0) {
-            tx
-                .delete(achievement)
-                .where(inArray(achievement.id, orphanedAchievementIds)).run();
+            tx.delete(achievement)
+                .where(inArray(achievement.id, orphanedAchievementIds))
+                .run();
         }
     }
 
@@ -80,10 +78,10 @@ export class AchievementsRepository {
     static updateTiersForAdmin(tiers: AchievementTier[]) {
         return withTransaction((tx) => {
             for (const tier of tiers) {
-                tx
-                    .update(achievementTier)
+                tx.update(achievementTier)
                     .set({ criteria: tier.criteria })
-                    .where(eq(achievementTier.id, tier.id)).run();
+                    .where(eq(achievementTier.id, tier.id))
+                    .run();
             }
         });
     }
@@ -96,16 +94,14 @@ export class AchievementsRepository {
                 description: achievement.description,
                 difficulty: achievementTier.difficulty,
                 completedAt: userAchievement.completedAt,
-            })
-            .from(userAchievement)
+            }).from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
             .innerJoin(achievement, eq(achievementTier.achievementId, achievement.id))
             .innerJoin(userMediaSettings, and(
                 eq(userMediaSettings.userId, userAchievement.userId),
                 eq(userMediaSettings.mediaType, achievement.mediaType),
                 eq(userMediaSettings.active, true),
-            ))
-            .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
+            )).where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
             .orderBy(desc(userAchievement.completedAt))
             .limit(limit);
 
@@ -124,13 +120,11 @@ export class AchievementsRepository {
                 eq(userMediaSettings.userId, userAchievement.userId),
                 eq(userMediaSettings.mediaType, achievement.mediaType),
                 eq(userMediaSettings.active, true),
-            ))
-            .where(and(
+            )).where(and(
                 forUser,
                 eq(userAchievement.completed, true),
                 eq(achievementTier.difficulty, AchievementDifficulty.PLATINUM),
-            ))
-            .get();
+            )).get();
 
         return result?.count ?? 0;
     }
@@ -149,16 +143,14 @@ export class AchievementsRepository {
                 mediaType: achievement.mediaType,
                 achievementId: achievementTier.achievementId,
                 maxTierOrder: max(tierOrder).as("maxTierOrder"),
-            })
-            .from(userAchievement)
+            }).from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
             .innerJoin(achievement, eq(achievementTier.achievementId, achievement.id))
             .where(and(
                 eq(userAchievement.userId, userId),
                 eq(userAchievement.completed, true),
                 inArray(achievement.mediaType, activeMediaTypes),
-            ))
-            .groupBy(achievement.mediaType, achievementTier.achievementId)
+            )).groupBy(achievement.mediaType, achievementTier.achievementId)
             .as("subq");
 
         const completedResult = await getDbClient()
@@ -166,18 +158,18 @@ export class AchievementsRepository {
                 mediaType: subq.mediaType,
                 count: count().as("count"),
                 difficulty: achievementTier.difficulty,
-            })
-            .from(achievementTier)
-            .innerJoin(subq, and(eq(achievementTier.achievementId, subq.achievementId), eq(tierOrder, subq.maxTierOrder)))
-            .groupBy(subq.mediaType, achievementTier.difficulty)
+            }).from(achievementTier)
+            .innerJoin(subq, and(
+                eq(tierOrder, subq.maxTierOrder),
+                eq(achievementTier.achievementId, subq.achievementId),
+            )).groupBy(subq.mediaType, achievementTier.difficulty)
             .orderBy(subq.mediaType, tierOrder);
 
         const totalAchievementsResult = await getDbClient()
             .select({
                 total: count().as("total"),
                 mediaType: achievement.mediaType,
-            })
-            .from(achievement)
+            }).from(achievement)
             .where(inArray(achievement.mediaType, activeMediaTypes))
             .groupBy(achievement.mediaType);
 
@@ -192,29 +184,35 @@ export class AchievementsRepository {
                 tier: achievementTier,
                 achievement: achievement,
                 userProgress: userAchievement,
-            })
-            .from(achievement)
+            }).from(achievement)
             .innerJoin(achievementTier, eq(achievement.id, achievementTier.achievementId))
             .innerJoin(userMediaSettings, and(
                 eq(userMediaSettings.userId, userId),
-                eq(userMediaSettings.mediaType, achievement.mediaType),
                 eq(userMediaSettings.active, true),
-            ))
-            .leftJoin(userAchievement, and(eq(achievementTier.id, userAchievement.tierId), eq(userAchievement.userId, userId)))
+                eq(userMediaSettings.mediaType, achievement.mediaType),
+            )).leftJoin(userAchievement, and(eq(achievementTier.id, userAchievement.tierId), eq(userAchievement.userId, userId)))
             .orderBy(achievement.id, tierOrder);
 
         return results;
     }
 
     static async getAllAchievements() {
-        return getDbClient().query.achievement.findMany({
-            orderBy: { id: "asc" },
-            with: {
-                tiers: {
-                    orderBy: tier => this._getSQLTierOrdering(tier.difficulty),
-                },
-            },
-        });
+        return getDbClient()
+            .select({
+                ...getTableColumns(achievement),
+                tiers: sql`(
+                    SELECT json_group_array(json_object(
+                        'id', ${achievementTier.id},
+                        'rarity', ${achievementTier.rarity},
+                        'difficulty', ${achievementTier.difficulty},
+                        'criteria', json(${achievementTier.criteria}),
+                        'achievementId', ${achievementTier.achievementId}
+                    ) ORDER BY ${this._getSQLTierOrdering()})
+                    FROM ${achievementTier}
+                    WHERE ${achievementTier.achievementId} = ${achievement}.${sql.identifier(achievement.id.name)}
+                )`.mapWith((value): (typeof achievementTier.$inferSelect)[] => JSON.parse(String(value))),
+            }).from(achievement)
+            .orderBy(achievement.id);
     }
 
     static async upsertAchievementProgress(achievementData: Achievement, calculation: StatsCTE) {
@@ -300,8 +298,8 @@ export class AchievementsRepository {
             });
     }
 
-    private static _getSQLTierOrdering(difficulty = achievementTier.difficulty) {
-        return sql<number>`CASE ${difficulty}
+    private static _getSQLTierOrdering() {
+        return sql<number>`CASE ${achievementTier.difficulty}
             WHEN 'bronze' THEN 1
             WHEN 'silver' THEN 2
             WHEN 'gold' THEN 3

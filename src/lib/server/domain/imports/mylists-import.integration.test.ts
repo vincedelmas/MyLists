@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
@@ -18,7 +17,7 @@ import {ImportJobProcessor} from "./import-job.processor";
 import {ImportService} from "./import.service";
 
 
-const context = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
+const context = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase }));
 
 // Exercise the real transaction implementation against a disposable database.
 vi.mock("@/lib/server/database/db", () => ({ get db() { return context.db; } }));
@@ -35,7 +34,7 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        context.db = drizzle({ client: sqlite, relations });
+        context.db = drizzle({ client: sqlite });
         migrate(context.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
 

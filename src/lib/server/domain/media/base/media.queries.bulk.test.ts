@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import {MediaType} from "@/lib/utils/enums";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import {eq} from "drizzle-orm";
@@ -24,13 +23,13 @@ const { createMoviesService } = await import("@/lib/server/domain/media/movies/m
 
 describe("Shared media persistence and list queries", () => {
     let sqlite: Database;
-    let db: SQLiteBunDatabase<typeof relations>;
+    let db: SQLiteBunDatabase;
     let repository: ReturnType<typeof createMoviesRepository>;
     let service: ReturnType<typeof createMoviesService>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle({ client: sqlite, relations });
+        db = drizzle({ client: sqlite });
         dbContext.db = db;
         repository = createMoviesRepository();
         service = createMoviesService(repository);

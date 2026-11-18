@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {and, eq} from "drizzle-orm";
@@ -19,7 +18,7 @@ import {createMediaQueries} from "./media.queries";
 import {createMediaListQueries} from "./media-list.queries";
 import {createMediaBrowseQueryParts} from "./media-browse.queries";
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase }));
 vi.mock("@/lib/server/database/db", () => ({
     get db() {
         return dbContext.db;
@@ -38,7 +37,7 @@ describe("collection and job media browsing", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle({ client: sqlite, relations });
+        dbContext.db = drizzle({ client: sqlite });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         dbContext.db.insert(schema.user).values([1, 2].map(id => ({

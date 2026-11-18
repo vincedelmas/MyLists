@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import {eq, sql} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {importItems, importJobs, user} from "@/lib/server/database/schema";
@@ -21,11 +20,11 @@ const { ImportRepository } = await import("@/lib/server/domain/imports/import.re
 
 describe("ImportRepository", () => {
     let sqlite: Database;
-    let db: SQLiteBunDatabase<typeof relations>;
+    let db: SQLiteBunDatabase;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle({ client: sqlite, relations });
+        db = drizzle({ client: sqlite });
         dbContext.db = db;
 
         migrate(db, { migrationsFolder: "./drizzle" });

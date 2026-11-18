@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 
 import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
@@ -22,11 +21,11 @@ const {MonthlyActivityRepository} = await import(
 
 describe("MonthlyActivityRepository", () => {
     let sqlite: Database;
-    let db: SQLiteBunDatabase<typeof relations>;
+    let db: SQLiteBunDatabase;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle({ client: sqlite, relations });
+        db = drizzle({ client: sqlite });
         dbContext.db = db;
 
         migrate(db, {migrationsFolder: "./drizzle"});

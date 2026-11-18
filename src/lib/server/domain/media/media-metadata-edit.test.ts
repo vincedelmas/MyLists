@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
@@ -42,12 +41,12 @@ const services = {
 
 describe("validated metadata edits", () => {
     let sqlite: Database;
-    let db: SQLiteBunDatabase<typeof relations>;
+    let db: SQLiteBunDatabase;
 
     beforeEach(async () => {
         vi.clearAllMocks();
         sqlite = new Database(":memory:");
-        db = drizzle({ client: sqlite, relations });
+        db = drizzle({ client: sqlite });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

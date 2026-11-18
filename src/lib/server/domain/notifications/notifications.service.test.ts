@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
@@ -9,7 +8,7 @@ import {NotificationsService} from "./notifications.service";
 import {NotificationsRepository} from "./notifications.repository";
 
 
-const context = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
+const context = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return context.db; } }));
 
 describe("notifications", () => {
@@ -18,7 +17,7 @@ describe("notifications", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        context.db = drizzle({ client: sqlite, relations });
+        context.db = drizzle({ client: sqlite });
         migrate(context.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         context.db.insert(schema.user).values({

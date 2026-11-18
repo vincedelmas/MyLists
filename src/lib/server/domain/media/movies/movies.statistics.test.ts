@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
@@ -23,11 +22,11 @@ const { createMoviesStatistics } = await import("@/lib/server/domain/media/movie
 
 describe("MoviesStatistics", () => {
     let sqlite: Database;
-    let db: SQLiteBunDatabase<typeof relations>;
+    let db: SQLiteBunDatabase;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle({ client: sqlite, relations });
+        db = drizzle({ client: sqlite });
         dbContext.db = db;
 
         migrate(db, { migrationsFolder: "./drizzle" });
@@ -152,7 +151,7 @@ it("computes the pre-computed totals owned by the statistics component", async (
 });
 
 
-async function seedStatisticsData(db: SQLiteBunDatabase<typeof relations>) {
+async function seedStatisticsData(db: SQLiteBunDatabase) {
     await db.insert(user).values({
         id: 1,
         name: "stats-user",

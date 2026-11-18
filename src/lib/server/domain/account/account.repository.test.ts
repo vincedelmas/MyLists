@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {eq, getTableName, sql} from "drizzle-orm";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
@@ -13,7 +12,7 @@ import {InactiveAccountRepository} from "@/lib/server/domain/account/inactive-ac
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase }));
 
 
 vi.mock("@/lib/server/database/db", () => ({
@@ -43,7 +42,7 @@ describe("collection likes after account deletion", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        const db = drizzle({ client: sqlite, relations });
+        const db = drizzle({ client: sqlite });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {seedMediaTags} from "@/lib/server/domain/media/tag-test-utils";
 import Database from "bun:sqlite";
@@ -20,7 +19,7 @@ import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.qu
 import {getDynamicListEditorFilterOptions, getDynamicListResults, getDynamicListSummaries, getDynamicListSummary} from "./dynamic-lists.queries";
 
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return dbContext.db; } }));
 vi.mock("@/env/client", () => ({ clientEnv: { VITE_BASE_URL: "https://mylists.example.invalid" } }));
 vi.mock("@/env/server", () => ({ serverEnv: { UPLOADS_DIR_NAME: "static" } }));
@@ -36,7 +35,7 @@ describe("dynamic list live queries", () => {
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle({ client: sqlite, relations });
+        dbContext.db = drizzle({ client: sqlite });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
         dbContext.db.insert(schema.user).values([1, 2].map(id => ({

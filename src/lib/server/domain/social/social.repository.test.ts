@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {drizzle} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
@@ -12,7 +11,7 @@ let sqlite: Database;
 
 beforeEach(() => {
     sqlite = new Database(":memory:");
-    dbContext.db = drizzle({ client: sqlite, relations });
+    dbContext.db = drizzle({ client: sqlite });
     migrate(dbContext.db, { migrationsFolder: "./drizzle" });
     sqlite.run("PRAGMA foreign_keys = ON");
     sqlite.query(`WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x < 1001)

@@ -7,8 +7,8 @@ import {and, asc, count, desc, eq, inArray, like, sql, type SQL} from "drizzle-o
 import {account, collectionLikes, collections, user, userMediaSettings} from "@/lib/server/database/schema";
 
 
-const orderByMediaType = (column = userMediaSettings.mediaType) => sql`
-    CASE ${column}
+const orderByMediaType = sql`
+    CASE ${userMediaSettings.mediaType}
         WHEN 'series' THEN 1
         WHEN 'anime' THEN 2
         WHEN 'movies' THEN 3
@@ -170,7 +170,7 @@ export class AccountRepository {
             })
             .from(userMediaSettings)
             .where(eq(userMediaSettings.userId, userId))
-            .orderBy(orderByMediaType());
+            .orderBy(orderByMediaType);
     }
 
     static updateUserSettings(userId: number, payload: Partial<typeof user.$inferInsert>) {
@@ -248,17 +248,7 @@ export class AccountRepository {
     }
 
     static async findByUsername(username: string) {
-        const userResult = await getDbClient().query.user.findFirst({
-            where: { name: username },
-            with: {
-                userMediaSettings: {
-                    orderBy: settings => asc(orderByMediaType(settings.mediaType)),
-                },
-            },
-        });
-
-        if (!userResult) return null;
-        return userResult;
+        return this._findWithMediaSettings(eq(user.name, username), orderByMediaType) ?? null;
     }
 
     static async updateShowOnboarding(userId: number) {
@@ -269,10 +259,25 @@ export class AccountRepository {
     }
 
     static findById(userId: number) {
-        return getDbClient().query.user.findFirst({
-            where: { id: userId },
-            with: { userMediaSettings: true },
-        }).sync();
+        return this._findWithMediaSettings(eq(user.id, userId));
+    }
+
+    private static _findWithMediaSettings(where: SQL, orderBy?: SQL) {
+        const query = getDbClient()
+            .select({
+                user,
+                settings: userMediaSettings,
+            }).from(user)
+            .leftJoin(userMediaSettings, eq(userMediaSettings.userId, user.id))
+            .where(where);
+
+        const rows = (orderBy ? query.orderBy(orderBy) : query).all();
+        if (!rows.length) return undefined;
+
+        return {
+            ...rows[0].user,
+            userMediaSettings: rows.flatMap(({ settings }) => settings ? [settings] : []),
+        };
     }
 
     private static _deleteUserAccounts(where: SQL) {

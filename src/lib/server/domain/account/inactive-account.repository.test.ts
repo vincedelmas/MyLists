@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {inactiveAccountDeletion, user} from "@/lib/server/database/schema";
@@ -24,11 +23,11 @@ const { InactiveAccountRepository } = await import("@/lib/server/domain/account/
 
 describe("InactiveAccountRepository", () => {
     let sqlite: Database;
-    let db: SQLiteBunDatabase<typeof relations>;
+    let db: SQLiteBunDatabase;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle({ client: sqlite, relations });
+        db = drizzle({ client: sqlite });
         dbContext.db = db;
 
         migrate(db, { migrationsFolder: "./drizzle" });

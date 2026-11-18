@@ -1,8 +1,8 @@
 import {NotifTab} from "@/lib/types/notifications.types";
-import {and, desc, eq, inArray, ne, sql} from "drizzle-orm";
 import {MediaType, SocialNotifType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {mediaNotifications, socialNotifications} from "@/lib/server/database/schema";
+import {and, desc, eq, getTableColumns, inArray, ne, sql} from "drizzle-orm";
+import {featureRequests, mediaNotifications, socialNotifications, user} from "@/lib/server/database/schema";
 
 
 export class NotificationsRepository {
@@ -89,21 +89,25 @@ export class NotificationsRepository {
 
     static async getLastNotifications(userId: number, type: NotifTab, limit = 8) {
         if (type === "social") {
-            return getDbClient().query.socialNotifications.findMany({
-                where: { userId },
-                with: {
-                    featureRequest: { columns: { id: true, title: true } },
-                    actor: { columns: { id: true, name: true, image: true } },
-                },
-                orderBy: { createdAt: "desc" },
-            });
+            return getDbClient()
+                .select({
+                    ...getTableColumns(socialNotifications),
+                    actor: { id: user.id, name: user.name, image: user.image },
+                    featureRequest: { id: featureRequests.id, title: featureRequests.title },
+                })
+                .from(socialNotifications)
+                .innerJoin(user, eq(user.id, socialNotifications.actorId))
+                .leftJoin(featureRequests, eq(featureRequests.id, socialNotifications.featureRequestId))
+                .where(eq(socialNotifications.userId, userId))
+                .orderBy(desc(socialNotifications.createdAt));
         }
 
-        return getDbClient().query.mediaNotifications.findMany({
-            where: { userId },
-            orderBy: { createdAt: "desc" },
-            limit,
-        });
+        return getDbClient()
+            .select()
+            .from(mediaNotifications)
+            .where(eq(mediaNotifications.userId, userId))
+            .orderBy(desc(mediaNotifications.createdAt))
+            .limit(limit);
     }
 
     static async countUnreadNotifications(userId: number) {

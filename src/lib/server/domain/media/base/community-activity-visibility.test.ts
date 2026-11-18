@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
@@ -23,11 +22,11 @@ const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime
 
 describe("media community activity visibility", () => {
     let sqlite: Database;
-    let db: SQLiteBunDatabase<typeof relations>;
+    let db: SQLiteBunDatabase;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle({ client: sqlite, relations });
+        db = drizzle({ client: sqlite });
         dbContext.db = db;
 
         migrate(db, { migrationsFolder: "./drizzle" });

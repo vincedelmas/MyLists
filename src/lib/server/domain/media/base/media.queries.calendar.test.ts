@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {drizzle} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
@@ -27,7 +26,7 @@ describe.each([moviesServerDefinition, gamesServerDefinition])("$identity.mediaT
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        const db = drizzle({ client: sqlite, relations });
+        const db = drizzle({ client: sqlite });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

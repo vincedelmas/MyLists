@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import Database from "bun:sqlite";
 import {eq, getTableName, sql} from "drizzle-orm";
 import {Status} from "@/lib/utils/enums";
@@ -25,13 +24,13 @@ const { createMediaIngestionService } = await import("@/lib/server/api-providers
 
 describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaType repository", definition => {
     let sqlite: Database;
-    let db: SQLiteBunDatabase<typeof relations>;
+    let db: SQLiteBunDatabase;
     const repository = createTvRepository(definition);
     const { mediaTable, listTable, epsPerSeasonTable } = definition.repository.tables;
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
-        db = drizzle({ client: sqlite, relations });
+        db = drizzle({ client: sqlite });
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
@@ -91,12 +90,12 @@ it("filters next calendar episodes by range, owner and eligible status", async (
 
 describe("TvRepository season refresh", () => {
     let sqlite: Database;
-    let db: SQLiteBunDatabase<typeof relations>;
+    let db: SQLiteBunDatabase;
     let repository: ReturnType<typeof createTvRepository>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
-        db = drizzle({ client: sqlite, relations });
+        db = drizzle({ client: sqlite });
         dbContext.db = db;
         repository = createTvRepository(seriesServerDefinition);
 

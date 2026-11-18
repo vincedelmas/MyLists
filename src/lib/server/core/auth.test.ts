@@ -1,4 +1,3 @@
-import {relations} from "@/lib/server/database/relations";
 import path from "node:path";
 import {tmpdir} from "node:os";
 import {eq, ne} from "drizzle-orm";
@@ -16,7 +15,7 @@ import {MCP_READ_SCOPE, MCP_RESOURCE, MCP_WRITE_SCOPE} from "@/lib/server/core/m
 
 const mailMocks = vi.hoisted(() => ({ sendEmail: vi.fn().mockResolvedValue(undefined) }));
 
-const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase<typeof relations> }));
+const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatabase }));
 const imageMocks = vi.hoisted(() => ({
     lookup: vi.fn(),
     httpsGet: vi.fn(),
@@ -55,7 +54,7 @@ describe("authentication", () => {
     beforeAll(async () => {
         imageMocks.env.BASE_UPLOADS_LOCATION = await mkdtemp(path.join(tmpdir(), "mylists-auth-avatar-test-"));
         sqlite = new Database(":memory:");
-        dbContext.db = drizzle({ client: sqlite, relations });
+        dbContext.db = drizzle({ client: sqlite });
         migrate(dbContext.db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
 

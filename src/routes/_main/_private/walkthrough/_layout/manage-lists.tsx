@@ -87,7 +87,7 @@ function ListsOnboarding() {
                 description="Every item in your grid displays its most important info at a glance. Here is how to read your cards:"
             >
                 <OnboardingDemoBox>
-                    <div className="w-48 sm:w-56">
+                    <div inert className="w-48 sm:w-56">
                         <BaseMediaListItem
                             rating={7.5}
                             isCurrent={true}

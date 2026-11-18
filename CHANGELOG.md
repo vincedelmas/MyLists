@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.0.0](https://github.com/vincedelmas/MyLists/compare/v3.21.1...v4.0.0) (2026-11-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* **db:** baseline Drizzle migrations at 0070
+
+### Code Refactoring
+
+* **db:** baseline Drizzle migrations at 0070 ([1fdd6d5](https://github.com/vincedelmas/MyLists/commit/1fdd6d53c51586445ac683357d6ca71b4fe22218))
+* **db:** replace relational queries and remove unused relations ([0990edb](https://github.com/vincedelmas/MyLists/commit/0990edb63b25991e375b2460ef708268ae1be9cb))
+* **db:** upgrade Drizzle to 1.0.0-rc.5 ([b853e24](https://github.com/vincedelmas/MyLists/commit/b853e24ffbbbe5449e59a2e86aaa665557ef4174))
+
 ## [3.21.1](https://github.com/vincedelmas/MyLists/compare/v3.21.0...v3.21.1) (2026-11-17)
 
 

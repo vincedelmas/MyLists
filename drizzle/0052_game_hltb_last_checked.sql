@@ -1,1 +1,0 @@
-ALTER TABLE `games` ADD `hltb_last_checked_at` text;

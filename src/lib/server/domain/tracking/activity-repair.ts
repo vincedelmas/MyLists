@@ -4,43 +4,49 @@ import {isDeepStrictEqual} from "node:util";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
 import {allocateActivityCorrection} from "@/lib/utils/media/activity";
-import migrationJournal from "../../../../../drizzle/meta/_journal.json";
 
 
 // The version date is not the deployment date. Only infer the old boolean encoding
 // for additions predating this version; later ambiguous counts use the list ceiling.
-const legacyRedoBefore = migrationJournal.entries.find(entry => entry.tag === "0040_explicit_monthly_activity")!.when;
-// Historical repair heuristic, matching the five-minute window used to merge feed edits.
+const legacyRedoBefore = 1784809270225; // Migration 0040_explicit_monthly_activity.
+// Historical repair heuristic, matching five-minute window used to merge feed edits.
 const rapidCompletionUndoMs = 5 * 60 * 1000;
 
 
-type RepairFilters = { username?: string; mediaType?: MediaType; evidenceOnly?: boolean };
+type RepairFilters = {
+    username?: string;
+    mediaType?: MediaType;
+    evidenceOnly?: boolean;
+};
+
 
 type Candidate = {
-    userId: number;
-    username: string;
-    mediaId: number;
-    mediaType: MediaType;
     title: string;
-    currentProgress: number | null;
-    currentRedo: number | null;
-    currentStatus: string | null;
-    lastUpdated: string | null;
-    recordedProgress: number;
+    userId: number;
+    mediaId: number;
+    username: string;
+    mediaType: MediaType;
     recordedRedo: number;
-    recordedCompletions: number;
     malformedMonths: number;
+    recordedProgress: number;
+    currentRedo: number | null;
+    lastUpdated: string | null;
+    recordedCompletions: number;
+    currentStatus: string | null;
+    currentProgress: number | null;
 };
+
 
 type ActivityRow = {
     id: number;
+    hidden: boolean;
+    redoGained: number;
     monthBucket: string;
     progressGained: number;
-    redoGained: number;
     hadCompletion: boolean;
-    hidden: boolean;
     lastActivityAt: string;
 };
+
 
 type HistoryRow = {
     id: number;
@@ -49,28 +55,29 @@ type HistoryRow = {
     payload: string | null;
 };
 
+
 type Snapshot = {
     id: number;
     userId: number;
     mediaId: number;
-    mediaType: MediaType;
     timestamp: string;
-    previousId: number | null;
-    progressTotal: number;
     redoTotal: number;
-    progressDelta: number | null;
-    redoDelta: number | null;
-    entriesDelta: number | null;
+    mediaType: MediaType;
     statusCounts: string;
+    progressTotal: number;
+    redoDelta: number | null;
+    previousId: number | null;
+    entriesDelta: number | null;
+    progressDelta: number | null;
     previousStatusCounts: string | null;
 };
 
 type ActivityRepairEntry = Candidate & {
     id: string;
-    fingerprint: string;
-    repairKind: "history" | "ceiling" | "orphan";
-    disposition: "proposal" | "review";
     reasons: string[];
+    fingerprint: string;
+    disposition: "proposal" | "review";
+    repairKind: "history" | "ceiling" | "orphan";
     historyIssues: string[];
     notes: string[];
     allocations: { monthBucket: string; source: "snapshots" | "earliest"; progressRemoved: number; redoRemoved: number }[];

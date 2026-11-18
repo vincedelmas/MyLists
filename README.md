@@ -62,6 +62,8 @@ heap limit; Bun's bundled SQLite disables that accounting starting in Bun 1.4.4.
    bun run new:db
    ```
 
+   For an existing database, follow the [database upgrade instructions](#database-upgrades).
+
 5. **Create a new user**
    To create a new user without email verification, OAuth2 setup, and with different roles (user, manager, admin), you can use the CLI:
 
@@ -188,6 +190,25 @@ When `LLM_API_KEY` is absent, direct and scheduled enrichment runs are skipped w
 
 ---
 
+## Database upgrades
+
+Back up your SQLite database before upgrading. The current migration baseline represents
+`0070_simplify_user_achievements`. Databases with `0070` already recorded in
+`__drizzle_migrations` skip the baseline and apply subsequent migrations normally.
+
+If your database or backup has tracked migrations but is older than `0070`, bring it
+up to the cutoff by running `bun run dk migrate` from a separate checkout of
+release `v3.21.1` with `DATABASE_URL` pointing to that database. Then run the
+current migrations from the current release:
+
+```bash
+bun run dk migrate
+```
+
+Older versions of `new:db` used `drizzle-kit push`, which did not record migration
+history. A populated database without a migration ledger requires a separate schema
+and data review before it can be adopted at the cutoff.
+
 ## Assistant connections (MCP)
 
 MyLists supports assistants that use **OAuth + MCP Streamable HTTP**.
@@ -197,11 +218,7 @@ Users can grant read-only or write access and disconnect it at any time.
 ### Setup
 
 Set `VITE_BASE_URL` to your public HTTPS origin in production.
-For an existing database:
-
-```bash
-bun run dk migrate
-```
+For an existing database, follow the [database upgrade instructions](#database-upgrades).
 
 New databases created with `bun run new:db` already include the OAuth tables.
 No separate MCP server or shared API key is required.

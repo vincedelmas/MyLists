@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX `achievement_codeName_unique` ON `achievement` (`code_name`);

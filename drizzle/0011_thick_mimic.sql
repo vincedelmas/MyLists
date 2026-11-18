@@ -1,1 +1,0 @@
-ALTER TABLE `followers` ADD COLUMN `status` text DEFAULT 'accepted' NOT NULL;

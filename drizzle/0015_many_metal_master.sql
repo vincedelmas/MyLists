@@ -1,1 +1,0 @@
-ALTER TABLE `games` ADD `steam_api_id` text;

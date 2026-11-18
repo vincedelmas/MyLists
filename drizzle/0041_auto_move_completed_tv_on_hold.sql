@@ -1,1 +1,0 @@
-ALTER TABLE `user` ADD `auto_move_completed_tv_to_on_hold` integer DEFAULT true NOT NULL;

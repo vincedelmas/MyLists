@@ -1,1 +1,0 @@
-ALTER TABLE `user_media_stats_history` ADD `media_id` integer;

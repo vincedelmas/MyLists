@@ -1,14 +1,11 @@
 import Database from "bun:sqlite";
 import {expect, it} from "vitest";
-import {readMigrationFiles} from "drizzle-orm/migrator";
+import {drizzle} from "drizzle-orm/bun-sqlite";
+import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 
 
-it.each([false, true])("keeps existing data and removes a deleted title's details (foreign keys: %s)", foreignKeys => {
+it("cascades detail deletion for untracked titles and preserves shared tags", () => {
     const db = new Database(":memory:");
-    const migrations = readMigrationFiles({ migrationsFolder: "./drizzle" });
-    const index = migrations.findIndex(migration => migration.sql.some(statement =>
-        statement.includes("CREATE TABLE `__new_series_actors`") && statement.includes("ON DELETE cascade"),
-    ));
     const details = {
         movies: ["genre", "actors", "tags"],
         series: ["genre", "actors", "network", "episodes_per_season", "tags"],
@@ -19,13 +16,8 @@ it.each([false, true])("keeps existing data and removes a deleted title's detail
     };
 
     try {
-        expect(index).toBeGreaterThan(0);
-        db.transaction(() => {
-            for (const migration of migrations.slice(0, index)) {
-                for (const statement of migration.sql) db.run(statement);
-            }
-        })();
-        db.run(`PRAGMA foreign_keys = ${foreignKeys ? "ON" : "OFF"}`);
+        migrate(drizzle(db), { migrationsFolder: "./drizzle" });
+        db.run("PRAGMA foreign_keys = ON");
         db.run(`INSERT INTO user (id, name, email, email_verified, created_at, updated_at)
             VALUES (1, 'owner', 'owner@example.invalid', 1, '2026-01-01', '2026-01-01')`);
 
@@ -69,18 +61,6 @@ it.each([false, true])("keeps existing data and removes a deleted title's detail
             }
         }
         const tagsBefore = db.query("SELECT * FROM media_tags ORDER BY id").all();
-        const indexesBefore = db.query("SELECT name, tbl_name FROM sqlite_schema WHERE type = 'index' ORDER BY name").all();
-
-        db.transaction(() => {
-            for (const statement of migrations[index].sql) db.run(statement);
-        })();
-
-        for (const [table, rows] of before) {
-            expect(db.query(`SELECT * FROM ${table} ORDER BY 1`).all()).toEqual(rows);
-        }
-        expect(db.query("SELECT name, tbl_name FROM sqlite_schema WHERE type = 'index' ORDER BY name").all()).toEqual(indexesBefore);
-        expect(db.query("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: Number(foreignKeys) });
-        db.run("PRAGMA foreign_keys = ON");
 
         for (const [type, suffixes] of Object.entries(details)) {
             expect(() => db.run(`DELETE FROM ${type} WHERE id IN (1, 2)`)).toThrow("FOREIGN KEY constraint failed");

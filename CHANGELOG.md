@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.1](https://github.com/vincedelmas/MyLists/compare/v4.1.0...v4.1.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **walkthrough:** prevent demo card requests ([0381ed9](https://github.com/vincedelmas/MyLists/commit/0381ed93b36e3e53276abf3282bbcfd4eb367836))
+
 ## [4.1.0](https://github.com/vincedelmas/MyLists/compare/v4.0.0...v4.1.0) (2026-11-18)
 
 

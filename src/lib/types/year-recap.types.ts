@@ -64,6 +64,7 @@ export type YearRecapData = {
     topTitles: YearRecapTitle[];
     media: YearRecapMediaSummary[];
     availableMediaTypes: MediaType[];
+    topTitlesByMedia: YearRecapTitle[];
     busiestMonth: YearRecapMonth | null;
     mostRepeatedTitle: YearRecapTitle | null;
     totals: {

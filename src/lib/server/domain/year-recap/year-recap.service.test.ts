@@ -75,6 +75,10 @@ describe("YearRecapService", () => {
         });
         expect(recap.busiestMonth?.month).toBe(`${year}-02`);
         expect(recap.media.map((item) => item.mediaType)).toEqual([MediaType.BOOKS, MediaType.MOVIES]);
+        expect(recap.topTitlesByMedia).toMatchObject([
+            { mediaType: MediaType.BOOKS, name: "The Book", hours: 4.25 },
+            { mediaType: MediaType.MOVIES, name: "The Movie", hours: 2 },
+        ]);
     });
 
 });

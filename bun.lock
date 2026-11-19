@@ -10,7 +10,9 @@
         "@better-auth/oauth-provider": "1.7.25",
         "@fontsource-variable/noto-emoji": "5.3.2",
         "@fontsource-variable/noto-sans-jp": "5.3.1",
+        "@fontsource/fira-sans-condensed": "5.3.0",
         "@fontsource/open-sans": "5.3.0",
+        "@fontsource/source-serif-4": "5.3.1",
         "@hookform/resolvers": "^7.0.7",
         "@libsql/client": "^0.18.0",
         "@modelcontextprotocol/sdk": "1.32.2",
@@ -239,7 +241,11 @@
 
     "@fontsource-variable/noto-sans-jp": ["@fontsource-variable/noto-sans-jp@5.3.1", "", {}, "sha512-/anGvJFc5y36f8DJ+3TSh2+KAvaRLA9PaLUMvneeY5s4j8m+8X4F3lE/sjTuG9YI5BX4sykvCk4TuJMG7ecMRQ=="],
 
+    "@fontsource/fira-sans-condensed": ["@fontsource/fira-sans-condensed@5.3.0", "", {}, "sha512-aYiPJnAwfvhHW1Yra+YPGdFvhvJhQax1wHb6aa6979ixPe51CspvxgZTJ8JNfIs3Gu7UcclUl6d2MuDnw1wsdg=="],
+
     "@fontsource/open-sans": ["@fontsource/open-sans@5.3.0", "", {}, "sha512-V1bdMlGNyZrJwzrdusshMOw2YR0aqYDL7kOo9dkxUEKl8dFv66A9HLckOOXl572sG/7ohhDQrCrTFGSn9LZcSw=="],
+
+    "@fontsource/source-serif-4": ["@fontsource/source-serif-4@5.3.1", "", {}, "sha512-cWcTCXjYYrgF9A67fThVir1VSc0lPEYmwQ6jA4pPt01s2MSCi/maINUcZoCzaqnU8fyUReDO97eGcBUkHgOeug=="],
 
     "@hono/node-server": ["@hono/node-server@2.1.9", "", { "peerDependencies": { "hono": "^4 || ^5.0.0-0" } }, "sha512-Sk4NQd3GFY0WZWCzndwFMPwJhtD0y9qjsQ+pjID0/03nK9pxyBCUoUHCho8QYBLBVhi0ssL8UkNPHqbgSOFPIQ=="],
 

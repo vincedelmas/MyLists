@@ -178,6 +178,7 @@ export class YearRecapService {
             availableMediaTypes,
             scope: mediaType ?? "all",
             topTitles: rankedTitles.slice(0, 6),
+            topTitlesByMedia: media.flatMap(({ mediaType }) => rankedTitles.find((title) => title.mediaType === mediaType) ?? []),
             totals: {
                 hours: totalHours,
                 longestActiveStreak,

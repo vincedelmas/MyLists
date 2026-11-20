@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.2.0](https://github.com/vincedelmas/MyLists/compare/v4.1.1...v4.2.0) (2026-11-20)
+
+
+### Features
+
+* **books:** transition books to work-based model with edition snapshots and admin merge tool ([1f48808](https://github.com/vincedelmas/MyLists/commit/1f48808eb395c5a62ba5989e573c52b6f29dc8d0))
+* redesign year recap share images ([7c880e3](https://github.com/vincedelmas/MyLists/commit/7c880e383d4be7ccb3c45c4c483b09d3a368d690))
+
 ## [4.1.1](https://github.com/vincedelmas/MyLists/compare/v4.1.0...v4.1.1) (2026-11-18)
 
 

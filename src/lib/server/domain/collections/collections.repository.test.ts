@@ -242,7 +242,7 @@ describe("collection media references", () => {
             items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }, { mediaType: MediaType.BOOKS, mediaId: 1 }, { mediaType: MediaType.GAMES, mediaId: 1 }],
         });
         dbContext.db.insert(schema.moviesList).values({ userId: 2, mediaId: 1, status: Status.COMPLETED, rating: 9, customCover: "viewer.jpg" }).run();
-        dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.COMPLETED, rating: 10, customCover: "owner-private.jpg" }).run();
+        dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.COMPLETED, rating: 10, customCover: "owner-private.jpg", customTitle: "Book 1", customPages: 250 }).run();
         const viewer = toActor({ id: 2, role: RoleType.USER });
         const tracked = await service.getCollectionDetails(collectionId, "read", viewer, { library: "in" });
         expect(tracked).toMatchObject({ total: 1, items: [{ mediaType: MediaType.MOVIES, mediaId: 1, inUserList: true }] });
@@ -263,7 +263,7 @@ describe("collection media references", () => {
         const tracking = { userId: 2, mediaId: 1, status: Status.COMPLETED, rating: 8, favorite: true, comment: "Viewer note" };
         dbContext.db.update(schema.user).set({ ratingSystem: RatingSystemType.FEELING }).where(eq(schema.user.id, 2)).run();
         dbContext.db.insert(schema.moviesList).values({ ...tracking, redo: 3 }).run();
-        dbContext.db.insert(schema.booksList).values({ ...tracking, actualPage: 123, redo: 2, customCover: "viewer-book.jpg" }).run();
+        dbContext.db.insert(schema.booksList).values({ ...tracking, actualPage: 123, redo: 2, customCover: "viewer-book.jpg", customTitle: "Book 1", customPages: 250 }).run();
         dbContext.db.insert(schema.gamesList).values({ ...tracking, playtime: 120 }).run();
         dbContext.db.insert(schema.mangaList).values({ ...tracking, currentChapter: 7, redo: 1 }).run();
         dbContext.db.insert(schema.seriesList).values({ ...tracking, currentSeason: 1, currentEpisode: 4, redo: 2 }).run();
@@ -274,7 +274,7 @@ describe("collection media references", () => {
             { userId: 2, mediaId: 1, name: "Viewer tag" },
             { userId: 1, mediaId: 1, name: "Owner private tag" },
         ]);
-        dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.IN_PROGRESS, actualPage: 99, comment: "Owner private note" }).run();
+        dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.IN_PROGRESS, actualPage: 99, comment: "Owner private note", customTitle: "Book 1", customPages: 250 }).run();
 
         const viewer = await service.getCollectionDetails(collectionId, "read", toActor({ id: 2, role: RoleType.USER }));
         expect(viewer.items).toHaveLength(6);
@@ -308,7 +308,7 @@ describe("collection media references", () => {
             { userId: 2, mediaId: 1, status: Status.COMPLETED, favorite: true, rating: 9 },
             { userId: 2, mediaId: 2, status: Status.COMPLETED },
         ]).run();
-        dbContext.db.insert(schema.booksList).values({ userId: 2, mediaId: 1, status: Status.IN_PROGRESS, favorite: false, rating: 5 }).run();
+        dbContext.db.insert(schema.booksList).values({ userId: 2, mediaId: 1, status: Status.IN_PROGRESS, favorite: false, rating: 5, customTitle: "Book 1", customPages: 250 }).run();
         dbContext.db.insert(schema.gamesList).values({ userId: 1, mediaId: 1, status: Status.COMPLETED }).run();
         dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 2, name: "Outside collection" }]).run();
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 1, name: "Fantasy" }).run();

@@ -11,6 +11,7 @@ type Facet = {
     role: string;
     table?: string;
     column?: string;
+    fromList?: boolean;
     condition?: string;
 };
 
@@ -125,13 +126,15 @@ const mediaProjections: MediaProjection[] = [
         type: "books",
         columns: {
             redo: "l.redo",
-            page_count: "m.pages",
-            language: "m.language",
+            title: "l.custom_title",
             progress_total: "l.total",
+            page_count: "l.custom_pages",
+            language: "l.custom_language",
             current_page: "l.actual_page",
+            release_date: "l.custom_release_date",
         },
         people: [{ table: "books_authors", role: "author" }],
-        attributes: [{ column: "publishers", role: "publisher" }],
+        attributes: [{ column: "custom_publisher", role: "publisher", fromList: true }],
     },
     {
         type: "manga",
@@ -222,7 +225,9 @@ export function buildQuerySnapshot(source: Database, userId: number, limits = QU
                         JOIN media_tags tag ON tag.id = t.tag_id`);
 
                     copyRows("activity", `${ownerProfile} SELECT a.user_id AS profile_id, a.media_type, a.media_id,
-                        (SELECT name FROM ${type} WHERE id = a.media_id) AS title,
+                        ${type === "books"
+                        ? `COALESCE((SELECT custom_title FROM books_list WHERE user_id = a.user_id AND media_id = a.media_id), (SELECT name FROM books WHERE id = a.media_id))`
+                        : `(SELECT name FROM ${type} WHERE id = a.media_id)`} AS title,
                         a.month_bucket, a.progress_gained, a.redo_gained, a.had_completion, a.last_activity_at ${activeActivity}`);
 
                     if (type === "series" || type === "anime") {
@@ -236,12 +241,15 @@ export function buildQuerySnapshot(source: Database, userId: number, limits = QU
                         FROM ${type}_genre f JOIN scoped_media v ON v.media_id = f.media_id`);
 
                     for (const [table, facets, roleColumn] of [["media_people", people, "role"], ["media_attributes", attributes, "kind"]] as const) {
-                        for (const { table: facetTable, column, role, condition } of facets) {
+                        for (const { table: facetTable, column, fromList, role, condition } of facets) {
                             copyRows(table, facetTable
                                 ? `${scopedMedia} SELECT DISTINCT '${type}' AS media_type, f.media_id, '${role}' AS ${roleColumn}, f.name
                                     FROM ${facetTable} f JOIN scoped_media v ON v.media_id = f.media_id ${condition ? `WHERE ${condition}` : ""}`
-                                : `${scopedMedia} SELECT '${type}' AS media_type, m.id AS media_id, '${role}' AS ${roleColumn}, m.${column} AS name
-                                    FROM ${type} m JOIN scoped_media v ON v.media_id = m.id WHERE m.${column} IS NOT NULL AND m.${column} <> ''`);
+                                : fromList
+                                    ? `${ownerProfile} SELECT DISTINCT '${type}' AS media_type, l.media_id, '${role}' AS ${roleColumn}, l.${column} AS name
+                                        ${activeLists} WHERE l.${column} IS NOT NULL AND l.${column} <> ''`
+                                    : `${scopedMedia} SELECT '${type}' AS media_type, m.id AS media_id, '${role}' AS ${roleColumn}, m.${column} AS name
+                                        FROM ${type} m JOIN scoped_media v ON v.media_id = m.id WHERE m.${column} IS NOT NULL AND m.${column} <> ''`);
                         }
                     }
                 }

@@ -28,22 +28,28 @@ const tables = {
 const sortColumns = {
     ...getCommonMediaSortColumns(tables),
     redo: booksList.redo,
-    pages: books.pages,
+    pages: sql`COALESCE(${booksList.customPages}, ${books.pages})`,
+    title: sql`COALESCE(${booksList.customTitle}, ${books.name}) COLLATE NOCASE`,
+    releaseDate: sql`JULIANDAY(CASE WHEN ${booksList.id} IS NOT NULL THEN ${booksList.customReleaseDate} ELSE ${books.releaseDate} END)`,
 };
 
 
 export const booksServerDefinition = defineServerMediaDefinition({
-    listImport: { csvRowSchema: booksMyListsCSVRowSchema },
+    listImport: {
+        csvRowSchema: booksMyListsCSVRowSchema,
+        optionalHeaders: ["customTitle", "customPages", "customPublisher", "customReleaseDate", "customLanguage"],
+    },
     identity: {
         mediaType: MediaType.BOOKS,
         coverDirectory: "books-covers",
     },
     repository: {
         sortColumns,
-        continuePreviewCondition: not(sql`COALESCE(${books.pages} > 0 AND COALESCE(${booksList.actualPage}, 0) = ${books.pages}, 0)`),
+        continuePreviewCondition: not(sql`COALESCE(${booksList.customPages} > 0 AND COALESCE(${booksList.actualPage}, 0) = ${booksList.customPages}, 0)`),
         filters: defineMediaFilterDefinitions(booksDefinition, tables, {
             langs: {
-                filterColumn: books.language,
+                optionsTable: booksList,
+                filterColumn: booksList.customLanguage,
             },
             authors: {
                 searchable: true,
@@ -54,9 +60,9 @@ export const booksServerDefinition = defineServerMediaDefinition({
         tables,
         listQuery: {
             selection: {
-                pages: books.pages,
-                mediaName: books.name,
+                pages: booksList.customPages,
                 imageCover: books.imageCover,
+                mediaName: booksList.customTitle,
                 ...getTableColumns(booksList),
             },
             defaultSort: getMediaSortLabel(booksDefinition, booksDefinition.sorting.default),
@@ -69,18 +75,6 @@ export const booksServerDefinition = defineServerMediaDefinition({
             },
         },
         categories: {
-            [MediaCategory.LANGUAGE]: {
-                matchExact: true,
-                sourceTable: books,
-                mediaIdColumn: books.id,
-                nameColumn: books.language,
-            },
-            [MediaCategory.PUBLISHER]: {
-                matchExact: true,
-                sourceTable: books,
-                mediaIdColumn: books.id,
-                nameColumn: books.publishers,
-            },
             [MediaCategory.CREATOR]: {
                 sourceTable: booksAuthors,
                 nameColumn: booksAuthors.name,
@@ -95,17 +89,17 @@ export const booksServerDefinition = defineServerMediaDefinition({
         },
         affinity: defineAffinityDefinitions(booksDefinition, {
             langsStats: {
-                metricTable: books,
                 metricIdCol: books.id,
-                metricNameCol: books.language,
+                metricTable: booksList,
                 mediaLinkCol: booksList.mediaId,
+                metricNameCol: booksList.customLanguage,
                 filters: [ne(booksList.status, Status.PLANNED)],
             },
             publishersStats: {
-                metricTable: books,
                 metricIdCol: books.id,
-                metricNameCol: books.publishers,
+                metricTable: booksList,
                 mediaLinkCol: booksList.mediaId,
+                metricNameCol: booksList.customPublisher,
                 filters: [ne(booksList.status, Status.PLANNED)],
             },
             authorsStats: {

@@ -81,30 +81,30 @@ export const createMediaListQueries = <TDef extends AnyServerMediaDefinition>(se
             return getDbClient()
                 .select({
                     mediaId: mediaTable.id,
-                    mediaName: mediaTable.name,
                     mediaCover: mediaTable.imageCover,
                     customCover: listTable.customCover,
-                    releaseDate: mediaTable.releaseDate,
-                })
-                .from(listTable)
+                    mediaName: listTable.customTitle ?? mediaTable.name,
+                    releaseDate: listTable.customReleaseDate ?? mediaTable.releaseDate,
+                }).from(listTable)
                 .where(and(eq(listTable.userId, userId), eq(listTable.favorite, true)))
                 .leftJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
                 .limit(limit);
         },
 
         async searchUserListByName(userId: number, query: string, limit = 10) {
+            const titleColumn = listTable.customTitle ?? mediaTable.name;
+
             return getDbClient()
                 .selectDistinct({
                     mediaId: mediaTable.id,
-                    mediaName: mediaTable.name,
+                    mediaName: titleColumn,
                     mediaCover: mediaTable.imageCover,
                     customCover: listTable.customCover,
-                    releaseDate: mediaTable.releaseDate,
-                })
-                .from(listTable)
+                    releaseDate: listTable.customReleaseDate ?? mediaTable.releaseDate,
+                }).from(listTable)
                 .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-                .where(and(eq(listTable.userId, userId), getMediaNameSearchCondition(mediaTable, query)))
-                .orderBy(asc(mediaTable.name))
+                .where(and(eq(listTable.userId, userId), getMediaNameSearchCondition(mediaTable, query, listTable.customTitle)))
+                .orderBy(asc(titleColumn))
                 .limit(limit);
         },
 

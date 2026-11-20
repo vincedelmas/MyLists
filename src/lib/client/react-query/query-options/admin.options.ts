@@ -1,12 +1,12 @@
 import {SearchType} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
-import {getAdminMissingCovers} from "@/lib/server/functions/admin";
-import type {AdminMissingCoversSearch} from "@/lib/schemas/admin.schema";
-import type {AdminImportsSearch, AdminListsSearch} from "@/lib/schemas/admin.schema";
 import type {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
+import type {AdminBookMergeSearch, AdminImportsSearch, AdminListsSearch, AdminMissingCoversSearch} from "@/lib/schemas/admin.schema";
 import {
     getAdminAchievements,
     getAdminAllUpdatesHistory,
+    getAdminBookMergePreview,
+    getAdminBooksForMerge,
     getAdminImports,
     getAdminImportIssues,
     getAdminLists,
@@ -18,6 +18,7 @@ import {
     getAdminListLogFiles,
     getAdminMediaOverview,
     getAdminMediaRefreshStats,
+    getAdminMissingCovers,
     getAdminOverview,
     getAdminReadLogFile,
     getAdminTasks,
@@ -30,6 +31,7 @@ export type AdminImportJob = AdminImportsData["items"][number];
 export type AdminUsersData = Awaited<ReturnType<typeof getAdminAllUsers>>;
 export type AdminImportsData = Awaited<ReturnType<typeof getAdminImports>>;
 export type AdminLogFilesData = Awaited<ReturnType<typeof getAdminListLogFiles>>;
+export type AdminBooksForMergeData = Awaited<ReturnType<typeof getAdminBooksForMerge>>;
 export type AdminMissingCoversData = Awaited<ReturnType<typeof getAdminMissingCovers>>;
 export type AdminArchivedTasksData = Awaited<ReturnType<typeof getAdminArchivedTasks>>;
 export type AdminApiRequestsData = Awaited<ReturnType<typeof getAdminApiMonitoringStats>>;
@@ -54,6 +56,18 @@ export const adminImportsOptions = (search: AdminImportsSearch) => queryOptions(
 export const adminMissingCoversOptions = (search: AdminMissingCoversSearch) => queryOptions({
     queryKey: ["admin", "missing-covers", search],
     queryFn: () => getAdminMissingCovers({ data: search }),
+});
+
+
+export const adminBookMergeOptions = (search: AdminBookMergeSearch) => queryOptions({
+    queryKey: ["admin", "book-merges", search],
+    queryFn: () => getAdminBooksForMerge({ data: search }),
+});
+
+
+export const adminBookMergePreviewOptions = (targetBookId: number, sourceBookIds: number[]) => queryOptions({
+    queryKey: ["admin", "book-merge-preview", targetBookId, [...sourceBookIds].sort((a, b) => a - b)],
+    queryFn: () => getAdminBookMergePreview({ data: { targetBookId, sourceBookIds } }),
 });
 
 

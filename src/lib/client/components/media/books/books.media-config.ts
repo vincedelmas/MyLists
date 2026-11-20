@@ -1,4 +1,4 @@
-import {Languages, Library, PenLine, XLineTop} from "lucide-react";
+import {PenLine, XLineTop} from "lucide-react";
 import {MediaCategory, MediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
@@ -36,20 +36,6 @@ export const booksMediaConfig = defineMediaConfig({
         extraMetric: "totalRedo",
     },
     categories: {
-        [MediaCategory.LANGUAGE]: {
-            icon: Languages,
-            label: "Language",
-            descriptionVerb: "in",
-            descriptionSuffix: "",
-            sectionTitle: "Catalogue",
-        },
-        [MediaCategory.PUBLISHER]: {
-            icon: Library,
-            label: "Publisher",
-            descriptionSuffix: "",
-            sectionTitle: "Catalogue",
-            descriptionVerb: "published by",
-        },
         [MediaCategory.CREATOR]: {
             icon: PenLine,
             label: "Author",

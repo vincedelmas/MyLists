@@ -3,14 +3,14 @@ import {LogPayload} from "@/lib/types/user-updates.types";
 import {pick, uniqueBy} from "@/lib/utils/arrays-objects";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
 import {Book, BooksList} from "@/lib/server/domain/media/books/books.types";
 import {createMediaService} from "@/lib/server/domain/media/base/media.service";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
-import {createBookSchema, type CreateBookPayload} from "@/lib/schemas/books.schema";
 import {PagePayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
-import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
+import {createBookSchema, type CreateBookPayload, type UpdateUserBookDetailsPayload} from "@/lib/schemas/books.schema";
 import {MANUAL_BOOK_ID_PREFIX, BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 
 
@@ -84,30 +84,48 @@ export function createBooksService(repository: BooksRepository, definition: Book
         withTransaction(() => repository.updateMediaWithDetails({ mediaData, authorsData }));
     }
 
-    async function updateDefaultCover(mediaId: number, payload: { imageUrl?: string; imageFile?: File }) {
-        const { coverDirectory } = identity;
-
-        const media = repository.findById(mediaId);
+    function updateUserCustomDetails(userId: number, payload: UpdateUserBookDetailsPayload) {
+        const media = repository.findById(payload.mediaId);
         if (!media) throw notFound();
 
-        const currentCover = media.imageCover.split("/").pop();
-        if (currentCover !== "default.jpg") {
-            throw new FormattedError("Cover already set for this book.");
+        const oldState = repository.findUserMedia(userId, payload.mediaId);
+        if (!oldState) throw new FormattedError("Media not in your list");
+
+        let total = oldState.total;
+        let actualPage = oldState.actualPage;
+
+        if (payload.customPages !== oldState.customPages) {
+            const currentPage = oldState.actualPage ?? 0;
+            if (oldState.status !== Status.COMPLETED && oldState.status !== Status.PLANNED && currentPage > payload.customPages) {
+                throw new ValidationError("customPages", `Total pages cannot be less than your current page (${currentPage}).`);
+            }
+
+            if (oldState.status === Status.COMPLETED) {
+                actualPage = payload.customPages;
+                total = payload.customPages * (1 + oldState.redo);
+            }
+            else if (oldState.status === Status.PLANNED) {
+                actualPage = 0;
+                total = 0;
+            }
+            else {
+                total = currentPage + (oldState.redo * payload.customPages);
+            }
         }
 
-        let imageName;
-        if (payload.imageFile) {
-            imageName = await saveUploadedImage({ file: payload.imageFile, dirSaveName: coverDirectory });
-        }
-        else if (payload.imageUrl) {
-            imageName = await saveImageFromUrl({ imageUrl: payload.imageUrl, dirSaveName: coverDirectory });
-        }
+        const newState = repository.updateUserMediaDetails(userId, payload.mediaId, {
+            total,
+            actualPage,
+            customTitle: payload.customTitle,
+            customPages: payload.customPages,
+            customLanguage: payload.customLanguage,
+            customPublisher: payload.customPublisher,
+            customReleaseDate: payload.customReleaseDate,
+        });
 
-        if (!imageName || imageName === "default.jpg") {
-            throw new FormattedError("Could not update the book cover. Please choose another one.");
-        }
+        const delta = service.calculateDeltaStats(oldState, newState, media);
 
-        withTransaction(() => repository.updateMediaWithDetails({ mediaData: { apiId: media.apiId, imageCover: imageName } }));
+        return { media, newState, delta };
     }
 
     async function batchBooksWithoutGenres(batchSize: number) {
@@ -139,22 +157,22 @@ description: ${book.synopsis}
         withTransaction(() => repository.updateMediaWithDetails({ mediaData, genresData }));
     }
 
-    function updateRedoHandler(currentState: BooksList, payload: RedoPayload, media: Book): [BooksList, LogPayload] {
+    function updateRedoHandler(currentState: BooksList, payload: RedoPayload, _media: Book): [BooksList, LogPayload] {
         const newState = { ...currentState, redo: payload.redo };
         const logPayload = { oldValue: currentState.redo, newValue: payload.redo };
 
-        newState.total = (currentState.actualPage ?? 0) + (payload.redo * media.pages);
+        newState.total = (currentState.actualPage ?? 0) + (payload.redo * currentState.customPages);
 
         return [newState, logPayload];
     }
 
-    function updateStatusHandler(currentState: BooksList, payload: StatusPayload, media: Book): [BooksList, LogPayload] {
+    function updateStatusHandler(currentState: BooksList, payload: StatusPayload, _media: Book): [BooksList, LogPayload] {
         const newState = { ...currentState, status: payload.status };
         const logPayload = { oldValue: currentState.status, newValue: payload.status };
 
         if (payload.status === Status.COMPLETED) {
-            newState.total = media.pages + (currentState.redo * media.pages);
-            newState.actualPage = media.pages;
+            newState.total = currentState.customPages + (currentState.redo * currentState.customPages);
+            newState.actualPage = currentState.customPages;
         }
         else if (payload.status === Status.PLANNED) {
             newState.redo = 0;
@@ -165,35 +183,35 @@ description: ${book.synopsis}
         return [newState, logPayload];
     }
 
-    function updatePageHandler(currentState: BooksList, payload: PagePayload, media: Book): [BooksList, LogPayload] {
-        if (payload.actualPage > media.pages) {
+    function updatePageHandler(currentState: BooksList, payload: PagePayload, _media: Book): [BooksList, LogPayload] {
+        if (payload.actualPage > currentState.customPages) {
             throw new FormattedError("Invalid page");
         }
 
         const newState = {
             ...currentState,
             actualPage: payload.actualPage,
-            status: media.pages > 0 && payload.actualPage === media.pages
+            status: currentState.customPages > 0 && payload.actualPage === currentState.customPages
                 ? Status.COMPLETED
                 : currentState.status,
         };
 
-        newState.total = payload.actualPage + (currentState.redo * media.pages);
+        newState.total = payload.actualPage + (currentState.redo * currentState.customPages);
 
         return [newState, { oldValue: currentState.actualPage, newValue: payload.actualPage }];
     }
 
     return {
         ...service,
-        prepareManualBook,
-        getMediaEditableFields,
-        updateMediaEditableFields,
-        updateDefaultCover,
-        batchBooksWithoutGenres,
         addGenresToBook,
         updateRedoHandler,
-        updateStatusHandler,
         updatePageHandler,
+        prepareManualBook,
+        updateStatusHandler,
+        getMediaEditableFields,
+        updateUserCustomDetails,
+        batchBooksWithoutGenres,
+        updateMediaEditableFields,
     };
 }
 

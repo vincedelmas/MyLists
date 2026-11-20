@@ -1,13 +1,13 @@
 import {describe, expect, it} from "vitest";
 import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {addMediaToListSchema, editUserTagSchema, updateUserCustomCoverSchema, updateUserMediaSchema} from "@/lib/schemas/user-media.schema";
-import {updateBookCoverSchema} from "@/lib/schemas/media-details.schema";
+import {adminUpdateMediaCoverSchema} from "@/lib/schemas/admin.schema";
 import {MAX_IMAGE_BYTES} from "@/lib/utils/constants";
 
 
 describe.each([
     { name: "custom cover", schema: updateUserCustomCoverSchema, fields: { mediaType: MediaType.MOVIES, mediaId: 1 } },
-    { name: "book cover", schema: updateBookCoverSchema, fields: { mediaId: 1 } },
+    { name: "admin media cover", schema: adminUpdateMediaCoverSchema, fields: { mediaType: MediaType.BOOKS, mediaId: 1 } },
 ])("$name input", ({ schema, fields }) => {
 
     it("limits uploads to non-empty files up to 10MB", () => {

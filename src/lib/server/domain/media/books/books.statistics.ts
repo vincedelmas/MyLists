@@ -1,7 +1,7 @@
 import {Status} from "@/lib/utils/enums";
 import {toHistogramBins} from "@/lib/utils/stats/histogram";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
+import {and, asc, count, ne, sql} from "drizzle-orm";
 import type {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
@@ -9,33 +9,30 @@ import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitio
 
 
 export const createBooksStatistics = (definition: BookServerDefinition = booksServerDefinition) => {
-    const { mediaTable, listTable } = definition.repository.tables;
+    const { listTable } = definition.repository.tables;
 
     const computeAverageDuration = async (userId?: number) => {
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
-            .select({ average: sql<number | null>`avg(${mediaTable.pages})` })
-            .from(mediaTable)
-            .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(mediaTable.pages)))
+            .select({ average: sql<number | null>`avg(${listTable.customPages})` })
+            .from(listTable)
+            .where(and(forUser, ne(listTable.status, Status.PLANNED)))
             .get();
 
         return result?.average ?? null;
     };
 
     const computeDurationDistribution = async (userId?: number) => {
-        const durationBucket = sql<number>`floor(${mediaTable.pages} / 100.0) * 100`;
+        const durationBucket = sql<number>`floor(${listTable.customPages} / 100.0) * 100`;
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const rows = await getDbClient()
             .select({
-                value: count(mediaTable.id),
+                value: count(listTable.mediaId),
                 name: durationBucket.mapWith(String),
-            })
-            .from(mediaTable)
-            .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLANNED), isNotNull(mediaTable.pages)))
+            }).from(listTable)
+            .where(and(forUser, ne(listTable.status, Status.PLANNED)))
             .groupBy(durationBucket)
             .orderBy(asc(durationBucket));
 

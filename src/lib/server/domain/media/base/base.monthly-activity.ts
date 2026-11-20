@@ -112,14 +112,22 @@ export const createMediaMonthlyActivity = ({ definition, repository, durationCol
                 .select({
                     ...selection,
                     rating: listTable.rating,
+                    hasListEntry: listTable.id,
                     favorite: listTable.favorite,
                     customCover: listTable.customCover,
+                    customTitle: listTable.customTitle ? listTable.customTitle : sql<string | null>`NULL`,
+                    customReleaseDate: listTable.customReleaseDate ? listTable.customReleaseDate : sql<string | null>`NULL`,
                 })
                 .from(mediaTable)
                 .leftJoin(listTable, and(eq(listTable.mediaId, mediaTable.id), eq(listTable.userId, userId)))
                 .where(inArray(mediaTable.id, uniqueMediaIds));
 
-            return media.map(({ customCover, ...item }) => ({ ...item, imageCover: customCover ?? item.imageCover }));
+            return media.map(({ customCover, customTitle, customReleaseDate, hasListEntry, ...item }) => ({
+                ...item,
+                name: customTitle ?? item.name,
+                imageCover: customCover ?? item.imageCover,
+                releaseDate: (hasListEntry && listTable.customReleaseDate) ? customReleaseDate : item.releaseDate,
+            }));
         },
 
         hasUserMedia(userId: number, mediaId: number) {

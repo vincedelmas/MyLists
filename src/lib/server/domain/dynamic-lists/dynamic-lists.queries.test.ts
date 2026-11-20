@@ -67,7 +67,15 @@ describe("dynamic list live queries", () => {
             lastUpdated: options.lastUpdated, rating: options.rating, favorite: options.favorite, customCover: options.customCover, comment: options.comment,
         };
         const { listTable } = getServerMediaDefinition(mediaType).repository.tables;
-        dbContext.db.insert(listTable).values({ ...listData, currentSeason: 1, currentEpisode: 0, currentChapter: 0 }).run();
+        dbContext.db.insert(listTable).values({
+            ...listData,
+            currentSeason: 1,
+            currentEpisode: 0,
+            currentChapter: 0,
+            customTitle: commonMedia.name,
+            customPages: 100,
+            customReleaseDate: options.releaseDate,
+        }).run();
     }
 
     function tagId(mediaType: MediaType, name: string, userId = 1) {
@@ -268,7 +276,7 @@ it("ANDs filters, matches any requested tag, and scopes tags to the owner", () =
         }
         dbContext.db.update(schema.movies).set({ directorName: "Director", originalLanguage: "fr" }).where(eq(schema.movies.id, 1)).run();
         dbContext.db.insert(schema.moviesActors).values([{ mediaId: 1, name: "Actor" }, { mediaId: 1, name: "Actor alternate" }]).run();
-        dbContext.db.update(schema.books).set({ language: "en" }).where(eq(schema.books.id, 1)).run();
+        dbContext.db.update(schema.booksList).set({ customLanguage: "en" }).where(eq(schema.booksList.mediaId, 1)).run();
         dbContext.db.insert(schema.booksAuthors).values({ mediaId: 1, name: "Author" }).run();
         dbContext.db.insert(schema.gamesCompanies).values({ mediaId: 1, name: "Studio", developer: true, publisher: false }).run();
         dbContext.db.update(schema.gamesList).set({ platform: GamesPlatformsEnum.PC }).where(eq(schema.gamesList.mediaId, 1)).run();

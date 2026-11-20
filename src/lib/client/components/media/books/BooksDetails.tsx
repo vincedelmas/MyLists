@@ -62,23 +62,13 @@ export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps) => {
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Published By">
-                {media.publishers ?
-                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "publisher", name: media.publishers }}>
-                        {media.publishers}
-                    </Link>
-                    : DEFAULT_DASH_FALLBACK
-                }
+                {media.publishers || DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Release Date">
                 {extractYear(media.releaseDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Language">
-                {media.language ?
-                    <Link to="/details/$mediaType/$category/$name" params={{ mediaType, category: "language", name: media.language }}>
-                        {formatLocaleName(media.language, "language")}
-                    </Link>
-                    : DEFAULT_DASH_FALLBACK
-                }
+                {media.language ? formatLocaleName(media.language, "language") : DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
             <MediaInfoGridItem label={`Total ${capitalize(booksProgressUnit.plural)}`}>
                 {media.pages ?? DEFAULT_DASH_FALLBACK} {booksProgressUnit.short}

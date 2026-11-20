@@ -11,7 +11,13 @@ import {createRateLimiter} from "@/lib/server/core/rate-limiter";
 import {getAllTasksMetadata, getTask} from "@/lib/server/tasks/registry";
 import {listAdminLogFiles, readAdminLogFile} from "@/lib/server/core/admin-logs-reader";
 import {clearAdminCookie, isAdminAuthenticated, setAdminCookie, verifyAdminPassword} from "@/lib/server/core/admin-auth";
-import {adminMissingCoversSchema, adminUpdateMediaCoverSchema, adminListsSearchSchema} from "@/lib/schemas/admin.schema";
+import {
+    adminBookMergeSearchSchema,
+    adminListsSearchSchema,
+    adminMergeBooksSchema,
+    adminMissingCoversSchema,
+    adminUpdateMediaCoverSchema
+} from "@/lib/schemas/admin.schema";
 import {requiredAuthAndAdminRoleMiddleware, requiredAuthAndAdminTokenMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     adminApiMonitoringSchema,
@@ -44,6 +50,33 @@ export const postAdminUpdateMediaCover = createServerFn({ method: "POST" })
     .handler(async ({ data }) => {
         const { services } = await getContainer();
         await services.admin.updateMissingCover(data);
+    });
+
+
+export const getAdminBooksForMerge = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(adminBookMergeSearchSchema)
+    .handler(async ({ data }) => {
+        const { services } = await getContainer();
+        return services.admin.getBooksForMerge(data);
+    });
+
+
+export const getAdminBookMergePreview = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(adminMergeBooksSchema)
+    .handler(async ({ data }) => {
+        const { services } = await getContainer();
+        return services.admin.getBookMergePreview(data);
+    });
+
+
+export const postAdminMergeBooks = createServerFn({ method: "POST" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(adminMergeBooksSchema)
+    .handler(async ({ data }) => {
+        const { services } = await getContainer();
+        return services.admin.mergeBooks(data);
     });
 
 

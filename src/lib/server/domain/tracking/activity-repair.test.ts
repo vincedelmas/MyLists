@@ -38,7 +38,7 @@ describe("historical activity repair", () => {
 
     const seedCase = (type: MediaType = MediaType.BOOKS, current = 100, peak = 120, peakRedo = 0) => {
         const extras = {
-            books: { media: ", pages", values: ", 1000", list: ", actual_page, total", listValues: `, ${current}, ${current}` },
+            books: { media: ", pages", values: ", 1000", list: ", actual_page, total, custom_title, custom_pages", listValues: `, ${current}, ${current}, 'Repair title', 1000` },
             manga: { media: "", values: "", list: ", current_chapter, total", listValues: `, ${current}, ${current}` },
             games: { media: "", values: "", list: ", playtime", listValues: `, ${current}` },
             movies: { media: ", duration", values: ", 100", list: ", total", listValues: `, ${current}` },

@@ -1,11 +1,17 @@
 import {SearchType} from "@/lib/schemas";
-import type {MediaType} from "@/lib/utils/enums";
+import {MediaType} from "@/lib/utils/enums";
 import {toast} from "@/lib/client/components/ui/toast";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {mediaDetailsOptions} from "@/lib/client/react-query/query-options/media.options";
-import {adminAchievementsOptions, adminArchivedTasksOptions, adminYearRecapReleasesOptions, userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
+import {
+    adminAchievementsOptions,
+    adminArchivedTasksOptions,
+    adminYearRecapReleasesOptions,
+    userAdminOptions,
+} from "@/lib/client/react-query/query-options/admin.options";
 import {
     postAdminDeleteArchivedTask,
+    postAdminMergeBooks,
     postAdminTriggerTask,
     postAdminUpdateAchievement,
     postAdminUpdateTiers,
@@ -35,6 +41,41 @@ export const useAdminUpdateMediaCoverMutation = (mediaType: MediaType, mediaId: 
                 queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
                 queryClient.invalidateQueries({ queryKey: ["release-calendar"] }),
+            ]);
+            onSuccess?.();
+        },
+    });
+};
+
+
+export const useAdminMergeBooksMutation = (onSuccess?: () => void) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: postAdminMergeBooks,
+        onSuccess: async (result) => {
+            const movedLabel = `${result.movedListEntries} user ${result.movedListEntries === 1 ? "entry" : "entries"} moved`;
+
+            const dupLabel = result.duplicateListEntriesRemoved > 0
+                ? `, ${result.duplicateListEntriesRemoved} overlapping ${result.duplicateListEntriesRemoved === 1 ? "entry" : "entries"} deduplicated`
+                : "";
+
+            toast.add({
+                type: "success",
+                description: `${movedLabel}${dupLabel}.`,
+                title: `Merged ${result.mergedBookCount} ${result.mergedBookCount === 1 ? "book" : "books"} into #${result.targetBookId}`,
+            });
+
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["admin", "book-merges"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin", "book-merge-preview"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin", "missing-covers"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin", "media-overview"] }),
+                queryClient.invalidateQueries({ queryKey: ["details", MediaType.BOOKS] }),
+                queryClient.invalidateQueries({ queryKey: ["userList", MediaType.BOOKS] }),
+                queryClient.invalidateQueries({ queryKey: ["continue"] }),
+                queryClient.invalidateQueries({ queryKey: ["dynamic-lists"] }),
+                queryClient.invalidateQueries({ queryKey: ["collections"] }),
             ]);
             onSuccess?.();
         },

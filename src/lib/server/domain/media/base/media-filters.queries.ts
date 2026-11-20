@@ -43,13 +43,19 @@ export type MediaFilterDefinitions = {
 };
 
 
-export const getMediaNameSearchCondition = (mediaTable: BaseMediaTables["mediaTable"], query: string) => {
+export const getMediaNameSearchCondition = (mediaTable: BaseMediaTables["mediaTable"], query: string, listTitleColumn?: SQLiteColumn) => {
     const pattern = `%${query}%`;
-    const nameCondition = like(mediaTable.name, pattern);
+    const conditions: SQL[] = [like(mediaTable.name, pattern)];
 
-    return mediaTable.originalName
-        ? or(nameCondition, like(mediaTable.originalName, pattern))!
-        : nameCondition;
+    if (mediaTable.originalName) {
+        conditions.push(like(mediaTable.originalName, pattern));
+    }
+
+    if (listTitleColumn) {
+        conditions.push(like(listTitleColumn, pattern));
+    }
+
+    return conditions.length > 1 ? or(...conditions)! : conditions[0];
 };
 
 
@@ -127,7 +133,7 @@ export const defineMediaFilterDefinitions = <const TDef extends Pick<MediaDefini
     const commonFilters = {
         search: {
             isActive: (args) => !!args.search,
-            getCondition: (args) => getMediaNameSearchCondition(mediaTable, args.search!),
+            getCondition: (args) => getMediaNameSearchCondition(mediaTable, args.search!, listTable.customTitle),
         },
         status: {
             ...createArrayFilter({

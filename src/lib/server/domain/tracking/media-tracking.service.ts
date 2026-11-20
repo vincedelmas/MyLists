@@ -1,6 +1,5 @@
 import {UpdateUserMedia} from "@/lib/schemas";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import type {CreateBookPayload} from "@/lib/schemas/books.schema";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {StatsService} from "@/lib/server/domain/stats/stats.service";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
@@ -8,6 +7,7 @@ import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {UpdateHistoryService} from "@/lib/server/domain/tracking/update-history.service";
 import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
 import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
+import type {CreateBookPayload, UpdateUserBookDetailsPayload} from "@/lib/schemas/books.schema";
 import {ContinueMediaType, getContinueItem} from "@/lib/server/domain/continue/continue.repository";
 
 
@@ -15,6 +15,14 @@ type MediaAction = {
     userId: number;
     mediaId: number;
     mediaType: MediaType;
+};
+
+
+const toLoggedMedia = <TMedia extends { id: number; name: string }>(media: TMedia, state: object): TMedia => {
+    if ("customTitle" in state && typeof state.customTitle === "string") {
+        return { ...media, name: state.customTitle };
+    }
+    return media;
 };
 
 
@@ -34,7 +42,7 @@ export class MediaTrackingService {
         return withTransaction(() => {
             const mediaId = store();
             this.addMediaToList({ userId, mediaId, mediaType: MediaType.BOOKS });
-            
+
             return { mediaId };
         });
     }
@@ -48,12 +56,22 @@ export class MediaTrackingService {
 
             this.activityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, updateType: UpdateType.STATUS });
             this.updateHistoryService.logUpdate({
-                media,
+                media: toLoggedMedia(media, newState),
                 userId,
                 mediaType,
                 updateType: UpdateType.STATUS,
                 payload: { old_value: logPayload.oldValue, new_value: logPayload.newValue },
             });
+
+            return newState;
+        });
+    }
+
+    updateUserBookCustomDetails(userId: number, payload: UpdateUserBookDetailsPayload) {
+        return withTransaction(() => {
+            const booksService = this.mediaServiceRegistry.get(MediaType.BOOKS);
+            const { newState, delta } = booksService.updateUserCustomDetails(userId, payload);
+            this.statsService.updateUserPreComputedStatsWithDelta(userId, MediaType.BOOKS, payload.mediaId, delta);
 
             return newState;
         });
@@ -88,12 +106,14 @@ export class MediaTrackingService {
                 });
             }
 
+            const loggedMedia = toLoggedMedia(media, newState);
+
             if (logPayload) {
                 this.updateHistoryService.logUpdate({
-                    media,
                     userId,
                     mediaType,
                     timestamp,
+                    media: loggedMedia,
                     updateType: mediaPayload.type,
                     payload: { old_value: logPayload.oldValue, new_value: logPayload.newValue },
                 });
@@ -101,10 +121,10 @@ export class MediaTrackingService {
 
             if (statusLogPayload) {
                 this.updateHistoryService.logUpdate({
-                    media,
                     userId,
                     mediaType,
                     timestamp,
+                    media: loggedMedia,
                     updateType: UpdateType.STATUS,
                     payload: { old_value: statusLogPayload.oldValue, new_value: statusLogPayload.newValue },
                 });

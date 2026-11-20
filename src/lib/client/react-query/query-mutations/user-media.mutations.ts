@@ -7,6 +7,7 @@ import {UpdatePayload} from "@/lib/types/user-media.types";
 import {formatMonthYear} from "@/lib/utils/formatting/date";
 import {toActivityDisplayValue} from "@/lib/utils/media/activity";
 import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
+import {postUpdateUserBookDetails} from "@/lib/server/functions/books";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {tvSeasonsOptions} from "@/lib/client/react-query/query-options/tv-seasons.options";
@@ -269,7 +270,10 @@ export const useUpdateCustomCoverMutation = (mediaType: MediaType, mediaId: numb
             ...meta,
         },
         onSuccess: async (data) => {
-            await createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).update({ customCover: data.customCover });
+            await createUserMediaCache(queryClient, currentUser!.name, mediaType, mediaId).update({
+                customCover: data.customCover,
+                ...(data.customCover ? { imageCover: data.customCover } : {}),
+            });
 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
@@ -277,6 +281,44 @@ export const useUpdateCustomCoverMutation = (mediaType: MediaType, mediaId: numb
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists"], refetchType: "none" }),
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists", "user", currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: profilePinsOptions(currentUser!.name).queryKey }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+                ...(!data.customCover ? [queryClient.invalidateQueries({ queryKey: ["userList", mediaType, currentUser!.name] })] : []),
+            ]);
+        },
+    });
+};
+
+
+export const useUpdateUserBookDetailsMutation = (mediaId: number, meta?: MutationMeta) => {
+    const { currentUser } = useAuth();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: userMediaEditKey(MediaType.BOOKS, mediaId),
+        mutationFn: postUpdateUserBookDetails,
+        meta: {
+            successToastMessage: "Edition details saved!",
+            ...meta,
+        },
+        onSuccess: async (data) => {
+            await createUserMediaCache(queryClient, currentUser!.name, MediaType.BOOKS, mediaId).update({
+                total: data.total,
+                pages: data.customPages,
+                actualPage: data.actualPage,
+                mediaName: data.customTitle,
+                customTitle: data.customTitle,
+                customPages: data.customPages,
+                customLanguage: data.customLanguage,
+                customPublisher: data.customPublisher,
+                customReleaseDate: data.customReleaseDate,
+            });
+
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
+                invalidateUserProgressQueries(queryClient, currentUser!.name),
+                queryClient.invalidateQueries({ queryKey: ["listFilters", MediaType.BOOKS, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
             ]);
         },

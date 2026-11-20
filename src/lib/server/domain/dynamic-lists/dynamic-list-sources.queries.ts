@@ -41,6 +41,9 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
         const definition = getServerMediaDefinition(mediaType).repository;
         const { tables: { mediaTable, listTable, tagTable, genreTable }, sortColumns } = definition;
 
+        const titleColumn = listTable.customTitle ?? mediaTable.name;
+        const releaseDateColumn = listTable.customReleaseDate ?? mediaTable.releaseDate;
+
         const conditions = [sql`${listTable.userId} = ${userId}`, sql`${userMediaSettings.active} = 1`];
         conditions.push(
             ...getMediaCommonFilterConditions(definition, {
@@ -50,7 +53,9 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
         );
 
         if (definition.filters.common.search && filters.search) {
-            conditions.push(sql`INSTR(LOWER(${mediaTable.name}), LOWER(${filters.search})) > 0`);
+            conditions.push(listTable.customTitle
+                ? sql`(INSTR(LOWER(${listTable.customTitle}), LOWER(${filters.search})) > 0 OR INSTR(LOWER(${mediaTable.name}), LOWER(${filters.search})) > 0)`
+                : sql`INSTR(LOWER(${mediaTable.name}), LOWER(${filters.search})) > 0`);
         }
 
         if (definition.filters.common.status && filters.statuses) {
@@ -83,7 +88,7 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
                 : sql`LENGTH(TRIM(COALESCE(${listTable.comment}, ''))) = 0`);
         }
 
-        const releaseYear = sql`CAST(STRFTIME('%Y', ${mediaTable.releaseDate}) AS INTEGER)`;
+        const releaseYear = sql`CAST(STRFTIME('%Y', ${releaseDateColumn}) AS INTEGER)`;
 
         if (filters.minReleaseYear !== undefined) {
             conditions.push(sql`${releaseYear} >= ${filters.minReleaseYear}`);
@@ -102,10 +107,10 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
         }
 
         const selection = sql`
+            ${titleColumn} AS "title",
             ${mediaType} AS "mediaType", 
-            ${mediaTable.name} AS "title",
             ${listTable.mediaId} AS "mediaId", 
-            ${mediaTable.releaseDate} AS "releaseDate",
+            ${releaseDateColumn} AS "releaseDate",
             COALESCE(${listTable.customCover}, ${mediaTable.imageCover}) AS "imageCover"`;
 
         const from = sql`FROM ${listTable}
@@ -135,7 +140,9 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
         }
 
         if (definition.filters.common.search && browseFilters.search) {
-            browseConditions.push(sql`INSTR(LOWER(${mediaTable.name}), LOWER(${browseFilters.search})) > 0`);
+            browseConditions.push(listTable.customTitle
+                ? sql`(INSTR(LOWER(${listTable.customTitle}), LOWER(${browseFilters.search})) > 0 OR INSTR(LOWER(${mediaTable.name}), LOWER(${browseFilters.search})) > 0)`
+                : sql`INSTR(LOWER(${mediaTable.name}), LOWER(${browseFilters.search})) > 0`);
         }
 
         if (browseFilters.library === "out") {
@@ -144,10 +151,11 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
 
         return {
             mediaType,
-            definition,
             selection,
-            sortColumns,
             baseQuery,
+            definition,
+            sortColumns,
+
             from: browseConditions.length
                 ? sql`${from} AND ${sql.join(browseConditions, sql` AND `)}`
                 : from,
@@ -162,5 +170,4 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
                     AND ${tagTable.mediaId} IN (SELECT "mediaId" FROM (${baseQuery}))` : sql`SELECT NULL AS "name" WHERE 0`,
         };
     });
-
 };

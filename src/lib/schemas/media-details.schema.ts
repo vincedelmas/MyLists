@@ -8,17 +8,9 @@ import {moviesDefinition} from "@/lib/media-definitions/movies/movies.definition
 import {animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
 import {mediaCatalogBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
 import {seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
-import {
-    coercedPositiveIntFieldSchema,
-    imageFileSchema,
-    imageUrlSchema,
-    mediaTypeFieldSchema,
-    mediaTypeMediaIdSchema,
-    simpleSearchSchema
-} from "@/lib/schemas/common.schema";
+import {mediaTypeFieldSchema, mediaTypeMediaIdSchema, simpleSearchSchema} from "@/lib/schemas/common.schema";
 
 
-export type UpdateBookCoverInput = z.input<typeof updateBookCoverSchema>;
 export type EditMediaDetailsInput = z.input<MediaMetadataSchemas[MediaType]>;
 export type EditMediaDetailsPayload = EditMediaDetailsPayloadByType[MediaType];
 export type EditMediaDetailsPayloadByType = { [T in MediaType]: z.output<MediaMetadataSchemas[T]> };
@@ -52,25 +44,6 @@ export const editMediaDetailsSchema = z.discriminatedUnion("mediaType", [
     mediaTypeMediaIdSchema.extend({ mediaType: z.literal(booksDefinition.identity.mediaType), payload: booksDefinition.metadataSchema }),
     mediaTypeMediaIdSchema.extend({ mediaType: z.literal(mangaDefinition.identity.mediaType), payload: mangaDefinition.metadataSchema }),
 ]);
-
-
-export const updateBookCoverSchema = z.object({
-    imageUrl: imageUrlSchema.optional(),
-    imageFile: imageFileSchema.optional(),
-    mediaId: coercedPositiveIntFieldSchema,
-}).superRefine((data, ctx) => {
-    const addFieldIssues = (message: string) => {
-        ctx.addIssue({ code: "custom", message, path: ["imageUrl"] });
-        ctx.addIssue({ code: "custom", message, path: ["imageFile"] });
-    };
-
-    if (!data.imageUrl && !data.imageFile) {
-        addFieldIssues("Provide an image link or upload a file.");
-    }
-    if (data.imageUrl && data.imageFile) {
-        addFieldIssues("Please, choose only one cover option.");
-    }
-});
 
 
 export const mediaCategoryParamsSchema = z.object({

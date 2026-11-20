@@ -2,7 +2,7 @@ import {MediaType, Status} from "@/lib/utils/enums";
 import {toItemKey} from "@/lib/utils/media/item-key";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {ContinueSearch} from "@/lib/schemas/continue.schema";
-import {and, asc, count, eq, inArray, like, not, sql} from "drizzle-orm";
+import {and, asc, count, eq, inArray, like, not, or, sql} from "drizzle-orm";
 import type {MediaListRowByType} from "@/lib/server/domain/media/media-list.types";
 import {createMediaSortOrder} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
@@ -31,11 +31,17 @@ export const getContinueItems = async ({ userId, mediaTypes, data }: ContinueIte
 
     const candidates = mediaTypes.map(mt => {
         const { repository: { tables: { listTable, mediaTable }, continuePreviewCondition } } = getServerMediaDefinition(mt);
+
+        const titleColumn = listTable.customTitle ?? mediaTable.name;
         const conditions: (ReturnType<typeof eq> | undefined)[] = [eq(listTable.userId, userId), eq(listTable.status, Status.IN_PROGRESS)];
 
         if (search) {
+            const pattern = `%${search.replace(/[\\%_]/g, "\\$&")}%`;
+            const mediaNameMatch = like(mediaTable.name, pattern).append(sql` ESCAPE '\\'`);
             conditions.push(
-                like(mediaTable.name, `%${search.replace(/[\\%_]/g, "\\$&")}%`).append(sql` ESCAPE '\\'`),
+                listTable.customTitle
+                    ? or(like(listTable.customTitle, pattern).append(sql` ESCAPE '\\'`), mediaNameMatch)
+                    : mediaNameMatch,
             );
         }
 
@@ -56,7 +62,7 @@ export const getContinueItems = async ({ userId, mediaTypes, data }: ContinueIte
 
         return getDbClient()
             .select({
-                name: mediaTable.name,
+                name: titleColumn,
                 mediaId: listTable.mediaId,
                 mediaType: sql<ContinueMediaType>`${mt}`.as("media_type"),
                 addedAt: sql<number>`JULIANDAY(${listTable.addedAt})`.as("added_at"),

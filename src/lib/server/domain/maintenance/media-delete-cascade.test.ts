@@ -44,8 +44,8 @@ it("cascades detail deletion for untracked titles and preserves shared tags", ()
                 }
             }
 
-            const listColumns = tv ? ", current_season, current_episode" : type === "manga" ? ", current_chapter" : "";
-            const listValues = tv ? ", 1, 5" : type === "manga" ? ", 10" : "";
+            const listColumns = tv ? ", current_season, current_episode" : type === "manga" ? ", current_chapter" : type === "books" ? ", custom_title, custom_pages" : "";
+            const listValues = tv ? ", 1, 5" : type === "manga" ? ", 10" : type === "books" ? ", 'Title', 100" : "";
             db.run(`INSERT INTO ${type}_list (id, user_id, media_id, status, rating, comment${listColumns})
                 VALUES (2, 1, 2, 'In Progress', 7.5, 'Keep this comment'${listValues})`);
             if (tv) db.run(`INSERT INTO ${type}_list_seasons (list_id, season, redo, rating) VALUES (2, 1, 2, 8)`);

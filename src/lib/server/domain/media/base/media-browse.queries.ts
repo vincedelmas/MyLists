@@ -49,22 +49,30 @@ export const createMediaBrowseQueryParts = (definition: AnyServerMediaDefinition
 
         selection: {
             mediaId: sql<number>`${mediaTable.id}`,
-            mediaName: sql<string>`${mediaTable.name}`,
             status: sql<Status | null>`${listTable.status}`,
             rating: sql<number | null>`${listTable.rating}`,
             addedAt: sql<string | null>`${listTable.addedAt}`,
             inUserList: isNotNull(listTable.userId).mapWith(Boolean),
             lastUpdated: sql<string | null>`${listTable.lastUpdated}`,
-            releaseDate: sql<string | null>`${mediaTable.releaseDate}`,
             favorite: sql<boolean | null>`${listTable.favorite}`.mapWith(value => value === null ? null : Boolean(value)),
             imageCover: sql<string>`COALESCE(${listTable.customCover}, ${mediaTable.imageCover})`
                 .mapWith(value => getImageUrl(definition.identity.coverDirectory, value)),
+            mediaName: listTable.customTitle
+                ? sql<string>`COALESCE(${listTable.customTitle}, ${mediaTable.name})`
+                : sql<string>`${mediaTable.name}`,
+            releaseDate: listTable.customReleaseDate
+                ? sql<string | null>`CASE WHEN ${listTable.id} IS NOT NULL THEN ${listTable.customReleaseDate} ELSE ${mediaTable.releaseDate} END`
+                : sql<string | null>`${mediaTable.releaseDate}`,
         },
 
         orderBy(defaultOrder: SQL[]) {
+            const titleOrder = listTable.customTitle
+                ? sql`COALESCE(${listTable.customTitle}, ${mediaTable.name}) COLLATE NOCASE ASC`
+                : sql`${mediaTable.name} COLLATE NOCASE ASC`;
+
             return [
                 ...(sortOrder ? [sortOrder] : defaultOrder),
-                sql`${mediaTable.name} COLLATE NOCASE ASC`, asc(mediaTable.id),
+                titleOrder, asc(mediaTable.id),
             ];
         },
     };

@@ -2,6 +2,7 @@ import * as z from "zod";
 import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-orm/zod";
 import {books, booksList} from "@/lib/server/database/schema";
+import {emptyStringToNull} from "@/lib/utils/formatting/text";
 import {mediaStatusSchema} from "@/lib/schemas/media-status.schema";
 import {minimalMyListsCSVSchema} from "@/lib/server/domain/imports/mylists-format";
 import {
@@ -39,6 +40,9 @@ export type UpdateBooksWithDetails = {
 };
 
 
+const optionalCsvTextSchema = z.preprocess(emptyStringToNull, z.string().trim().nullish());
+
+
 export const booksFinalListInsertSchema = createInsertSchema(booksList, {
     status: mediaStatusSchema(MediaType.BOOKS),
     customCover: z.string().nullable().optional(),
@@ -51,6 +55,11 @@ const booksCSVListSchema = createInsertSchema(booksList, {
     rating: importRatingSchema,
     comment: importCommentSchema,
     favorite: importFavoriteSchema,
+    customPages: importTotalSchema,
+    customTitle: optionalCsvTextSchema,
+    customLanguage: optionalCsvTextSchema,
+    customPublisher: optionalCsvTextSchema,
+    customReleaseDate: optionalCsvTextSchema,
     actualPage: nullableImportProgressSchema,
     status: mediaStatusSchema(MediaType.BOOKS),
 });

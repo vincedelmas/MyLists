@@ -9,6 +9,7 @@ import {Switch} from "@/lib/client/components/ui/switch";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
+import {Separator} from "@/lib/client/components/ui/separator";
 import type {UserMedia} from "@/lib/types/query.options.types";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {historyOptions} from "@/lib/client/react-query/query-options";
@@ -23,6 +24,7 @@ import {BacklogModeSystem} from "@/lib/client/components/media/base/BacklogModeS
 import {CustomCoverTabContent} from "@/lib/client/components/media/base/CustomCoverTab";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/lib/client/components/ui/tabs";
 import type {MediaUserDetailsProps} from "@/lib/client/components/media/media-config.types";
+import {BookCustomDetailsForm} from "@/lib/client/components/media/books/BookCustomDetailsForm";
 import {UserMediaSpecificDetails} from "@/lib/client/components/media/base/UserMediaSpecificDetails";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 import {
@@ -41,7 +43,10 @@ interface UserMediaDetailsProps {
     mediaType: MediaType;
     userMedia: UserMedia;
     source?: "list_dialog" | "details";
-    media: MediaUserDetailsProps<MediaType>["media"];
+    media: MediaUserDetailsProps<MediaType>["media"] & {
+        name?: string;
+        authors?: { name: string }[];
+    };
 }
 
 
@@ -81,7 +86,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, media, preview = false,
     };
 
     return (
-        <Tabs value={activeTab} onValueChange={setActiveTab} render={<Card className="bg-popover p-3"/>}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} render={<Card className="w-full bg-popover p-3"/>}>
             <header className="flex items-center justify-between gap-3 px-2 pt-1">
                 <div className="min-w-0">
                     <h3 className="text-base leading-snug font-semibold">
@@ -167,7 +172,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, media, preview = false,
                 </div>
             </TabsContent>
 
-            <TabsContent value="custom" className="flex flex-col gap-4">
+            <TabsContent value="custom" className="flex flex-col gap-4 overflow-y-auto scrollbar-thin max-h-120 py-1">
                 {getMediaDefinition(mediaType).releaseNotifications &&
                     <Field orientation="horizontal" data-disabled={preview}>
                         <div className="flex flex-col gap-1">
@@ -196,10 +201,24 @@ export const UserMediaDetails = ({ userMedia, mediaType, media, preview = false,
                     </Field>
                 }
 
+                {mediaType === MediaType.BOOKS && "customTitle" in userMedia &&
+                    <>
+                        <BookCustomDetailsForm
+                            disabled={preview}
+                            userMedia={userMedia}
+                        />
+                        <Separator className="mx-4 w-auto"/>
+                    </>
+                }
+
                 <CustomCoverTabContent
+                    disabled={preview}
                     mediaType={mediaType}
                     userMedia={userMedia}
+                    enabled={activeTab === "custom" && !preview}
                     onUpdateMutation={updateCustomCoverMutation}
+                    authors={media.authors?.map(author => author.name).join(", ")}
+                    mediaName={"customTitle" in userMedia ? userMedia.customTitle : media.name}
                 />
             </TabsContent>
 
@@ -213,7 +232,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, media, preview = false,
 
             <footer className="mx-2 flex items-center justify-end gap-3 border-t mt-1 pt-2 text-[10px] text-muted-foreground">
                 {activeTab === "custom"
-                    ? "Cover changes need saving"
+                    ? "Custom changes need saving"
                     : "Changes save automatically"
                 }
             </footer>

@@ -69,20 +69,33 @@ const getFilteredActivityConditions = (userId: number, filters: PaginatedMonthly
             : Object.values(MediaType);
 
         const searchConditions = mediaTypes.map((mediaType) => {
-            const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
+            const { mediaTable, listTable } = getServerMediaDefinition(mediaType).repository.tables;
             const nameCondition = like(mediaTable.name, pattern);
+
+            const mediaMatch = exists(getDbClient()
+                .select({ id: mediaTable.id })
+                .from(mediaTable)
+                .where(and(
+                    eq(mediaTable.id, userMediaMonthlyActivity.mediaId),
+                    mediaTable.originalName
+                        ? or(nameCondition, like(mediaTable.originalName, pattern))
+                        : nameCondition,
+                )));
+
+            const customTitleMatch = listTable.customTitle
+                ? exists(getDbClient()
+                    .select({ id: listTable.id })
+                    .from(listTable)
+                    .where(and(
+                        eq(listTable.userId, userId),
+                        eq(listTable.mediaId, userMediaMonthlyActivity.mediaId),
+                        like(listTable.customTitle, pattern),
+                    )))
+                : undefined;
 
             return and(
                 eq(userMediaMonthlyActivity.mediaType, mediaType),
-                exists(getDbClient()
-                    .select({ id: mediaTable.id })
-                    .from(mediaTable)
-                    .where(and(
-                        eq(mediaTable.id, userMediaMonthlyActivity.mediaId),
-                        mediaTable.originalName
-                            ? or(nameCondition, like(mediaTable.originalName, pattern))
-                            : nameCondition,
-                    ))),
+                customTitleMatch ? or(mediaMatch, customTitleMatch) : mediaMatch,
             );
         });
 
@@ -98,12 +111,21 @@ const getActivitySort = (sort: ActivitySort, grouped = false): { value: SQL; dir
 
     if (sort === "title_asc" || sort === "title_desc") {
         const names = Object.values(MediaType).map(mediaType => {
-            const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
-
-            return sql`WHEN ${mediaType}
-                THEN (SELECT ${mediaTable.name}
+            const { mediaTable, listTable } = getServerMediaDefinition(mediaType).repository.tables;
+            
+            const mediaNameSubquery = sql`(SELECT ${mediaTable.name}
                 FROM ${mediaTable}
-                WHERE ${mediaTable.id} = ${userMediaMonthlyActivity.mediaId}) COLLATE NOCASE`;
+                WHERE ${mediaTable.id} = ${userMediaMonthlyActivity.mediaId})`;
+
+            return listTable.customTitle
+                ? sql`WHEN ${mediaType}
+                    THEN COALESCE((SELECT ${listTable.customTitle}
+                        FROM ${listTable}
+                        WHERE ${listTable.userId} = ${userMediaMonthlyActivity.userId}
+                            AND ${listTable.mediaId} = ${userMediaMonthlyActivity.mediaId}),
+                        ${mediaNameSubquery}) COLLATE NOCASE`
+                : sql`WHEN ${mediaType}
+                    THEN ${mediaNameSubquery} COLLATE NOCASE`;
         });
 
         value = sql`CASE ${userMediaMonthlyActivity.mediaType} ${sql.join(names, sql` `)} END COLLATE NOCASE`;

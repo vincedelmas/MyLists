@@ -3,12 +3,13 @@ import {getThemeColor} from "@/lib/client/theme";
 import {TopAffinity} from "@/lib/types/stats.types";
 import {CircleOff, Heart, Play, Star} from "lucide-react";
 import {MediaCategory, MediaType} from "@/lib/utils/enums";
-import {formatMediaCategoryName} from "@/lib/utils/formatting/text";
+import {formatLocaleName, formatMediaCategoryName} from "@/lib/utils/formatting/text";
 
 
 type TasteShelfCategory = {
     title: string;
-    category: MediaCategory;
+    category?: MediaCategory;
+    format?: "language" | "region";
     topAffinity: TopAffinity;
 };
 
@@ -24,8 +25,13 @@ export function TasteShelf({ mediaType, categories }: TasteShelfProps) {
 
     return (
         <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
-            {categories.map(({ title, category, topAffinity }) => {
+            {categories.map(({ title, category, format, topAffinity }) => {
                 const [first, ...rest] = topAffinity;
+                const formatName = (name: string) => {
+                    if (category) return formatMediaCategoryName(category, name);
+                    if (format) return formatLocaleName(name, format);
+                    return name;
+                };
 
                 return (
                     <div key={title} className="min-w-0 border-l pl-5" style={{ borderColor: color }}>
@@ -41,13 +47,17 @@ export function TasteShelf({ mediaType, categories }: TasteShelfProps) {
                                 <div className="mt-4 flex items-start justify-between gap-4">
                                     <div className="min-w-0">
                                         <div className="truncate text-lg font-bold">
-                                            <Link
-                                                className="hover:text-brand"
-                                                to="/details/$mediaType/$category/$name"
-                                                params={{ mediaType, category, name: first.name }}
-                                            >
-                                                {formatMediaCategoryName(category, first.name)}
-                                            </Link>
+                                            {category ?
+                                                <Link
+                                                    className="hover:text-brand"
+                                                    to="/details/$mediaType/$category/$name"
+                                                    params={{ mediaType, category, name: first.name }}
+                                                >
+                                                    {formatName(first.name)}
+                                                </Link>
+                                                :
+                                                <span>{formatName(first.name)}</span>
+                                            }
                                         </div>
                                         {first.metadata &&
                                             <div className="mt-2 flex gap-3 text-[10px] text-muted-foreground">
@@ -72,17 +82,28 @@ export function TasteShelf({ mediaType, categories }: TasteShelfProps) {
                                 </div>
                                 <div className="mt-5 flex flex-wrap gap-2">
                                     {rest.slice(0, 6).map((item, idx) =>
-                                        <Link
-                                            key={item.name}
-                                            to="/details/$mediaType/$category/$name"
-                                            params={{ mediaType, category, name: item.name }}
-                                            className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground hover:text-brand"
-                                        >
-                                            {idx + 2}. {formatMediaCategoryName(category, item.name)}{" "}
-                                            <span className="ml-1 font-semibold text-foreground">
-                                                {item.value}
+                                        category ?
+                                            <Link
+                                                key={item.name}
+                                                to="/details/$mediaType/$category/$name"
+                                                params={{ mediaType, category, name: item.name }}
+                                                className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground hover:text-brand"
+                                            >
+                                                {idx + 2}. {formatName(item.name)}{" "}
+                                                <span className="ml-1 font-semibold text-foreground">
+                                                    {item.value}
+                                                </span>
+                                            </Link>
+                                            :
+                                            <span
+                                                key={item.name}
+                                                className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground"
+                                            >
+                                                {idx + 2}. {formatName(item.name)}{" "}
+                                                <span className="ml-1 font-semibold text-foreground">
+                                                    {item.value}
+                                                </span>
                                             </span>
-                                        </Link>
                                     )}
                                 </div>
                             </>

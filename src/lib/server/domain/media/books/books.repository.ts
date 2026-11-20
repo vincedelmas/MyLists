@@ -9,7 +9,18 @@ import {Book, InsertBooksWithDetails, UpdateBooksWithDetails} from "@/lib/server
 import {isManualBookId, BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 
 
-export function createBooksRepository(definition: BookServerDefinition = booksServerDefinition) {
+export const toBookEditionSnapshot = (media: Book) => {
+    return {
+        customTitle: media.name,
+        customLanguage: media.language,
+        customPublisher: media.publishers,
+        customReleaseDate: media.releaseDate,
+        customPages: Math.max(0, media.pages),
+    };
+};
+
+
+export const createBooksRepository = (definition: BookServerDefinition = booksServerDefinition) => {
     const { attribution } = definition;
     const queries = createMediaQueries(definition);
 
@@ -20,8 +31,7 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
                 apiId: books.apiId,
                 synopsis: books.synopsis,
                 authors: sql<string>`group_concat(${booksAuthors.name}, ', ')`,
-            })
-            .from(books)
+            }).from(books)
             .leftJoin(booksAuthors, eq(booksAuthors.mediaId, books.id))
             .leftJoin(booksGenre, eq(booksGenre.mediaId, books.id))
             .where(isNull(booksGenre.mediaId))
@@ -29,7 +39,8 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
     }
 
     function addMediaToUserList(userId: number, media: Book, newStatus: Status) {
-        const newTotal = (newStatus === Status.COMPLETED) ? media.pages : 0;
+        const snapshot = toBookEditionSnapshot(media);
+        const newTotal = (newStatus === Status.COMPLETED) ? snapshot.customPages : 0;
 
         const [newMedia] = getDbClient()
             .insert(booksList)
@@ -39,8 +50,9 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
                 status: newStatus,
                 mediaId: media.id,
                 actualPage: newTotal,
-            })
-            .returning().all();
+                ...snapshot,
+            }).returning()
+            .all();
 
         return newMedia;
     }
@@ -49,8 +61,8 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
         const details = getDbClient()
             .select({
                 ...getTableColumns(books),
-                authors: mediaRelationArray(booksAuthors, books.id, { id: booksAuthors.id, name: booksAuthors.name }, booksAuthors.id),
                 genres: mediaRelationArray(booksGenre, books.id, { id: booksGenre.id, name: booksGenre.name }, booksGenre.id),
+                authors: mediaRelationArray(booksAuthors, books.id, { id: booksAuthors.id, name: booksAuthors.name }, booksAuthors.id),
             }).from(books)
             .where(eq(books.id, mediaId))
             .get();
@@ -151,13 +163,13 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
 
     return {
         ...queries,
-        getBooksWithoutGenres,
         addMediaToUserList,
-        findAllAssociatedDetails,
+        getBooksWithoutGenres,
         storeMediaWithDetails,
         updateMediaWithDetails,
+        findAllAssociatedDetails,
     };
-}
+};
 
 
 export type BooksRepository = ReturnType<typeof createBooksRepository>;

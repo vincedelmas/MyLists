@@ -15,7 +15,8 @@ type MediaStatsDefinition = Readonly<{
     affinities: ReadonlyArray<Readonly<{
         label: string;
         key: `${string}Stats`;
-        category: MediaCategory;
+        category?: MediaCategory;
+        format?: "language" | "region";
     }>>;
     repeat: Readonly<{
         label: string;

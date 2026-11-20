@@ -88,6 +88,7 @@ describe("collection and category media browsing", () => {
         const definition = getServerMediaDefinition(mediaType);
         const queries = createMediaQueries(definition);
         for (const { category } of getMediaDefinition(mediaType).statistics.affinities) {
+            if (!category) continue;
             const result = await queries.getMediaCategoryDetails(category, "Absent category value", {});
             expect(result.total).toBe(0);
         }
@@ -117,10 +118,6 @@ describe("collection and category media browsing", () => {
     it("matches complete metadata values while keeping locale codes as query values", async () => {
         dbContext.db.update(schema.movies).set({ originalLanguage: "fr" }).where(eq(schema.movies.id, 1)).run();
         dbContext.db.update(schema.movies).set({ originalLanguage: "fr-CA" }).where(eq(schema.movies.id, 2)).run();
-        dbContext.db.insert(schema.books).values([
-            { id: 1, apiId: "book-1", name: "Book one", imageCover: "1.jpg", pages: 100, language: "fr", publishers: "Publisher" },
-            { id: 2, apiId: "book-2", name: "Book two", imageCover: "2.jpg", pages: 100, language: "fr-CA", publishers: "Publisher Extra" },
-        ]).run();
         dbContext.db.insert(schema.games).values([
             { id: 1, apiId: 1, name: "Game one", imageCover: "1.jpg", gameEngine: "Engine", playerPerspective: "First person" },
             { id: 2, apiId: 2, name: "Game two", imageCover: "2.jpg", gameEngine: "Engine Extra", playerPerspective: "First person Extra" },
@@ -128,8 +125,6 @@ describe("collection and category media browsing", () => {
 
         const cases = [
             [MediaType.MOVIES, MediaCategory.LANGUAGE, "fr"],
-            [MediaType.BOOKS, MediaCategory.LANGUAGE, "fr"],
-            [MediaType.BOOKS, MediaCategory.PUBLISHER, "Publisher"],
             [MediaType.GAMES, MediaCategory.ENGINE, "Engine"],
             [MediaType.GAMES, MediaCategory.PERSPECTIVE, "First person"],
         ] as const;
@@ -138,6 +133,12 @@ describe("collection and category media browsing", () => {
             const result = await queries.getMediaCategoryDetails(category, name, {});
             expect(result).toMatchObject({ total: 1, items: [{ mediaId: 1, inUserList: false }] });
         }
+
+        const books = createMediaQueries(getServerMediaDefinition(MediaType.BOOKS));
+        await expect(books.getMediaCategoryDetails(MediaCategory.LANGUAGE, "fr", {}))
+            .rejects.toMatchObject({ isNotFound: true });
+        await expect(books.getMediaCategoryDetails(MediaCategory.PUBLISHER, "Publisher", {}))
+            .rejects.toMatchObject({ isNotFound: true });
     });
 
     it("resolves a platform from profile stats against catalogue aliases", async () => {

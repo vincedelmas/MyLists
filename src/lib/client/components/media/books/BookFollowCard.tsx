@@ -23,6 +23,7 @@ export const BookFollowCard = ({ followData, rating, showComment }: BookFollowCa
             mediaDetailsDisplay={
                 <DisplayPages
                     status={followData.userMedia.status}
+                    total={followData.userMedia.customPages}
                     currentPage={followData.userMedia.actualPage}
                 />
             }

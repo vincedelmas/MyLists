@@ -40,6 +40,8 @@ type ListTableColumns = {
     addedAt: NullableColumn<string>;
     favorite: NotNullColumn<boolean>;
     lastUpdated: NullableColumn<string>;
+    customTitle?: NotNullColumn<string>;
+    customReleaseDate?: NullableColumn<string>;
     customCover: NullableColumn<string | null>;
     releaseNotificationsEnabled: NotNullColumn<boolean>;
 };
@@ -205,7 +207,10 @@ export interface ServerMediaDefinition<
     readonly service: MediaServicePolicy<TTables, TMediaType>;
     readonly statistics: MediaStatisticsDefinition<TAffinityDefinitions>;
     readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions, TSortColumns, TSelection>;
-    readonly listImport: { readonly csvRowSchema: z.ZodObject<{ [K in keyof MyListsCSVImport]: z.ZodType<MyListsCSVImport[K]> }> };
+    readonly listImport: {
+        readonly optionalHeaders?: readonly string[];
+        readonly csvRowSchema: z.ZodObject<{ [K in keyof MyListsCSVImport]: z.ZodType<MyListsCSVImport[K]> }>;
+    };
 }
 
 

@@ -131,6 +131,48 @@ describe("parseMyListsCsv", () => {
         expect(parseMyListsCsv(toCsv(rows)).totalCount).toBe(1500);
         expect(() => parseMyListsCsv(toCsv([...rows, movieRow()]))).toThrow("Maximum is 1500");
     });
+
+    it("accepts legacy v2 book backups without custom edition columns", () => {
+        const parsed = parseMyListsCsv(toCsv([{
+            mediaName: "Dune",
+            formatVersion: "2",
+            mediaType: MediaType.BOOKS,
+            externalApiId: "book-dune",
+            externalApiSource: ApiProviderType.BOOKS,
+            releaseDate: "1965-08-01",
+            status: Status.COMPLETED,
+            actualPage: "412",
+            redo: "1",
+            total: "824",
+            rating: "9",
+            favorite: "true",
+            comment: "Classic",
+        }]));
+
+        expect(parsed).toMatchObject({
+            totalCount: 1,
+            failedCount: 0,
+            items: [{
+                name: "Dune",
+                mediaType: MediaType.BOOKS,
+                status: ImportItemStatus.QUEUED,
+                payload: {
+                    status: Status.COMPLETED,
+                    actualPage: 412,
+                    redo: 1,
+                    total: 824,
+                    rating: 9,
+                    favorite: true,
+                    comment: "Classic",
+                },
+            }],
+        });
+        expect(parsed.items[0].payload).not.toHaveProperty("customTitle");
+        expect(parsed.items[0].payload).not.toHaveProperty("customPages");
+        expect(parsed.items[0].payload).not.toHaveProperty("customPublisher");
+        expect(parsed.items[0].payload).not.toHaveProperty("customReleaseDate");
+        expect(parsed.items[0].payload).not.toHaveProperty("customLanguage");
+    });
 });
 
 

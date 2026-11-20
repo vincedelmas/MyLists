@@ -17,6 +17,7 @@ import {
     CalendarRange,
     CircleX,
     FolderKanban,
+    GitMerge,
     History,
     Home,
     ImageOff,
@@ -50,6 +51,7 @@ const navigation = [
     {
         title: "Media catalog", items: [
             { title: "Missing covers", to: "/admin/missing-covers", icon: ImageOff },
+            { title: "Merge books", to: "/admin/book-merges", icon: GitMerge },
             { title: "Update history", to: "/admin/history", icon: History },
             { title: "Metadata refreshes", to: "/admin/media-refresh", icon: RefreshCw },
         ]

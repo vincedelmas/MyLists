@@ -1,7 +1,6 @@
-import {Search} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
+import {ExternalLink} from "lucide-react";
 import type {MediaType} from "@/lib/utils/enums";
-import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
 import {useEffect, useEffectEvent, useRef, useState} from "react";
 
@@ -25,9 +24,9 @@ export function GoogleCoverSearch(props: GoogleCoverSearchProps) {
         size = "default", className, onUseCover
     } = props;
 
-    const [status, setStatus] = useState("");
     const requestId = useRef<string | null>(null);
     const [connected, setConnected] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const mediaKey = `${mediaType}:${mediaId}`;
 
@@ -47,11 +46,11 @@ export function GoogleCoverSearch(props: GoogleCoverSearchProps) {
 
         if (!requestId.current || data.requestId !== requestId.current) return;
         if (data.type === "search-result") {
-            setStatus(data.ok ? "Right-click a large image and choose ‘Use as MyLists cover’." : data.error);
+            setError(data.error ? data.error : null);
         }
 
         if (data.type !== "cover") return;
-        let error: string | undefined;
+        let error: string | null = null;
 
         if (data.mediaKey !== mediaKey) {
             error = "This search belongs to another media item. Start a new search.";
@@ -66,8 +65,8 @@ export function GoogleCoverSearch(props: GoogleCoverSearchProps) {
             error = "Choose an image with an HTTP or HTTPS address.";
         }
 
+        setError(error);
         if (!error) onUseCover(data.imageUrl);
-        setStatus(error ?? "Cover address added. Review the cover, then save.");
 
         window.postMessage({
             error,
@@ -112,8 +111,8 @@ export function GoogleCoverSearch(props: GoogleCoverSearchProps) {
                         return;
                     }
 
+                    setError(null);
                     requestId.current = crypto.randomUUID();
-                    setStatus("Opening Google Images…");
 
                     window.postMessage({
                         query,
@@ -124,18 +123,12 @@ export function GoogleCoverSearch(props: GoogleCoverSearchProps) {
                     }, window.location.origin);
                 }}
             >
-                <Search data-icon="inline-start"/>
                 Search Google Images
+                <ExternalLink data-icon="inline-end"/>
             </Button>
 
-            {connected &&
-                <Badge variant="success">
-                    Cover picker connected.
-                </Badge>
-            }
-
             <p role="status" className="text-sm text-muted-foreground empty:hidden">
-                {status}
+                {error}
             </p>
         </div>
     );

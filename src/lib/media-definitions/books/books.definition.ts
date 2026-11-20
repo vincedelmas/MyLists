@@ -90,8 +90,8 @@ export const booksDefinition = defineMediaDefinition({
         affinities: [
             { key: "authorsStats", label: "Authors", category: MediaCategory.CREATOR },
             { key: "genresStats", label: "Genres", category: MediaCategory.GENRE },
-            { key: "publishersStats", label: "Publishers", category: MediaCategory.PUBLISHER },
-            { key: "langsStats", label: "Languages", category: MediaCategory.LANGUAGE },
+            { key: "publishersStats", label: "Publishers" },
+            { key: "langsStats", label: "Languages", format: "language" },
         ],
         repeat: {
             label: "Rereads",

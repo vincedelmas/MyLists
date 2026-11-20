@@ -1,18 +1,40 @@
 import {SearchType} from "@/lib/schemas";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
-import {MediaType, PrivacyType} from "@/lib/utils/enums";
-import {ProviderApiRollup} from "@/lib/types/admin.types";
-import {formatMonthYear} from "@/lib/utils/formatting/date";
+import {MediaType, PrivacyType, Status} from "@/lib/utils/enums";
+import {dateFromUTCInput, formatMonthYear} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {getImageFilename} from "@/lib/server/core/images/image-url";
 import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
-import {booksAuthors, dynamicLists} from "@/lib/server/database/schema";
-import type {AdminMissingCoversSearch} from "@/lib/schemas/admin.schema";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
+import type {HighlightedMediaSettings} from "@/lib/types/profile-custom.types";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {and, asc, count, countDistinct, desc, eq, gte, like, lt, lte, or, sql} from "drizzle-orm";
+import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
+import type {AdminBookMergeSearch, AdminMissingCoversSearch} from "@/lib/schemas/admin.schema";
 import {getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
-import {apiCallRollup, collectionItems, collections, mediaRefreshLog, taskHistory, user, yearRecapRelease} from "@/lib/server/database/schema";
+import {AdminBookMergeItem, AdminBookMergePreview, ProviderApiRollup} from "@/lib/types/admin.types";
+import {and, asc, count, countDistinct, desc, eq, exists, gte, inArray, like, lt, lte, or, sql} from "drizzle-orm";
+import {
+    apiCallRollup,
+    books,
+    booksAuthors,
+    booksList,
+    booksTags,
+    collectionItems,
+    collections,
+    dynamicLists,
+    importItems,
+    mediaNotifications,
+    mediaRefreshLog,
+    profileCustom,
+    taskHistory,
+    user,
+    userMediaMonthlyActivity,
+    userMediaStatsHistory,
+    userMediaUpdate,
+    whichCameFirstMedia,
+    yearRecapRelease
+} from "@/lib/server/database/schema";
 
 
 export class AdminRepository {
@@ -89,6 +111,490 @@ export class AdminRepository {
             .where(and(eq(mediaTable.id, mediaId), eq(mediaTable.imageCover, "default.jpg")))
             .returning({ id: mediaTable.id })
             .get();
+    }
+
+    static async getBooksForAdminMerge({ search, ...pagination }: AdminBookMergeSearch) {
+        const db = getDbClient();
+        const trimmed = search?.trim();
+
+        const usersCountExpr = sql<number>`(SELECT COUNT(*) FROM ${booksList} WHERE ${booksList.mediaId} = ${books.id})`;
+        const numericId = trimmed && /^#?\d+$/.test(trimmed) ? Number(trimmed.replace(/^#/, "")) : null;
+
+        const where = trimmed
+            ? or(
+                like(books.name, `%${trimmed}%`),
+                like(books.apiId, `%${trimmed}%`),
+                like(books.publishers, `%${trimmed}%`),
+                numericId !== null ? eq(books.id, numericId) : undefined,
+                exists(
+                    db.select({ id: booksAuthors.id })
+                        .from(booksAuthors)
+                        .where(and(eq(booksAuthors.mediaId, books.id), like(booksAuthors.name, `%${trimmed}%`))),
+                ),
+            )
+            : undefined;
+
+        return paginate<AdminBookMergeItem>({
+            ...pagination,
+            maxPerPage: 50,
+            defaultPerPage: 20,
+            getTotal: () => db
+                .select({ total: count() })
+                .from(books)
+                .where(where)
+                .get()!.total,
+            getItems: async ({ limit, offset }) => db
+                .select({
+                    id: books.id,
+                    name: books.name,
+                    apiId: books.apiId,
+                    pages: books.pages,
+                    language: books.language,
+                    publishers: books.publishers,
+                    imageCover: books.imageCover,
+                    releaseDate: books.releaseDate,
+                    usersCount: usersCountExpr.as("users_count"),
+                    authors: sql<string | null>`(
+                        SELECT group_concat(${booksAuthors.name}, ', ')
+                        FROM ${booksAuthors}
+                        WHERE ${booksAuthors.mediaId} = ${books.id}
+                    )`.as("authors"),
+                })
+                .from(books)
+                .where(where)
+                .orderBy(desc(usersCountExpr), sql`${books.name} COLLATE NOCASE`, asc(books.id))
+                .limit(limit)
+                .offset(offset)
+                .all(),
+        });
+    }
+
+    static findBooksByIds(bookIds: number[]) {
+        if (bookIds.length === 0) return [];
+
+        return getDbClient()
+            .select({ id: books.id, name: books.name })
+            .from(books)
+            .where(inArray(books.id, bookIds))
+            .all();
+    }
+
+    static getBookMergePreview(targetBookId: number, sourceBookIds: number[]): AdminBookMergePreview {
+        const db = getDbClient();
+
+        const targetUserRows = db
+            .select({ userId: booksList.userId })
+            .from(booksList)
+            .where(eq(booksList.mediaId, targetBookId))
+            .all();
+
+        const seenUserIds = new Set(targetUserRows.map(row => row.userId));
+
+        const sourceListRows = db
+            .select({ userId: booksList.userId, username: user.name })
+            .from(booksList)
+            .innerJoin(user, eq(user.id, booksList.userId))
+            .where(inArray(booksList.mediaId, sourceBookIds))
+            .orderBy(asc(user.name))
+            .all();
+
+        let movedListEntries = 0;
+        const overlappingById = new Map<number, string>();
+
+        for (const row of sourceListRows) {
+            if (seenUserIds.has(row.userId)) {
+                overlappingById.set(row.userId, row.username);
+            }
+            else {
+                seenUserIds.add(row.userId);
+                movedListEntries += 1;
+            }
+        }
+
+        const movedCollectionItems = db
+            .select({ total: count() })
+            .from(collectionItems)
+            .where(and(
+                eq(collectionItems.mediaType, MediaType.BOOKS),
+                inArray(collectionItems.mediaId, sourceBookIds),
+            ))
+            .get()!.total;
+
+        const targetActivityKeys = new Set(
+            db.select({
+                userId: userMediaMonthlyActivity.userId,
+                monthBucket: userMediaMonthlyActivity.monthBucket,
+            })
+                .from(userMediaMonthlyActivity)
+                .where(and(
+                    eq(userMediaMonthlyActivity.mediaType, MediaType.BOOKS),
+                    eq(userMediaMonthlyActivity.mediaId, targetBookId),
+                ))
+                .all()
+                .map(row => `${row.userId}:${row.monthBucket}`),
+        );
+
+        const sourceActivityRows = db
+            .select({
+                userId: userMediaMonthlyActivity.userId,
+                monthBucket: userMediaMonthlyActivity.monthBucket,
+            })
+            .from(userMediaMonthlyActivity)
+            .where(and(
+                eq(userMediaMonthlyActivity.mediaType, MediaType.BOOKS),
+                inArray(userMediaMonthlyActivity.mediaId, sourceBookIds),
+            ))
+            .all();
+
+        let movedActivities = 0;
+        let mergedActivities = 0;
+        for (const row of sourceActivityRows) {
+            const key = `${row.userId}:${row.monthBucket}`;
+            if (targetActivityKeys.has(key)) {
+                mergedActivities += 1;
+            }
+            else {
+                targetActivityKeys.add(key);
+                movedActivities += 1;
+            }
+        }
+
+        return {
+            movedActivities,
+            mergedActivities,
+            movedListEntries,
+            movedCollectionItems,
+            overlappingUsers: [...overlappingById.entries()].map(([id, name]) => ({ id, name })),
+        };
+    }
+
+    static mergeBooks(targetBookId: number, sourceBookIds: number[]) {
+        const db = getDbClient();
+        const sourceIdSet = new Set(sourceBookIds);
+        const allBookIds = [targetBookId, ...sourceBookIds];
+
+        // Re-point 'books_list' rows while keeping each user's edition snapshot intact.
+        // If a user has multiple entries across the target and duplicates, keep the richest / most recently updated entry.
+        const bookCoverFilenames = new Map(
+            db.select({ id: books.id, imageCover: books.imageCover })
+                .from(books)
+                .where(inArray(books.id, allBookIds))
+                .all()
+                .map(book => [book.id, getImageFilename(book.imageCover)]),
+        );
+        const targetCoverFilename = bookCoverFilenames.get(targetBookId) ?? "default.jpg";
+
+        const allListRows = db
+            .select({
+                id: booksList.id,
+                userId: booksList.userId,
+                mediaId: booksList.mediaId,
+                status: booksList.status,
+                total: booksList.total,
+                rating: booksList.rating,
+                comment: booksList.comment,
+                favorite: booksList.favorite,
+                actualPage: booksList.actualPage,
+                customCover: booksList.customCover,
+                addedAt: booksList.addedAt,
+                lastUpdated: booksList.lastUpdated,
+            })
+            .from(booksList)
+            .where(inArray(booksList.mediaId, allBookIds))
+            .all();
+
+        const rowsByUser = new Map<number, typeof allListRows>();
+        for (const row of allListRows) {
+            const group = rowsByUser.get(row.userId) ?? [];
+            group.push(row);
+            rowsByUser.set(row.userId, group);
+        }
+
+        const scoreListRow = (row: (typeof allListRows)[number]) => {
+            const nonPlanned = row.status !== Status.PLANNED ? 1 : 0;
+            const richness = (row.status === Status.COMPLETED ? 2 : 0)
+                + (row.rating !== null ? 2 : 0)
+                + (row.comment?.trim() ? 2 : 0)
+                + (row.favorite ? 1 : 0)
+                + (row.total > 0 || (row.actualPage ?? 0) > 0 ? 1 : 0);
+            const updatedMs = dateFromUTCInput(row.lastUpdated ?? row.addedAt ?? "").getTime();
+
+            return {
+                nonPlanned,
+                richness,
+                total: row.total,
+                updatedMs: Number.isFinite(updatedMs) ? updatedMs : 0,
+                isTarget: row.mediaId === targetBookId ? 1 : 0,
+                id: row.id,
+            };
+        };
+
+        let movedListEntries = 0;
+        let duplicateListEntriesRemoved = 0;
+        const recomputeStatsUserIds = new Set<number>();
+
+        for (const [userId, userRows] of rowsByUser) {
+            userRows.sort((a, b) => {
+                const sa = scoreListRow(a);
+                const sb = scoreListRow(b);
+                return (sb.nonPlanned - sa.nonPlanned)
+                    || (sb.richness - sa.richness)
+                    || (sb.total - sa.total)
+                    || (sb.updatedMs - sa.updatedMs)
+                    || (sb.isTarget - sa.isTarget)
+                    || (sb.id - sa.id);
+            });
+
+            const [winner, ...losers] = userRows;
+
+            if (losers.length > 0) {
+                db.delete(booksList)
+                    .where(inArray(booksList.id, losers.map(row => row.id)))
+                    .run();
+                duplicateListEntriesRemoved += losers.length;
+                recomputeStatsUserIds.add(userId);
+            }
+
+            if (winner.mediaId !== targetBookId) {
+                const sourceCoverFilename = bookCoverFilenames.get(winner.mediaId) ?? "default.jpg";
+                const preservedCustomCover = winner.customCover === null
+                    && sourceCoverFilename !== "default.jpg"
+                    && sourceCoverFilename !== targetCoverFilename
+                    ? sourceCoverFilename
+                    : undefined;
+
+                db.update(booksList)
+                    .set({
+                        mediaId: targetBookId,
+                        ...(preservedCustomCover ? { customCover: preservedCustomCover } : {}),
+                    })
+                    .where(eq(booksList.id, winner.id))
+                    .run();
+                if (losers.every(row => row.mediaId !== targetBookId)) {
+                    movedListEntries += 1;
+                }
+            }
+        }
+
+        // Merge user tags without violating (user_id, media_id, tag_id) uniqueness
+        const sourceTagRows = db
+            .select({ userId: booksTags.userId, tagId: booksTags.tagId })
+            .from(booksTags)
+            .where(inArray(booksTags.mediaId, sourceBookIds))
+            .all();
+
+        if (sourceTagRows.length > 0) {
+            db.insert(booksTags)
+                .values(sourceTagRows.map(row => ({
+                    tagId: row.tagId,
+                    userId: row.userId,
+                    mediaId: targetBookId,
+                }))).onConflictDoNothing()
+                .run();
+
+            db.delete(booksTags)
+                .where(inArray(booksTags.mediaId, sourceBookIds))
+                .run();
+        }
+
+        // Merge monthly activity buckets:
+        // - Same visibility (both visible or both hidden): sum counters and keep latest timestamp.
+        // - Mixed visibility (one visible, one hidden): keep only the visible entry's counters so hidden activity never leaks into recaps.
+        const sourceActivities = db
+            .select()
+            .from(userMediaMonthlyActivity)
+            .where(and(
+                eq(userMediaMonthlyActivity.mediaType, MediaType.BOOKS),
+                inArray(userMediaMonthlyActivity.mediaId, sourceBookIds),
+            )).all();
+
+        for (const activity of sourceActivities) {
+            const { id: activityId, ...rest } = activity;
+            const existingTarget = db
+                .select()
+                .from(userMediaMonthlyActivity)
+                .where(and(
+                    eq(userMediaMonthlyActivity.userId, activity.userId),
+                    eq(userMediaMonthlyActivity.mediaId, targetBookId),
+                    eq(userMediaMonthlyActivity.mediaType, MediaType.BOOKS),
+                    eq(userMediaMonthlyActivity.monthBucket, activity.monthBucket),
+                )).get();
+
+            if (!existingTarget) {
+                db.insert(userMediaMonthlyActivity)
+                    .values({ ...rest, mediaId: targetBookId })
+                    .run();
+            }
+            else if (existingTarget.hidden === activity.hidden) {
+                db.update(userMediaMonthlyActivity)
+                    .set({
+                        redoGained: existingTarget.redoGained + activity.redoGained,
+                        progressGained: existingTarget.progressGained + activity.progressGained,
+                        hadCompletion: existingTarget.hadCompletion || activity.hadCompletion,
+                        lastActivityAt: existingTarget.lastActivityAt > activity.lastActivityAt
+                            ? existingTarget.lastActivityAt
+                            : activity.lastActivityAt,
+                    }).where(eq(userMediaMonthlyActivity.id, existingTarget.id))
+                    .run();
+            }
+            else if (existingTarget.hidden && !activity.hidden) {
+                db.update(userMediaMonthlyActivity)
+                    .set({
+                        hidden: false,
+                        redoGained: activity.redoGained,
+                        hadCompletion: activity.hadCompletion,
+                        progressGained: activity.progressGained,
+                        lastActivityAt: activity.lastActivityAt,
+                    }).where(eq(userMediaMonthlyActivity.id, existingTarget.id))
+                    .run();
+            }
+
+            db.delete(userMediaMonthlyActivity)
+                .where(eq(userMediaMonthlyActivity.id, activityId))
+                .run();
+        }
+
+        // Re-point collections while avoiding (collection_id, media_type, media_id) collisions and compacting order_index
+        const sourceCollectionRows = db
+            .select({
+                id: collectionItems.id,
+                mediaId: collectionItems.mediaId,
+                collectionId: collectionItems.collectionId,
+            }).from(collectionItems)
+            .where(and(
+                eq(collectionItems.mediaType, MediaType.BOOKS),
+                inArray(collectionItems.mediaId, sourceBookIds),
+            )).orderBy(asc(collectionItems.collectionId), asc(collectionItems.orderIndex))
+            .all();
+
+        if (sourceCollectionRows.length > 0) {
+            const touchedCollectionIds = [...new Set(sourceCollectionRows.map(row => row.collectionId))];
+            const collectionsWithTarget = new Set(
+                db.select({ collectionId: collectionItems.collectionId })
+                    .from(collectionItems)
+                    .where(and(
+                        eq(collectionItems.mediaType, MediaType.BOOKS),
+                        eq(collectionItems.mediaId, targetBookId),
+                        inArray(collectionItems.collectionId, touchedCollectionIds),
+                    )).all()
+                    .map(row => row.collectionId),
+            );
+
+            for (const row of sourceCollectionRows) {
+                if (!collectionsWithTarget.has(row.collectionId)) {
+                    db.update(collectionItems)
+                        .set({ mediaId: targetBookId })
+                        .where(eq(collectionItems.id, row.id))
+                        .run();
+                    collectionsWithTarget.add(row.collectionId);
+                }
+                else {
+                    CollectionsRepository.deleteCollectionItem(row.collectionId, row.mediaId, MediaType.BOOKS);
+                }
+            }
+        }
+
+        // Re-point update history, stats history, notifications, and import item references
+        db.update(userMediaUpdate)
+            .set({ mediaId: targetBookId })
+            .where(and(
+                eq(userMediaUpdate.mediaType, MediaType.BOOKS),
+                inArray(userMediaUpdate.mediaId, sourceBookIds),
+            )).run();
+
+        db.update(userMediaStatsHistory)
+            .set({ mediaId: targetBookId })
+            .where(and(
+                eq(userMediaStatsHistory.mediaType, MediaType.BOOKS),
+                inArray(userMediaStatsHistory.mediaId, sourceBookIds),
+            )).run();
+
+        db.update(mediaNotifications)
+            .set({ mediaId: targetBookId })
+            .where(and(
+                eq(mediaNotifications.mediaType, MediaType.BOOKS),
+                inArray(mediaNotifications.mediaId, sourceBookIds),
+            )).run();
+
+        db.update(importItems)
+            .set({ matchedMediaId: targetBookId })
+            .where(and(
+                eq(importItems.mediaType, MediaType.BOOKS),
+                inArray(importItems.matchedMediaId, sourceBookIds),
+            )).run();
+
+        // Re-point profile highlighted media JSON references and deduplicate
+        const highlightedRows = db
+            .select({ id: profileCustom.id, value: profileCustom.value })
+            .from(profileCustom)
+            .where(eq(profileCustom.key, "highlightedMedia"))
+            .all();
+
+        for (const row of highlightedRows) {
+            const settings = row.value as HighlightedMediaSettings | null;
+            if (!settings) continue;
+
+            let changed = false;
+            const rewriteItems = (items: { mediaId: number; mediaType: MediaType }[] | undefined) => {
+                if (!items) return items;
+                const seen = new Set<string>();
+                const next: { mediaId: number; mediaType: MediaType }[] = [];
+
+                for (const item of items) {
+                    const remapped = item.mediaType === MediaType.BOOKS && sourceIdSet.has(item.mediaId)
+                        ? { ...item, mediaId: targetBookId }
+                        : item;
+
+                    if (remapped.mediaId !== item.mediaId) changed = true;
+
+                    const key = `${remapped.mediaType}:${remapped.mediaId}`;
+                    if (seen.has(key)) {
+                        changed = true;
+                        continue;
+                    }
+                    seen.add(key);
+                    next.push(remapped);
+                }
+
+                return next;
+            };
+
+            const nextSettings: HighlightedMediaSettings = {
+                ...settings,
+                overview: settings.overview
+                    ? { ...settings.overview, items: rewriteItems(settings.overview.items) ?? [] }
+                    : settings.overview,
+                [MediaType.BOOKS]: settings[MediaType.BOOKS]
+                    ? { ...settings[MediaType.BOOKS], items: rewriteItems(settings[MediaType.BOOKS].items) ?? [] }
+                    : settings[MediaType.BOOKS],
+            };
+
+            if (changed) {
+                db.update(profileCustom)
+                    .set({ value: nextSettings, updatedAt: sql`datetime('now')` })
+                    .where(eq(profileCustom.id, row.id))
+                    .run();
+            }
+        }
+
+        // Remove stale WCF catalog entries and delete source books (cascades books_authors & books_genre)
+        db.delete(whichCameFirstMedia)
+            .where(and(
+                eq(whichCameFirstMedia.mediaType, MediaType.BOOKS),
+                inArray(whichCameFirstMedia.mediaId, sourceBookIds),
+            )).run();
+
+        db.delete(books)
+            .where(inArray(books.id, sourceBookIds))
+            .run();
+
+        return {
+            targetBookId,
+            movedListEntries,
+            duplicateListEntriesRemoved,
+            mergedBookCount: sourceBookIds.length,
+            recomputeStatsUserIds: [...recomputeStatsUserIds],
+        };
     }
 
     static async getUserMediaAddedAndUpdatedForAdmin(mediaType: MediaType) {

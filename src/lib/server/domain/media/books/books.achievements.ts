@@ -1,6 +1,6 @@
-import {AchievementDifficulty, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {books, booksAuthors, booksList} from "@/lib/server/database/schema";
+import {AchievementDifficulty, Status} from "@/lib/utils/enums";
+import {booksAuthors, booksList} from "@/lib/server/database/schema";
 import {count, countDistinct, eq, gte, isNotNull, lte, max} from "drizzle-orm";
 import {BookServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
@@ -15,15 +15,13 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
     const duration: AchievementCalculation = (achievement) => {
         const value = Number(achievement.value);
         const isLong = achievement.codeName.includes("long");
-        const condition = isLong ? gte(books.pages, value) : lte(books.pages, value);
+        const condition = isLong ? gte(booksList.customPages, value) : lte(booksList.customPages, value);
 
         const query = getDbClient()
             .select({
                 userId: booksList.userId,
                 value: count(booksList.mediaId).as("value"),
-            })
-            .from(booksList)
-            .innerJoin(books, eq(booksList.mediaId, books.id));
+            }).from(booksList);
 
         return queries.applyConditionsAndGroup(query, [eq(booksList.status, Status.COMPLETED), condition]);
     };
@@ -54,10 +52,8 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
         const query = getDbClient()
             .select({
                 userId: booksList.userId,
-                value: countDistinct(books.language).as("value"),
-            })
-            .from(booksList)
-            .innerJoin(books, eq(booksList.mediaId, books.id));
+                value: countDistinct(booksList.customLanguage).as("value"),
+            }).from(booksList);
 
         return queries.applyConditionsAndGroup(query, [eq(booksList.status, Status.COMPLETED)]);
     };

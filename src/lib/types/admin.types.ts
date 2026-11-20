@@ -37,3 +37,34 @@ export type AdminMissingCoverMedia = {
     authors: string | null;
     releaseDate: string | null;
 };
+
+
+export type AdminBookMergeItem = {
+    id: number;
+    name: string;
+    apiId: string;
+    pages: number;
+    usersCount: number;
+    imageCover: string;
+    authors: string | null;
+    language: string | null;
+    publishers: string | null;
+    releaseDate: string | null;
+};
+
+
+export type AdminBookMergePreview = {
+    movedActivities: number;
+    mergedActivities: number;
+    movedListEntries: number;
+    movedCollectionItems: number;
+    overlappingUsers: { id: number; name: string }[];
+};
+
+
+export type AdminBookMergeResult = {
+    targetBookId: number;
+    mergedBookCount: number;
+    movedListEntries: number;
+    duplicateListEntriesRemoved: number;
+};

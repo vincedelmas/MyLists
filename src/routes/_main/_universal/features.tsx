@@ -22,7 +22,6 @@ import {
     ImageUp,
     Import,
     LayoutList,
-    Layers3,
     LibraryBig,
     ListFilter,
     ListOrdered,
@@ -198,55 +197,44 @@ const AREA_DESCRIPTIONS: Record<FeatureArea, string> = {
 
 
 const LATEST_RELEASE: ReleaseData = {
-    icon: Layers3,
+    icon: BookOpen,
     type: "New",
-    date: "October 2026",
-    title: "Lists, collections & an MCP connection",
-    summary: "Quite a few things added in this update: " +
-        "a new page for your lists, " +
-        "collections can now mix media types, " +
-        "and lists that update themselves (based on filters). " +
-        "I have also added an MCP, if you’d like to use an AI assistant with MyLists.",
+    date: "November 2026",
+    title: "Book works & your own editions",
+    summary: "Book details pages now represent the book itself (the work), while your list keeps your own edition details. " +
+        "You can edit the title, total pages, publisher, publication date, language, and cover for the exact copy you read.",
     items: [
         {
-            icon: LibraryBig,
+            icon: BookOpen,
             type: "Revamped",
+            name: "Books as Works",
             area: "Lists & Tracking",
-            name: "Lists & collections",
-            description: "Your tracking lists, Continue, dynamic lists and collections now share a page in MyMedia. " +
-                "You can also pin up to 4 dynamic lists or collections to your profile as a shortcut or to display to others.",
+            description: <span>
+                Each book details page now represents the book itself rather than an edition.
+                Everyone reading the same 'book' shares one page, so follows, ratings, and stats stay together
+                as editions get merged (I do that manually so please be nice :D).
+            </span>,
         },
         {
-            icon: ListFilter,
+            icon: Edit3,
             type: "New",
-            name: "Dynamic lists",
-            area: "Lists & Tracking",
-            description: "You can now pick filters and save these as a dynamic list. " +
-                "You can mix the media types, tags, ratings, etc. and let the list update itself as your tracking changes. " +
-                "For example: a dynamic list of all your media you didn't rate yet.",
+            area: "Customization",
+            name: "Edit your own book edition",
+            description: <span>
+                When you add a book, MyLists saves your edition details in your list.
+                Open the <b>Custom tab</b> on any book to change its title, total pages, publisher, publication date, language, or cover
+                to match your copy, without changing anything for other users.
+            </span>,
         },
         {
-            icon: ListOrdered,
+            icon: ImageUp,
             type: "Improved",
-            area: "Lists & Tracking",
-            name: "Mix types in collections",
-            description: "A book and its movie adaptation can finally be in the same collection. " +
-                "Mix any media you like, rank it, add a few notes, and keep it private or share it. "
-        },
-        {
-            icon: Plug,
-            type: "New",
-            area: "Lists & Tracking",
-            name: "Ask your assistant (MCP)",
-            description: (
-                <span>
-                    You can now ask a compatible AI assistant about your lists, have it create a dynamic list,
-                    update your progress or ask for personalized stats about your lists. You can access it here{" "}
-                    <Link to="/settings/connected-apps" className="font-medium text-brand hover:text-brand/80">
-                        Settings → Connected apps
-                    </Link>.
-                </span>
-            ),
+            area: "Customization",
+            name: "Google Images cover search",
+            description: <span>
+                Looking for a better cover for any media type? You can now use the <b>Search Google Images</b> button right inside
+                the <b>Custom tab</b> to find one and paste or upload it faster.
+            </span>,
         },
     ],
 };
@@ -254,6 +242,46 @@ const LATEST_RELEASE: ReleaseData = {
 
 const FEATURES_DATA: FeatureData[] = [
     ...LATEST_RELEASE.items,
+    {
+        icon: LibraryBig,
+        type: "Existing",
+        area: "Lists & Tracking",
+        name: "Lists & collections",
+        description: "Your tracking lists, Continue, dynamic lists and collections now share a page in MyMedia. " +
+            "You can also pin up to 4 dynamic lists or collections to your profile as a shortcut or to display to others.",
+    },
+    {
+        icon: ListFilter,
+        type: "Existing",
+        name: "Dynamic lists",
+        area: "Lists & Tracking",
+        description: "You can now pick filters and save these as a dynamic list. " +
+            "You can mix the media types, tags, ratings, etc. and let the list update itself as your tracking changes. " +
+            "For example: a dynamic list of all your media you didn't rate yet.",
+    },
+    {
+        icon: ListOrdered,
+        type: "Existing",
+        area: "Lists & Tracking",
+        name: "Mix types in collections",
+        description: "A book and its movie adaptation can finally be in the same collection. " +
+            "Mix any media you like, rank it, add a few notes, and keep it private or share it.",
+    },
+    {
+        icon: Plug,
+        type: "Existing",
+        area: "Lists & Tracking",
+        name: "Ask your assistant (MCP)",
+        description: (
+            <span>
+                You can now ask a compatible AI assistant about your lists, have it create a dynamic list,
+                update your progress or ask for personalized stats about your lists. You can access it here{" "}
+                <Link to="/settings/connected-apps" className="font-medium text-brand hover:text-brand/80">
+                    Settings → Connected apps
+                </Link>.
+            </span>
+        ),
+    },
     {
         icon: Star,
         type: "Existing",
@@ -570,11 +598,12 @@ const ReleaseCard = ({ release }: { release: ReleaseData }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 border-t md:grid-cols-2 xl:grid-cols-4">
+            <div className={`grid grid-cols-1 border-t ${release.items.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-4"}`}>
                 {release.items.map((item, idx) =>
                     <ReleaseItem
                         item={item}
                         key={`${item.name}-${idx}`}
+                        columns={release.items.length === 3 ? 3 : 4}
                     />
                 )}
             </div>
@@ -583,11 +612,14 @@ const ReleaseCard = ({ release }: { release: ReleaseData }) => {
 };
 
 
-const ReleaseItem = ({ item }: { item: FeatureData }) => {
+const ReleaseItem = ({ item, columns }: { item: FeatureData; columns: 3 | 4 }) => {
     const Icon = item.icon;
+    const borderClass = columns === 3
+        ? "border-b p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
+        : "border-b p-5 last:border-b-0 md:odd:border-r md:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0";
 
     return (
-        <article className="border-b p-5 last:border-b-0 md:odd:border-r md:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0">
+        <article className={borderClass}>
             <h3 className="flex items-center gap-2 font-semibold text-foreground">
                 <Icon className="size-4 text-brand"/>
                 {item.name}

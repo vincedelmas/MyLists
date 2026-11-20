@@ -56,6 +56,8 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
                 : mediaType === MediaType.MOVIES ? 2 : 16,
             currentSeason: 1, currentEpisode: 8, actualPage: 200, currentChapter: 40,
             playtime: 120, platform: "PC",
+            customTitle: 'A title, with "quotes" and é', customPages: 200,
+            customReleaseDate: "2024-01-01",
         } as any).run();
 
         if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {

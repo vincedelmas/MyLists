@@ -11,7 +11,7 @@ import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutatio
 type BooksUserDetailsProps<T extends MediaType> = MediaUserDetailsProps<T>;
 
 
-export const BooksUserDetails = ({ userMedia, mediaType, media, mutationOptions }: BooksUserDetailsProps<typeof MediaType.BOOKS>) => {
+export const BooksUserDetails = ({ userMedia, mediaType, mutationOptions }: BooksUserDetailsProps<typeof MediaType.BOOKS>) => {
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, mutationOptions);
 
     return (
@@ -26,9 +26,9 @@ export const BooksUserDetails = ({ userMedia, mediaType, media, mutationOptions 
                     <div className="flex justify-between items-center">
                         <div>Pages</div>
                         <UpdateInput
-                            total={media.pages}
                             payloadName={"actualPage"}
                             updateType={UpdateType.PAGE}
+                            total={userMedia.customPages}
                             initValue={userMedia.actualPage}
                             updateInput={updateUserMediaMutation}
                         />

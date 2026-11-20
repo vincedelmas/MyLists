@@ -32,8 +32,9 @@ export const createUserMediaCache = (queryClient: QueryClient, username: string,
     return {
         cancel,
 
-        async update(patch: Partial<UserMedia> & { tags?: never }) {
+        async update(patch: Partial<UserMedia> & { tags?: never; mediaName?: string; pages?: number; imageCover?: string }) {
             await cancel();
+            const { mediaName: _mediaName, pages: _pages, imageCover: _imageCover, ...userMediaPatch } = patch;
 
             queryClient.setQueryData(detailsKey, (oldData) => {
                 if (!oldData?.userMedia) return oldData;
@@ -42,7 +43,7 @@ export const createUserMediaCache = (queryClient: QueryClient, username: string,
                     ...oldData,
                     userMedia: {
                         ...oldData.userMedia,
-                        ...patch,
+                        ...userMediaPatch,
                     },
                 }
             });
@@ -55,7 +56,7 @@ export const createUserMediaCache = (queryClient: QueryClient, username: string,
                     results: {
                         ...oldData.results,
                         items: oldData.results.items.map(i => i.mediaId === mediaId
-                            ? { ...i, ...Object.fromEntries(Object.entries(patch).filter(([key]) => key in i)) } : i),
+                            ? { ...i, ...Object.fromEntries(Object.entries(patch).filter(([key, value]) => key in i && value !== undefined)) } : i),
                     },
                 }
             });

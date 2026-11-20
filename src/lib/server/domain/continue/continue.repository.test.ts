@@ -40,7 +40,7 @@ it("bounds the preview and page response while retaining totals and non-overlapp
 
 it("sorts across media types before limiting and keeps tab counts independent of the selected tab", async () => {
     dbContext.db.insert(schema.books).values({ id: 1, apiId: "book", name: "Most recent", imageCover: "book.jpg", pages: 100 }).run();
-    dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.IN_PROGRESS, lastUpdated: "2099-01-01" }).run();
+    dbContext.db.insert(schema.booksList).values({ userId: 1, mediaId: 1, status: Status.IN_PROGRESS, lastUpdated: "2099-01-01", customTitle: "Most recent", customPages: 100 }).run();
     const mixed = await getContinueItems({ userId: 1, mediaTypes: [MediaType.GAMES, MediaType.BOOKS], data: {} });
     expect(mixed.items).toHaveLength(12);
     expect(mixed.items[0]).toMatchObject({ mediaId: 1, mediaType: MediaType.BOOKS });
@@ -56,7 +56,7 @@ it("filters finished books, manga, and TV using the shared completion rules befo
         id: i + 1, apiId: `book${i}`, name: `Book ${i}`, imageCover: "book.jpg", pages: i === 8 ? 0 : 100,
     }))).run();
     dbContext.db.insert(schema.booksList).values(Array.from({ length: 9 }, (_, i) => ({
-        userId: 1, mediaId: i + 1, status: Status.IN_PROGRESS, actualPage: i < 6 ? 100 : 0,
+        userId: 1, mediaId: i + 1, status: Status.IN_PROGRESS, actualPage: i < 6 ? 100 : 0, customTitle: `Book ${i}`, customPages: i === 8 ? 0 : 100,
     }))).run();
     dbContext.db.insert(schema.manga).values([
         { id: 1, apiId: 1, name: "Finished manga", imageCover: "manga.jpg", chapters: 10 },

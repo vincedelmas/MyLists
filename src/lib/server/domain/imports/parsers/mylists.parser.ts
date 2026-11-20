@@ -65,15 +65,26 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
     if (!result.success) throw new Error(MYLISTS_FORMAT_ERROR);
 
     const definition = getServerMediaDefinition(result.data);
-    const mediaZodValidator = definition.listImport.csvRowSchema.required().extend({
+    const optionalHeaders = new Set(definition.listImport.optionalHeaders ?? []);
+    const baseValidator = definition.listImport.csvRowSchema.required().extend({
         externalApiSource: z.literal(definition.ingestion.externalApiSource),
     });
 
-    // Even nullable fields have a column in a current export. Missing columns must
+    // Even nullable fields have a column in a current export. Missing required columns must
     // not silently become defaults and discard list data.
-    if (Object.keys(mediaZodValidator.shape).some(header => !headers.includes(header))) {
+    const requiredHeaders = Object.keys(baseValidator.shape).filter(header => !optionalHeaders.has(header));
+    if (requiredHeaders.some(header => !headers.includes(header))) {
         throw new Error(MYLISTS_FORMAT_ERROR);
     }
+
+    const missingOptionalHeaders = new Set(
+        [...optionalHeaders].filter(header => !headers.includes(header) && header in baseValidator.shape),
+    );
+    const mediaZodValidator = (missingOptionalHeaders.size > 0
+        ? z.object(Object.fromEntries(
+            Object.entries(baseValidator.shape).filter(([key]) => !missingOptionalHeaders.has(key)),
+        ))
+        : baseValidator) as typeof baseValidator;
 
     const versionColumn = headers.indexOf("formatVersion");
     if (rows.some(row => row[versionColumn] !== MYLISTS_CSV_VERSION)) {

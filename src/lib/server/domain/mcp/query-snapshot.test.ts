@@ -34,10 +34,23 @@ describe("MCP query snapshots", () => {
                     (90, '90', '${type} unrelated secret', 'cover.jpg'${values}),
                     (80, '80', '${type} historical', 'cover.jpg'${values})`);
 
-                const progress = type === "series" || type === "anime" ? ", current_season, current_episode" : type === "manga" ? ", current_chapter" : "";
-                const position = type === "series" || type === "anime" ? ", 1, 3" : type === "manga" ? ", 10" : "";
+                const progress = type === "series" || type === "anime"
+                    ? ", current_season, current_episode"
+                    : type === "manga"
+                        ? ", current_chapter"
+                        : type === "books"
+                            ? ", custom_title, custom_pages, custom_language, custom_publisher"
+                            : "";
                 for (const id of [1, 2, 3, 4, 5, 6]) {
-                    source.run(`INSERT INTO ${type}_list (id, user_id, media_id, status, rating, comment${progress}) VALUES (?, ?, ?, 'Completed', ?, ?${position})`, [id * 100, id, id === 1 || id === 2 ? 10 : 90, id === 1 ? 9 : 7, `comment-user-${id}`]);
+                    const mediaId = id === 1 || id === 2 ? 10 : 90;
+                    const position = type === "series" || type === "anime"
+                        ? ", 1, 3"
+                        : type === "manga"
+                            ? ", 10"
+                            : type === "books"
+                                ? `, '${mediaId === 10 ? "books shared" : "books unrelated secret"}', 300, ${mediaId === 10 ? "'fr'" : "NULL"}, ${mediaId === 10 ? "'Known publisher'" : "NULL"}`
+                                : "";
+                    source.run(`INSERT INTO ${type}_list (id, user_id, media_id, status, rating, comment${progress}) VALUES (?, ?, ?, 'Completed', ?, ?${position})`, [id * 100, id, mediaId, id === 1 ? 9 : 7, `comment-user-${id}`]);
                     const tag = source.query<{
                         id: number
                     }, [number, string, string]>("INSERT INTO media_tags (user_id, media_type, name) VALUES (?, ?, ?) RETURNING id").get(id, type, `label-user-${id}`)!;

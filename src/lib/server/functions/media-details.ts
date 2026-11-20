@@ -17,7 +17,6 @@ import {
     mediaDetailsToEditSchema,
     mediaTypeMediaIdSchema,
     refreshMediaDetailsSchema,
-    updateBookCoverSchema
 } from "@/lib/schemas";
 
 
@@ -135,16 +134,6 @@ export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
         }
 
         return gamesService.getCompatiblePlatforms(mediaId);
-    });
-
-
-export const postUpdateBookCover = createServerFn({ method: "POST" })
-    .middleware([requiredAuthMiddleware])
-    .validator((data) => updateBookCoverSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
-    .handler(async ({ data: { mediaId, imageUrl, imageFile } }) => {
-        const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(MediaType.BOOKS);
-        await mediaService.updateDefaultCover(mediaId, { imageUrl, imageFile });
     });
 
 

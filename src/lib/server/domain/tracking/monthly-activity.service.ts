@@ -135,7 +135,7 @@ export class MonthlyActivityService {
             }),
         ]);
 
-        const mediaDetailsByType = await resolveMonthlyActivityMedia(result.items, this.mediaMonthlyActivityRegistry);
+        const mediaDetailsByType = await resolveMonthlyActivityMedia(result.items, this.mediaMonthlyActivityRegistry, userId);
 
         const rows: MonthlyActivityEditor[] = [];
         for (const activity of result.items) {

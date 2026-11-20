@@ -1,17 +1,28 @@
 import * as z from "zod";
-import {updateBookCoverSchema} from "@/lib/schemas/media-details.schema";
 import {YEAR_RECAP_FIRST_YEAR, yearRecapReleaseModes} from "@/lib/types/year-recap.types";
 import {AchievementDifficulty, ImportJobStatus, MediaType, PrivacyType, RoleType} from "@/lib/utils/enums";
-import {coercedPositiveIntFieldSchema, positiveIntFieldSchema, simpleSearchSchema, searchTypeSchema} from "@/lib/schemas/common.schema";
+import {
+    coercedPositiveIntFieldSchema,
+    imageFileSchema,
+    imageUrlSchema,
+    positiveIntFieldSchema,
+    searchTypeSchema,
+    simpleSearchSchema
+} from "@/lib/schemas/common.schema";
 
 
+export type AdminMergeBooks = z.infer<typeof adminMergeBooksSchema>;
 export type AchievementTier = z.infer<typeof tierAchievementSchema>;
 export type AdminImportsSearch = z.infer<typeof adminImportsSchema>;
 export type AdminListsSearch = z.infer<typeof adminListsSearchSchema>;
 export type AdminUpdatePayload = z.infer<typeof adminUpdatePayloadSchema>;
+export type AdminBookMergeSearch = z.infer<typeof adminBookMergeSearchSchema>;
 export type AdminMissingCoversSearch = z.infer<typeof adminMissingCoversSchema>;
 export type AdminUpdateMediaCover = z.infer<typeof adminUpdateMediaCoverSchema>;
 export type AdminUpdateMediaCoverInput = z.input<typeof adminUpdateMediaCoverSchema>;
+
+
+export const adminBookMergeSearchSchema = simpleSearchSchema;
 
 
 export const adminListsSearchSchema = searchTypeSchema.extend({
@@ -24,8 +35,44 @@ export const adminMissingCoversSchema = simpleSearchSchema.extend({
 });
 
 
-export const adminUpdateMediaCoverSchema = updateBookCoverSchema.safeExtend({
+export const adminUpdateMediaCoverSchema = z.object({
     mediaType: z.enum(MediaType),
+    imageUrl: imageUrlSchema.optional(),
+    imageFile: imageFileSchema.optional(),
+    mediaId: coercedPositiveIntFieldSchema,
+}).superRefine((data, ctx) => {
+    const addFieldIssues = (message: string) => {
+        ctx.addIssue({ code: "custom", message, path: ["imageUrl"] });
+        ctx.addIssue({ code: "custom", message, path: ["imageFile"] });
+    };
+
+    if (!data.imageUrl && !data.imageFile) {
+        addFieldIssues("Provide an image link or upload a file.");
+    }
+    if (data.imageUrl && data.imageFile) {
+        addFieldIssues("Please, choose only one cover option.");
+    }
+});
+
+
+export const adminMergeBooksSchema = z.object({
+    targetBookId: positiveIntFieldSchema,
+    sourceBookIds: z.array(positiveIntFieldSchema).min(1, "Select at least one duplicate book to merge."),
+}).superRefine((data, ctx) => {
+    if (data.sourceBookIds.includes(data.targetBookId)) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["sourceBookIds"],
+            message: "Target book cannot also be a source book.",
+        });
+    }
+    if (new Set(data.sourceBookIds).size !== data.sourceBookIds.length) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["sourceBookIds"],
+            message: "Duplicate source books selected.",
+        });
+    }
 });
 
 

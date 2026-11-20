@@ -3,24 +3,73 @@ import {MediaType} from "@/lib/utils/enums";
 import {logger} from "@/lib/server/core/logger";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
 import {FormattedError} from "@/lib/utils/error-classes";
-import type {AdminListsSearch} from "@/lib/schemas/admin.schema";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
+import {withTransaction} from "@/lib/server/database/async-storage";
+import {StatsService} from "@/lib/server/domain/stats/stats.service";
 import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
+import {MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
 import {getRollupKey, PENDING_ROLLUPS_KEY} from "@/lib/server/core/cache-keys";
 import {getYearRecapReleaseStatus} from "@/lib/server/domain/year-recap/release-status";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {YEAR_RECAP_FIRST_YEAR, YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
-import type {AdminMissingCoversSearch, AdminUpdateMediaCover} from "@/lib/schemas/admin.schema";
+import {AdminApiMonitoringParams, AdminBookMergeResult, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
+import type {AdminBookMergeSearch, AdminListsSearch, AdminMergeBooks, AdminMissingCoversSearch, AdminUpdateMediaCover} from "@/lib/schemas/admin.schema";
 
 
 export class AdminService {
-    constructor(private repository: typeof AdminRepository) {
+    constructor(
+        private repository: typeof AdminRepository,
+        private statsService: StatsService,
+        private mediaStatsRegistry: MediaStatsRegistry,
+    ) {
     }
 
     async getMissingCovers(search: AdminMissingCoversSearch) {
         return this.repository.getMissingCovers(search);
+    }
+
+    async getBooksForMerge(search: AdminBookMergeSearch) {
+        return this.repository.getBooksForAdminMerge(search);
+    }
+
+    getBookMergePreview({ targetBookId, sourceBookIds }: AdminMergeBooks) {
+        const existing = this.repository.findBooksByIds([targetBookId, ...sourceBookIds]);
+        const existingIds = new Set(existing.map(book => book.id));
+
+        if (!existingIds.has(targetBookId)) {
+            throw new FormattedError("Target book no longer exists.");
+        }
+
+        if (sourceBookIds.some(id => !existingIds.has(id))) {
+            throw new FormattedError("One or more selected source books no longer exist.");
+        }
+
+        return this.repository.getBookMergePreview(targetBookId, sourceBookIds);
+    }
+
+    mergeBooks({ targetBookId, sourceBookIds }: AdminMergeBooks): AdminBookMergeResult {
+        return withTransaction(() => {
+            const existing = this.repository.findBooksByIds([targetBookId, ...sourceBookIds]);
+            const existingIds = new Set(existing.map(book => book.id));
+
+            if (!existingIds.has(targetBookId)) {
+                throw new FormattedError("Target book no longer exists.");
+            }
+
+            if (sourceBookIds.some(id => !existingIds.has(id))) {
+                throw new FormattedError("One or more selected source books no longer exist. Refresh the list and try again.");
+            }
+
+            const { recomputeStatsUserIds, ...result } = this.repository.mergeBooks(targetBookId, sourceBookIds);
+
+            if (recomputeStatsUserIds.length > 0) {
+                const userStats = this.mediaStatsRegistry.get(MediaType.BOOKS).computeAllUsersStats(recomputeStatsUserIds);
+                this.statsService.updateAllUsersPreComputedStats(MediaType.BOOKS, userStats);
+            }
+
+            return result;
+        });
     }
 
     async updateMissingCover({ mediaType, mediaId, imageUrl, imageFile }: AdminUpdateMediaCover) {

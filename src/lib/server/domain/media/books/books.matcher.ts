@@ -1,6 +1,7 @@
 import {ApiProviderType, MediaType, Status} from "@/lib/utils/enums";
 import type {BooksService} from "@/lib/server/domain/media/books/books.service";
 import {isManualBookId} from "@/lib/media-definitions/books/book.definition.server";
+import {toBookEditionSnapshot} from "@/lib/server/domain/media/books/books.repository";
 import type {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {createImportListWriter, createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
@@ -56,20 +57,39 @@ export const createBooksMatcher = (
                     throw new Error(`Matched book media ${mediaId} does not exist`);
                 }
 
+                const snapshot = toBookEditionSnapshot(media);
+                const customTitle = payload.customTitle ?? snapshot.customTitle;
+                const customPages = payload.customPages ?? snapshot.customPages;
+                const customPublisher = payload.customPublisher !== undefined ? payload.customPublisher : snapshot.customPublisher;
+                const customReleaseDate = payload.customReleaseDate !== undefined ? payload.customReleaseDate : snapshot.customReleaseDate;
+                const customLanguage = payload.customLanguage !== undefined ? payload.customLanguage : snapshot.customLanguage;
+
                 let total = payload.total;
                 const redo = payload.redo ?? 0;
 
                 const actualPage = payload.actualPage === undefined
-                    ? payload.status === Status.COMPLETED ? media.pages : 0
+                    ? payload.status === Status.COMPLETED ? customPages : 0
                     : payload.actualPage;
 
                 if (total === undefined) {
-                    if (payload.status === Status.COMPLETED) total = media.pages * (1 + redo);
+                    if (payload.status === Status.COMPLETED) total = customPages * (1 + redo);
                     else if (payload.status === Status.PLANNED) total = 0;
-                    else total = (actualPage ?? 0) + redo * media.pages;
+                    else total = (actualPage ?? 0) + redo * customPages;
                 }
 
-                return booksFinalListInsertSchema.parse({ userId, mediaId, ...payload, redo, total, actualPage });
+                return booksFinalListInsertSchema.parse({
+                    ...payload,
+                    userId,
+                    mediaId,
+                    redo,
+                    total,
+                    actualPage,
+                    customTitle,
+                    customPages,
+                    customPublisher,
+                    customReleaseDate,
+                    customLanguage,
+                });
             },
         }),
     });

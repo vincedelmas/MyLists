@@ -11,17 +11,24 @@ import {LoadingButton} from "@/lib/client/components/general/LoadingButton";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {UpdateUserCustomCoverInput, updateUserCustomCoverSchema} from "@/lib/schemas";
 import {CoverSourceFields} from "@/lib/client/components/media/base/CoverSourceFields";
+import {GoogleCoverSearch} from "@/lib/client/components/media/base/GoogleCoverSearch";
 import {useUpdateCustomCoverMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
 interface CustomCoverTabProps {
+    enabled?: boolean;
+    disabled?: boolean;
+    mediaName?: string;
     mediaType: MediaType;
+    authors?: string | null;
     userMedia: UserMedia | UserMediaItem;
     onUpdateMutation: ReturnType<typeof useUpdateCustomCoverMutation>;
 }
 
 
-export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }: CustomCoverTabProps) => {
+export const CustomCoverTabContent = (props: CustomCoverTabProps) => {
+    const { mediaType, userMedia, onUpdateMutation, mediaName, authors, enabled = true, disabled = false } = props;
+
     const [mode, setMode] = useState<"link" | "upload">("link");
     const form = useForm<UpdateUserCustomCoverInput>({
         resolver: zodResolver(updateUserCustomCoverSchema),
@@ -63,8 +70,8 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
 
     const handleRemove = () => {
         const formData = new FormData();
-        formData.append("remove", "true");
         formData.append("mediaType", mediaType);
+        formData.append("remove", "true");
         formData.append("mediaId", userMedia.mediaId.toString());
 
         onUpdateMutation.mutate({ data: formData }, {
@@ -77,6 +84,14 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
         });
     };
 
+    const useSuggestedCover = (suggestedCoverUrl: string) => {
+        setMode("link");
+        form.clearErrors(["imageFile", "imageUrl"]);
+        form.setValue("imageFile", undefined);
+        form.setValue("imageUrl", suggestedCoverUrl, { shouldDirty: true, shouldValidate: true });
+    };
+
+    const isFormDisabled = disabled || onUpdateMutation.isPending;
     const removingCover = onUpdateMutation.isPending
         && onUpdateMutation.variables?.data instanceof FormData
         && onUpdateMutation.variables.data.get("remove") === "true";
@@ -89,7 +104,7 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
                         <img
                             alt="Custom Cover"
                             src={userMedia.customCover}
-                            className="h-52 rounded-md border object-cover"
+                            className="h-65 rounded-md border object-cover"
                         />
                         <LoadingButton
                             size="bare"
@@ -99,12 +114,12 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
                             isLoading={removingCover}
                             title="Remove custom cover"
                             icon={<X className="size-4"/>}
-                            disabled={onUpdateMutation.isPending && !removingCover}
+                            disabled={disabled || (onUpdateMutation.isPending && !removingCover)}
                             className="absolute -top-2 -right-2.5 rounded-full bg-destructive p-1"
                         />
                     </div>
                     :
-                    <div className="h-52 w-35 flex flex-col gap-2 px-3 justify-center text-center items-center rounded-md border
+                    <div className="h-65 w-43.5 flex flex-col gap-2 px-3 justify-center text-center items-center rounded-md border
                     border-dashed text-xs text-muted-foreground">
                         <ImageOff className="size-6"/>
                         No custom cover set for this media
@@ -114,17 +129,28 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
 
             <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-3">
-                    <FieldSet disabled={onUpdateMutation.isPending}>
+                    <FieldSet disabled={isFormDisabled}>
                         <FieldGroup>
+                            {mediaName &&
+                                <GoogleCoverSearch
+                                    enabled={enabled}
+                                    authors={authors}
+                                    mediaType={mediaType}
+                                    mediaName={mediaName}
+                                    disabled={isFormDisabled}
+                                    mediaId={userMedia.mediaId}
+                                    onUseCover={useSuggestedCover}
+                                />
+                            }
                             <CoverSourceFields
                                 mode={mode}
                                 onModeChange={setMode}
-                                disabled={onUpdateMutation.isPending}
+                                disabled={isFormDisabled}
                             />
                         </FieldGroup>
                     </FieldSet>
                     <FormError/>
-                    <FormSubmitButton className="w-full" isLoading={onUpdateMutation.isPending && !removingCover} disabled={removingCover}>
+                    <FormSubmitButton className="w-full" isLoading={onUpdateMutation.isPending && !removingCover} disabled={disabled || removingCover}>
                         Save Custom Cover
                     </FormSubmitButton>
                 </form>

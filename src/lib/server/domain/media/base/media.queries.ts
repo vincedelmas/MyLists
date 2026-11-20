@@ -160,9 +160,13 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         return getDbClient()
             .select({
                 id: mediaTable.id,
-                name: mediaTable.name,
+                name: listTable.customTitle
+                    ? sql<string>`COALESCE(${listTable.customTitle}, ${mediaTable.name})`
+                    : mediaTable.name,
                 imageCover: mediaTable.imageCover,
-                releaseDate: mediaTable.releaseDate,
+                releaseDate: listTable.customReleaseDate
+                    ? sql<string | null>`CASE WHEN ${listTable.id} IS NOT NULL THEN ${listTable.customReleaseDate} ELSE ${mediaTable.releaseDate} END`
+                    : mediaTable.releaseDate,
                 customCover: listTable.customCover,
                 inUserList: isNotNull(listTable.userId).mapWith(Boolean).as("inUserList"),
             })
@@ -310,9 +314,9 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
 
         return await getDbClient()
             .select({
-                mediaName: sql<string>`${mediaTable.name}`,
                 externalApiId: sql<string>`${mediaTable.apiId}`,
-                releaseDate: sql<string | null>`${mediaTable.releaseDate}`,
+                mediaName: sql<string>`${listTable.customTitle ?? mediaTable.name}`,
+                releaseDate: sql<string | null>`${listTable.customReleaseDate ?? mediaTable.releaseDate}`,
                 ...getTableColumns(listTable),
             })
             .from(listTable)

@@ -20,7 +20,10 @@ describe.each(Object.values(MediaType))("%s import matching", (mediaType) => {
         service = {
             findByApiIds: vi.fn().mockResolvedValue([]),
             findByNames: vi.fn().mockResolvedValue([{ id: 100, name: "Requested Title", releaseDate: "2024-01-01" }]),
-            findById: vi.fn().mockImplementation((id) => ({ id, pages: 100, chapters: 100 })),
+            findById: vi.fn().mockImplementation((id) => ({
+                id, pages: 100, chapters: 100, name: "Requested Title",
+                imageCover: "cover.jpg", publishers: null, releaseDate: null, language: null,
+            })),
             getMediaEpsPerSeason: vi.fn().mockReturnValue([{ season: 1, episodes: 10 }]),
             bulkInsertUserMedia: vi.fn().mockResolvedValue([]),
         };

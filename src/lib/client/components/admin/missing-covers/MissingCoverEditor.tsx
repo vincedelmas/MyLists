@@ -80,7 +80,9 @@ export function MissingCoverEditor({ media, onUpdated }: MissingCoverEditorProps
             </CardHeader>
             <CardContent className="flex flex-col gap-5">
                 <FieldSet className="gap-3">
-                    <FieldLegend variant="label">Find a cover</FieldLegend>
+                    <FieldLegend variant="label">
+                        Find a cover
+                    </FieldLegend>
                     <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-2">
                         <LoadingButton
                             size="lg"
@@ -100,8 +102,8 @@ export function MissingCoverEditor({ media, onUpdated }: MissingCoverEditorProps
                             params={{ mediaType: media.mediaType, mediaId: media.mediaId }}
                             className={buttonVariants({ variant: "outline", size: "lg", className: "justify-start" })}
                         >
-                            <ExternalLink data-icon="inline-start" aria-hidden="true"/>
                             View media
+                            <ExternalLink data-icon="inline-end"/>
                         </Link>
                         <GoogleCoverSearch
                             size="lg"

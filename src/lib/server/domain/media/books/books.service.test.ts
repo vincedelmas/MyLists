@@ -43,6 +43,11 @@ describe("BooksService", () => {
         addedAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
         customCover: null,
+        customTitle: "Test Book",
+        customPages: 100,
+        customPublisher: "Test Publisher",
+        customReleaseDate: "2025-01-01",
+        customLanguage: "en",
         releaseNotificationsEnabled: true,
         redo: 0,
         total: 100,
@@ -120,5 +125,67 @@ describe("BooksService", () => {
             },
         );
 
+        it("uses customPages instead of parent book pages for progress and completion", () => {
+            const current = makeUserState({ status: Status.IN_PROGRESS, customPages: 320, actualPage: 300, redo: 1, total: 620 });
+            const [next] = booksService.updatePageHandler(current, { actualPage: 320 }, baseBook);
+            expect(next).toMatchObject({ status: Status.COMPLETED, actualPage: 320, total: 640 });
+            expect(() => booksService.updatePageHandler(current, { actualPage: 321 }, baseBook)).toThrow("Invalid page");
+        });
+
+    });
+
+    describe("updateUserCustomDetails", () => {
+        it("rejects lowering customPages below actualPage for an in-progress book", () => {
+            const repo = {
+                ...booksRepository,
+                findById: () => baseBook,
+                findUserMedia: () => makeUserState({ status: Status.IN_PROGRESS, actualPage: 80, customPages: 100, total: 80 }),
+            } as unknown as BooksRepository;
+            const service = createBooksService(repo);
+
+            expect(() => service.updateUserCustomDetails(1, {
+                mediaId: 1,
+                customTitle: "My Edition",
+                customPages: 50,
+                customPublisher: null,
+                customReleaseDate: null,
+                customLanguage: "fr",
+            })).toThrow("Total pages cannot be less than your current page (80).");
+        });
+
+        it("recalculates actualPage, total, and stats delta when changing customPages on a completed book", () => {
+            const current = makeUserState({ status: Status.COMPLETED, actualPage: 100, customPages: 100, redo: 1, total: 200 });
+            let updatedValues: Partial<BooksList> = {};
+            const repo = {
+                ...booksRepository,
+                findById: () => baseBook,
+                findUserMedia: () => current,
+                updateUserMediaDetails: (_userId: number, _mediaId: number, data: Partial<BooksList>) => {
+                    updatedValues = data;
+                    return { ...current, ...data };
+                },
+            } as unknown as BooksRepository;
+            const service = createBooksService(repo);
+
+            const result = service.updateUserCustomDetails(1, {
+                mediaId: 1,
+                customTitle: "French Edition",
+                customPages: 150,
+                customPublisher: "Gallimard",
+                customReleaseDate: "2020-05-01",
+                customLanguage: "fr",
+            });
+
+            expect(updatedValues).toMatchObject({
+                customTitle: "French Edition",
+                customPages: 150,
+                actualPage: 150,
+                total: 300,
+                customPublisher: "Gallimard",
+                customLanguage: "fr",
+            });
+            expect(result.delta.totalSpecific).toBe(100);
+            expect(result.delta.timeSpent).toBeCloseTo(100 * TIME_PER_PAGE);
+        });
     });
 });

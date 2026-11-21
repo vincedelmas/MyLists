@@ -165,9 +165,11 @@ export const createDynamicListSources = (userId: number, spec: DynamicListSpec, 
                 WHERE ${genreTable.mediaId} IN (SELECT "mediaId" FROM (${baseQuery}))` : sql`SELECT NULL AS "name" WHERE 0`,
 
             tagQuery: definition.filters.common.tags ? sql`SELECT ${mediaTags.name} AS "name"
-                FROM ${tagTable} INNER JOIN ${mediaTags} ON ${mediaTags.id} = ${tagTable.tagId}
-                WHERE ${tagTable.userId} = ${userId} 
-                    AND ${tagTable.mediaId} IN (SELECT "mediaId" FROM (${baseQuery}))` : sql`SELECT NULL AS "name" WHERE 0`,
+                FROM ${tagTable}
+                INNER JOIN ${mediaTags} ON ${mediaTags.id} = ${tagTable.tagId}
+                INNER JOIN ${listTable} ON ${listTable.id} = ${tagTable.listId}
+                WHERE ${listTable.userId} = ${userId}
+                    AND ${listTable.mediaId} IN (SELECT "mediaId" FROM (${baseQuery}))` : sql`SELECT NULL AS "name" WHERE 0`,
         };
     });
 };

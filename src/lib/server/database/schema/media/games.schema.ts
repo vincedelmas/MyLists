@@ -58,5 +58,5 @@ export const gamesCompanies = snakeCase.table("games_companies", {
 
 
 export const gamesTags = snakeCase.table("games_tags", {
-    ...commonMediaTagsCols(games.id),
+    ...commonMediaTagsCols(gamesList.id),
 }, (table) => commonMediaTagsIndexes(table, MediaType.GAMES));

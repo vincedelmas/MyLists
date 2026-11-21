@@ -46,5 +46,5 @@ export const mangaAuthors = snakeCase.table("manga_authors", {
 
 
 export const mangaTags = snakeCase.table("manga_tags", {
-    ...commonMediaTagsCols(manga.id),
+    ...commonMediaTagsCols(mangaList.id),
 }, (table) => commonMediaTagsIndexes(table, MediaType.MANGA));

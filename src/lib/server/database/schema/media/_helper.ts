@@ -73,21 +73,18 @@ export const commonGenericIndexes = (table: { mediaId: SQLiteColumn; name: SQLit
 };
 
 
-export const commonMediaTagsCols = (modelMediaId: SQLiteColumn) => {
+export const commonMediaTagsCols = (listId: SQLiteColumn) => {
     return {
-        id: integer().primaryKey().notNull(),
-        userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
-        mediaId: integer().notNull().references(() => modelMediaId, { onDelete: "cascade" }),
+        listId: integer().notNull().references(() => listId, { onDelete: "cascade" }),
         tagId: integer().notNull().references(() => mediaTags.id, { onDelete: "cascade" }),
     };
 };
 
 
-export const commonMediaTagsIndexes = (table: { userId: SQLiteColumn; mediaId: SQLiteColumn; tagId: SQLiteColumn }, mediaTypeName: MediaType) => {
+export const commonMediaTagsIndexes = (table: { listId: SQLiteColumn; tagId: SQLiteColumn }, mediaTypeName: MediaType) => {
     return [
-        uniqueIndex(`ux_${mediaTypeName}_tags_user_media_tag`)
-            .on(table.userId, table.mediaId, table.tagId),
-        index(`ix_${mediaTypeName}_tags_user_tag_media`).on(table.userId, table.tagId, table.mediaId),
+        primaryKey({ columns: [table.listId, table.tagId] }),
+        index(`ix_${mediaTypeName}_tags_tag_list`).on(table.tagId, table.listId),
     ];
 };
 

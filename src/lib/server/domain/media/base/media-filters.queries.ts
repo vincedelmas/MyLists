@@ -162,10 +162,13 @@ export const defineMediaFilterDefinitions = <const TDef extends Pick<MediaDefini
         tags: {
             personal: true,
             isActive: (args) => !!args.tags?.length,
-            getCondition: (args) => inArray(mediaTable.id, getDbClient()
-                .select({ mediaId: tagTable.mediaId }).from(tagTable)
+            getCondition: (args) => inArray(listTable.id, getDbClient()
+                .select({ listId: tagTable.listId }).from(tagTable)
                 .innerJoin(mediaTags, eq(mediaTags.id, tagTable.tagId))
-                .where(and(eq(tagTable.userId, args.userId!), inArray(mediaTags.name, args.tags!)))),
+                .where(and(
+                    eq(mediaTags.userId, args.userId!),
+                    inArray(mediaTags.name, args.tags!),
+                ))),
         },
         genres: createArrayFilter({
             mediaTable,
@@ -248,27 +251,35 @@ export const getMediaScopedFilterConditions = (definition: AnyMediaRepositoryDef
         ...getMediaCommonFilterConditions(definition, { genres: filters.genres }, userId),
         ...getMediaMetadataFilterConditions(definition, filters, userId),
     ];
-    if (!definition.filters.common.tags || (!filters.tags?.length && !filters.excludeTags?.length)) return conditions;
-    if (userId === undefined) throw new FormattedError("Sign in to filter by your own list.");
 
-    const { tagTable, mediaTable, listTable } = definition.tables;
+    if (!definition.filters.common.tags || (!filters.tags?.length && !filters.excludeTags?.length)) {
+        return conditions;
+    }
+
+    if (userId === undefined) {
+        throw new FormattedError("Sign in to filter by your own list.");
+    }
+
+    const { tagTable, listTable } = definition.tables;
     conditions.push(isNotNull(listTable.userId));
 
     if (filters.tags?.length) {
         const tags = [...new Set(filters.tags)];
         const matching = sql`SELECT DISTINCT ${mediaTags.id} FROM ${tagTable}
             INNER JOIN ${mediaTags} ON ${mediaTags.id} = ${tagTable.tagId}
-            WHERE ${tagTable.userId} = ${userId} AND ${tagTable.mediaId} = ${mediaTable.id}
+            WHERE ${tagTable.listId} = ${listTable.id}
                 AND ${mediaTags.name} IN (${sql.join(tags.map(tag => sql`${tag}`), sql`, `)})`;
         conditions.push(filters.tagsMatch === "all"
             ? sql`(SELECT COUNT(*) FROM (${matching})) = ${tags.length}`
             : sql`EXISTS (${matching})`);
     }
+
     if (filters.excludeTags?.length) {
         conditions.push(sql`NOT EXISTS (SELECT 1 FROM ${tagTable}
             INNER JOIN ${mediaTags} ON ${mediaTags.id} = ${tagTable.tagId}
-            WHERE ${tagTable.userId} = ${userId} AND ${tagTable.mediaId} = ${mediaTable.id}
+            WHERE ${tagTable.listId} = ${listTable.id}
                 AND ${mediaTags.name} IN (${sql.join(filters.excludeTags.map(tag => sql`${tag}`), sql`, `)}))`);
     }
+
     return conditions;
 };

@@ -200,9 +200,9 @@ async function seedStatisticsData(db: SQLiteBunDatabase) {
         { id: 4, mediaId: 4, name: "Hidden Actor" },
     ]);
     seedMediaTags(db, MediaType.MOVIES, [
-        { id: 1, userId: 1, mediaId: 1, name: "favorite" },
-        { id: 2, userId: 1, mediaId: 2, name: "favorite" },
-        { id: 3, userId: 2, mediaId: 4, name: "hidden" },
+        { userId: 1, mediaId: 1, name: "favorite" },
+        { userId: 1, mediaId: 2, name: "favorite" },
+        { userId: 2, mediaId: 4, name: "hidden" },
     ]);
 }
 

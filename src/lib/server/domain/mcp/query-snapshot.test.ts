@@ -54,7 +54,7 @@ describe("MCP query snapshots", () => {
                     const tag = source.query<{
                         id: number
                     }, [number, string, string]>("INSERT INTO media_tags (user_id, media_type, name) VALUES (?, ?, ?) RETURNING id").get(id, type, `label-user-${id}`)!;
-                    source.run(`INSERT INTO ${type}_tags (user_id, media_id, tag_id) VALUES (?, 10, ?)`, [id, tag.id]);
+                    source.run(`INSERT INTO ${type}_tags (list_id, tag_id) VALUES (?, ?)`, [id * 100, tag.id]);
                     source.run("INSERT INTO media_tags (user_id, media_type, name) VALUES (?, ?, ?)", [id, type, `unattached-user-${id}`]);
                     source.run("INSERT INTO user_media_monthly_activity (user_id, media_type, media_id, month_bucket, progress_gained, redo_gained) VALUES (?, ?, ?, '2026-01', 10, 0)", [id, type, id === 1 || id === 2 ? 10 : 90]);
                 }

@@ -107,7 +107,7 @@ it("offers editor genres and tags from selected owner active lists only", () => 
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 2, name: "Drama" }).run();
         dbContext.db.insert(schema.mangaGenre).values({ mediaId: 3, name: "Inactive genre" }).run();
         seedMediaTags(dbContext.db, MediaType.MOVIES, [
-            { userId: 1, mediaId: 1, name: "cozy" }, { userId: 2, mediaId: 1, name: "Visitor tag" },
+            { userId: 1, mediaId: 1, name: "cozy" }, { userId: 2, mediaId: 4, name: "Visitor tag" },
             { userId: 1, name: "Unused tag" }, { userId: 2, mediaId: 4, name: "Foreign tag" },
         ]);
         seedMediaTags(dbContext.db, MediaType.BOOKS, { userId: 1, mediaId: 2, name: "learning" });
@@ -206,6 +206,7 @@ it("ANDs filters, matches any requested tag, and scopes tags to the owner", () =
         addEntry(MediaType.GAMES, 3, { rating: 7, favorite: true });
         addEntry(MediaType.MOVIES, 4, { rating: 8, favorite: false });
         addEntry(MediaType.MOVIES, 5, { rating: 8, favorite: true });
+        addEntry(MediaType.MOVIES, 5, { userId: 2 });
         seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 1, name: "cozy" }, { userId: 1, mediaId: 1, name: "short" },
             { userId: 1, mediaId: 4, name: "cozy" }, { userId: 2, mediaId: 5, name: "cozy" },
@@ -229,6 +230,7 @@ it("ANDs filters, matches any requested tag, and scopes tags to the owner", () =
         addEntry(MediaType.MOVIES, 1, { rating: 9, favorite: true });
         addEntry(MediaType.BOOKS, 2, { rating: 8, favorite: false });
         addEntry(MediaType.MOVIES, 3, { rating: 10, status: Status.PLANNED });
+        addEntry(MediaType.MOVIES, 1, { userId: 2 });
         dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 3, name: "Excluded genre" }]).run();
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 2, name: "History" }).run();
         seedMediaTags(dbContext.db, MediaType.MOVIES, [
@@ -251,6 +253,7 @@ it("ANDs filters, matches any requested tag, and scopes tags to the owner", () =
         addEntry(MediaType.MOVIES, 1, { rating: 9 });
         addEntry(MediaType.MOVIES, 2, { rating: 9 });
         addEntry(MediaType.BOOKS, 1, { rating: 8 });
+        addEntry(MediaType.MOVIES, 2, { userId: 2 });
         dbContext.db.insert(schema.moviesGenre).values([{ mediaId: 1, name: "Drama" }, { mediaId: 2, name: "Comedy" }]).run();
         dbContext.db.insert(schema.booksGenre).values({ mediaId: 1, name: "History" }).run();
         seedMediaTags(dbContext.db, MediaType.MOVIES, [
@@ -367,6 +370,8 @@ it("loads small facets and searches tracking-list names on demand", async () => 
 
 it("matches all requested tags and excludes any owner tag while ignoring other users' tags", () => {
         for (let id = 1; id <= 4; id++) addEntry(MediaType.MOVIES, id);
+        addEntry(MediaType.MOVIES, 1, { userId: 2 });
+        addEntry(MediaType.MOVIES, 2, { userId: 2 });
         seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 1, name: "cozy" }, { userId: 1, mediaId: 1, name: "short" },
             { userId: 1, mediaId: 2, name: "cozy" }, { userId: 2, mediaId: 2, name: "short" },

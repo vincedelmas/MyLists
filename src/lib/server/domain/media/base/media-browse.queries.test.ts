@@ -66,6 +66,7 @@ describe("collection and category media browsing", () => {
             { userId: 1, mediaId: 55, status: Status.COMPLETED, rating: 10, favorite: true },
             { userId: 2, mediaId: 1, status: Status.COMPLETED, rating: 3, favorite: false, addedAt: "2026-06-01T00:00:00.000Z" },
             { userId: 2, mediaId: 55, status: Status.DROPPED, rating: 9, favorite: true, addedAt: "2026-01-01 00:00:00", customCover: "custom.jpg" },
+            { userId: 2, mediaId: 56, status: Status.COMPLETED },
         ]).run();
         seedMediaTags(dbContext.db, MediaType.MOVIES, [
             { userId: 1, mediaId: 55, name: "Owner secret" }, { userId: 2, mediaId: 55, name: "Viewer tag" },

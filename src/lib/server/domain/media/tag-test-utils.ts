@@ -1,3 +1,4 @@
+import {and, eq} from "drizzle-orm";
 import type {MediaType} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
 import type {SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
@@ -5,7 +6,6 @@ import {getServerMediaDefinition} from "@/lib/media-definitions/definition.regis
 
 
 type TagSeed = {
-    id?: number;
     name: string;
     userId: number;
     mediaId?: number;
@@ -13,25 +13,29 @@ type TagSeed = {
 
 
 export const seedMediaTags = (db: SQLiteBunDatabase, mediaType: MediaType, rows: TagSeed | TagSeed[]) => {
-    const { tagTable } = getServerMediaDefinition(mediaType).repository.tables;
+    const { listTable, tagTable } = getServerMediaDefinition(mediaType).repository.tables;
 
-    for (const { name, ...assignment } of Array.isArray(rows) ? rows : [rows]) {
+    for (const { name, userId, mediaId } of Array.isArray(rows) ? rows : [rows]) {
         const tag = db
             .insert(schema.mediaTags)
-            .values({
-                name,
-                mediaType,
-                userId: assignment.userId,
-            })
+            .values({ name, mediaType, userId })
             .onConflictDoUpdate({
                 set: { name },
                 target: [schema.mediaTags.userId, schema.mediaTags.mediaType, schema.mediaTags.name],
             }).returning({ id: schema.mediaTags.id })
             .get()!;
 
-        if (assignment.mediaId !== undefined) {
+        if (mediaId !== undefined) {
+            const listEntry = db
+                .select({ id: listTable.id })
+                .from(listTable)
+                .where(and(eq(listTable.userId, userId), eq(listTable.mediaId, mediaId)))
+                .get();
+            if (!listEntry) {
+                throw new Error(`Cannot seed tag "${name}": no ${mediaType} list entry for user ${userId}, media ${mediaId}`);
+            }
             db.insert(tagTable)
-                .values({ ...assignment, mediaId: assignment.mediaId, tagId: tag.id })
+                .values({ listId: listEntry.id, tagId: tag.id })
                 .run();
         }
     }

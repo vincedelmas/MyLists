@@ -48,10 +48,8 @@ type ListTableColumns = {
 
 
 type TagTableColumns = {
-    id: NotNullColumn<number>;
     tagId: NotNullColumn<number>;
-    userId: NotNullColumn<number>;
-    mediaId: NotNullColumn<number>;
+    listId: NotNullColumn<number>;
 };
 
 

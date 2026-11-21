@@ -1,8 +1,8 @@
+import {and, asc, count, eq, sql} from "drizzle-orm";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {mediaTags} from "@/lib/server/database/schema";
 import type {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {and, asc, count, eq, inArray, sql} from "drizzle-orm";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
 import type {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {removeDynamicListTagReferences} from "@/lib/server/domain/dynamic-lists/dynamic-list-tags.queries";
@@ -19,7 +19,7 @@ export const getMediaTagNames = (mediaType: MediaType, userId: number) => {
 
 
 export const createMediaTagQueries = (definition: AnyServerMediaDefinition) => {
-    const { identity: { mediaType }, repository: { tables: { tagTable } } } = definition;
+    const { identity: { mediaType }, repository: { tables: { listTable, tagTable } } } = definition;
 
     return {
         async getTagNames(userId: number) {
@@ -31,24 +31,57 @@ export const createMediaTagQueries = (definition: AnyServerMediaDefinition) => {
                 const db = getDbClient();
                 const owner = and(eq(mediaTags.userId, userId), eq(mediaTags.mediaType, mediaType));
 
+                const listEntry = mediaId === undefined
+                    ? undefined
+                    : db.select({ id: listTable.id })
+                        .from(listTable)
+                        .where(and(eq(listTable.userId, userId), eq(listTable.mediaId, mediaId)))
+                        .get();
+
+                if (mediaId !== undefined && !listEntry) {
+                    throw new FormattedError("Media not in your list");
+                }
+
                 if (action === TagAction.ADD) {
-                    let identity = db.select().from(mediaTags).where(and(owner, eq(mediaTags.name, tag.name))).get();
+                    let identity = db
+                        .select()
+                        .from(mediaTags)
+                        .where(and(owner, eq(mediaTags.name, tag.name)))
+                        .get();
+
                     if (!identity) {
-                        identity = db.insert(mediaTags).values({ userId, mediaType, name: tag.name }).returning().get()!;
+                        identity = db
+                            .insert(mediaTags)
+                            .values({ userId, mediaType, name: tag.name })
+                            .returning()
+                            .get()!;
                     }
-                    if (mediaId !== undefined) {
-                        db.insert(tagTable).values({ userId, mediaId, tagId: identity.id }).run();
+                    if (listEntry) {
+                        db.insert(tagTable)
+                            .values({ listId: listEntry.id, tagId: identity.id })
+                            .run();
                     }
+
                     return { name: identity.name } satisfies Tag;
                 }
 
                 if (action === TagAction.RENAME) {
-                    const existing = db.select({ id: mediaTags.id }).from(mediaTags)
-                        .where(and(owner, eq(mediaTags.name, tag.name))).get();
-                    if (existing) throw new FormattedError("A tag with this name already exists.");
-                    return db.update(mediaTags).set({ name: tag.name })
+                    const existing = db
+                        .select({ id: mediaTags.id })
+                        .from(mediaTags)
+                        .where(and(owner, eq(mediaTags.name, tag.name)))
+                        .get();
+
+                    if (existing) {
+                        throw new FormattedError("A tag with this name already exists.");
+                    }
+
+                    return db
+                        .update(mediaTags)
+                        .set({ name: tag.name })
                         .where(and(owner, eq(mediaTags.name, tag.oldName!)))
-                        .returning({ name: mediaTags.name }).get();
+                        .returning({ name: mediaTags.name })
+                        .get();
                 }
 
                 const identity = db
@@ -62,9 +95,8 @@ export const createMediaTagQueries = (definition: AnyServerMediaDefinition) => {
                 if (action === TagAction.DELETE_ONE) {
                     db.delete(tagTable)
                         .where(and(
-                            eq(tagTable.userId, userId),
                             eq(tagTable.tagId, identity.id),
-                            eq(tagTable.mediaId, mediaId!),
+                            eq(tagTable.listId, listEntry!.id),
                         )).run();
                 }
                 else if (action === TagAction.DELETE_ALL) {
@@ -77,20 +109,11 @@ export const createMediaTagQueries = (definition: AnyServerMediaDefinition) => {
             });
         },
 
-        removeMediaAssignments(mediaIds: number[], userId?: number) {
-            return getDbClient()
-                .delete(tagTable)
-                .where(and(
-                    inArray(tagTable.mediaId, mediaIds),
-                    userId === undefined ? undefined : eq(tagTable.userId, userId),
-                )).run();
-        },
-
         async getTagsView(userId: number) {
             return getDbClient()
                 .select({
                     tagName: mediaTags.name,
-                    totalCount: count(tagTable.mediaId),
+                    totalCount: count(tagTable.listId),
                 }).from(mediaTags)
                 .leftJoin(tagTable, eq(mediaTags.id, tagTable.tagId))
                 .where(and(eq(mediaTags.userId, userId), eq(mediaTags.mediaType, mediaType)))

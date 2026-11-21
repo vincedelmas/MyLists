@@ -223,7 +223,8 @@ export class CollectionsRepository {
         if (includeFilterOptions && filterMediaTypes.length) {
             const sources = filterMediaTypes.map(mediaType => {
                 const definition = getServerMediaDefinition(mediaType).repository;
-                const { tagTable, genreTable } = definition.tables;
+                const { listTable, tagTable, genreTable } = definition.tables;
+
                 const sourceMediaIds = getCollectionFilterMediaIds(collectionId, mediaType, viewerId, filters.library);
 
                 filterOptions.mediaFilters[mediaType] = getMediaMetadataFilterOptions(definition, {
@@ -239,15 +240,15 @@ export class CollectionsRepository {
                             inArray(genreTable.mediaId, sourceMediaIds),
                             definition.filters.common.genres ? undefined : sql`FALSE`,
                         )),
-
                     tags: db
                         .select({ name: mediaTags.name })
                         .from(tagTable)
                         .innerJoin(mediaTags, eq(mediaTags.id, tagTable.tagId))
+                        .innerJoin(listTable, eq(listTable.id, tagTable.listId))
                         .where(and(
-                            viewerId === undefined ? sql`FALSE` : eq(tagTable.userId, viewerId),
-                            inArray(tagTable.mediaId, sourceMediaIds),
+                            inArray(listTable.mediaId, sourceMediaIds),
                             definition.filters.common.tags ? undefined : sql`FALSE`,
+                            viewerId === undefined ? sql`FALSE` : eq(listTable.userId, viewerId),
                         )),
                 };
 

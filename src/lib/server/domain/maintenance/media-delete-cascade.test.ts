@@ -7,12 +7,12 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 it("cascades detail deletion for untracked titles and preserves shared tags", () => {
     const db = new Database(":memory:");
     const details = {
-        movies: ["genre", "actors", "tags"],
-        series: ["genre", "actors", "network", "episodes_per_season", "tags"],
-        anime: ["genre", "actors", "network", "episodes_per_season", "tags"],
-        games: ["genre", "platforms", "companies", "tags"],
-        books: ["genre", "authors", "tags"],
-        manga: ["genre", "authors", "tags"],
+        movies: ["genre", "actors"],
+        series: ["genre", "actors", "network", "episodes_per_season"],
+        anime: ["genre", "actors", "network", "episodes_per_season"],
+        games: ["genre", "platforms", "companies"],
+        books: ["genre", "authors"],
+        manga: ["genre", "authors"],
     };
 
     try {
@@ -34,11 +34,9 @@ it("cascades detail deletion for untracked titles and preserves shared tags", ()
             for (const id of [1, 2]) {
                 db.query(`INSERT INTO ${type} (id, api_id, name, image_cover${mediaColumns}) VALUES (?, ?, 'Title', 'cover.jpg'${mediaValues})`).run(id, id);
                 for (const suffix of suffixes) {
-                    const columns = suffix === "tags" ? "user_id, tag_id"
-                        : suffix === "episodes_per_season" ? "season, episodes"
+                    const columns = suffix === "episodes_per_season" ? "season, episodes"
                         : suffix === "companies" ? "name, publisher, developer" : "name";
-                    const values = suffix === "tags" ? `1, ${tagId}`
-                        : suffix === "episodes_per_season" ? "1, 12"
+                    const values = suffix === "episodes_per_season" ? "1, 12"
                         : suffix === "companies" ? "'Studio', 1, 1" : "'Shared name'";
                     db.query(`INSERT INTO ${type}_${suffix} (id, media_id, ${columns}) VALUES (?, ?, ${values})`).run(id, id);
                 }
@@ -48,11 +46,13 @@ it("cascades detail deletion for untracked titles and preserves shared tags", ()
             const listValues = tv ? ", 1, 5" : type === "manga" ? ", 10" : type === "books" ? ", 'Title', 100" : "";
             db.run(`INSERT INTO ${type}_list (id, user_id, media_id, status, rating, comment${listColumns})
                 VALUES (2, 1, 2, 'In Progress', 7.5, 'Keep this comment'${listValues})`);
+            db.query(`INSERT INTO ${type}_tags (list_id, tag_id) VALUES (2, ?)`).run(tagId);
             if (tv) db.run(`INSERT INTO ${type}_list_seasons (list_id, season, redo, rating) VALUES (2, 1, 2, 8)`);
 
             const tables = [
                 type,
                 `${type}_list`,
+                `${type}_tags`,
                 ...suffixes.map(suffix => `${type}_${suffix}`),
                 ...(tv ? [`${type}_list_seasons`] : []),
             ];
@@ -78,9 +78,13 @@ it("cascades detail deletion for untracked titles and preserves shared tags", ()
             }
             expect(db.query(`SELECT * FROM ${type} ORDER BY id`).all()).toEqual(before.get(type)!.filter(row => row.id === 2));
             expect(db.query(`SELECT * FROM ${type}_list ORDER BY id`).all()).toEqual(before.get(`${type}_list`));
+            expect(db.query(`SELECT * FROM ${type}_tags ORDER BY list_id, tag_id`).all()).toEqual(before.get(`${type}_tags`));
             if (type === "series" || type === "anime") {
                 expect(db.query(`SELECT * FROM ${type}_list_seasons ORDER BY list_id, season`).all()).toEqual(before.get(`${type}_list_seasons`));
             }
+
+            db.run(`DELETE FROM ${type}_list WHERE id = 2`);
+            expect(db.query(`SELECT * FROM ${type}_tags`).all()).toEqual([]);
         }
         expect(db.query("SELECT * FROM media_tags ORDER BY id").all()).toEqual(tagsBefore);
         expect(db.query("PRAGMA foreign_key_check").all()).toEqual([]);

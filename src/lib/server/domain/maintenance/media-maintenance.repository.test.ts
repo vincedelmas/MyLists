@@ -81,7 +81,7 @@ describe("MediaMaintenanceRepository", () => {
 
         await db.insert(moviesActors).values({ mediaId: 102, name: "Orphan actor" });
         const tag = db.insert(schema.mediaTags).values({ userId: 42, mediaType: MediaType.MOVIES, name: "Keep" }).returning().get()!;
-        db.insert(schema.moviesTags).values({ userId: 42, mediaId: 102, tagId: tag.id }).run();
+        db.insert(schema.moviesTags).values({ listId: 1, tagId: tag.id }).run();
         const orphanIds = MediaMaintenanceRepository.getOrphanedMediaIds(MediaType.MOVIES);
         expect(orphanIds).toEqual([102]);
 
@@ -89,7 +89,7 @@ describe("MediaMaintenanceRepository", () => {
 
         expect(db.select({ id: movies.id }).from(movies).all()).toEqual([{ id: 100 }, { id: 101 }]);
         expect(db.select().from(moviesActors).all()).toEqual([]);
-        expect(db.select().from(schema.moviesTags).all()).toEqual([]);
+        expect(db.select().from(schema.moviesTags).all()).toEqual([{ listId: 1, tagId: tag.id }]);
         expect(db.select().from(schema.mediaTags).all()).toEqual([tag]);
     });
 

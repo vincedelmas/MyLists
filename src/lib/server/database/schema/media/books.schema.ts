@@ -48,5 +48,5 @@ export const booksAuthors = snakeCase.table("books_authors", {
 
 
 export const booksTags = snakeCase.table("books_tags", {
-    ...commonMediaTagsCols(books.id),
+    ...commonMediaTagsCols(booksList.id),
 }, (table) => commonMediaTagsIndexes(table, MediaType.BOOKS));

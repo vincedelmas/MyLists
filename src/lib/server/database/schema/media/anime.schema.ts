@@ -76,5 +76,5 @@ export const animeEpisodesPerSeason = snakeCase.table("anime_episodes_per_season
 
 
 export const animeTags = snakeCase.table("anime_tags", {
-    ...commonMediaTagsCols(anime.id),
+    ...commonMediaTagsCols(animeList.id),
 }, (table) => commonMediaTagsIndexes(table, MediaType.ANIME));

@@ -1,15 +1,13 @@
-import type {InferSelectModel} from "drizzle-orm";
 import {notFound} from "@tanstack/react-router";
 import {Actor} from "@/lib/server/authorization";
+import type {InferSelectModel} from "drizzle-orm";
 import {DeltaStats} from "@/lib/types/stats.types";
-import {Tag} from "@/lib/types/media-common.types";
+import {Status, UpdateType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {withTransaction} from "@/lib/server/database/async-storage";
 import type {AddedMediaDetails} from "@/lib/types/media-common.types";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
-import {formatMyListsCsvExport} from "@/lib/server/domain/imports/mylists-format";
 import {SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
+import {formatMyListsCsvExport} from "@/lib/server/domain/imports/mylists-format";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.queries";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
@@ -58,16 +56,6 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         if (!media) throw notFound();
 
         return communityQueries.getMediaCommunityActivity(actor, mediaId, search);
-    }
-
-    function editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {
-        return withTransaction(() => {
-            if (mediaId && !repository.findUserMedia(userId, mediaId)) {
-                throw new FormattedError("Media not in your list");
-            }
-
-            return tagQueries.editUserTag(userId, tag, action, mediaId);
-        });
     }
 
     function addMediaToUserList(userId: number, mediaId: number, status: Status = Status.PLANNED) {
@@ -236,7 +224,6 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
     }
 
     return {
-        editUserTag,
         addMediaToUserList,
         calculateDeltaStats,
         updateUserCustomCover,
@@ -247,6 +234,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         getMediaCommunityActivity,
         updateUserMediaNotifications,
         findById: repository.findById,
+        editUserTag: tagQueries.editUserTag,
         getTagsView: tagQueries.getTagsView,
         getTagNames: tagQueries.getTagNames,
         findByNames: repository.findByNames,

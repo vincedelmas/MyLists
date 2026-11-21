@@ -136,6 +136,7 @@ it("scopes tag filters to the owner of the requested list", async () => {
         await db.insert(moviesList).values([
             { userId: 42, mediaId: 100, status: Status.COMPLETED },
             { userId: 42, mediaId: 101, status: Status.COMPLETED },
+            { userId: 43, mediaId: 100, status: Status.COMPLETED },
         ]);
         seedMediaTags(db, MediaType.MOVIES, [
             { userId: 43, mediaId: 100, name: "private-tag" },

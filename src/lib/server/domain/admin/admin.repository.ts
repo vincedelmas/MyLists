@@ -486,15 +486,31 @@ export class AdminRepository {
             const [winner, ...losers] = userRows;
 
             if (losers.length > 0) {
+                const loserIds = losers.map(row => row.id);
+                const loserTags = db
+                    .select({ tagId: booksTags.tagId })
+                    .from(booksTags)
+                    .where(inArray(booksTags.listId, loserIds))
+                    .all();
+
+                if (loserTags.length > 0) {
+                    db.insert(booksTags)
+                        .values(loserTags.map(row => ({ listId: winner.id, tagId: row.tagId })))
+                        .onConflictDoNothing()
+                        .run();
+                }
+
                 db.delete(booksList)
-                    .where(inArray(booksList.id, losers.map(row => row.id)))
+                    .where(inArray(booksList.id, loserIds))
                     .run();
+
                 duplicateListEntriesRemoved += losers.length;
                 recomputeStatsUserIds.add(userId);
             }
 
             if (winner.mediaId !== targetBookId) {
                 const sourceCoverFilename = bookCoverFilenames.get(winner.mediaId) ?? "default.jpg";
+
                 const preservedCustomCover = winner.customCover === null
                 && sourceCoverFilename !== "default.jpg"
                 && sourceCoverFilename !== targetCoverFilename
@@ -505,34 +521,13 @@ export class AdminRepository {
                     .set({
                         mediaId: targetBookId,
                         ...(preservedCustomCover ? { customCover: preservedCustomCover } : {}),
-                    })
-                    .where(eq(booksList.id, winner.id))
+                    }).where(eq(booksList.id, winner.id))
                     .run();
+
                 if (losers.every(row => row.mediaId !== targetBookId)) {
                     movedListEntries += 1;
                 }
             }
-        }
-
-        // Merge user tags without violating (user_id, media_id, tag_id) uniqueness
-        const sourceTagRows = db
-            .select({ userId: booksTags.userId, tagId: booksTags.tagId })
-            .from(booksTags)
-            .where(inArray(booksTags.mediaId, sourceBookIds))
-            .all();
-
-        if (sourceTagRows.length > 0) {
-            db.insert(booksTags)
-                .values(sourceTagRows.map(row => ({
-                    tagId: row.tagId,
-                    userId: row.userId,
-                    mediaId: targetBookId,
-                }))).onConflictDoNothing()
-                .run();
-
-            db.delete(booksTags)
-                .where(inArray(booksTags.mediaId, sourceBookIds))
-                .run();
         }
 
         // Merge monthly activity buckets:

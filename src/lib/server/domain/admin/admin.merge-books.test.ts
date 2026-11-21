@@ -167,11 +167,11 @@ describe("AdminRepository book merging", () => {
         ]).run();
 
         // Tags, monthly activity (including same-month overlap for Bob), collection (with both books), update history, highlighted media
+        const bobListRows = dbContext.db.select().from(schema.booksList).where(eq(schema.booksList.userId, 2)).all();
         const [tag] = dbContext.db.insert(schema.mediaTags).values({ userId: 2, mediaType: MediaType.BOOKS, name: "Sci-Fi" }).returning().all();
-        dbContext.db.insert(schema.booksTags).values([
-            { userId: 2, mediaId: 10, tagId: tag.id },
-            { userId: 2, mediaId: 20, tagId: tag.id },
-        ]).run();
+        dbContext.db.insert(schema.booksTags).values(
+            bobListRows.map(row => ({ listId: row.id, tagId: tag.id }))
+        ).run();
 
         dbContext.db.insert(schema.userMediaMonthlyActivity).values([
             { userId: 2, mediaId: 10, mediaType: MediaType.BOOKS, monthBucket: "2026-02", progressGained: 200, redoGained: 0, hadCompletion: false, lastActivityAt: "2026-02-10T10:00:00.000Z" },

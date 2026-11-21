@@ -64,10 +64,12 @@ export const getSearchResults = createServerFn({ method: "GET" })
             searchResults = await providers.get(MediaType.MANGA).search(query, page);
         }
         else if (apiProvider === ApiProviderType.BOOKS) {
-            const apiResults = await providers.get(MediaType.BOOKS).search(query, page, advancedFilters);
             if (!advancedFilters && page === 1) {
                 const booksService = container.registries.mediaService.get(MediaType.BOOKS);
-                const dbResults = await booksService.searchByName(query);
+                const [apiResults, dbResults] = await Promise.all([
+                    providers.get(MediaType.BOOKS).search(query, page, advancedFilters),
+                    booksService.searchByName(query),
+                ]);
 
                 const dbApiIds = new Set(dbResults.map((r) => String(r.id)));
                 const filteredApiResults = apiResults.data.filter((r) => !dbApiIds.has(String(r.id)));
@@ -78,7 +80,7 @@ export const getSearchResults = createServerFn({ method: "GET" })
                 };
             }
             else {
-                searchResults = apiResults;
+                searchResults = await providers.get(MediaType.BOOKS).search(query, page, advancedFilters);
             }
         }
         else {

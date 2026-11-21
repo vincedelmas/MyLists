@@ -61,12 +61,14 @@ export const getUserProfile = createServerFn({ method: "GET" })
             await profileService.incrementProfileView(targetUserId);
         }
 
-        const { followsCount } = await socialService.getFollowCount(targetUserId);
-        const userFollows = await socialService.getUserFollows(undefined, targetUserId);
-        const followsUpdates = await updateHistoryService.getFollowsUpdates(targetUserId, toActor(currentUser));
-        const highlightedMedia = await profileService.resolveHighlightedMedia(targetUserId);
-        const showContinue = await profileService.getContinueVisibility(targetUserId);
-        const achievements = await achievementsService.getAchievementsDetails(targetUserId);
+        const [{ followsCount }, userFollows, followsUpdates, highlightedMedia, showContinue, achievements] = await Promise.all([
+            socialService.getFollowCount(targetUserId),
+            socialService.getUserFollows(undefined, targetUserId),
+            updateHistoryService.getFollowsUpdates(targetUserId, toActor(currentUser)),
+            profileService.resolveHighlightedMedia(targetUserId),
+            profileService.getContinueVisibility(targetUserId),
+            achievementsService.getAchievementsDetails(targetUserId),
+        ]);
 
         return {
             userFollows,

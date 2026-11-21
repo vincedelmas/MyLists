@@ -6,6 +6,8 @@ import {getRedisConnection} from "@/lib/server/core/redis-client";
 
 export type CacheManager = Awaited<ReturnType<typeof setupCacheManager>>;
 
+const MEMORY_CACHE_MAX_ENTRIES = 1_000;
+
 
 abstract class CacheStore {
     private pending = new Map<string, Promise<unknown>>();
@@ -15,8 +17,6 @@ abstract class CacheStore {
     abstract del(key: string): Promise<void>;
 
     abstract get<T>(key: string): Promise<T | undefined>;
-
-    abstract increment(key: string, amount?: number): Promise<number>;
 
     abstract set(key: string, value: any, ttl?: number): Promise<void>;
 
@@ -63,11 +63,6 @@ class RedisCacheStore extends CacheStore {
         await this.redis.del(key);
     }
 
-    async increment(key: string, amount = 1) {
-        const newValue = await this.redis.incrby(key, amount);
-        return newValue;
-    }
-
     getStoreType(): string {
         return "Redis";
     }
@@ -107,28 +102,15 @@ class MemoryCacheStore extends CacheStore {
 
     async set(key: string, value: any, ttl?: number) {
         const ttlMs = ttl ?? this.defaultTtl;
+        this.cache.delete(key);
+        if (this.cache.size >= MEMORY_CACHE_MAX_ENTRIES) {
+            this.cache.delete(this.cache.keys().next().value!);
+        }
         this.cache.set(key, { value, expires: Date.now() + ttlMs });
     }
 
     async del(key: string) {
         this.cache.delete(key);
-    }
-
-    async increment(key: string, amount = 1) {
-        const cached = this.cache.get(key);
-        const ttl = this.defaultTtl;
-
-        let newValue: number;
-        if (cached && cached.expires > Date.now() && typeof cached.value === "number") {
-            newValue = cached.value + amount;
-        }
-        else {
-            newValue = amount;
-        }
-
-        this.cache.set(key, { value: newValue, expires: Date.now() + ttl });
-
-        return newValue;
     }
 
     getStoreType() {

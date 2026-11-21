@@ -15,7 +15,10 @@ const verifyAdminToken = async (token: string, currentUserId: number) => {
     const sig = token.slice(dotIdx + 1);
     const expected = await signCookieValue(payload, serverEnv.ADMIN_TOKEN_SECRET);
 
-    if (sig !== expected) return false;
+    const submittedSignature = Buffer.from(sig);
+    const expectedSignature = Buffer.from(expected);
+    if (submittedSignature.length !== expectedSignature.length
+        || !crypto.timingSafeEqual(submittedSignature, expectedSignature)) return false;
 
     const [userId, exp] = payload.split(":");
     if (!userId || !exp) return false;

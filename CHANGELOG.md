@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.1](https://github.com/vincedelmas/MyLists/compare/v4.2.0...v4.2.1) (2026-11-21)
+
+
+### Bug Fixes
+
+* **books:** harden merge browsing and genre enrichment ([628ca00](https://github.com/vincedelmas/MyLists/commit/628ca0041dec1a50b769b930ad9b7155e2edc831))
+
 ## [4.2.0](https://github.com/vincedelmas/MyLists/compare/v4.1.1...v4.2.0) (2026-11-20)
 
 

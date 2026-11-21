@@ -1,4 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
+import type {CacheManager} from "@/lib/server/core/cache-manager";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {ProfileRepository} from "@/lib/server/domain/profile/profile.repository";
@@ -16,6 +17,9 @@ import {
 } from "@/lib/types/profile-custom.types";
 
 
+const VIEW_THROTTLE_MS = 5 * 60 * 1000;
+
+
 export class ProfileService {
     constructor(
         private repository: typeof ProfileRepository,
@@ -27,12 +31,18 @@ export class ProfileService {
         return this.repository.getRandomPublicProfile();
     }
 
-    async incrementProfileView(userId: number) {
-        return this.repository.incrementProfileView(userId);
+    async incrementProfileView(cacheManager: CacheManager, viewerId: number, userId: number) {
+        return cacheManager.wrap(`profileView:${viewerId}:${userId}`, async () => {
+            await this.repository.incrementProfileView(userId);
+            return true;
+        }, { ttl: VIEW_THROTTLE_MS });
     }
 
-    async incrementMediaTypeView(userId: number, mediaType: MediaType) {
-        return this.repository.incrementMediaTypeView(userId, mediaType);
+    async incrementMediaTypeView(cacheManager: CacheManager, viewerId: number, userId: number, mediaType: MediaType) {
+        return cacheManager.wrap(`mediaTypeView:${viewerId}:${userId}:${mediaType}`, async () => {
+            await this.repository.incrementMediaTypeView(userId, mediaType);
+            return true;
+        }, { ttl: VIEW_THROTTLE_MS });
     }
 
     async searchUsers(query: string, page = 1, currentUserId?: number) {

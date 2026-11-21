@@ -1,5 +1,7 @@
 import Database from "bun:sqlite";
 import {ProfileService} from "./profile.service";
+import {MediaType} from "@/lib/utils/enums";
+import {setupCacheManager} from "@/lib/server/core/cache-manager";
 import {ProfileRepository} from "./profile.repository";
 import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
@@ -15,6 +17,8 @@ const dbContext = vi.hoisted(() => ({ db: undefined as unknown as SQLiteBunDatab
 vi.mock("@/lib/server/database/db", () => ({
     get db() { return dbContext.db; },
 }));
+vi.mock("@/env/server", () => ({ serverEnv: { REDIS_ENABLED: false, CACHE_TTL_MIN: 5 } }));
+vi.mock("@/lib/server/core/logger", () => ({ logger: { info: vi.fn() } }));
 
 
 describe("profile customization", () => {
@@ -32,7 +36,62 @@ describe("profile customization", () => {
         }))).run();
     });
 
-    afterEach(() => sqlite.close());
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.clearAllTimers();
+        vi.useRealTimers();
+        sqlite.close();
+    });
+
+    it("deduplicates profile views per viewer and target until the five-minute window expires", async () => {
+        vi.useFakeTimers();
+        const cache = await setupCacheManager();
+        await Promise.all(Array.from({ length: 5 }, () => service.incrementProfileView(cache, 3, 1)));
+        await service.incrementProfileView(cache, 3, 1);
+        expect(dbContext.db.select().from(schema.user).all().map(user => user.profileViews)).toEqual([1, 0]);
+
+        await service.incrementProfileView(cache, 4, 1);
+        await service.incrementProfileView(cache, 3, 2);
+        expect(dbContext.db.select().from(schema.user).all().map(user => user.profileViews)).toEqual([2, 1]);
+
+        vi.advanceTimersByTime(5 * 60 * 1000);
+        await service.incrementProfileView(cache, 3, 1);
+        expect(dbContext.db.select().from(schema.user).all().map(user => user.profileViews)).toEqual([3, 1]);
+    });
+
+    it("counts media-list views independently by media type, viewer, target, and profile", async () => {
+        vi.useFakeTimers();
+        const cache = await setupCacheManager();
+        dbContext.db.insert(schema.userMediaSettings).values([
+            { userId: 1, mediaType: MediaType.BOOKS, active: true },
+            { userId: 1, mediaType: MediaType.MOVIES, active: true },
+            { userId: 2, mediaType: MediaType.BOOKS, active: true },
+        ]).run();
+
+        await service.incrementProfileView(cache, 3, 1);
+        await Promise.all(Array.from({ length: 5 }, () => service.incrementMediaTypeView(cache, 3, 1, MediaType.BOOKS)));
+        await service.incrementMediaTypeView(cache, 3, 1, MediaType.BOOKS);
+        expect(dbContext.db.select().from(schema.userMediaSettings).all().map(settings => settings.views)).toEqual([1, 0, 0]);
+
+        await service.incrementMediaTypeView(cache, 4, 1, MediaType.BOOKS);
+        await service.incrementMediaTypeView(cache, 3, 1, MediaType.MOVIES);
+        await service.incrementMediaTypeView(cache, 3, 2, MediaType.BOOKS);
+        expect(dbContext.db.select().from(schema.userMediaSettings).all().map(settings => settings.views)).toEqual([2, 1, 1]);
+
+        vi.advanceTimersByTime(5 * 60 * 1000);
+        await service.incrementMediaTypeView(cache, 3, 1, MediaType.BOOKS);
+        expect(dbContext.db.select().from(schema.userMediaSettings).all().map(settings => settings.views)).toEqual([3, 1, 1]);
+    });
+
+    it("does not suppress retries after a failed view update", async () => {
+        vi.useFakeTimers();
+        const cache = await setupCacheManager();
+        vi.spyOn(ProfileRepository, "incrementProfileView").mockRejectedValueOnce(new Error("write failed"));
+
+        await expect(service.incrementProfileView(cache, 3, 1)).rejects.toThrow("write failed");
+        await service.incrementProfileView(cache, 3, 1);
+        expect(dbContext.db.select().from(schema.user).all().map(user => user.profileViews)).toEqual([1, 0]);
+    });
 
     it("defaults existing profiles to visible and saves the owner's choice alongside highlights", async () => {
         const highlights = createDefaultHighlightedMediaSettings();

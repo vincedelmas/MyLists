@@ -58,7 +58,7 @@ export const getUserProfile = createServerFn({ method: "GET" })
         const updateHistoryService = container.services.updateHistory;
 
         if (currentUser && currentUser.id !== targetUserId) {
-            await profileService.incrementProfileView(targetUserId);
+            await profileService.incrementProfileView(container.cacheManager, currentUser.id, targetUserId);
         }
 
         const [{ followsCount }, userFollows, followsUpdates, highlightedMedia, showContinue, achievements] = await Promise.all([

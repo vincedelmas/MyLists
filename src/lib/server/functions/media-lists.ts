@@ -13,7 +13,7 @@ export const getUserListHeaderSF = createServerFn({ method: "GET" })
         const profileService = container.services.profile;
 
         if (currentUser && currentUser.id !== targetUser.id) {
-            await profileService.incrementMediaTypeView(targetUser.id, mediaType);
+            await profileService.incrementMediaTypeView(container.cacheManager, currentUser.id, targetUser.id, mediaType);
         }
 
         return { timeSpent: targetUser.userMediaSettings.find((s) => s.mediaType === mediaType)?.timeSpent ?? 0 };

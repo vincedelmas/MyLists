@@ -59,7 +59,7 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         },
     },
     logger: {
-        level: "debug",
+        level: "info",
         log: (level, message, ...args) => {
             logger[level]({
                 source: "better-auth",

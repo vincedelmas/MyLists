@@ -69,13 +69,6 @@ export default defineConfig(({ mode }) => ({
                     ) {
                         return "icons";
                     }
-
-                    if (
-                        id.includes("/node_modules/@radix-ui/") ||
-                        id.includes("/node_modules/radix-ui/")
-                    ) {
-                        return "radix-ui";
-                    }
                 },
             },
         },

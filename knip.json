@@ -19,7 +19,9 @@
         ]
     },
     "ignoreDependencies": [
+        "@fontsource/fira-sans-condensed",
         "@fontsource/open-sans",
+        "@fontsource/source-serif-4",
         "@fontsource-variable/noto-emoji",
         "@fontsource-variable/noto-sans-jp",
         "pino-pretty"

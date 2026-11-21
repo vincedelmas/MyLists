@@ -1,6 +1,7 @@
 import {SearchType} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
 import {toast} from "@/lib/client/components/ui/toast";
+import type {AdminBookMergeResult} from "@/lib/types/admin.types";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {mediaDetailsOptions} from "@/lib/client/react-query/query-options/media.options";
 import {
@@ -48,7 +49,7 @@ export const useAdminUpdateMediaCoverMutation = (mediaType: MediaType, mediaId: 
 };
 
 
-export const useAdminMergeBooksMutation = (onSuccess?: () => void) => {
+export const useAdminMergeBooksMutation = (onSuccess?: (result: AdminBookMergeResult) => void) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -66,9 +67,10 @@ export const useAdminMergeBooksMutation = (onSuccess?: () => void) => {
                 title: `Merged ${result.mergedBookCount} ${result.mergedBookCount === 1 ? "book" : "books"} into #${result.targetBookId}`,
             });
 
+            onSuccess?.(result);
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["admin", "book-merges"] }),
-                queryClient.invalidateQueries({ queryKey: ["admin", "book-merge-preview"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin", "book-merge-preview"], refetchType: "none" }),
                 queryClient.invalidateQueries({ queryKey: ["admin", "missing-covers"] }),
                 queryClient.invalidateQueries({ queryKey: ["admin", "media-overview"] }),
                 queryClient.invalidateQueries({ queryKey: ["details", MediaType.BOOKS] }),
@@ -77,7 +79,6 @@ export const useAdminMergeBooksMutation = (onSuccess?: () => void) => {
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists"] }),
                 queryClient.invalidateQueries({ queryKey: ["collections"] }),
             ]);
-            onSuccess?.();
         },
     });
 };

@@ -5,6 +5,7 @@ import {
     coercedPositiveIntFieldSchema,
     imageFileSchema,
     imageUrlSchema,
+    optionalTrimmedSearchFieldSchema,
     positiveIntFieldSchema,
     searchTypeSchema,
     simpleSearchSchema
@@ -22,7 +23,10 @@ export type AdminUpdateMediaCover = z.infer<typeof adminUpdateMediaCoverSchema>;
 export type AdminUpdateMediaCoverInput = z.input<typeof adminUpdateMediaCoverSchema>;
 
 
-export const adminBookMergeSearchSchema = simpleSearchSchema;
+export const adminBookMergeSearchSchema = simpleSearchSchema.extend({
+    author: optionalTrimmedSearchFieldSchema,
+    view: z.enum(["duplicates", "authors", "catalog"]).catch("duplicates"),
+});
 
 
 export const adminListsSearchSchema = searchTypeSchema.extend({

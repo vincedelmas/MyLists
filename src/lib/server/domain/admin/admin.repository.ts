@@ -1,13 +1,14 @@
 import {SearchType} from "@/lib/schemas";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
-import {MediaType, PrivacyType, Status} from "@/lib/utils/enums";
-import {dateFromUTCInput, formatMonthYear} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {getImageFilename} from "@/lib/server/core/images/image-url";
+import {MediaType, PrivacyType, Status} from "@/lib/utils/enums";
 import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
+import {getImageFilename} from "@/lib/server/core/images/image-url";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
+import {dateFromUTCInput, formatMonthYear} from "@/lib/utils/formatting/date";
 import type {HighlightedMediaSettings} from "@/lib/types/profile-custom.types";
+import {mediaRelationArray} from "@/lib/server/domain/media/base/media-relations.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import type {AdminBookMergeSearch, AdminMissingCoversSearch} from "@/lib/schemas/admin.schema";
@@ -35,6 +36,12 @@ import {
     whichCameFirstMedia,
     yearRecapRelease
 } from "@/lib/server/database/schema";
+
+
+const normalizeBookMatch = (value: string) => value.normalize("NFKD").toLowerCase()
+    .replace(/(\p{Script=Latin})\p{M}+/gu, "$1")
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
+    .trim();
 
 
 export class AdminRepository {
@@ -113,12 +120,156 @@ export class AdminRepository {
             .get();
     }
 
-    static async getBooksForAdminMerge({ search, ...pagination }: AdminBookMergeSearch) {
+    static async getBooksForAdminMerge({ view, author, search, ...pagination }: AdminBookMergeSearch) {
         const db = getDbClient();
         const trimmed = search?.trim();
+        const selectedAuthor = view === "authors" ? author : undefined;
 
+        const titleOrder = sql`${books.name} COLLATE NOCASE`;
         const usersCountExpr = sql<number>`(SELECT COUNT(*) FROM ${booksList} WHERE ${booksList.mediaId} = ${books.id})`;
-        const numericId = trimmed && /^#?\d+$/.test(trimmed) ? Number(trimmed.replace(/^#/, "")) : null;
+
+        const selection = {
+            id: books.id,
+            name: books.name,
+            apiId: books.apiId,
+            pages: books.pages,
+            language: books.language,
+            publishers: books.publishers,
+            imageCover: books.imageCover,
+            releaseDate: books.releaseDate,
+            usersCount: usersCountExpr.as("users_count"),
+            authors: sql<string | null>`(
+                SELECT group_concat(${booksAuthors.name}, ', ')
+                FROM ${booksAuthors}
+                WHERE ${booksAuthors.mediaId} = ${books.id}
+            )`.as("authors"),
+        };
+
+        const catalog = view === "catalog" ? [] : db
+            .select({
+                id: books.id,
+                title: books.name,
+                authors: mediaRelationArray(booksAuthors, books.id, { name: booksAuthors.name }, booksAuthors.id),
+            }).from(books)
+            .orderBy(...(selectedAuthor ? [titleOrder, asc(books.id)] : [asc(books.id)]))
+            .all()
+            .map(book => ({
+                ...book,
+                authors: book.authors.map(({ name }) => ({ name, key: normalizeBookMatch(name) }))
+                    .filter(item => item.key),
+            }));
+
+        const searchKey = trimmed && normalizeBookMatch(trimmed);
+
+        if (view === "authors" && !author) {
+            const byAuthor = new Map<string, { name: string; bookIds: Set<number> }>();
+            for (const book of catalog) {
+                for (const { key, name } of book.authors) {
+                    if (trimmed && !(searchKey && key.includes(searchKey))) continue;
+
+                    const group = byAuthor.get(key) ?? { name, bookIds: new Set<number>() };
+                    group.bookIds.add(book.id);
+                    byAuthor.set(key, group);
+                }
+            }
+
+            const authors = Array.from(byAuthor, ([key, group]) => ({
+                key,
+                name: group.name,
+                bookCount: group.bookIds.size,
+            })).filter(item => item.bookCount > 1).sort((a, b) => b.bookCount - a.bookCount || a.key.localeCompare(b.key));
+
+            return {
+                kind: "authors" as const,
+                ...await paginate({
+                    ...pagination,
+                    maxPerPage: 50,
+                    defaultPerPage: 20,
+                    getTotal: () => authors.length,
+                    getItems: async ({ limit, offset }) => authors.slice(offset, offset + limit),
+                }),
+            };
+        }
+
+        if (view === "duplicates") {
+            const byTitleAndAuthors = new Map<string, { key: string; title: string; ids: number[] }>();
+            for (const book of catalog) {
+                const title = normalizeBookMatch(book.title);
+                if (!title || book.authors.length === 0) continue;
+
+                const authorKeys = new Set(book.authors.map(item => item.key));
+                const matchFields = [title, ...[...authorKeys].sort()];
+                if (trimmed && !(searchKey && matchFields.some(field => field.includes(searchKey)))) continue;
+
+                const key = JSON.stringify(matchFields);
+                const group = byTitleAndAuthors.get(key) ?? { key, title, ids: [] };
+
+                group.ids.push(book.id);
+                byTitleAndAuthors.set(key, group);
+            }
+
+            const groups = [...byTitleAndAuthors.values()]
+                .filter(group => group.ids.length > 1)
+                .sort((a, b) => b.ids.length - a.ids.length || a.title.localeCompare(b.title) || a.key.localeCompare(b.key));
+
+            return {
+                kind: "duplicates" as const,
+                ...await paginate({
+                    ...pagination,
+                    maxPerPage: 50,
+                    defaultPerPage: 5,
+                    getTotal: () => groups.length,
+                    getItems: async ({ limit, offset }) => {
+                        const page = groups.slice(offset, offset + limit);
+                        if (page.length === 0) return [];
+
+                        const rows = db.select(selection).from(books)
+                            .where(inArray(books.id, page.flatMap(group => group.ids)))
+                            .all();
+
+                        const byId = new Map(rows.map(book => [book.id, book]));
+
+                        return page.flatMap(group => {
+                            const matches = group.ids.flatMap(id => byId.get(id) ?? [])
+                                .sort((a, b) => b.usersCount - a.usersCount || a.id - b.id);
+
+                            return matches.length > 1 ? [{ key: group.key, books: matches }] : [];
+                        });
+                    },
+                }),
+            };
+        }
+
+        if (selectedAuthor) {
+            const authorBooks = catalog.flatMap(book => {
+                const match = book.authors.find(item => item.key === selectedAuthor);
+                return match ? [{ id: book.id, author: match.name }] : [];
+            });
+
+            return {
+                kind: "author-books" as const,
+                author: authorBooks[0]?.author ?? selectedAuthor,
+                ...await paginate({
+                    ...pagination,
+                    maxPerPage: 50,
+                    defaultPerPage: 20,
+                    getTotal: () => authorBooks.length,
+                    getItems: async ({ limit, offset }) => {
+                        const pageIds = authorBooks.slice(offset, offset + limit).map(book => book.id);
+                        if (pageIds.length === 0) return [];
+
+                        return db.select(selection).from(books)
+                            .where(inArray(books.id, pageIds))
+                            .orderBy(titleOrder, asc(books.id))
+                            .all();
+                    },
+                }),
+            };
+        }
+
+        const numericId = trimmed && /^#?\d+$/.test(trimmed)
+            ? Number(trimmed.replace(/^#/, ""))
+            : null;
 
         const where = trimmed
             ? or(
@@ -134,7 +285,7 @@ export class AdminRepository {
             )
             : undefined;
 
-        return paginate<AdminBookMergeItem>({
+        const results = await paginate<AdminBookMergeItem>({
             ...pagination,
             maxPerPage: 50,
             defaultPerPage: 20,
@@ -144,29 +295,16 @@ export class AdminRepository {
                 .where(where)
                 .get()!.total,
             getItems: async ({ limit, offset }) => db
-                .select({
-                    id: books.id,
-                    name: books.name,
-                    apiId: books.apiId,
-                    pages: books.pages,
-                    language: books.language,
-                    publishers: books.publishers,
-                    imageCover: books.imageCover,
-                    releaseDate: books.releaseDate,
-                    usersCount: usersCountExpr.as("users_count"),
-                    authors: sql<string | null>`(
-                        SELECT group_concat(${booksAuthors.name}, ', ')
-                        FROM ${booksAuthors}
-                        WHERE ${booksAuthors.mediaId} = ${books.id}
-                    )`.as("authors"),
-                })
+                .select(selection)
                 .from(books)
                 .where(where)
-                .orderBy(desc(usersCountExpr), sql`${books.name} COLLATE NOCASE`, asc(books.id))
+                .orderBy(desc(usersCountExpr), titleOrder, asc(books.id))
                 .limit(limit)
                 .offset(offset)
                 .all(),
         });
+
+        return { kind: "catalog" as const, ...results };
     }
 
     static findBooksByIds(bookIds: number[]) {
@@ -358,8 +496,8 @@ export class AdminRepository {
             if (winner.mediaId !== targetBookId) {
                 const sourceCoverFilename = bookCoverFilenames.get(winner.mediaId) ?? "default.jpg";
                 const preservedCustomCover = winner.customCover === null
-                    && sourceCoverFilename !== "default.jpg"
-                    && sourceCoverFilename !== targetCoverFilename
+                && sourceCoverFilename !== "default.jpg"
+                && sourceCoverFilename !== targetCoverFilename
                     ? sourceCoverFilename
                     : undefined;
 

@@ -81,7 +81,8 @@ export function createBooksService(repository: BooksRepository, definition: Book
 
         const authorsData = authors === undefined ? undefined : toAuthorsData(authors);
 
-        withTransaction(() => repository.updateMediaWithDetails({ mediaData, authorsData }));
+        const updated = withTransaction(() => repository.updateMediaWithDetails({ mediaData, authorsData }));
+        if (!updated) throw notFound();
     }
 
     function updateUserCustomDetails(userId: number, payload: UpdateUserBookDetailsPayload) {
@@ -131,20 +132,9 @@ export function createBooksService(repository: BooksRepository, definition: Book
     async function batchBooksWithoutGenres(batchSize: number) {
         const booksWithoutGenres = await repository.getBooksWithoutGenres();
 
-        const booksPrompts: string[] = [];
-        for (const book of booksWithoutGenres) {
-            booksPrompts.push(`
-bookApiId: ${book.apiId}
-title: ${book.title}
-authors: ${book.authors}
-description: ${book.synopsis}
-----------
-`);
-        }
-
         const batches = [];
-        for (let i = 0; i < booksPrompts.length; i += batchSize) {
-            batches.push(booksPrompts.slice(i, i + batchSize));
+        for (let i = 0; i < booksWithoutGenres.length; i += batchSize) {
+            batches.push(booksWithoutGenres.slice(i, i + batchSize));
         }
 
         return batches;
@@ -154,7 +144,7 @@ description: ${book.synopsis}
         const mediaData = { apiId: bookApiId };
         const genresData = uniqueBy(booksGenres.map((name) => ({ name })), (genre) => genre.name);
 
-        withTransaction(() => repository.updateMediaWithDetails({ mediaData, genresData }));
+        return withTransaction(() => repository.updateMediaWithDetails({ mediaData, genresData }));
     }
 
     function updateRedoHandler(currentState: BooksList, payload: RedoPayload, _media: Book): [BooksList, LogPayload] {

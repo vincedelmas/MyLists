@@ -45,7 +45,8 @@ export const addGenresToBooksUsingLlmTask = defineTask({
             Instructions:
             1. Choose a MAXIMUM of ${booksDefinition.maxGenres} genres per book.
             2. ONLY choose genres from the above list.
-            3. Output your answer as a JSON array following this schema:
+            3. Copy each bookApiId exactly as provided.
+            4. Output your answer as a JSON array following this schema:
                [
                  {
                    "bookApiId": string,
@@ -61,7 +62,15 @@ export const addGenresToBooksUsingLlmTask = defineTask({
             batchIndex += 1;
 
             await ctx.step(`batch-${batchIndex}`, async () => {
-                const promptToSend = `${mainPrompt}\n${booksBatch.join("\n")}`;
+                const batchApiIds = new Set(booksBatch.map((book) => book.apiId));
+                const bookPrompts = booksBatch.map((book) => dedent`
+                    bookApiId: ${book.apiId}
+                    title: ${book.title}
+                    authors: ${book.authors}
+                    description: ${book.synopsis}
+                    ----------
+                `);
+                const promptToSend = `${mainPrompt}\n${bookPrompts.join("\n")}`;
 
                 const data = await llmClient.llmBookGenresCall(promptToSend, adminLlmResponseSchema);
                 const content = data.choices[0].message.content ?? "";
@@ -78,13 +87,19 @@ export const addGenresToBooksUsingLlmTask = defineTask({
                 for (const item of result) {
                     const valid = item.genres.filter((g) => booksGenres.includes(g)).slice(0, booksDefinition.maxGenres);
 
-                    if (!item.bookApiId || valid.length === 0) {
+                    if (!batchApiIds.has(item.bookApiId) || valid.length === 0) {
                         ctx.warn("Skipping invalid LLM entry", { item });
                         ctx.increment("books.skipped");
                         continue;
                     }
 
-                    await booksService.addGenresToBook(item.bookApiId, valid);
+                    const updated = await booksService.addGenresToBook(item.bookApiId, valid);
+                    if (!updated) {
+                        ctx.warn("Skipping book that no longer exists", { bookApiId: item.bookApiId });
+                        ctx.increment("books.skipped");
+                        continue;
+                    }
+
                     ctx.increment("books.tagged");
                 }
             });

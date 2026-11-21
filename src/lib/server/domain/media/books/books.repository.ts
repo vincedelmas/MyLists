@@ -120,41 +120,29 @@ export const createBooksRepository = (definition: BookServerDefinition = booksSe
     function updateMediaWithDetails({ mediaData, authorsData, genresData }: UpdateBooksWithDetails) {
         const tx = getDbClient();
 
-        const [media] = tx
+        const media = tx
             .update(books)
             .set({
                 ...mediaData,
                 lastApiUpdate: isManualBookId(mediaData.apiId) ? null : sql`datetime('now')`,
                 imageCover: mediaData.imageCover === "default.jpg" ? undefined : mediaData.imageCover,
-            })
-            .where(eq(books.apiId, mediaData.apiId))
-            .returning({ id: books.id }).all();
+            }).where(eq(books.apiId, mediaData.apiId))
+            .returning({ id: books.id }).get();
 
+        if (!media) return false;
         const mediaId = media.id;
 
         if (authorsData !== undefined) {
-            tx
-                .delete(booksAuthors)
-                .where(eq(booksAuthors.mediaId, mediaId)).run();
-
+            tx.delete(booksAuthors).where(eq(booksAuthors.mediaId, mediaId)).run();
             if (authorsData.length > 0) {
-                tx
-                    .insert(booksAuthors)
-                    .values(authorsData.map(author => ({ mediaId, ...author })))
-                    .onConflictDoNothing().run();
+                tx.insert(booksAuthors).values(authorsData.map(author => ({ mediaId, ...author }))).onConflictDoNothing().run();
             }
         }
 
         if (genresData !== undefined) {
-            tx
-                .delete(booksGenre)
-                .where(eq(booksGenre.mediaId, mediaId)).run();
-
+            tx.delete(booksGenre).where(eq(booksGenre.mediaId, mediaId)).run();
             if (genresData.length > 0) {
-                tx
-                    .insert(booksGenre)
-                    .values(genresData.map(genre => ({ mediaId, ...genre })))
-                    .onConflictDoNothing().run();
+                tx.insert(booksGenre).values(genresData.map(genre => ({ mediaId, ...genre }))).onConflictDoNothing().run();
             }
         }
 

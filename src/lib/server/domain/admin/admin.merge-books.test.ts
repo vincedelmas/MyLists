@@ -37,6 +37,87 @@ describe("AdminRepository book merging", () => {
         dbContext.db = undefined as unknown as ReturnType<typeof drizzle>;
     });
 
+    it("groups matching titles and author sets, then suggests the book with the most users", async () => {
+        dbContext.db.insert(schema.books).values([
+            { id: 30, apiId: "work-c", name: "Duné!", pages: 320, imageCover: "default.jpg" },
+            { id: 40, apiId: "work-d", name: "Dune", pages: 300, imageCover: "default.jpg" },
+        ]).run();
+        dbContext.db.insert(schema.booksAuthors).values([
+            { mediaId: 10, name: "Frank Herbert" },
+            { mediaId: 10, name: "John Schoenherr" },
+            { mediaId: 20, name: "Frank Herbert" },
+            { mediaId: 20, name: "John Schoenherr" },
+            { mediaId: 30, name: "John Schoenherr" },
+            { mediaId: 30, name: "FRANK HERBERT" },
+            { mediaId: 40, name: "Frank Herbert" },
+        ]).run();
+        dbContext.db.insert(schema.booksList).values({
+            userId: 1, mediaId: 30, status: Status.PLANNED, customTitle: "Duné!", customPages: 320,
+        }).run();
+
+        const result = await AdminRepository.getBooksForAdminMerge({ view: "duplicates", search: "frank herbert" });
+        expect(result).toMatchObject({
+            kind: "duplicates",
+            total: 1,
+            items: [{ books: [{ id: 30, usersCount: 1 }, { id: 10, usersCount: 0 }] }],
+        });
+
+        AdminRepository.mergeBooks(30, [10]);
+        const afterMerge = await AdminRepository.getBooksForAdminMerge({ view: "duplicates" });
+        expect(afterMerge).toMatchObject({ total: 0, items: [] });
+    });
+
+    it("lists authors by book count and browses titles outside the duplicate queue", async () => {
+        dbContext.db.insert(schema.books).values({
+            id: 30, apiId: "work-c", name: "Dune Messiah", pages: 256, imageCover: "default.jpg",
+        }).run();
+        dbContext.db.insert(schema.booksAuthors).values([
+            { mediaId: 10, name: "Frank Herbert" },
+            { mediaId: 10, name: "John Schoenherr" },
+            { mediaId: 10, name: "Adrian Author" },
+            { mediaId: 10, name: "Zoe Author" },
+            { mediaId: 20, name: "Frank Herbert" },
+            { mediaId: 20, name: "Adrian Author" },
+            { mediaId: 20, name: "Zoe Author" },
+            { mediaId: 30, name: "Zoe Author" },
+        ]).run();
+
+        const authorDirectory = await AdminRepository.getBooksForAdminMerge({ view: "authors" });
+        expect(authorDirectory).toMatchObject({
+            kind: "authors",
+            total: 3,
+            items: [
+                { name: "Zoe Author", bookCount: 3 },
+                { name: "Adrian Author", bookCount: 2 },
+                { name: "Frank Herbert", bookCount: 2 },
+            ],
+        });
+
+        const authors = await AdminRepository.getBooksForAdminMerge({ view: "authors", search: "HERBERT" });
+        expect(authors).toMatchObject({
+            kind: "authors",
+            total: 1,
+            items: [{ key: "frank herbert", name: "Frank Herbert", bookCount: 2 }],
+        });
+
+        const authorBooks = await AdminRepository.getBooksForAdminMerge({
+            view: "authors", author: "frank herbert", page: 2, perPage: 1,
+        });
+        expect(authorBooks).toMatchObject({
+            kind: "author-books",
+            author: "Frank Herbert",
+            total: 2,
+            items: [{ id: 20, name: "Dune (Edition Française)" }],
+        });
+
+        const catalog = await AdminRepository.getBooksForAdminMerge({ view: "catalog", search: "#30" });
+        expect(catalog).toMatchObject({
+            kind: "catalog",
+            total: 1,
+            items: [{ id: 30, name: "Dune Messiah" }],
+        });
+    });
+
     it("merges duplicate books while preserving user edition snapshots and resolving overlaps", () => {
         // Alice only has the French edition (book 20) with no explicit custom cover
         dbContext.db.insert(schema.booksList).values({

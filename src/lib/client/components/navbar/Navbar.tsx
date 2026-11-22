@@ -12,6 +12,7 @@ import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {useOnClickOutside} from "@/lib/client/hooks/use-clicked-outside";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
+import {CommandPalette} from "@/lib/client/components/navbar/CommandPalette";
 import {useFeatureFlagMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {
     DropdownMenu,
@@ -150,6 +151,7 @@ export const Navbar = () => {
                     <div className="flex items-center gap-1 max-sm:gap-2">
                         {isAnonymous ?
                             <div className="flex items-center gap-2">
+                                <CommandPalette/>
                                 <Link to="/login" search={{ redirect: location.href }} className={buttonVariants({ variant: "ghost" })}>
                                     Login
                                 </Link>
@@ -164,6 +166,8 @@ export const Navbar = () => {
                                     triggerClassName={navStyle()}
                                     settings={currentUser.settings}
                                 />
+
+                                <CommandPalette/>
 
                                 <Notifications/>
 

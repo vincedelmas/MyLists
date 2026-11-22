@@ -1,8 +1,21 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {queryOptions} from "@tanstack/react-query";
 import {AdvancedSearchFilters} from "@/lib/schemas";
-import {getGameAdvancedSearchOptions, getSearchResults} from "@/lib/server/functions/search";
+import {keepPreviousData, queryOptions} from "@tanstack/react-query";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/media/advanced-search";
+import {getCommandPaletteResults, getGameAdvancedSearchOptions, getSearchResults} from "@/lib/server/functions/search";
+
+
+export const commandPaletteOptions = (query: string, enabled: boolean) => {
+    const trimmedQuery = query.trim();
+
+    return queryOptions({
+        queryKey: ["commandPalette", trimmedQuery] as const,
+        queryFn: () => getCommandPaletteResults({ data: { query: trimmedQuery } }),
+        staleTime: 1000 * 30,
+        placeholderData: keepPreviousData,
+        enabled: enabled && trimmedQuery.length >= 2,
+    });
+};
 
 
 export const navSearchOptions = (query: string, page: number, apiProvider: ApiProviderType, advancedFilters?: AdvancedSearchFilters) => {

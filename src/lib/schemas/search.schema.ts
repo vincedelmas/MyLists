@@ -255,6 +255,11 @@ export const globalSearchSchema = z.object({
 });
 
 
+export const commandPaletteSearchSchema = z.object({
+    query: z.string().trim().min(2).max(100),
+});
+
+
 export const navbarSearchSchema = z.object({
     query: z.string().trim(),
     page: coercedPositiveIntFieldSchema,

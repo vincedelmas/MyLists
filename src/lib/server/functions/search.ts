@@ -2,10 +2,25 @@ import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
-import {navbarSearchSchema} from "@/lib/schemas/search.schema";
+import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
+import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {ProviderSearchResult, ProviderSearchResults} from "@/lib/types/provider.types";
 import {optionalMediaAuthMiddleware} from "@/lib/server/middlewares/media-authentication";
+import {searchCommandPalette} from "@/lib/server/domain/search/command-palette.repository";
+import {commandPaletteSearchSchema, navbarSearchSchema} from "@/lib/schemas/search.schema";
 import {IGDB_ADVANCED_SEARCH_OPTIONS_CACHE_KEY, ONE_DAY_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
+
+
+export const getCommandPaletteResults = createServerFn({ method: "GET" })
+    .middleware([requiredAuthMiddleware])
+    .validator(commandPaletteSearchSchema)
+    .handler(async ({ data: { query }, context: { currentUser } }) => {
+        const container = await getContainer();
+        const settings = await container.services.account.getMinimalUserSettings(currentUser.id);
+        const activeMediaTypes = getActiveMediaTypes(settings);
+
+        return searchCommandPalette(currentUser.id, activeMediaTypes, query);
+    });
 
 
 export const getGameAdvancedSearchOptions = createServerFn({ method: "GET" })

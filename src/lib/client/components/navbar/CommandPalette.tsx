@@ -1,0 +1,688 @@
+import {useQuery} from "@tanstack/react-query";
+import {getThemeColor} from "@/lib/client/theme";
+import {formatRating} from "@/lib/client/ratings";
+import {useEffect, useRef, useState} from "react";
+import {useNavigate} from "@tanstack/react-router";
+import {useAuth} from "@/lib/client/hooks/use-auth";
+import {capitalize} from "@/lib/utils/formatting/text";
+import {MediaType, UpdateType} from "@/lib/utils/enums";
+import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {useCurrentDate} from "@/lib/client/hooks/use-dates";
+import {useDebounce} from "@/lib/client/hooks/use-debounce";
+import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {getMediaConfig} from "@/lib/client/components/media/media-config";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
+import {commandPaletteOptions, continueOptions} from "@/lib/client/react-query/query-options";
+import {getActiveMediaSettings, resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
+import {Command, CommandDialog, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator} from "@/lib/client/components/ui/command";
+import {
+    Activity,
+    Award,
+    BarChart2,
+    BookPlus,
+    Calendar,
+    ChartNoAxesColumn,
+    Clapperboard,
+    Command as CommandIcon,
+    GitCompareArrows,
+    Heart,
+    Import,
+    LibraryBig,
+    Lightbulb,
+    ListFilter,
+    ListOrdered,
+    ListPlus,
+    LogIn,
+    Play,
+    Plug,
+    Settings,
+    ShieldCheck,
+    SlidersHorizontal,
+    TrendingUp,
+    Trophy,
+    User,
+    UserPlus,
+    UsersRound,
+    Zap,
+    type LucideIcon,
+} from "lucide-react";
+
+
+interface PaletteNavItem {
+    id: string;
+    label: string;
+    keywords: string;
+    icon?: LucideIcon;
+    onSelect: () => void;
+    mediaType?: MediaType;
+    section: "quick" | "lists" | "pages";
+}
+
+
+const isMacPlatform = () => {
+    if (typeof navigator === "undefined") return false;
+    return /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
+};
+
+
+const matchesTokens = (query: string, label: string, keywords: string) => {
+    const haystack = `${label} ${keywords}`.toLowerCase();
+
+    return query
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean)
+        .every(token => haystack.includes(token));
+};
+
+
+export const CommandPalette = () => {
+    const navigate = useNavigate();
+    const { currentUser } = useAuth();
+    const currentDate = useCurrentDate();
+    const isJumping = useRef(false);
+    const [query, setQuery] = useState("");
+    const [open, setOpen] = useState(false);
+    const [shortcutLabel] = useState(() => (isMacPlatform() ? "⌘K" : "Ctrl K"));
+
+    const trimmedQuery = query.trim();
+    const debouncedQuery = useDebounce(trimmedQuery, 150);
+    const { data: paletteData, isFetching } = useQuery(commandPaletteOptions(debouncedQuery, open && Boolean(currentUser)));
+
+    const { data: continueData } = useQuery({
+        ...continueOptions(currentUser?.name ?? "", { preview: true }),
+        enabled: open && Boolean(currentUser) && trimmedQuery.length === 0,
+    });
+
+    useEffect(() => {
+        const handleKeyDown = (ev: KeyboardEvent) => {
+            if (ev.defaultPrevented) return;
+
+            if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "k") {
+                ev.preventDefault();
+                isJumping.current = false;
+                setOpen(prev => !prev);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (nextOpen) isJumping.current = false;
+        setOpen(nextOpen);
+        if (!nextOpen) setQuery("");
+    };
+
+    const runAction = (action: () => void) => {
+        isJumping.current = true;
+        setOpen(false);
+        setQuery("");
+        action();
+    };
+
+    const [currentYear, currentMonth] = currentDate?.split("-") ?? [];
+    const activeMediaSettings = currentUser ? getActiveMediaSettings(currentUser.settings) : [];
+    const booksActive = currentUser ? resolveMediaTypeActive(currentUser.settings, MediaType.BOOKS) : false;
+
+    const navItems: PaletteNavItem[] = currentUser
+        ? [
+            {
+                icon: Calendar,
+                section: "quick",
+                id: "quick-calendar",
+                label: "Release Calendar",
+                keywords: "upcoming releases schedule episodes movies games",
+                onSelect: () => void navigate({ to: "/release-calendar" }),
+            },
+            {
+                icon: LibraryBig,
+                section: "quick",
+                id: "quick-lists",
+                label: "Lists & Collections",
+                keywords: "my media library dynamic lists collections",
+                onSelect: () => void navigate({ to: "/lists/$username", params: { username: currentUser.name } }),
+            },
+            {
+                icon: ListPlus,
+                section: "quick",
+                label: "New Collection",
+                id: "quick-new-collection",
+                keywords: "create list rank mix media",
+                onSelect: () => void navigate({ to: "/lists/collections/create" }),
+            },
+            {
+                section: "quick",
+                icon: SlidersHorizontal,
+                label: "New Dynamic List",
+                id: "quick-new-dynamic-list",
+                keywords: "create smart filter rule list",
+                onSelect: () => void navigate({ to: "/lists/dynamic/create" }),
+            },
+            ...(booksActive ? [{
+                icon: BookPlus,
+                id: "quick-add-book",
+                label: "Add Manual Book",
+                section: "quick" as const,
+                keywords: "create book custom edition",
+                onSelect: () => void navigate({ to: "/add-book" }),
+            }] : []),
+            ...activeMediaSettings.map(setting => ({
+                section: "lists" as const,
+                mediaType: setting.mediaType,
+                id: `list-${setting.mediaType}`,
+                label: `${capitalize(setting.mediaType)} List`,
+                keywords: `tracking list my ${setting.mediaType}`,
+                onSelect: () => void navigate({
+                    to: "/lists/tracking/$mediaType/$username",
+                    params: { mediaType: setting.mediaType, username: currentUser.name },
+                }),
+            })),
+            {
+                icon: Play,
+                section: "lists",
+                label: "Continue",
+                id: "list-continue",
+                keywords: "in progress watching reading playing queue",
+                onSelect: () => void navigate({ to: "/lists/continue/$username", params: { username: currentUser.name } }),
+            },
+            {
+                icon: User,
+                section: "pages",
+                id: "page-profile",
+                label: "My Profile",
+                keywords: `account user ${currentUser.name}`,
+                onSelect: () => void navigate({ to: "/profile/$username", params: { username: currentUser.name } }),
+            },
+            {
+                section: "pages",
+                label: "My Stats",
+                id: "page-my-stats",
+                icon: ChartNoAxesColumn,
+                keywords: "statistics analytics charts hours ratings",
+                onSelect: () => void navigate({ to: "/stats/$username", params: { username: currentUser.name } }),
+            },
+            ...(currentYear && currentMonth ? [{
+                icon: Zap,
+                label: "My Activity",
+                id: "page-my-activity",
+                section: "pages" as const,
+                keywords: "monthly history recap calendar log",
+                onSelect: () => void navigate({
+                    to: "/activity/$username",
+                    params: { username: currentUser.name },
+                    search: { year: currentYear, month: String(Number(currentMonth)) },
+                }),
+            }] : []),
+            {
+                icon: Award,
+                section: "pages",
+                id: "page-achievements",
+                label: "My Achievements",
+                keywords: "badges trophies milestones",
+                onSelect: () => void navigate({ to: "/achievements/$username", params: { username: currentUser.name } }),
+            },
+            {
+                icon: UsersRound,
+                section: "pages",
+                label: "Taste Matches",
+                id: "page-taste-matches",
+                keywords: "similarity compatible users ratings",
+                onSelect: () => void navigate({ to: "/taste-matches" }),
+            },
+            {
+                icon: Settings,
+                section: "pages",
+                label: "Settings",
+                id: "page-settings",
+                keywords: "preferences privacy profile customization",
+                onSelect: () => void navigate({ to: "/settings" }),
+            },
+            {
+                icon: Import,
+                section: "pages",
+                label: "Imports",
+                id: "page-imports",
+                keywords: "settings csv letterboxd imdb mylists import",
+                onSelect: () => void navigate({ to: "/settings/imports" }),
+            },
+            {
+                icon: Plug,
+                section: "pages",
+                id: "page-connected-apps",
+                label: "Connected Apps (MCP)",
+                keywords: "settings assistant oauth chatgpt claude api",
+                onSelect: () => void navigate({ to: "/settings/connected-apps" }),
+            },
+            ...(currentUser.capabilities.enterAdminDashboard ? [{
+                id: "page-admin",
+                icon: ShieldCheck,
+                label: "Admin Panel",
+                section: "pages" as const,
+                keywords: "dashboard management moderation",
+                onSelect: () => void navigate({ to: "/admin" }),
+            }] : []),
+            ...getPublicNavItems(navigate),
+        ]
+        : [
+            {
+                icon: LogIn,
+                label: "Login",
+                id: "auth-login",
+                section: "quick",
+                keywords: "sign in account",
+                onSelect: () => void navigate({ to: "/login" }),
+            },
+            {
+                icon: UserPlus,
+                section: "quick",
+                label: "Register",
+                id: "auth-register",
+                keywords: "sign up create account",
+                onSelect: () => void navigate({ to: "/register" }),
+            },
+            ...getPublicNavItems(navigate),
+        ];
+
+    const continueItems = (continueData?.items ?? []).filter(item =>
+        getMediaDefinition(item.mediaType).continue.getUpdate(item)?.type !== UpdateType.STATUS,
+    ).slice(0, 5);
+
+    const isSearching = trimmedQuery.length > 0;
+    const isServerReady = Boolean(currentUser) && debouncedQuery.length >= 2;
+
+    const isServerSearchActive = Boolean(currentUser) && trimmedQuery.length >= 2;
+    const isWaitingForServer = isServerSearchActive && (trimmedQuery !== debouncedQuery || isFetching);
+
+    const mediaResults = isServerReady ? (paletteData?.media ?? []) : [];
+    const collectionResults = isServerReady ? (paletteData?.collections ?? []) : [];
+
+    const followResults = isServerReady ? (paletteData?.follows ?? []) : [];
+    const dynamicListResults = isServerReady ? (paletteData?.dynamicLists ?? []) : [];
+
+    const filteredNavItems = isSearching
+        ? navItems.filter(item => matchesTokens(trimmedQuery, item.label, item.keywords)).slice(0, 8)
+        : [];
+
+    const hasSearchResults = mediaResults.length > 0
+        || collectionResults.length > 0
+        || dynamicListResults.length > 0
+        || followResults.length > 0
+        || filteredNavItems.length > 0;
+
+    return (
+        <>
+            <Tooltip>
+                <TooltipTrigger
+                    render={
+                        <Button
+                            type="button"
+                            size="icon-sm"
+                            variant="hover"
+                            className="mr-1"
+                            aria-label={`Quick Jump (${shortcutLabel})`}
+                            onClick={() => handleOpenChange(true)}
+                        />
+                    }
+                >
+                    <CommandIcon className="size-4.5" aria-hidden="true"/>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" variant="popover">
+                    <span>Quick jump</span>
+                    <kbd data-slot="kbd" className="bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium">
+                        {shortcutLabel}
+                    </kbd>
+                </TooltipContent>
+            </Tooltip>
+
+            <CommandDialog open={open} onOpenChange={handleOpenChange} finalFocus={() => !isJumping.current}>
+                <Command loop shouldFilter={false}>
+                    <CommandInput
+                        value={query}
+                        onValueChange={setQuery}
+                        placeholder={currentUser ? "Search your lists, collections, pages..." : "Jump to a page..."}
+                        endAddon={isWaitingForServer
+                            ? <Spinner className="size-3.5 text-muted-foreground"/>
+                            : undefined
+                        }
+                    />
+
+                    <CommandList>
+                        {!isSearching ?
+                            <>
+                                {continueItems.length > 0 &&
+                                    <>
+                                        <CommandGroup heading="Continue">
+                                            {continueItems.map(item => {
+                                                const progress = getMediaConfig(item.mediaType).continue.getProgress(item);
+
+                                                return (
+                                                    <CommandItem
+                                                        key={`continue-${item.mediaType}-${item.mediaId}`}
+                                                        value={`continue-${item.mediaType}-${item.mediaId}`}
+                                                        onSelect={() => runAction(() => void navigate({
+                                                            to: "/details/$mediaType/$mediaId",
+                                                            params: { mediaType: item.mediaType, mediaId: item.mediaId },
+                                                        }))}
+                                                    >
+                                                        <img
+                                                            alt=""
+                                                            src={item.imageCover}
+                                                            className="h-9 w-6 shrink-0 rounded-sm object-cover"
+                                                        />
+                                                        <div className="flex min-w-0 flex-1 flex-col">
+                                                            <span className="truncate font-medium">
+                                                                {item.mediaName}
+                                                            </span>
+                                                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                                <MediaTypeIcon mediaType={item.mediaType} size={12}/>
+                                                                <span className="truncate tabular-nums">
+                                                                    {progress.label}
+                                                                </span>
+                                                            </span>
+                                                        </div>
+                                                    </CommandItem>
+                                                );
+                                            })}
+                                        </CommandGroup>
+                                        <CommandSeparator/>
+                                    </>
+                                }
+
+                                <CommandGroup heading={currentUser ? "Quick Actions" : "Explore"}>
+                                    {navItems
+                                        .filter(item => item.section === "quick" || (!currentUser && item.section === "pages"))
+                                        .slice(0, 6).map(item =>
+                                            <NavCommandItem
+                                                item={item}
+                                                key={item.id}
+                                                onRun={runAction}
+                                            />
+                                        )
+                                    }
+                                </CommandGroup>
+
+                                {currentUser &&
+                                    <>
+                                        <CommandSeparator/>
+                                        <CommandGroup heading="Tracking Lists">
+                                            {navItems
+                                                .filter(item => item.section === "lists")
+                                                .map(item =>
+                                                    <NavCommandItem
+                                                        item={item}
+                                                        key={item.id}
+                                                        onRun={runAction}
+                                                    />
+                                                )
+                                            }
+                                        </CommandGroup>
+                                    </>
+                                }
+                            </>
+                            :
+                            <>
+                                {mediaResults.length > 0 &&
+                                    <CommandGroup heading="In Your Lists">
+                                        {mediaResults.map(item => {
+                                            const ratingDisplay = currentUser && item.rating !== null
+                                                ? formatRating(currentUser.ratingSystem, item.rating, true)
+                                                : null;
+
+                                            return (
+                                                <CommandItem
+                                                    key={`media-${item.mediaType}-${item.mediaId}`}
+                                                    value={`media-${item.mediaType}-${item.mediaId}`}
+                                                    onSelect={() => runAction(() => void navigate({
+                                                        to: "/details/$mediaType/$mediaId",
+                                                        params: { mediaType: item.mediaType, mediaId: item.mediaId },
+                                                    }))}
+                                                >
+                                                    <img
+                                                        alt=""
+                                                        src={item.imageCover}
+                                                        className="h-9 w-6 shrink-0 rounded-sm object-cover"
+                                                    />
+                                                    <div className="flex min-w-0 flex-1 flex-col">
+                                                        <span className="truncate font-medium">
+                                                            {item.name}
+                                                        </span>
+                                                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                            <MediaTypeIcon mediaType={item.mediaType} size={12}/>
+                                                            <span
+                                                                aria-hidden="true"
+                                                                className="size-1.5 shrink-0 rounded-full"
+                                                                style={{ backgroundColor: getThemeColor(item.status) }}
+                                                            />
+                                                            <span className="truncate">
+                                                                {item.status}
+                                                            </span>
+                                                        </span>
+                                                    </div>
+                                                    <div className="ml-auto flex shrink-0 items-center gap-2 text-xs
+                                                    text-muted-foreground tabular-nums">
+                                                        {item.favorite &&
+                                                            <Heart
+                                                                aria-label="Favorite"
+                                                                className="size-3.5 fill-favorite text-favorite"
+                                                            />
+                                                        }
+                                                        {ratingDisplay !== null &&
+                                                            <span className="font-medium text-rating">
+                                                                {ratingDisplay}
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                </CommandItem>
+                                            );
+                                        })}
+                                    </CommandGroup>
+                                }
+
+                                {collectionResults.length > 0 &&
+                                    <CommandGroup heading="Collections">
+                                        {collectionResults.map(collection =>
+                                            <CommandItem
+                                                key={`collection-${collection.id}`}
+                                                value={`collection-${collection.id}`}
+                                                onSelect={() => runAction(() => void navigate({
+                                                    to: "/lists/collections/$collectionId",
+                                                    params: { collectionId: collection.id },
+                                                }))}
+                                            >
+                                                <ListOrdered className="size-4 text-muted-foreground"/>
+                                                <span className="min-w-0 flex-1 truncate">
+                                                    {collection.title}
+                                                </span>
+                                                <span className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
+                                                    {collection.itemsCount}{" "}
+                                                    {collection.itemsCount === 1 ? "item" : "items"}
+                                                </span>
+                                            </CommandItem>
+                                        )}
+                                    </CommandGroup>
+                                }
+
+                                {dynamicListResults.length > 0 &&
+                                    <CommandGroup heading="Dynamic Lists">
+                                        {dynamicListResults.map(list =>
+                                            <CommandItem
+                                                key={`dynamic-${list.id}`}
+                                                value={`dynamic-${list.id}`}
+                                                onSelect={() => runAction(() => void navigate({
+                                                    to: "/lists/dynamic/$listId",
+                                                    params: { listId: list.id },
+                                                }))}
+                                            >
+                                                <ListFilter className="size-4 text-muted-foreground"/>
+                                                <span className="min-w-0 flex-1 truncate">
+                                                    {list.title}
+                                                </span>
+                                            </CommandItem>
+                                        )}
+                                    </CommandGroup>
+                                }
+
+                                {followResults.length > 0 &&
+                                    <CommandGroup heading="Following">
+                                        {followResults.map(person => (
+                                            <CommandItem
+                                                key={`follow-${person.id}`}
+                                                value={`follow-${person.id}`}
+                                                onSelect={() => runAction(() => void navigate({
+                                                    to: "/profile/$username",
+                                                    params: { username: person.name },
+                                                }))}
+                                            >
+                                                <ProfileIcon
+                                                    fallbackSize="text-[10px]"
+                                                    className="size-6 border-none"
+                                                    user={{ name: person.name, image: person.image ?? "" }}
+                                                />
+                                                <span className="min-w-0 flex-1 truncate">
+                                                    {person.name}
+                                                </span>
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                }
+
+                                {filteredNavItems.length > 0 &&
+                                    <CommandGroup heading="Pages & Actions">
+                                        {filteredNavItems.map(item =>
+                                            <NavCommandItem
+                                                item={item}
+                                                key={item.id}
+                                                onRun={runAction}
+                                            />
+                                        )}
+                                    </CommandGroup>
+                                }
+
+                                {!hasSearchResults &&
+                                    <div className="py-8 text-center text-sm text-muted-foreground">
+                                        {isWaitingForServer
+                                            ? "Searching your lists..."
+                                            : currentUser && trimmedQuery.length === 1
+                                                ? "No matching pages. Type at least 2 characters to search your lists."
+                                                : "No results found."
+                                        }
+                                    </div>
+                                }
+                            </>
+                        }
+                    </CommandList>
+
+                    <div className="flex items-center justify-between border-t px-3 py-2 text-[11px] text-muted-foreground max-sm:hidden">
+                        <div className="flex items-center gap-3">
+                            <span><kbd className="font-mono">
+                                ↑↓</kbd> Navigate
+                            </span>
+                            <span><kbd className="font-mono">
+                                ↵</kbd> Open
+                            </span>
+                            <span><kbd className="font-mono">
+                                Esc</kbd> Close
+                            </span>
+                        </div>
+                        <span>
+                            {currentUser
+                                ? "Your lists & pages"
+                                : "Pages"
+                            }
+                        </span>
+                    </div>
+                </Command>
+            </CommandDialog>
+        </>
+    );
+};
+
+
+const NavCommandItem = ({ item, onRun }: { item: PaletteNavItem; onRun: (action: () => void) => void }) => {
+    const Icon = item.icon;
+
+    return (
+        <CommandItem value={item.id} onSelect={() => onRun(item.onSelect)}>
+            {item.mediaType
+                ? <MediaTypeIcon mediaType={item.mediaType} size={15}/>
+                : Icon && <Icon className="size-4 text-muted-foreground"/>
+            }
+            <span className="min-w-0 flex-1 truncate">
+                {item.label}
+            </span>
+        </CommandItem>
+    );
+};
+
+
+const getPublicNavItems = (navigate: ReturnType<typeof useNavigate>): PaletteNavItem[] => [
+    {
+        section: "pages",
+        label: "Moviedle",
+        icon: Clapperboard,
+        id: "page-moviedle",
+        keywords: "daily game guess movie poster",
+        onSelect: () => void navigate({ to: "/moviedle" }),
+    },
+    {
+        id: "page-wcf",
+        section: "pages",
+        icon: GitCompareArrows,
+        label: "Which Came First?",
+        keywords: "wcf game release date quiz",
+        onSelect: () => void navigate({ to: "/which-came-first" }),
+    },
+    {
+        section: "pages",
+        icon: ListOrdered,
+        label: "Community Collections",
+        id: "page-discover-collections",
+        keywords: "discover browse public lists",
+        onSelect: () => void navigate({ to: "/collections/discover" }),
+    },
+    {
+        icon: Trophy,
+        section: "pages",
+        label: "Hall of Fame",
+        id: "page-hall-of-fame",
+        keywords: "leaderboard rankings top users",
+        onSelect: () => void navigate({ to: "/hall-of-fame" }),
+    },
+    {
+        icon: BarChart2,
+        section: "pages",
+        label: "Platform Stats",
+        id: "page-platform-stats",
+        keywords: "global site statistics",
+        onSelect: () => void navigate({ to: "/platform-stats" }),
+    },
+    {
+        label: "Trends",
+        section: "pages",
+        icon: TrendingUp,
+        id: "page-trends",
+        keywords: "trending popular movies series games",
+        onSelect: () => void navigate({ to: "/trends" }),
+    },
+    {
+        icon: Activity,
+        section: "pages",
+        id: "page-features",
+        label: "News & Features",
+        keywords: "changelog updates release notes",
+        onSelect: () => void navigate({ to: "/features" }),
+    },
+    {
+        icon: Lightbulb,
+        section: "pages",
+        label: "Feature Voting",
+        id: "page-feature-votes",
+        keywords: "ideas suggestions roadmap vote",
+        onSelect: () => void navigate({ to: "/features-vote" }),
+    },
+];

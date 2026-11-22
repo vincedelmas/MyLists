@@ -54,3 +54,11 @@ export const getRedisConnection = async () => {
 
     return redisConnection;
 };
+
+
+export const closeRedisConnection = async () => {
+    await redisInstance?.quit();
+
+    redisInstance = null;
+    connectionPromise = null;
+};

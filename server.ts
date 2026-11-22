@@ -25,6 +25,7 @@ const UPLOADS_ROUTE = `/${UPLOADS_DIR_NAME}/*`;
 
 let isShuttingDown = false;
 let server: ReturnType<typeof Bun.serve> | undefined;
+let closeResources: (() => Promise<void>) | undefined;
 
 
 const startServer = async () => {
@@ -32,6 +33,8 @@ const startServer = async () => {
 
     // Load TanStack Start handler
     const { default: handler } = await import(SERVER_ENTRY);
+
+    closeResources = handler.closeResources;
     logger.info("TanStack Start handler loaded");
 
     // Scan and register static file routes at startup
@@ -62,11 +65,19 @@ const startServer = async () => {
         routes: {
             ...routes,
             [UPLOADS_ROUTE]: async (req: Request) => {
+                let relativePath: string;
                 const url = new URL(req.url);
                 const routePrefix = `/${UPLOADS_DIR_NAME}/`;
-                const relativePath = decodeURIComponent(url.pathname.slice(routePrefix.length));
-                const resolvedPath = path.resolve(BASE_UPLOADS_LOCATION, relativePath);
+
+                try {
+                    relativePath = decodeURIComponent(url.pathname.slice(routePrefix.length));
+                }
+                catch {
+                    return new Response("Bad Request", { status: 400 });
+                }
+
                 const uploadsRoot = path.resolve(BASE_UPLOADS_LOCATION);
+                const resolvedPath = path.resolve(BASE_UPLOADS_LOCATION, relativePath);
 
                 if (!resolvedPath.startsWith(`${uploadsRoot}${path.sep}`) && resolvedPath !== uploadsRoot) {
                     return new Response("Not Found", { status: 404 });
@@ -118,9 +129,10 @@ const shutdown = async (signal: string) => {
     try {
         // Stop accepting connections immediately and wait for active requests to finish.
         await server?.stop();
+        await closeResources?.();
     }
     catch (err) {
-        logger.error({ err }, "Failed to stop server gracefully");
+        logger.error({ err }, "Failed to shutdown gracefully");
         process.exit(1);
     }
 

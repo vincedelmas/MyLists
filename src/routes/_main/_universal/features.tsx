@@ -15,6 +15,7 @@ import {
     CheckCheck,
     ChevronDown,
     ClockCheck,
+    Command,
     Edit3,
     Gamepad2,
     GraduationCap,
@@ -234,6 +235,16 @@ const LATEST_RELEASE: ReleaseData = {
             description: <span>
                 Looking for a better cover for any media type? You can now use the <b>Search Google Images</b> button right inside
                 the <b>Custom tab</b> to find one and paste or upload it faster.
+            </span>,
+        },
+        {
+            icon: Command,
+            type: "New",
+            area: "Lists & Tracking",
+            name: "Quick jump (Command Palette)",
+            description: <span>
+                Press <b>Ctrl+K</b> / <b>⌘K</b>, <b>double-tap Shift</b>, or click the command icon in the navbar to quickly
+                jump to your lists, collections, dynamic lists, follows, and pages, or hand off to external search when needed.
             </span>,
         },
     ],

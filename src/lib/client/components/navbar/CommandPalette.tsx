@@ -4,6 +4,7 @@ import {formatRating} from "@/lib/client/ratings";
 import {useEffect, useRef, useState} from "react";
 import {useNavigate} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {captureEvent} from "@/lib/client/analytics";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {MediaType, UpdateType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
@@ -91,21 +92,32 @@ const matchesTokens = (query: string, label: string, keywords: string) => {
 
 export const CommandPalette = () => {
     const navigate = useNavigate();
+    const isJumping = useRef(false);
+    const isOpenRef = useRef(false);
     const { currentUser } = useAuth();
     const currentDate = useCurrentDate();
-    const isJumping = useRef(false);
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
     const [shortcutLabel] = useState(() => (isMacPlatform() ? "⌘K" : "Ctrl K"));
 
     const trimmedQuery = query.trim();
     const debouncedQuery = useDebounce(trimmedQuery, 150);
-    const { data: paletteData, isFetching } = useQuery(commandPaletteOptions(debouncedQuery, open && Boolean(currentUser)));
+    const { data: paletteData, isFetching, isError } = useQuery(commandPaletteOptions(debouncedQuery, open && Boolean(currentUser)));
 
     const { data: continueData } = useQuery({
         ...continueOptions(currentUser?.name ?? "", { preview: true }),
         enabled: open && Boolean(currentUser) && trimmedQuery.length === 0,
     });
+
+    const setPaletteOpen = (nextOpen: boolean, trigger?: "button" | "shortcut_k" | "double_shift") => {
+        if (nextOpen && !isOpenRef.current && trigger) {
+            captureEvent("command_palette_opened", { trigger });
+        }
+        if (nextOpen) isJumping.current = false;
+        isOpenRef.current = nextOpen;
+        setOpen(nextOpen);
+        if (!nextOpen) setQuery("");
+    };
 
     useEffect(() => {
         let lastShiftTapAt = 0;
@@ -116,9 +128,17 @@ export const CommandPalette = () => {
             shiftPressedAlone = false;
         };
 
-        const togglePalette = () => {
-            isJumping.current = false;
-            setOpen(prev => !prev);
+        const togglePalette = (trigger: "shortcut_k" | "double_shift") => {
+            const nextOpen = !isOpenRef.current;
+            if (nextOpen) {
+                captureEvent("command_palette_opened", { trigger });
+                isJumping.current = false;
+            }
+            else {
+                setQuery("");
+            }
+            isOpenRef.current = nextOpen;
+            setOpen(nextOpen);
         };
 
         const handleKeyDown = (ev: KeyboardEvent) => {
@@ -130,7 +150,7 @@ export const CommandPalette = () => {
             if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "k") {
                 ev.preventDefault();
                 resetShiftTap();
-                togglePalette();
+                togglePalette("shortcut_k");
                 return;
             }
 
@@ -151,7 +171,7 @@ export const CommandPalette = () => {
 
             if (now - lastShiftTapAt <= DOUBLE_SHIFT_WINDOW_MS) {
                 lastShiftTapAt = 0;
-                togglePalette();
+                togglePalette("double_shift");
             }
             else {
                 lastShiftTapAt = now;
@@ -170,17 +190,25 @@ export const CommandPalette = () => {
     }, []);
 
     const handleOpenChange = (nextOpen: boolean) => {
-        if (nextOpen) isJumping.current = false;
-        setOpen(nextOpen);
-        if (!nextOpen) setQuery("");
+        setPaletteOpen(nextOpen);
     };
 
-    const runAction = (action: () => void) => {
+    const runAction = (
+        resultType: "continue" | "media" | "collection" | "dynamic_list" | "follow" | "page" | "external_search",
+        action: () => void,
+    ) => {
+        captureEvent("command_palette_selected", {
+            result_type: resultType,
+            had_query: trimmedQuery.length > 0,
+        });
         isJumping.current = true;
+        isOpenRef.current = false;
         setOpen(false);
         setQuery("");
         action();
     };
+
+    const runPageAction = (action: () => void) => runAction("page", action);
 
     const [currentYear, currentMonth] = currentDate?.split("-") ?? [];
     const activeMediaSettings = currentUser ? getActiveMediaSettings(currentUser.settings) : [];
@@ -432,7 +460,7 @@ export const CommandPalette = () => {
                             size="icon-sm"
                             variant="hover"
                             className="mr-1"
-                            onClick={() => handleOpenChange(true)}
+                            onClick={() => setPaletteOpen(true, "button")}
                             aria-label={`Quick Jump (${shortcutLabel} or double Shift)`}
                         />
                     }
@@ -475,7 +503,7 @@ export const CommandPalette = () => {
                                                     <CommandItem
                                                         key={`continue-${item.mediaType}-${item.mediaId}`}
                                                         value={`continue-${item.mediaType}-${item.mediaId}`}
-                                                        onSelect={() => runAction(() => void navigate({
+                                                        onSelect={() => runAction("continue", () => void navigate({
                                                             to: "/details/$mediaType/$mediaId",
                                                             params: { mediaType: item.mediaType, mediaId: item.mediaId },
                                                         }))}
@@ -511,7 +539,7 @@ export const CommandPalette = () => {
                                             <NavCommandItem
                                                 item={item}
                                                 key={item.id}
-                                                onRun={runAction}
+                                                onRun={runPageAction}
                                             />
                                         )
                                     }
@@ -527,7 +555,7 @@ export const CommandPalette = () => {
                                                     <NavCommandItem
                                                         item={item}
                                                         key={item.id}
-                                                        onRun={runAction}
+                                                        onRun={runPageAction}
                                                     />
                                                 )
                                             }
@@ -548,7 +576,7 @@ export const CommandPalette = () => {
                                                 <CommandItem
                                                     key={`media-${item.mediaType}-${item.mediaId}`}
                                                     value={`media-${item.mediaType}-${item.mediaId}`}
-                                                    onSelect={() => runAction(() => void navigate({
+                                                    onSelect={() => runAction("media", () => void navigate({
                                                         to: "/details/$mediaType/$mediaId",
                                                         params: { mediaType: item.mediaType, mediaId: item.mediaId },
                                                     }))}
@@ -600,7 +628,7 @@ export const CommandPalette = () => {
                                             <CommandItem
                                                 key={`collection-${collection.id}`}
                                                 value={`collection-${collection.id}`}
-                                                onSelect={() => runAction(() => void navigate({
+                                                onSelect={() => runAction("collection", () => void navigate({
                                                     to: "/lists/collections/$collectionId",
                                                     params: { collectionId: collection.id },
                                                 }))}
@@ -624,7 +652,7 @@ export const CommandPalette = () => {
                                             <CommandItem
                                                 key={`dynamic-${list.id}`}
                                                 value={`dynamic-${list.id}`}
-                                                onSelect={() => runAction(() => void navigate({
+                                                onSelect={() => runAction("dynamic_list", () => void navigate({
                                                     to: "/lists/dynamic/$listId",
                                                     params: { listId: list.id },
                                                 }))}
@@ -644,7 +672,7 @@ export const CommandPalette = () => {
                                             <CommandItem
                                                 key={`follow-${person.id}`}
                                                 value={`follow-${person.id}`}
-                                                onSelect={() => runAction(() => void navigate({
+                                                onSelect={() => runAction("follow", () => void navigate({
                                                     to: "/profile/$username",
                                                     params: { username: person.name },
                                                 }))}
@@ -668,7 +696,7 @@ export const CommandPalette = () => {
                                             <NavCommandItem
                                                 item={item}
                                                 key={item.id}
-                                                onRun={runAction}
+                                                onRun={runPageAction}
                                             />
                                         )}
                                     </CommandGroup>
@@ -678,11 +706,13 @@ export const CommandPalette = () => {
                                     <div className="py-5 text-center text-sm text-muted-foreground">
                                         {isWaitingForServer
                                             ? "Searching your lists..."
-                                            : currentUser && trimmedQuery.length === 1
-                                                ? "No matching pages. Type at least 2 characters to search your lists."
-                                                : showExternalSearch
-                                                    ? "No matches in your lists."
-                                                    : "No results found."
+                                            : isError && isServerReady
+                                                ? "Could not search your lists right now."
+                                                : currentUser && trimmedQuery.length === 1
+                                                    ? "No matching pages. Type at least 2 characters to search your lists."
+                                                    : showExternalSearch
+                                                        ? "No matches in your lists."
+                                                        : "No results found."
                                         }
                                     </div>
                                 }
@@ -698,7 +728,7 @@ export const CommandPalette = () => {
                                                     <CommandItem
                                                         key={`external-${provider.value}`}
                                                         value={`external-${provider.value}`}
-                                                        onSelect={() => runAction(() => void navigate({
+                                                        onSelect={() => runAction("external_search", () => void navigate({
                                                             to: "/search",
                                                             search: {
                                                                 page: 1,

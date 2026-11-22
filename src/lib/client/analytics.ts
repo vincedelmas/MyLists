@@ -39,6 +39,13 @@ type AnalyticsEvents = {
         advanced_filter_count: number,
         surface: "navbar" | "mobile" | "search_page",
     };
+    command_palette_opened: {
+        trigger: "button" | "shortcut_k" | "double_shift";
+    };
+    command_palette_selected: {
+        had_query: boolean;
+        result_type: "continue" | "media" | "collection" | "dynamic_list" | "follow" | "page" | "external_search";
+    };
 };
 
 

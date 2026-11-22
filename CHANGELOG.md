@@ -1,5 +1,29 @@
 # Changelog
 
+## [4.3.0](https://github.com/vincedelmas/MyLists/compare/v4.2.1...v4.3.0) (2026-11-22)
+
+
+### Features
+
+* **navbar:** add command palette analytics and news & features entry ([7a87fea](https://github.com/vincedelmas/MyLists/commit/7a87fea0485d1157e0b7831436206774960d5ec8))
+* **navbar:** add local command palette shortcut (cmd+k) ([5404771](https://github.com/vincedelmas/MyLists/commit/54047718064d5e75f4d24ed796ebc92fd68b853b))
+* **navbar:** add local command palette with double-shift and external search handoff ([f40616b](https://github.com/vincedelmas/MyLists/commit/f40616b7caf769357fe97d33887281296865c4de))
+* **navbar:** add missing settings for command palette ([bda18c9](https://github.com/vincedelmas/MyLists/commit/bda18c9a8d31ead10cd8960d6aaacf6f5e59ce32))
+
+
+### Bug Fixes
+
+* **cache:** align serialization and use LRU memory eviction ([752170e](https://github.com/vincedelmas/MyLists/commit/752170e181943471bdc7a0920b3990aa658c249c))
+* **container:** allow retry after init failure ([65e7a06](https://github.com/vincedelmas/MyLists/commit/65e7a0681d1ef0ebcdc819e720fa1df6f611bf86))
+* disable session cookie cache and throttle view counts ([ca53abb](https://github.com/vincedelmas/MyLists/commit/ca53abbf544060e494cc4234f5ecf5c7b109f156))
+* harden admin auth and bound memory cache ([8974a0e](https://github.com/vincedelmas/MyLists/commit/8974a0ee1480c5efe7bdb069684116f4f55f41b9))
+* **server:** reject malformed paths and close resources on shutdown ([8f6669c](https://github.com/vincedelmas/MyLists/commit/8f6669c7cd32713f23fe1bfe3c2bd20e4f87f76a))
+
+
+### Code Refactoring
+
+* **tags:** link media tag assignments to user list entries ([ecfa712](https://github.com/vincedelmas/MyLists/commit/ecfa712ee3ab496a5d75423bd789c19c74b2d8af))
+
 ## [4.2.1](https://github.com/vincedelmas/MyLists/compare/v4.2.0...v4.2.1) (2026-11-21)
 
 

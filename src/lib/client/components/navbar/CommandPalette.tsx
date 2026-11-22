@@ -14,12 +14,14 @@ import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {getMediaConfig} from "@/lib/client/components/media/media-config";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {getSearchProviderItems} from "@/lib/client/components/navbar/navbar-search";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
 import {commandPaletteOptions, continueOptions} from "@/lib/client/react-query/query-options";
 import {getActiveMediaSettings, resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
 import {Command, CommandDialog, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator} from "@/lib/client/components/ui/command";
 import {
     Activity,
+    ArrowUpRight,
     Award,
     BarChart2,
     BookPlus,
@@ -62,6 +64,9 @@ interface PaletteNavItem {
 }
 
 
+const DOUBLE_SHIFT_WINDOW_MS = 350;
+
+
 const isMacPlatform = () => {
     if (typeof navigator === "undefined") return false;
     return /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -98,18 +103,65 @@ export const CommandPalette = () => {
     });
 
     useEffect(() => {
+        let lastShiftTapAt = 0;
+        let shiftPressedAlone = false;
+
+        const resetShiftTap = () => {
+            lastShiftTapAt = 0;
+            shiftPressedAlone = false;
+        };
+
+        const togglePalette = () => {
+            isJumping.current = false;
+            setOpen(prev => !prev);
+        };
+
         const handleKeyDown = (ev: KeyboardEvent) => {
-            if (ev.defaultPrevented) return;
+            if (ev.defaultPrevented) {
+                resetShiftTap();
+                return;
+            }
 
             if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "k") {
                 ev.preventDefault();
-                isJumping.current = false;
-                setOpen(prev => !prev);
+                resetShiftTap();
+                togglePalette();
+                return;
+            }
+
+            if (ev.key === "Shift") {
+                if (ev.repeat || ev.ctrlKey || ev.metaKey || ev.altKey) resetShiftTap();
+                else shiftPressedAlone = true;
+                return;
+            }
+
+            resetShiftTap();
+        };
+
+        const handleKeyUp = (ev: KeyboardEvent) => {
+            if (ev.key !== "Shift" || !shiftPressedAlone) return;
+
+            const now = Date.now();
+            shiftPressedAlone = false;
+
+            if (now - lastShiftTapAt <= DOUBLE_SHIFT_WINDOW_MS) {
+                lastShiftTapAt = 0;
+                togglePalette();
+            }
+            else {
+                lastShiftTapAt = now;
             }
         };
 
         window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+        window.addEventListener("blur", resetShiftTap);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+            window.removeEventListener("blur", resetShiftTap);
+        };
     }, []);
 
     const handleOpenChange = (nextOpen: boolean) => {
@@ -308,7 +360,10 @@ export const CommandPalette = () => {
         ? navItems.filter(item => matchesTokens(trimmedQuery, item.label, item.keywords)).slice(0, 8)
         : [];
 
-    const hasSearchResults = mediaResults.length > 0
+    const searchProviders = currentUser ? getSearchProviderItems(currentUser.settings) : [];
+    const showExternalSearch = Boolean(currentUser) && trimmedQuery.length >= 2 && searchProviders.length > 0;
+
+    const hasLocalSearchResults = mediaResults.length > 0
         || collectionResults.length > 0
         || dynamicListResults.length > 0
         || followResults.length > 0
@@ -324,8 +379,8 @@ export const CommandPalette = () => {
                             size="icon-sm"
                             variant="hover"
                             className="mr-1"
-                            aria-label={`Quick Jump (${shortcutLabel})`}
                             onClick={() => handleOpenChange(true)}
+                            aria-label={`Quick Jump (${shortcutLabel} or double Shift)`}
                         />
                     }
                 >
@@ -335,6 +390,9 @@ export const CommandPalette = () => {
                     <span>Quick jump</span>
                     <kbd data-slot="kbd" className="bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium">
                         {shortcutLabel}
+                    </kbd>
+                    <kbd data-slot="kbd" className="bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium">
+                        2× Shift
                     </kbd>
                 </TooltipContent>
             </Tooltip>
@@ -563,15 +621,53 @@ export const CommandPalette = () => {
                                     </CommandGroup>
                                 }
 
-                                {!hasSearchResults &&
-                                    <div className="py-8 text-center text-sm text-muted-foreground">
+                                {!hasLocalSearchResults &&
+                                    <div className="py-5 text-center text-sm text-muted-foreground">
                                         {isWaitingForServer
                                             ? "Searching your lists..."
                                             : currentUser && trimmedQuery.length === 1
                                                 ? "No matching pages. Type at least 2 characters to search your lists."
-                                                : "No results found."
+                                                : showExternalSearch
+                                                    ? "No matches in your lists."
+                                                    : "No results found."
                                         }
                                     </div>
+                                }
+
+                                {showExternalSearch &&
+                                    <>
+                                        {hasLocalSearchResults && <CommandSeparator/>}
+                                        <CommandGroup heading="Search External">
+                                            {searchProviders.map(provider => {
+                                                const Icon = provider.icon;
+
+                                                return (
+                                                    <CommandItem
+                                                        key={`external-${provider.value}`}
+                                                        value={`external-${provider.value}`}
+                                                        onSelect={() => runAction(() => void navigate({
+                                                            to: "/search",
+                                                            search: {
+                                                                page: 1,
+                                                                query: trimmedQuery,
+                                                                advancedFilters: undefined,
+                                                                apiProvider: provider.value,
+                                                            },
+                                                        }))}
+                                                    >
+                                                        <Icon className="size-4 text-muted-foreground"/>
+                                                        <span className="min-w-0 flex-1 truncate">
+                                                            Search {provider.label} for “{trimmedQuery}”
+                                                        </span>
+                                                        <ArrowUpRight
+                                                            aria-hidden="true"
+                                                            className="ml-auto size-3.5 text-muted-foreground"
+                                                        />
+                                                    </CommandItem>
+                                                );
+                                            })}
+                                        </CommandGroup>
+                                    </>
                                 }
                             </>
                         }

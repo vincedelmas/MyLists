@@ -18,7 +18,17 @@ abstract class CacheStore {
 
     abstract get<T>(key: string): Promise<T | undefined>;
 
-    abstract set(key: string, value: any, ttl?: number): Promise<void>;
+    protected abstract setSerialized(key: string, value: string, ttl?: number): Promise<void>;
+
+    async set(key: string, value: unknown, ttl?: number): Promise<void> {
+        const serialized = JSON.stringify(value);
+        if (serialized === undefined) {
+            await this.del(key);
+            return;
+        }
+
+        await this.setSerialized(key, serialized, ttl);
+    }
 
     async wrap<T>(key: string, fn: () => Promise<T>, options?: { ttl?: number }): Promise<T> {
         const existing = this.pending.get(key);
@@ -54,9 +64,9 @@ class RedisCacheStore extends CacheStore {
         return value ? JSON.parse(value) : undefined;
     }
 
-    async set(key: string, value: any, ttl?: number) {
+    protected async setSerialized(key: string, value: string, ttl?: number) {
         const ttlMs = ttl ?? this.defaultTtl;
-        await this.redis.set(key, JSON.stringify(value), "PX", ttlMs);
+        await this.redis.set(key, value, "PX", ttlMs);
     }
 
     async del(key: string) {
@@ -70,7 +80,7 @@ class RedisCacheStore extends CacheStore {
 
 
 class MemoryCacheStore extends CacheStore {
-    private cache = new Map<string, { value: any; expires: number }>();
+    private cache = new Map<string, { value: string; expires: number }>();
 
     constructor(private defaultTtl: number) {
         super();
@@ -90,7 +100,9 @@ class MemoryCacheStore extends CacheStore {
         const cached = this.cache.get(key);
 
         if (cached && cached.expires > Date.now()) {
-            return cached.value;
+            this.cache.delete(key);
+            this.cache.set(key, cached);
+            return JSON.parse(cached.value);
         }
 
         if (cached) {
@@ -100,12 +112,14 @@ class MemoryCacheStore extends CacheStore {
         return undefined;
     }
 
-    async set(key: string, value: any, ttl?: number) {
+    protected async setSerialized(key: string, value: string, ttl?: number) {
         const ttlMs = ttl ?? this.defaultTtl;
         this.cache.delete(key);
+
         if (this.cache.size >= MEMORY_CACHE_MAX_ENTRIES) {
             this.cache.delete(this.cache.keys().next().value!);
         }
+
         this.cache.set(key, { value, expires: Date.now() + ttlMs });
     }
 

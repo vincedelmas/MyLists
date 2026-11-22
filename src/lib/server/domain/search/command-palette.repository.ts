@@ -7,6 +7,7 @@ import {collectionItems, collections, dynamicLists, followers, user} from "@/lib
 
 
 const MAX_MEDIA_RESULTS = 8;
+const MAX_SEARCH_TOKENS = 6;
 const MAX_SECONDARY_RESULTS = 5;
 
 
@@ -16,15 +17,21 @@ const prefixPattern = (query: string) => `${escapeLike(query)}%`;
 
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, "\\$&");
 
+const toSearchTokens = (query: string) => query.split(/\s+/).filter(Boolean).slice(0, MAX_SEARCH_TOKENS);
+
+
+const matchAllTokens = (expression: ReturnType<typeof sql> | typeof collections.title | typeof user.name, tokens: string[]) => {
+    return and(...tokens.map(token => sql`${expression} LIKE ${likePattern(token)} ESCAPE '\\'`));
+};
+
 
 export const searchCommandPalette = async (userId: number, activeMediaTypes: MediaType[], rawQuery: string) => {
     const db = getDbClient();
-
     const query = rawQuery.trim();
-    const contains = likePattern(query);
-    const prefix = prefixPattern(query);
 
-    const media = searchTrackedMedia(userId, activeMediaTypes, contains, prefix);
+    const prefix = prefixPattern(query);
+    const tokens = toSearchTokens(query);
+    const media = searchTrackedMedia(userId, activeMediaTypes, tokens, prefix);
 
     const userCollections = db
         .select({
@@ -38,7 +45,7 @@ export const searchCommandPalette = async (userId: number, activeMediaTypes: Med
         }).from(collections)
         .where(and(
             eq(collections.ownerId, userId),
-            like(collections.title, contains).append(sql` ESCAPE '\\'`),
+            matchAllTokens(collections.title, tokens),
         )).orderBy(
             sql`CASE WHEN ${collections.title} LIKE ${prefix} ESCAPE '\\' THEN 0 ELSE 1 END`,
             desc(collections.updatedAt),
@@ -54,7 +61,7 @@ export const searchCommandPalette = async (userId: number, activeMediaTypes: Med
         }).from(dynamicLists)
         .where(and(
             eq(dynamicLists.userId, userId),
-            sql`${dynamicTitle} LIKE ${contains} ESCAPE '\\'`,
+            matchAllTokens(dynamicTitle, tokens),
         )).orderBy(
             sql`CASE WHEN ${dynamicTitle} LIKE ${prefix} ESCAPE '\\' THEN 0 ELSE 1 END`,
             desc(dynamicLists.updatedAt),
@@ -72,7 +79,7 @@ export const searchCommandPalette = async (userId: number, activeMediaTypes: Med
         .where(and(
             eq(followers.followerId, userId),
             eq(followers.status, SocialState.ACCEPTED),
-            like(user.name, contains).append(sql` ESCAPE '\\'`),
+            matchAllTokens(user.name, tokens),
         )).orderBy(
             sql`CASE WHEN ${user.name} LIKE ${prefix} ESCAPE '\\' THEN 0 ELSE 1 END`,
             asc(sql`${user.name} COLLATE NOCASE`),
@@ -88,7 +95,7 @@ export const searchCommandPalette = async (userId: number, activeMediaTypes: Med
 };
 
 
-const searchTrackedMedia = (userId: number, activeMediaTypes: MediaType[], contains: string, prefix: string) => {
+const searchTrackedMedia = (userId: number, activeMediaTypes: MediaType[], tokens: string[], prefix: string) => {
     if (activeMediaTypes.length === 0) return [];
 
     const db = getDbClient();
@@ -97,15 +104,20 @@ const searchTrackedMedia = (userId: number, activeMediaTypes: MediaType[], conta
         const { repository: { tables: { mediaTable, listTable } } } = getServerMediaDefinition(mediaType);
 
         const displayName = listTable.customTitle ?? mediaTable.name;
-        const matchConditions = [like(mediaTable.name, contains).append(sql` ESCAPE '\\'`)];
+        const tokenConditions = tokens.map(token => {
+            const pattern = likePattern(token);
+            const fields = [like(mediaTable.name, pattern).append(sql` ESCAPE '\\'`)];
 
-        if (listTable.customTitle) {
-            matchConditions.push(like(listTable.customTitle, contains).append(sql` ESCAPE '\\'`));
-        }
+            if (listTable.customTitle) {
+                fields.push(like(listTable.customTitle, pattern).append(sql` ESCAPE '\\'`));
+            }
 
-        if (mediaTable.originalName) {
-            matchConditions.push(like(mediaTable.originalName, contains).append(sql` ESCAPE '\\'`));
-        }
+            if (mediaTable.originalName) {
+                fields.push(like(mediaTable.originalName, pattern).append(sql` ESCAPE '\\'`));
+            }
+
+            return or(...fields);
+        });
 
         const rank = sql<number>`CASE WHEN ${displayName} LIKE ${prefix} ESCAPE '\\' THEN 0 ELSE 1 END`;
 
@@ -124,7 +136,7 @@ const searchTrackedMedia = (userId: number, activeMediaTypes: MediaType[], conta
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
             .where(and(
                 eq(listTable.userId, userId),
-                or(...matchConditions),
+                ...tokenConditions,
             )).$dynamic();
     });
 

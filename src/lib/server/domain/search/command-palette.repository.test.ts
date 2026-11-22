@@ -121,3 +121,25 @@ it("matches original titles, respects active media types, and escapes LIKE wildc
     const wildcard = await searchCommandPalette(1, [MediaType.MOVIES, MediaType.BOOKS], "%");
     expect(wildcard).toEqual({ media: [], collections: [], dynamicLists: [], follows: [] });
 });
+
+
+it("matches multi-word queries across extra spaces and non-adjacent words", async () => {
+    dbContext.db.insert(schema.dynamicLists).values({
+        id: 3,
+        userId: 1,
+        spec: {
+            version: 2,
+            display: "grid",
+            title: "All  Media On Hold",
+            mediaTypes: "all",
+            sort: { field: "addedAt", direction: "desc" },
+            filters: {},
+        },
+    }).run();
+
+    const byExtraSpaces = await searchCommandPalette(1, [MediaType.MOVIES], "all media");
+    expect(byExtraSpaces.dynamicLists).toEqual([{ id: 3, title: "All  Media On Hold" }]);
+
+    const nonAdjacent = await searchCommandPalette(1, [MediaType.MOVIES], "dune two");
+    expect(nonAdjacent.media.map(item => item.name)).toEqual(["Dune: Part Two"]);
+});

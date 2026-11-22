@@ -169,7 +169,10 @@ async function initContainer(): Promise<AppContainer> {
 
 export function getContainer() {
     if (!containerPromise) {
-        containerPromise = initContainer();
+        containerPromise = initContainer().catch((error) => {
+            containerPromise = null;
+            throw error;
+        });
     }
     return containerPromise;
 }

@@ -12,7 +12,6 @@ import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/a
 import {
     GameAdvancedSearchOptions,
     IdNamePair,
-    IgdbGameCollectionIds,
     IgdbGameDetails,
     IgdbPopularityPrimitive,
     IgdbSearchResponse,
@@ -273,18 +272,6 @@ export const createIgdbApi = async () => {
             const headers = await getHeaders();
             const response = await http.call(config.baseUrl, "post", { headers, body });
             return await response.json() as Promise<IgdbGameDetails[]>;
-        },
-
-        // TODO: to remove after backfilling
-        async getGamesCollectionIds(apiIds: number[]): Promise<IgdbGameCollectionIds[]> {
-            if (apiIds.length === 0) return [];
-
-            const body = `fields id, collections; where id = (${apiIds.join(",")}); limit ${apiIds.length};`;
-
-            const headers = await getHeaders();
-            const response = await http.call(config.baseUrl, "post", { headers, body });
-
-            return await response.json() as Promise<IgdbGameCollectionIds[]>;
         },
 
         async getTrendingGames(): Promise<IgdbTrendingGame[]> {

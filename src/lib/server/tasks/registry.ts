@@ -18,7 +18,6 @@ import {precomputePlatformStatsTask} from "@/lib/server/tasks/definitions/precom
 import {deleteNonActivatedUsersTask} from "@/lib/server/tasks/definitions/delete-non-activated-users.task";
 import {removeUnusedMediaCoversTask} from "@/lib/server/tasks/definitions/remove-unused-media-covers.task";
 import {createMediaNotificationsTask} from "@/lib/server/tasks/definitions/create-media-notifications.task";
-import {backfillGameCollectionIdsTask} from "@/lib/server/tasks/definitions/backfill-game-collection-ids.task";
 import {removeUnusedProfileImagesTask} from "@/lib/server/tasks/definitions/remove-unused-profile-images.task";
 
 
@@ -44,7 +43,6 @@ export const taskRegistry = {
     [precomputePlatformStatsTask.name]: precomputePlatformStatsTask,
     [createMediaNotificationsTask.name]: createMediaNotificationsTask,
     [addGenresToBooksUsingLlmTask.name]: addGenresToBooksUsingLlmTask,
-    [backfillGameCollectionIdsTask.name]: backfillGameCollectionIdsTask,
     [removeUnusedProfileImagesTask.name]: removeUnusedProfileImagesTask,
 };
 

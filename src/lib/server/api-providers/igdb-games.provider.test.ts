@@ -22,7 +22,6 @@ const igdb = {
     getAdvancedSearchOptions: vi.fn<IgdbApi["getAdvancedSearchOptions"]>(),
     getGameDetails: vi.fn<IgdbApi["getGameDetails"]>(),
     getGamesDetails: vi.fn<IgdbApi["getGamesDetails"]>(),
-    getGamesCollectionIds: vi.fn<IgdbApi["getGamesCollectionIds"]>(),
     getTrendingGames: vi.fn<IgdbApi["getTrendingGames"]>(),
     refreshAccessToken: vi.fn<IgdbApi["refreshAccessToken"]>(),
     fetchNewIgdbToken: vi.fn<IgdbApi["fetchNewIgdbToken"]>(),

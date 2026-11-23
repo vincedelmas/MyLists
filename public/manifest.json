@@ -1,7 +1,7 @@
 {
     "short_name": "MyLists",
     "name": "MyLists",
-    "description": "App that allows you to manage your series, anime, movies, games and books lists.",
+    "description": "App that allows you to manage your series, anime, movies, games, books and manga lists.",
     "orientation": "portrait",
     "start_url": ".",
     "display": "standalone",

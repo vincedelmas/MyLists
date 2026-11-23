@@ -94,13 +94,6 @@ export type IgdbTrendingGame = {
 }
 
 
-// TODO: to remove after backfilling
-export type IgdbGameCollectionIds = {
-    id: number;
-    collections?: number[];
-}
-
-
 export interface IgdbGameDetails {
     id: number;
     url: string;

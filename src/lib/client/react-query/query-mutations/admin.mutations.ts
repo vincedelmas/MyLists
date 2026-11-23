@@ -12,6 +12,7 @@ import {
 } from "@/lib/client/react-query/query-options/admin.options";
 import {
     postAdminDeleteArchivedTask,
+    postAdminDismissBookMergeSuggestion,
     postAdminMergeBooks,
     postAdminTriggerTask,
     postAdminUpdateAchievement,
@@ -79,6 +80,19 @@ export const useAdminMergeBooksMutation = (onSuccess?: (result: AdminBookMergeRe
                 queryClient.invalidateQueries({ queryKey: ["dynamic-lists"] }),
                 queryClient.invalidateQueries({ queryKey: ["collections"] }),
             ]);
+        },
+    });
+};
+
+
+export const useAdminDismissBookMergeSuggestionMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: postAdminDismissBookMergeSuggestion,
+        meta: { successToastMessage: "Suggestion dismissed." },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["admin", "book-merges"] });
         },
     });
 };

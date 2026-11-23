@@ -22,20 +22,20 @@ describe("media authentication across transports", () => {
     });
 
     it("uses the verified connection identity instead of a different browser cookie", () => {
-        const result = mcpRequestContext.run({ userId: 1, username: "owner", scopes: new Set([MCP_READ_SCOPE]) }, () => read({
+        const result = mcpRequestContext.run({ userId: 1, role: RoleType.USER, username: "owner", scopes: new Set([MCP_READ_SCOPE]) }, () => read({
             next, context: { currentUser: { id: 2, role: RoleType.ADMIN } },
         }));
         expect(result).toEqual({ context: { currentUser: { id: 1, role: RoleType.USER } } });
     });
 
     it("enforces scopes inside server functions, independently of tool registration", () => {
-        expect(() => mcpRequestContext.run({ userId: 1, username: "owner", scopes: new Set() }, () => read({ next, context: {} }))).toThrow("permission to read");
-        expect(() => mcpRequestContext.run({ userId: 1, username: "owner", scopes: new Set([MCP_READ_SCOPE]) }, () => write({ next, context: {} }))).toThrow("permission to modify");
-        expect(mcpRequestContext.run({ userId: 1, username: "owner", scopes: new Set([MCP_READ_SCOPE, MCP_WRITE_SCOPE]) }, () => write({ next, context: {} }))).toBeUndefined();
+        expect(() => mcpRequestContext.run({ userId: 1, role: RoleType.USER, username: "owner", scopes: new Set() }, () => read({ next, context: {} }))).toThrow("permission to read");
+        expect(() => mcpRequestContext.run({ userId: 1, role: RoleType.USER, username: "owner", scopes: new Set([MCP_READ_SCOPE]) }, () => write({ next, context: {} }))).toThrow("permission to modify");
+        expect(mcpRequestContext.run({ userId: 1, role: RoleType.USER, username: "owner", scopes: new Set([MCP_READ_SCOPE, MCP_WRITE_SCOPE]) }, () => write({ next, context: {} }))).toBeUndefined();
     });
 
     it("isolates concurrent connections and clears identity after the request", async () => {
-        const results = await Promise.all([1, 2].map(userId => mcpRequestContext.run({ userId, username: "owner", scopes: new Set([MCP_READ_SCOPE]) }, async () => {
+        const results = await Promise.all([1, 2].map(userId => mcpRequestContext.run({ userId, role: RoleType.USER, username: "owner", scopes: new Set([MCP_READ_SCOPE]) }, async () => {
             await Promise.resolve();
             return read({ next, context: {} });
         })));

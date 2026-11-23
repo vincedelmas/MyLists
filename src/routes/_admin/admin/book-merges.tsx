@@ -31,6 +31,7 @@ function BookMergesPage() {
 
     const asideLabels = {
         authors: "Authors",
+        suggestions: "AI suggestions",
         duplicates: "Candidate groups",
         "author-books": "Books by this author",
         catalog: filters.search ? "Matching books" : "Catalog books",

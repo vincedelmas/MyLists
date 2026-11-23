@@ -18,6 +18,7 @@ vi.mock("@/lib/server/database/db", () => ({
 }));
 
 
+const { AdminRepository } = await import("@/lib/server/domain/admin/admin.repository");
 const { MediaMaintenanceRepository } = await import("@/lib/server/domain/maintenance/media-maintenance.repository");
 const { withTransaction } = await import("@/lib/server/database/async-storage");
 
@@ -136,5 +137,46 @@ describe("MediaMaintenanceRepository", () => {
 
         expect(db.select().from(movies).where(eq(movies.id, 100)).get()).toBeDefined();
         expect(db.select().from(moviesActors).all()).toHaveLength(1);
+    });
+
+    it("reconciles book merge suggestions when orphan cleanup deletes books", async () => {
+        db.insert(schema.books).values([
+            { id: 1, apiId: "b1", name: "Dune", pages: 412, imageCover: "1.jpg" },
+            { id: 2, apiId: "b2", name: "Dune (Orphan)", pages: 420, imageCover: "2.jpg" },
+            { id: 3, apiId: "b3", name: "Dune (FR)", pages: 600, imageCover: "3.jpg" },
+            { id: 4, apiId: "b4", name: "Foundation", pages: 244, imageCover: "4.jpg" },
+        ]).run();
+
+        // 2-book pending suggestion (1, 2), 3-book pending suggestion with target=2 (2, 1, 3), and dismissed (2, 4)
+        AdminRepository.proposeBookMerges({
+            proposals: [
+                { targetBookId: 1, sourceBookIds: [2], confidence: "high", reason: "Two-book group" },
+                { targetBookId: 2, sourceBookIds: [1, 3], confidence: "medium", reason: "Three-book group" },
+                { targetBookId: 4, sourceBookIds: [2], confidence: "low", reason: "Dismissed group" },
+            ],
+        });
+        const dismissedId = db.select({ id: schema.bookMergeSuggestion.id })
+            .from(schema.bookMergeSuggestion)
+            .where(eq(schema.bookMergeSuggestion.groupKey, "2,4"))
+            .get()!.id;
+        AdminRepository.dismissBookMergeSuggestion(dismissedId);
+
+        withTransaction(() => MediaMaintenanceRepository.removeMediaByIds(MediaType.BOOKS, [2]));
+
+        const queue = await AdminRepository.getBooksForAdminMerge({ view: "suggestions" });
+        expect(queue).toMatchObject({
+            kind: "suggestions",
+            total: 1,
+            pendingSuggestionsCount: 1,
+            items: [{
+                targetBookId: 1,
+                reason: "Three-book group",
+                books: [{ id: 1 }, { id: 3 }],
+            }],
+        });
+
+        const stored = db.select().from(schema.bookMergeSuggestion).all();
+        expect(stored).toHaveLength(1);
+        expect(stored[0]).toMatchObject({ groupKey: "1,3", targetBookId: 1, status: "pending" });
     });
 });

@@ -25,7 +25,12 @@ export type AdminUpdateMediaCoverInput = z.input<typeof adminUpdateMediaCoverSch
 
 export const adminBookMergeSearchSchema = simpleSearchSchema.extend({
     author: optionalTrimmedSearchFieldSchema,
-    view: z.enum(["duplicates", "authors", "catalog"]).catch("duplicates"),
+    view: z.enum(["suggestions", "duplicates", "authors", "catalog"]).catch("duplicates"),
+});
+
+
+export const adminDismissBookMergeSuggestionSchema = z.object({
+    suggestionId: positiveIntFieldSchema,
 });
 
 

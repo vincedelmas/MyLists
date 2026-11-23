@@ -4,9 +4,8 @@ import {useId, useRef, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
-import {Separator} from "@/lib/client/components/ui/separator";
 import {formatNumber} from "@/lib/utils/formatting/number";
-import type {AdminBookMergeItem} from "@/lib/types/admin.types";
+import {Separator} from "@/lib/client/components/ui/separator";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import type {AdminBookMergeSearch} from "@/lib/schemas/admin.schema";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -19,16 +18,25 @@ import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseD
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 import {BookMergeList} from "@/lib/client/components/admin/book-merges/BookMergeList";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
-import {useAdminMergeBooksMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
+import type {AdminBookMergeItem, BookMergeSuggestionConfidence} from "@/lib/types/admin.types";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {adminBookMergePreviewOptions, type AdminBooksForMergeData} from "@/lib/client/react-query/query-options/admin.options";
-import {AlertTriangle, ArrowLeft, BookOpen, ChevronRight, GitMerge, Pencil, RefreshCw, SearchX, Target, X} from "lucide-react";
+import {AlertTriangle, ArrowLeft, BookOpen, ChevronRight, GitMerge, Pencil, RefreshCw, SearchX, Sparkles, Target, X} from "lucide-react";
+import {useAdminDismissBookMergeSuggestionMutation, useAdminMergeBooksMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 
 
 const searchFields = {
-    duplicates: { label: "Filter duplicate groups", placeholder: "Title or author…" },
     authors: { label: "Search authors", placeholder: "Author name…" },
+    duplicates: { label: "Filter duplicate groups", placeholder: "Title or author…" },
     catalog: { label: "Search catalog books", placeholder: "Title, author, publisher, or #id…" },
+    suggestions: { label: "Filter AI suggestions", placeholder: "Title, author, reason, or #id…" },
+};
+
+
+const confidenceBadges: Record<BookMergeSuggestionConfidence, { label: string; variant: "success" | "warning" | "secondary" }> = {
+    high: { label: "High confidence", variant: "success" },
+    medium: { label: "Medium confidence", variant: "warning" },
+    low: { label: "Low confidence", variant: "secondary" },
 };
 
 
@@ -45,6 +53,7 @@ export function BookMergeDirectory({ data, filters, isRefreshing, isRefreshError
     const fieldId = useId();
     const confirm = useConfirm();
     const mergePlanRef = useRef<HTMLDivElement>(null);
+    const dismissMutation = useAdminDismissBookMergeSuggestionMutation();
     const [sourceBooks, setSourceBooks] = useState<AdminBookMergeItem[]>([]);
     const [targetBook, setTargetBook] = useState<AdminBookMergeItem | null>(null);
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate(filters, { resetScroll: false });
@@ -121,9 +130,16 @@ export function BookMergeDirectory({ data, filters, isRefreshing, isRefreshError
     };
 
     const emptyMessages = {
-        duplicates: filters.search ? "No duplicate groups match your search." : "No likely duplicates found.",
-        authors: filters.search ? "No authors with multiple books match your search." : "No authors with multiple books found.",
         "author-books": "No catalog books found for this author.",
+        duplicates: filters.search
+            ? "No duplicate groups match your search."
+            : "No likely duplicates found.",
+        suggestions: filters.search
+            ? "No AI suggestions match your search."
+            : "No pending AI suggestions. Use your MCP assistant to analyze catalog books.",
+        authors: filters.search
+            ? "No authors with multiple books match your search."
+            : "No authors with multiple books found.",
         catalog: filters.search
             ? "No books match your search. Try another title, author, publisher, or ID."
             : "No books found in the catalog.",
@@ -143,6 +159,15 @@ export function BookMergeDirectory({ data, filters, isRefreshing, isRefreshError
                         if (view) void updateFilters({ view, author: undefined, search: undefined, page: 1 });
                     }}
                 >
+                    <ToggleGroupItem value="suggestions" className="gap-1.5">
+                        <Sparkles className="size-3.5"/>
+                        AI suggestions
+                        {data.pendingSuggestionsCount > 0 &&
+                            <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+                                {formatNumber(data.pendingSuggestionsCount)}
+                            </Badge>
+                        }
+                    </ToggleGroupItem>
                     <ToggleGroupItem value="duplicates">
                         Likely duplicates
                     </ToggleGroupItem>
@@ -198,6 +223,18 @@ export function BookMergeDirectory({ data, filters, isRefreshing, isRefreshError
                         </Field>
                     }
 
+                    {data.kind === "suggestions" &&
+                        <p className="text-xs text-muted-foreground">
+                            {formatNumber(data.reviewProgress.reviewedBooks)} / {formatNumber(data.reviewProgress.totalBooks)} catalog books reviewed
+                            {" · "}
+                            {formatNumber(data.reviewProgress.unreviewedAuthorsWithMultipleBooks)} multi-book{" "}
+                            {data.reviewProgress.unreviewedAuthorsWithMultipleBooks === 1 ? "author" : "authors"} remaining
+                            {data.reviewProgress.dismissedSuggestions > 0 &&
+                                <>{" · "}{formatNumber(data.reviewProgress.dismissedSuggestions)} dismissed</>
+                            }
+                        </p>
+                    }
+
                     {data.items.length === 0 ?
                         <div className="flex flex-col items-center gap-4 rounded-lg border py-12">
                             <EmptyState
@@ -210,76 +247,147 @@ export function BookMergeDirectory({ data, filters, isRefreshing, isRefreshError
                                 </Button>
                             }
                         </div>
-                        : data.kind === "duplicates" ?
-                            data.items.map(group => {
-                                const [suggested, ...duplicates] = group.books;
+                        : data.kind === "suggestions" ?
+                            data.items.map(suggestion => {
+                                const [suggested, ...duplicates] = suggestion.books;
+                                const confidence = confidenceBadges[suggestion.confidence];
+                                const isDismissing = dismissMutation.isPending && dismissMutation.variables?.data.suggestionId === suggestion.id;
 
-                                const isStaged = group.books.some(book => book.id === targetBook?.id)
+                                const isStaged = suggestion.books.some(book => book.id === targetBook?.id)
                                     && sourceBooks.length === duplicates.length
-                                    && sourceBooks.every(book => group.books.some(item => item.id === book.id));
+                                    && sourceBooks.every(book => suggestion.books.some(item => item.id === book.id));
 
                                 return (
-                                    <section key={group.key} className="min-w-0 rounded-lg border bg-card">
-                                        <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/30 px-3 py-2">
-                                            <div className="min-w-0">
-                                                <h2 className="text-sm font-semibold wrap-anywhere">
-                                                    {suggested.name}
-                                                </h2>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {formatNumber(group.books.length)} books with the same title and authors
+                                    <section key={suggestion.id} className="min-w-0 rounded-lg border bg-card">
+                                        <div className="flex flex-wrap items-start justify-between gap-2 border-b bg-muted/30 px-3 py-2.5">
+                                            <div className="min-w-0 flex-1 space-y-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <h2 className="text-sm font-semibold wrap-anywhere">
+                                                        {suggested.name}
+                                                    </h2>
+                                                    <Badge variant={confidence.variant}>
+                                                        {confidence.label}
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground wrap-anywhere">
+                                                    {suggestion.reason}
                                                 </p>
                                             </div>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                disabled={isStaged || mergeMutation.isPending}
-                                                onClick={() => {
-                                                    setTargetBook(suggested);
-                                                    setSourceBooks(duplicates);
-                                                    mergePlanRef.current?.focus();
-                                                }}
-                                            >
-                                                <GitMerge data-icon="inline-start"/>
-                                                {isStaged ? "Group staged" : hasMergePlan ? "Replace merge plan" : "Stage group"}
-                                            </Button>
+                                            <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                                                <LoadingButton
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    isLoading={isDismissing}
+                                                    icon={<X data-icon="inline-start"/>}
+                                                    disabled={mergeMutation.isPending || dismissMutation.isPending}
+                                                    onClick={() => dismissMutation.mutate({ data: { suggestionId: suggestion.id } })}
+                                                >
+                                                    Dismiss
+                                                </LoadingButton>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    disabled={isStaged || mergeMutation.isPending || isDismissing}
+                                                    onClick={() => {
+                                                        setTargetBook(suggested);
+                                                        setSourceBooks(duplicates);
+                                                        mergePlanRef.current?.focus();
+                                                    }}
+                                                >
+                                                    <GitMerge data-icon="inline-start"/>
+                                                    {isStaged
+                                                        ? "Group staged"
+                                                        : hasMergePlan
+                                                            ? "Replace merge plan"
+                                                            : "Stage group"
+                                                    }
+                                                </Button>
+                                            </div>
                                         </div>
                                         <BookMergeList
                                             {...listProps}
-                                            books={group.books}
                                             label={suggested.name}
-                                            suggestedBookId={suggested.id}
+                                            books={suggestion.books}
+                                            suggestedBookId={suggestion.targetBookId}
                                         />
                                     </section>
                                 );
                             })
-                            : data.kind === "authors" ?
-                                <ul className="divide-y rounded-lg border bg-card" aria-label="Authors">
-                                    {data.items.map(author =>
-                                        <li key={author.key}>
-                                            <Button
-                                                variant="ghost"
-                                                onClick={() => updateFilters({ author: author.key, page: 1 })}
-                                                className="h-auto w-full justify-start gap-3 whitespace-normal px-3 py-2.5 text-left"
-                                            >
+                            : data.kind === "duplicates" ?
+                                data.items.map(group => {
+                                    const [suggested, ...duplicates] = group.books;
+
+                                    const isStaged = group.books.some(book => book.id === targetBook?.id)
+                                        && sourceBooks.length === duplicates.length
+                                        && sourceBooks.every(book => group.books.some(item => item.id === book.id));
+
+                                    return (
+                                        <section key={group.key} className="min-w-0 rounded-lg border bg-card">
+                                            <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/30 px-3 py-2">
+                                                <div className="min-w-0">
+                                                    <h2 className="text-sm font-semibold wrap-anywhere">
+                                                        {suggested.name}
+                                                    </h2>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {formatNumber(group.books.length)} books with the same title and authors
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    disabled={isStaged || mergeMutation.isPending}
+                                                    onClick={() => {
+                                                        setTargetBook(suggested);
+                                                        setSourceBooks(duplicates);
+                                                        mergePlanRef.current?.focus();
+                                                    }}
+                                                >
+                                                    <GitMerge data-icon="inline-start"/>
+                                                    {isStaged
+                                                        ? "Group staged"
+                                                        : hasMergePlan
+                                                            ? "Replace merge plan"
+                                                            : "Stage group"
+                                                    }
+                                                </Button>
+                                            </div>
+                                            <BookMergeList
+                                                {...listProps}
+                                                books={group.books}
+                                                label={suggested.name}
+                                                suggestedBookId={suggested.id}
+                                            />
+                                        </section>
+                                    );
+                                })
+                                : data.kind === "authors" ?
+                                    <ul className="divide-y rounded-lg border bg-card" aria-label="Authors">
+                                        {data.items.map(author =>
+                                            <li key={author.key}>
+                                                <Button
+                                                    variant="ghost"
+                                                    onClick={() => updateFilters({ author: author.key, page: 1 })}
+                                                    className="h-auto w-full justify-start gap-3 whitespace-normal px-3 py-2.5 text-left"
+                                                >
                                                 <span className="min-w-0 flex-1 wrap-anywhere">
                                                     {author.name}
                                                 </span>
-                                                <Badge variant="secondary">
-                                                    {formatNumber(author.bookCount)} books
-                                                </Badge>
-                                                <ChevronRight data-icon="inline-end"/>
-                                            </Button>
-                                        </li>
-                                    )}
-                                </ul>
-                                :
-                                <div className="rounded-lg border bg-card">
-                                    <BookMergeList
-                                        {...listProps}
-                                        books={data.items}
-                                        label={data.kind === "author-books" ? `Books by ${data.author}` : "Catalog books"}
-                                    />
-                                </div>
+                                                    <Badge variant="secondary">
+                                                        {formatNumber(author.bookCount)} books
+                                                    </Badge>
+                                                    <ChevronRight data-icon="inline-end"/>
+                                                </Button>
+                                            </li>
+                                        )}
+                                    </ul>
+                                    :
+                                    <div className="rounded-lg border bg-card">
+                                        <BookMergeList
+                                            {...listProps}
+                                            books={data.items}
+                                            label={data.kind === "author-books" ? `Books by ${data.author}` : "Catalog books"}
+                                        />
+                                    </div>
                     }
 
                     <Pagination
@@ -289,13 +397,7 @@ export function BookMergeDirectory({ data, filters, isRefreshing, isRefreshError
                     />
                 </div>
 
-                <Card
-                    role="region"
-                    tabIndex={-1}
-                    ref={mergePlanRef}
-                    aria-label="Merge staging"
-                    className="min-w-0 scroll-mt-16 lg:sticky lg:top-16"
-                >
+                <Card role="region" tabIndex={-1} ref={mergePlanRef} className="min-w-0 scroll-mt-16 lg:sticky lg:top-16">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <GitMerge className="size-4"/>

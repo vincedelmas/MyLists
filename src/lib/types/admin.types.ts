@@ -62,6 +62,30 @@ export type AdminBookMergePreview = {
 };
 
 
+export type BookMergeSuggestionStatus = "pending" | "dismissed";
+export type BookMergeSuggestionConfidence = "high" | "medium" | "low";
+
+
+export type AdminBookMergeSuggestion = {
+    id: number;
+    reason: string;
+    createdAt: string;
+    targetBookId: number;
+    books: AdminBookMergeItem[];
+    confidence: BookMergeSuggestionConfidence;
+};
+
+
+export type AdminBookMergeReviewProgress = {
+    totalBooks: number;
+    reviewedBooks: number;
+    unreviewedBooks: number;
+    pendingSuggestions: number;
+    dismissedSuggestions: number;
+    unreviewedAuthorsWithMultipleBooks: number;
+};
+
+
 export type AdminBookMergeResult = {
     targetBookId: number;
     mergedBookCount: number;

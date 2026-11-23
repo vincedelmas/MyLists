@@ -3,6 +3,7 @@ import {toDateInputValue} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, eq, gte, inArray, isNotNull, notExists} from "drizzle-orm";
 import {collectionItems, dailyMediadle} from "@/lib/server/database/schema";
+import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
 
@@ -63,6 +64,10 @@ export class MediaMaintenanceRepository {
 
     static removeMediaByIds(mediaType: MediaType, mediaIds: number[]) {
         const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
+
+        if (mediaType === MediaType.BOOKS && mediaIds.length > 0) {
+            AdminRepository.reconcileBookMergeSuggestionsOnBookRemoval(mediaIds);
+        }
 
         getDbClient()
             .delete(mediaTable)

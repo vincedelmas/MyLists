@@ -2,9 +2,11 @@ import {sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
 import {TaskResult} from "@/lib/types/tasks.types";
 import {user} from "@/lib/server/database/schema/auth.schema";
+import {books} from "@/lib/server/database/schema/media/books.schema";
 import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 import {customJson, dateAsString} from "@/lib/server/database/custom-types";
-import {check, index, integer, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import type {BookMergeSuggestionConfidence, BookMergeSuggestionStatus} from "@/lib/types/admin.types";
+import {check, index, integer, primaryKey, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
 export const taskHistory = snakeCase.table("task_history", {
@@ -94,3 +96,35 @@ export const apiCallRollup = snakeCase.table("api_call_rollup", {
     check("api_call_rollup_errors_not_above_total_check", sql`${table.errors} <= ${table.total}`),
     check("api_call_rollup_status_counts_json_check", sql`json_valid(${table.statusCounts})`),
 ]);
+
+
+export const bookMergeSuggestion = snakeCase.table("book_merge_suggestion", {
+    id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
+    targetBookId: integer("target_book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
+    reviewedAt: text("reviewed_at"),
+    reason: text("reason").notNull(),
+    groupKey: text("group_key").notNull(),
+    createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+    confidence: text("confidence").$type<BookMergeSuggestionConfidence>().notNull(),
+    status: text("status").$type<BookMergeSuggestionStatus>().default("pending").notNull(),
+}, (table) => [
+    uniqueIndex("ux_book_merge_suggestion_group_key").on(table.groupKey),
+    index("ix_book_merge_suggestion_status_created_at").on(table.status, table.createdAt),
+    check("book_merge_suggestion_status_check", sql`${table.status} IN ('pending', 'dismissed')`),
+    check("book_merge_suggestion_confidence_check", sql`${table.confidence} IN ('high', 'medium', 'low')`),
+]);
+
+
+export const bookMergeSuggestionBook = snakeCase.table("book_merge_suggestion_book", {
+    bookId: integer("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
+    suggestionId: integer("suggestion_id").notNull().references(() => bookMergeSuggestion.id, { onDelete: "cascade" }),
+}, (table) => [
+    primaryKey({ columns: [table.suggestionId, table.bookId] }),
+    index("ix_book_merge_suggestion_book_book_id").on(table.bookId),
+]);
+
+
+export const bookMergeReview = snakeCase.table("book_merge_review", {
+    bookId: integer("book_id").primaryKey().notNull().references(() => books.id, { onDelete: "cascade" }),
+    reviewedAt: text("reviewed_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});

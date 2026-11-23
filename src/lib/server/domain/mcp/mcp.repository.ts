@@ -20,6 +20,7 @@ export const getMcpAccess = (accessTokenClaims: JWTPayload) => {
 
     const grant = getDbClient()
         .select({
+            role: user.role,
             username: user.name,
             scopes: oauthConsent.scopes,
             disabled: oauthClient.disabled,
@@ -52,6 +53,7 @@ export const getMcpAccess = (accessTokenClaims: JWTPayload) => {
     return {
         userId,
         scopes,
+        role: grant.role,
         username: grant.username,
     };
 };

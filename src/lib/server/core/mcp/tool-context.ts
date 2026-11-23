@@ -1,9 +1,9 @@
 import z from "zod";
 import {and, eq} from "drizzle-orm";
 import {logger} from "@/lib/server/core/logger";
-import type {MediaType} from "@/lib/utils/enums";
 import {isNotFound} from "@tanstack/react-router";
 import {AsyncLocalStorage} from "node:async_hooks";
+import type {MediaType, RoleType} from "@/lib/utils/enums";
 import {userMediaSettings} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -13,6 +13,7 @@ import type {ToolAnnotations, CallToolResult} from "@modelcontextprotocol/sdk/ty
 
 
 export type McpAccess = {
+    role: RoleType;
     userId: number;
     username: string;
     scopes: Set<string>;
@@ -51,7 +52,9 @@ const toolErrorMessage = (error: unknown) => {
 
 export const createToolContext = (server: McpServer, access: McpAccess) => {
     return {
+        role: access.role,
         userId: access.userId,
+        scopes: access.scopes,
         username: access.username,
         register<T extends z.ZodObject>(name: string, options: RegisterOptions<T>, action: (input: z.output<T>) => unknown) {
             const { write = false, annotations, inputSchema, description } = options;

@@ -350,4 +350,209 @@ describe("AdminRepository book merging", () => {
             lastActivityAt: "2026-04-12T10:00:00.000Z",
         });
     });
+
+    it("stages LLM merge suggestions, prevents re-suggesting dismissed groups, tracks reviewed books, and cleans up after merge", async () => {
+        dbContext.db.insert(schema.books).values([
+            { id: 30, apiId: "work-c", name: "Dune Messiah", pages: 256, imageCover: "default.jpg" },
+            { id: 40, apiId: "work-d", name: "Foundation", pages: 244, imageCover: "default.jpg" },
+        ]).run();
+        dbContext.db.insert(schema.booksAuthors).values([
+            { mediaId: 10, name: "Frank Herbert" },
+            { mediaId: 20, name: "Frank Herbert" },
+            { mediaId: 30, name: "Frank Herbert" },
+            { mediaId: 40, name: "Isaac Asimov" },
+        ]).run();
+
+        // Authors mode returns multi-book authors with unreviewed books
+        const initialBatch = AdminRepository.getBooksForLlmGrouping({ mode: "authors", page: 1, includeReviewed: false });
+        expect(initialBatch).toMatchObject({
+            mode: "authors",
+            totalAuthors: 1,
+            progress: {
+                totalBooks: 4,
+                reviewedBooks: 0,
+                unreviewedBooks: 4,
+                unreviewedAuthorsWithMultipleBooks: 1,
+                pendingSuggestions: 0,
+                dismissedSuggestions: 0,
+            },
+            authors: [{
+                name: "Frank Herbert",
+                bookCount: 3,
+                unreviewedCount: 3,
+            }],
+        });
+
+        // Propose Dune EN + FR and mark Dune Messiah reviewed too; also include a nonexistent book
+        const proposed = AdminRepository.proposeBookMerges({
+            proposals: [
+                { targetBookId: 10, sourceBookIds: [20], confidence: "high", reason: "French edition of Dune." },
+                { targetBookId: 10, sourceBookIds: [999], confidence: "low", reason: "Missing book." },
+            ],
+            markReviewedBookIds: [30],
+        });
+        expect(proposed.createdCount).toBe(1);
+        expect(proposed.reviewedCount).toBe(3);
+        expect(proposed.skipped).toEqual([{ targetBookId: 10, sourceBookIds: [999], reason: "book_not_found" }]);
+
+        // All Frank Herbert books are now reviewed -> excluded from default authors batch, while Asimov remains in unreviewed mode
+        const afterReview = AdminRepository.getBooksForLlmGrouping({ mode: "authors", page: 1, includeReviewed: false });
+        expect(afterReview).toMatchObject({ totalAuthors: 0, authors: [] });
+
+        const unreviewedMode = AdminRepository.getBooksForLlmGrouping({ mode: "unreviewed", page: 1, includeReviewed: false });
+        expect(unreviewedMode).toMatchObject({ total: 1, books: [{ id: 40, name: "Foundation", reviewed: false }] });
+
+        // Adding a new book by Frank Herbert resurfaces him automatically for review with existingSuggestions included
+        dbContext.db.insert(schema.books).values({
+            id: 50, apiId: "work-e", name: "Dune (Illustrated)", pages: 500, imageCover: "default.jpg",
+        }).run();
+        dbContext.db.insert(schema.booksAuthors).values({ mediaId: 50, name: "Frank Herbert" }).run();
+
+        const resurfaced = AdminRepository.getBooksForLlmGrouping({ mode: "authors", page: 1, includeReviewed: false });
+        expect(resurfaced).toMatchObject({
+            totalAuthors: 1,
+            authors: [{ name: "Frank Herbert", bookCount: 4, unreviewedCount: 1 }],
+            existingSuggestions: [{ status: "pending", targetBookId: 10, bookIds: [10, 20] }],
+        });
+
+        // Admin UI suggestions view lists the pending suggestion
+        const uiSuggestions = await AdminRepository.getBooksForAdminMerge({ view: "suggestions" });
+        expect(uiSuggestions).toMatchObject({
+            kind: "suggestions",
+            total: 1,
+            pendingSuggestionsCount: 1,
+            items: [{
+                targetBookId: 10,
+                confidence: "high",
+                reason: "French edition of Dune.",
+                books: [{ id: 10 }, { id: 20 }],
+            }],
+        });
+
+        // Dismissing prevents re-proposing the same group (even with swapped target/source)
+        const suggestionId = uiSuggestions.kind === "suggestions" ? uiSuggestions.items[0].id : 0;
+        expect(AdminRepository.dismissBookMergeSuggestion(suggestionId)).toBe(true);
+        expect(AdminRepository.dismissBookMergeSuggestion(suggestionId)).toBe(false);
+
+        const reProposed = AdminRepository.proposeBookMerges({
+            proposals: [{ targetBookId: 20, sourceBookIds: [10], confidence: "medium", reason: "Swapped order." }],
+        });
+        expect(reProposed.createdCount).toBe(0);
+        expect(reProposed.skipped).toEqual([{ targetBookId: 20, sourceBookIds: [10], reason: "already_dismissed" }]);
+
+        // Propose a new group with #50 and then merge #50 into #10 -> suggestion auto-cleans
+        AdminRepository.proposeBookMerges({
+            proposals: [{ targetBookId: 10, sourceBookIds: [50], confidence: "high", reason: "Illustrated edition." }],
+        });
+        AdminRepository.mergeBooks(10, [50]);
+
+        const afterMerge = await AdminRepository.getBooksForAdminMerge({ view: "suggestions" });
+        expect(afterMerge).toMatchObject({ kind: "suggestions", total: 0, pendingSuggestionsCount: 0, items: [] });
+
+        // Resetting review markers clears book_merge_review
+        expect(AdminRepository.markBooksReviewed({ reset: true })).toEqual({ reset: true, clearedCount: 3 });
+        expect(AdminRepository.getBookMergeReviewProgress().reviewedBooks).toBe(0);
+    });
+
+    it("remaps overlapping suggestions to the surviving target book when merging", async () => {
+        dbContext.db.insert(schema.books).values([
+            { id: 30, apiId: "work-c", name: "Dune (Collector)", pages: 600, imageCover: "default.jpg" },
+            { id: 40, apiId: "work-d", name: "Dune (Pocket)", pages: 500, imageCover: "default.jpg" },
+        ]).run();
+
+        // Overlapping suggestions: (10, 20) and (20, 30), plus a third (20, 40) that collides with an existing (10, 40)
+        AdminRepository.proposeBookMerges({
+            proposals: [
+                { targetBookId: 10, sourceBookIds: [20], confidence: "high", reason: "A+B" },
+                { targetBookId: 20, sourceBookIds: [30], confidence: "medium", reason: "B+C" },
+                { targetBookId: 10, sourceBookIds: [40], confidence: "high", reason: "A+D" },
+                { targetBookId: 20, sourceBookIds: [40], confidence: "low", reason: "B+D duplicate after merge" },
+            ],
+        });
+
+        // Merge 20 (B) into 10 (A)
+        AdminRepository.mergeBooks(10, [20]);
+
+        const remaining = await AdminRepository.getBooksForAdminMerge({ view: "suggestions" });
+        expect(remaining).toMatchObject({
+            kind: "suggestions",
+            total: 2,
+            pendingSuggestionsCount: 2,
+            items: [
+                { targetBookId: 10, reason: "A+D", books: [{ id: 10 }, { id: 40 }] },
+                { targetBookId: 10, reason: "B+C", books: [{ id: 10 }, { id: 30 }] },
+            ],
+        });
+    });
+
+    it("prioritizes unreviewed books in author batches when an author has more than 60 books", () => {
+        const extraBooks = Array.from({ length: 61 }, (_, index) => ({
+            id: 100 + index,
+            apiId: `prolific-${index}`,
+            name: `Prolific Book ${index + 1}`,
+            pages: 200,
+            imageCover: "default.jpg",
+        }));
+        dbContext.db.insert(schema.books).values(extraBooks).run();
+        dbContext.db.insert(schema.booksAuthors).values(
+            extraBooks.map(book => ({ mediaId: book.id, name: "Prolific Author" })),
+        ).run();
+
+        // Mark the first 60 books as reviewed, leaving only book #160 unreviewed
+        AdminRepository.markBooksReviewed({ bookIds: extraBooks.slice(0, 60).map(book => book.id) });
+
+        const batch = AdminRepository.getBooksForLlmGrouping({ mode: "authors", page: 1, includeReviewed: false });
+        expect(batch.mode).toBe("authors");
+        if (batch.mode === "authors" && "authors" in batch && batch.authors) {
+            expect(batch.authors).toHaveLength(1);
+            expect(batch.authors[0]).toMatchObject({
+                name: "Prolific Author",
+                bookCount: 61,
+                unreviewedCount: 1,
+                truncated: true,
+            });
+            expect(batch.authors[0].books).toHaveLength(60);
+            expect(batch.authors[0].books.some(book => book.id === 160 && !book.reviewed)).toBe(true);
+        }
+    });
+
+    it("does not skip unreviewed books when advancing with cursor after marking a batch reviewed", () => {
+        dbContext.db.insert(schema.books).values([
+            { id: 30, apiId: "work-c", name: "Dune Messiah", pages: 256, imageCover: "default.jpg" },
+            { id: 40, apiId: "work-d", name: "Children of Dune", pages: 444, imageCover: "default.jpg" },
+        ]).run();
+
+        const first = AdminRepository.getBooksForLlmGrouping({ mode: "unreviewed", limit: 2, page: 1, includeReviewed: false });
+        expect(first).toMatchObject({
+            mode: "unreviewed",
+            total: 4,
+            hasMore: true,
+            nextCursor: 20,
+            books: [{ id: 10 }, { id: 20 }],
+        });
+
+        AdminRepository.markBooksReviewed({ bookIds: [10, 20] });
+
+        const withCursor = AdminRepository.getBooksForLlmGrouping({
+            mode: "unreviewed", limit: 2, page: 1, cursor: 20, includeReviewed: false,
+        });
+        expect(withCursor).toMatchObject({
+            mode: "unreviewed",
+            total: 2,
+            hasMore: false,
+            nextCursor: null,
+            books: [{ id: 30 }, { id: 40 }],
+        });
+
+        const withoutCursor = AdminRepository.getBooksForLlmGrouping({
+            mode: "unreviewed", limit: 2, page: 1, includeReviewed: false,
+        });
+        expect(withoutCursor).toMatchObject({
+            mode: "unreviewed",
+            total: 2,
+            hasMore: false,
+            nextCursor: null,
+            books: [{ id: 30 }, { id: 40 }],
+        });
+    });
 });

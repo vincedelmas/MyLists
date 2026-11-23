@@ -222,7 +222,7 @@ describe("canonical dynamic list access", () => {
 
     it("keeps MCP reads scoped to the token user even if a foreign view is pinned and public", async () => {
         mocks.currentUser = { id: 10, role: RoleType.USER };
-        mocks.access = { userId: 20, username: "assistant-owner", scopes: new Set(["media:read"]) };
+        mocks.access = { userId: 20, role: RoleType.USER, username: "assistant-owner", scopes: new Set(["media:read"]) };
         await expect(getDynamicList({ data: { id: 30 } })).rejects.toThrow("Dynamic list not found");
         expect(mocks.getView).toHaveBeenCalledWith(20, 30);
         expect(mocks.getOwner).not.toHaveBeenCalled();

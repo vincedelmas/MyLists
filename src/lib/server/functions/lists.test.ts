@@ -279,7 +279,7 @@ describe("lists hub privacy", () => {
     });
 
     it.each([getUserListViews, getListsCollections])("keeps website hub reads unavailable through MCP context", async read => {
-        mocks.access = { userId: 20, username: "assistant-owner", scopes: new Set(["media:read"]) };
+        mocks.access = { userId: 20, role: "user", username: "assistant-owner", scopes: new Set(["media:read"]) };
 
         await expect(read({ data: { username: "list-owner" } })).rejects.toThrow("available on the web app");
         expect(mocks.getAllViews).not.toHaveBeenCalled();

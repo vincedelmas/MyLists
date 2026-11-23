@@ -2,6 +2,7 @@ import z from "zod";
 import {describe, expect, it, vi} from "vitest";
 import {createToolContext} from "./tool-context";
 import {MCP_READ_SCOPE, MCP_WRITE_SCOPE} from "./config";
+import {RoleType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {CallToolResult} from "@modelcontextprotocol/sdk/types.js";
@@ -16,6 +17,7 @@ const createRegistry = (scopes = [MCP_READ_SCOPE, MCP_WRITE_SCOPE]) => {
     const registerTool = vi.fn((_name: string, _config: unknown, action: (input: Record<string, unknown>) => Promise<CallToolResult>) => action);
     const context = createToolContext({ registerTool } as unknown as McpServer, {
         userId: 1,
+        role: RoleType.USER,
         username: "owner",
         scopes: new Set(scopes),
     });

@@ -1,6 +1,5 @@
 import {SearchType} from "@/lib/schemas";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
-import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType, PrivacyType, Status} from "@/lib/utils/enums";
 import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 import {getImageFilename} from "@/lib/server/core/images/image-url";
@@ -8,15 +7,20 @@ import {paginate, resolveSorting} from "@/lib/server/database/pagination";
 import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
 import {dateFromUTCInput, formatMonthYear} from "@/lib/utils/formatting/date";
 import type {HighlightedMediaSettings} from "@/lib/types/profile-custom.types";
+import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
 import {mediaRelationArray} from "@/lib/server/domain/media/base/media-relations.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import type {AdminBookMergeSearch, AdminMissingCoversSearch} from "@/lib/schemas/admin.schema";
 import {getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
-import {AdminBookMergeItem, AdminBookMergePreview, ProviderApiRollup} from "@/lib/types/admin.types";
-import {and, asc, count, countDistinct, desc, eq, exists, gte, inArray, like, lt, lte, or, sql} from "drizzle-orm";
+import {and, asc, count, countDistinct, desc, eq, exists, gt, gte, inArray, isNull, like, lt, lte, or, sql} from "drizzle-orm";
+import type {AdminBookMergeItem, AdminBookMergePreview, AdminBookMergeReviewProgress, AdminBookMergeSuggestion, ProviderApiRollup} from "@/lib/types/admin.types";
+import type {AdminBooksForGroupingInput, AdminListBookMergeSuggestionsInput, AdminMarkBooksReviewedInput, AdminProposeBookMergesInput} from "@/lib/schemas/tool-schemas";
 import {
     apiCallRollup,
+    bookMergeReview,
+    bookMergeSuggestion,
+    bookMergeSuggestionBook,
     books,
     booksAuthors,
     booksList,
@@ -38,10 +42,88 @@ import {
 } from "@/lib/server/database/schema";
 
 
+const formatGroupKey = (bookIds: number[]) => [...new Set(bookIds)].sort((a, b) => a - b).join(",");
+
 const normalizeBookMatch = (value: string) => value.normalize("NFKD").toLowerCase()
     .replace(/(\p{Script=Latin})\p{M}+/gu, "$1")
     .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
     .trim();
+
+const truncateSynopsis = (synopsis: string | null) => {
+    if (!synopsis) return null;
+    const collapsed = synopsis.replace(/\s+/g, " ").trim();
+
+    if (!collapsed) return null;
+    return collapsed.length > 240 ? `${collapsed.slice(0, 237)}...` : collapsed;
+};
+
+type DbClient = ReturnType<typeof getDbClient>;
+type AuthorReviewGroup = { name: string; bookIds: Set<number>; unreviewedIds: Set<number> };
+
+const getSuggestionBookIdsMap = (db: DbClient, suggestionIds: number[]) => {
+    const bookIdsBySuggestion = new Map<number, number[]>();
+    if (suggestionIds.length === 0) return bookIdsBySuggestion;
+
+    const links = db
+        .select({
+            bookId: bookMergeSuggestionBook.bookId,
+            suggestionId: bookMergeSuggestionBook.suggestionId,
+        })
+        .from(bookMergeSuggestionBook)
+        .where(inArray(bookMergeSuggestionBook.suggestionId, suggestionIds))
+        .all();
+
+    for (const link of links) {
+        const list = bookIdsBySuggestion.get(link.suggestionId) ?? [];
+        list.push(link.bookId);
+        bookIdsBySuggestion.set(link.suggestionId, list);
+    }
+
+    return bookIdsBySuggestion;
+};
+
+const getAuthorsByReviewStatus = (db: DbClient) => {
+    const authorRows = db
+        .select({
+            bookId: booksAuthors.mediaId,
+            name: booksAuthors.name,
+            reviewed: sql<number>`CASE WHEN ${bookMergeReview.bookId} IS NULL THEN 0 ELSE 1 END`,
+        })
+        .from(booksAuthors)
+        .leftJoin(bookMergeReview, eq(bookMergeReview.bookId, booksAuthors.mediaId))
+        .all();
+
+    const byAuthor = new Map<string, AuthorReviewGroup>();
+    for (const row of authorRows) {
+        const key = normalizeBookMatch(row.name);
+        if (!key) continue;
+
+        const group = byAuthor.get(key) ?? {
+            name: row.name,
+            bookIds: new Set<number>(),
+            unreviewedIds: new Set<number>(),
+        };
+
+        group.bookIds.add(row.bookId);
+        if (!row.reviewed) group.unreviewedIds.add(row.bookId);
+        byAuthor.set(key, group);
+    }
+
+    return byAuthor;
+};
+
+const upsertReviewedBooks = (db: DbClient, bookIds: Iterable<number>) => {
+    const values = [...bookIds].map(bookId => ({ bookId }));
+    if (values.length === 0) return;
+
+    db.insert(bookMergeReview)
+        .values(values)
+        .onConflictDoUpdate({
+            target: bookMergeReview.bookId,
+            set: { reviewedAt: sql`CURRENT_TIMESTAMP` },
+        })
+        .run();
+};
 
 
 export class AdminRepository {
@@ -76,19 +158,17 @@ export class AdminRepository {
         const [firstQuery, ...otherQueries] = queries;
 
         for (const query of otherQueries) {
-            firstQuery.unionAll(query);
+            void firstQuery.unionAll(query);
         }
 
         const missing = firstQuery.as("missing_covers");
 
         return paginate({
             ...pagination,
-
             getTotal: () => db
                 .select({ total: count() })
                 .from(missing)
                 .get()!.total,
-
             getItems: async ({ limit, offset }) => db
                 .select()
                 .from(missing)
@@ -145,6 +225,123 @@ export class AdminRepository {
             )`.as("authors"),
         };
 
+        const pendingSuggestionsCount = db
+            .select({ total: count() })
+            .from(bookMergeSuggestion)
+            .where(eq(bookMergeSuggestion.status, "pending"))
+            .get()!.total;
+
+        if (view === "suggestions") {
+            const confidenceOrder = sql<number>`CASE ${bookMergeSuggestion.confidence} WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END`;
+            const suggestionSelection = {
+                id: bookMergeSuggestion.id,
+                reason: bookMergeSuggestion.reason,
+                createdAt: bookMergeSuggestion.createdAt,
+                confidence: bookMergeSuggestion.confidence,
+                targetBookId: bookMergeSuggestion.targetBookId,
+            };
+
+            const hydrateSuggestions = (rows: {
+                id: number;
+                reason: string;
+                createdAt: string;
+                targetBookId: number;
+                confidence: AdminBookMergeSuggestion["confidence"];
+            }[]): AdminBookMergeSuggestion[] => {
+                if (rows.length === 0) return [];
+
+                const bookIdsBySuggestion = getSuggestionBookIdsMap(db, rows.map(row => row.id));
+                const bookIds = [...new Set([...bookIdsBySuggestion.values()].flat())];
+                const bookRows = bookIds.length > 0
+                    ? db.select(selection).from(books).where(inArray(books.id, bookIds)).all()
+                    : [];
+                const bookById = new Map(bookRows.map(book => [book.id, book]));
+
+                return rows.flatMap(row => {
+                    const groupBooks = (bookIdsBySuggestion.get(row.id) ?? []).flatMap(id => bookById.get(id) ?? []);
+                    const target = groupBooks.find(book => book.id === row.targetBookId);
+                    if (!target || groupBooks.length < 2) return [];
+
+                    const orderedBooks = [
+                        target,
+                        ...groupBooks
+                            .filter(book => book.id !== row.targetBookId)
+                            .sort((a, b) => b.usersCount - a.usersCount || a.id - b.id),
+                    ];
+
+                    return [{
+                        id: row.id,
+                        reason: row.reason,
+                        books: orderedBooks,
+                        createdAt: row.createdAt,
+                        confidence: row.confidence,
+                        targetBookId: row.targetBookId,
+                    }];
+                });
+            };
+
+            const reviewProgress = AdminRepository.getBookMergeReviewProgress();
+
+            if (!trimmed) {
+                return {
+                    reviewProgress,
+                    pendingSuggestionsCount,
+                    kind: "suggestions" as const,
+                    ...await paginate({
+                        ...pagination,
+                        maxPerPage: 50,
+                        defaultPerPage: 5,
+                        getTotal: () => pendingSuggestionsCount,
+                        getItems: async ({ limit, offset }) => {
+                            const pageRows = db
+                                .select(suggestionSelection)
+                                .from(bookMergeSuggestion)
+                                .where(eq(bookMergeSuggestion.status, "pending"))
+                                .orderBy(asc(confidenceOrder), desc(bookMergeSuggestion.id))
+                                .limit(limit)
+                                .offset(offset)
+                                .all();
+
+                            return hydrateSuggestions(pageRows);
+                        },
+                    }),
+                };
+            }
+
+            const pendingRows = db
+                .select(suggestionSelection)
+                .from(bookMergeSuggestion)
+                .where(eq(bookMergeSuggestion.status, "pending"))
+                .orderBy(asc(confidenceOrder), desc(bookMergeSuggestion.id))
+                .all();
+
+            const numericId = /^#?\d+$/.test(trimmed) ? Number(trimmed.replace(/^#/, "")) : null;
+            const searchLower = trimmed.toLowerCase();
+
+            const filtered = hydrateSuggestions(pendingRows).filter(suggestion =>
+                suggestion.reason.toLowerCase().includes(searchLower)
+                || suggestion.books.some(book =>
+                    (numericId !== null && book.id === numericId)
+                    || book.name.toLowerCase().includes(searchLower)
+                    || (book.authors?.toLowerCase().includes(searchLower) ?? false)
+                    || (book.publishers?.toLowerCase().includes(searchLower) ?? false),
+                ),
+            );
+
+            return {
+                reviewProgress,
+                pendingSuggestionsCount,
+                kind: "suggestions" as const,
+                ...await paginate({
+                    ...pagination,
+                    maxPerPage: 50,
+                    defaultPerPage: 5,
+                    getTotal: () => filtered.length,
+                    getItems: async ({ limit, offset }) => filtered.slice(offset, offset + limit),
+                }),
+            };
+        }
+
         const catalog = view === "catalog" ? [] : db
             .select({
                 id: books.id,
@@ -181,6 +378,7 @@ export class AdminRepository {
 
             return {
                 kind: "authors" as const,
+                pendingSuggestionsCount,
                 ...await paginate({
                     ...pagination,
                     maxPerPage: 50,
@@ -214,6 +412,7 @@ export class AdminRepository {
 
             return {
                 kind: "duplicates" as const,
+                pendingSuggestionsCount,
                 ...await paginate({
                     ...pagination,
                     maxPerPage: 50,
@@ -248,6 +447,7 @@ export class AdminRepository {
 
             return {
                 kind: "author-books" as const,
+                pendingSuggestionsCount,
                 author: authorBooks[0]?.author ?? selectedAuthor,
                 ...await paginate({
                     ...pagination,
@@ -304,7 +504,7 @@ export class AdminRepository {
                 .all(),
         });
 
-        return { kind: "catalog" as const, ...results };
+        return { kind: "catalog" as const, pendingSuggestionsCount, ...results };
     }
 
     static findBooksByIds(bookIds: number[]) {
@@ -710,12 +910,14 @@ export class AdminRepository {
             }
         }
 
-        // Remove stale WCF catalog entries and delete source books (cascades books_authors & books_genre)
+        // Remove stale WCF catalog entries, resolved merge suggestions, and source books (cascades authors, genres, review markers)
         db.delete(whichCameFirstMedia)
             .where(and(
                 eq(whichCameFirstMedia.mediaType, MediaType.BOOKS),
                 inArray(whichCameFirstMedia.mediaId, sourceBookIds),
             )).run();
+
+        AdminRepository.reconcileBookMergeSuggestionsOnBookRemoval(sourceBookIds, targetBookId);
 
         db.delete(books)
             .where(inArray(books.id, sourceBookIds))
@@ -728,6 +930,619 @@ export class AdminRepository {
             mergedBookCount: sourceBookIds.length,
             recomputeStatsUserIds: [...recomputeStatsUserIds],
         };
+    }
+
+    static reconcileBookMergeSuggestionsOnBookRemoval(removedBookIds: number[], replacementBookId?: number) {
+        if (removedBookIds.length === 0) return;
+
+        const db = getDbClient();
+        const removedIdSet = new Set(removedBookIds);
+
+        const affectedSuggestionIds = db
+            .selectDistinct({ suggestionId: bookMergeSuggestionBook.suggestionId })
+            .from(bookMergeSuggestionBook)
+            .where(inArray(bookMergeSuggestionBook.bookId, removedBookIds))
+            .all()
+            .map(row => row.suggestionId);
+
+        if (affectedSuggestionIds.length === 0) return;
+
+        const affectedSuggestions = db
+            .select({
+                id: bookMergeSuggestion.id,
+                status: bookMergeSuggestion.status,
+                targetBookId: bookMergeSuggestion.targetBookId,
+            })
+            .from(bookMergeSuggestion)
+            .where(inArray(bookMergeSuggestion.id, affectedSuggestionIds))
+            .orderBy(asc(sql<number>`CASE ${bookMergeSuggestion.status} WHEN 'pending' THEN 0 ELSE 1 END`), asc(bookMergeSuggestion.id))
+            .all();
+
+        const memberIdsBySuggestion = getSuggestionBookIdsMap(db, affectedSuggestionIds);
+
+        const remappedSuggestions = affectedSuggestions.map(suggestion => {
+            const members = memberIdsBySuggestion.get(suggestion.id) ?? [];
+            const nextMemberIds = replacementBookId !== undefined
+                ? [...new Set(members.map(id => removedIdSet.has(id) ? replacementBookId : id))].sort((a, b) => a - b)
+                : members.filter(id => !removedIdSet.has(id)).sort((a, b) => a - b);
+
+            const nextTargetBookId = removedIdSet.has(suggestion.targetBookId)
+                ? (replacementBookId ?? nextMemberIds[0])
+                : suggestion.targetBookId;
+
+            return {
+                ...suggestion,
+                nextMemberIds,
+                nextTargetBookId,
+                nextGroupKey: formatGroupKey(nextMemberIds),
+            };
+        });
+
+        const candidateGroupKeys = [...new Set(
+            remappedSuggestions
+                .filter(suggestion => suggestion.nextMemberIds.length >= 2)
+                .map(suggestion => suggestion.nextGroupKey),
+        )];
+
+        const claimedGroupKeys = new Set(
+            candidateGroupKeys.length > 0
+                ? db.select({ groupKey: bookMergeSuggestion.groupKey })
+                    .from(bookMergeSuggestion)
+                    .where(inArray(bookMergeSuggestion.groupKey, candidateGroupKeys))
+                    .all()
+                    .map(row => row.groupKey)
+                : [],
+        );
+
+        const deleteSuggestionIds: number[] = [];
+        for (const suggestion of remappedSuggestions) {
+            const shouldDropDismissedOnDelete = replacementBookId === undefined && suggestion.status === "dismissed";
+            if (
+                shouldDropDismissedOnDelete
+                || suggestion.nextMemberIds.length < 2
+                || suggestion.nextTargetBookId === undefined
+                || claimedGroupKeys.has(suggestion.nextGroupKey)
+            ) {
+                deleteSuggestionIds.push(suggestion.id);
+                continue;
+            }
+
+            claimedGroupKeys.add(suggestion.nextGroupKey);
+            db.update(bookMergeSuggestion)
+                .set({
+                    groupKey: suggestion.nextGroupKey,
+                    targetBookId: suggestion.nextTargetBookId,
+                })
+                .where(eq(bookMergeSuggestion.id, suggestion.id))
+                .run();
+
+            db.delete(bookMergeSuggestionBook)
+                .where(and(
+                    eq(bookMergeSuggestionBook.suggestionId, suggestion.id),
+                    inArray(bookMergeSuggestionBook.bookId, removedBookIds),
+                ))
+                .run();
+
+            if (replacementBookId !== undefined) {
+                db.insert(bookMergeSuggestionBook)
+                    .values({ suggestionId: suggestion.id, bookId: replacementBookId })
+                    .onConflictDoNothing()
+                    .run();
+            }
+        }
+
+        if (deleteSuggestionIds.length > 0) {
+            db.delete(bookMergeSuggestion)
+                .where(inArray(bookMergeSuggestion.id, deleteSuggestionIds))
+                .run();
+        }
+    }
+
+    static dismissBookMergeSuggestion(suggestionId: number) {
+        return !!getDbClient()
+            .update(bookMergeSuggestion)
+            .set({ status: "dismissed", reviewedAt: sql`datetime('now')` })
+            .where(and(
+                eq(bookMergeSuggestion.id, suggestionId),
+                eq(bookMergeSuggestion.status, "pending"),
+            )).returning({ id: bookMergeSuggestion.id })
+            .get();
+    }
+
+    static getBookMergeReviewProgress(precomputedByAuthor?: Map<string, AuthorReviewGroup>): AdminBookMergeReviewProgress {
+        const db = getDbClient();
+
+        const totalBooks = db.select({ total: count() }).from(books).get()!.total;
+        const reviewedBooks = db.select({ total: count() }).from(bookMergeReview).get()!.total;
+
+        const suggestionCounts = db
+            .select({ status: bookMergeSuggestion.status, total: count() })
+            .from(bookMergeSuggestion)
+            .groupBy(bookMergeSuggestion.status)
+            .all();
+
+        let pendingSuggestions = 0;
+        let dismissedSuggestions = 0;
+
+        for (const row of suggestionCounts) {
+            if (row.status === "pending") pendingSuggestions = row.total;
+            else if (row.status === "dismissed") dismissedSuggestions = row.total;
+        }
+
+        const byAuthor = precomputedByAuthor ?? getAuthorsByReviewStatus(db);
+
+        let unreviewedAuthorsWithMultipleBooks = 0;
+        for (const group of byAuthor.values()) {
+            if (group.bookIds.size > 1 && group.unreviewedIds.size > 0) {
+                unreviewedAuthorsWithMultipleBooks += 1;
+            }
+        }
+
+        return {
+            totalBooks,
+            reviewedBooks,
+            pendingSuggestions,
+            dismissedSuggestions,
+            unreviewedAuthorsWithMultipleBooks,
+            unreviewedBooks: Math.max(0, totalBooks - reviewedBooks),
+        };
+    }
+
+    static getBooksForLlmGrouping(input: AdminBooksForGroupingInput) {
+        const db = getDbClient();
+        const usersCountExpr = sql<number>`(SELECT COUNT(*) FROM ${booksList} WHERE ${booksList.mediaId} = ${books.id})`;
+
+        const loadBooksByIds = (bookIds: number[]) => {
+            if (bookIds.length === 0) return [];
+
+            const uniqueIds = [...new Set(bookIds)];
+            const rows = db
+                .select({
+                    id: books.id,
+                    name: books.name,
+                    pages: books.pages,
+                    language: books.language,
+                    synopsis: books.synopsis,
+                    publishers: books.publishers,
+                    releaseDate: books.releaseDate,
+                    reviewedAt: bookMergeReview.reviewedAt,
+                    usersCount: usersCountExpr.as("users_count"),
+                    authors: mediaRelationArray(booksAuthors, books.id, { name: booksAuthors.name }, booksAuthors.id),
+                })
+                .from(books)
+                .leftJoin(bookMergeReview, eq(bookMergeReview.bookId, books.id))
+                .where(inArray(books.id, uniqueIds))
+                .all();
+
+            return rows.map(row => ({
+                id: row.id,
+                name: row.name,
+                pages: row.pages,
+                language: row.language,
+                publishers: row.publishers,
+                usersCount: row.usersCount,
+                releaseDate: row.releaseDate,
+                reviewed: row.reviewedAt !== null,
+                synopsis: truncateSynopsis(row.synopsis),
+                authors: row.authors.map(author => author.name),
+            }));
+        };
+
+        const loadExistingSuggestions = (bookIds: number[]) => {
+            if (bookIds.length === 0) return [];
+
+            const suggestionIds = db
+                .selectDistinct({ suggestionId: bookMergeSuggestionBook.suggestionId })
+                .from(bookMergeSuggestionBook)
+                .where(inArray(bookMergeSuggestionBook.bookId, [...new Set(bookIds)]))
+                .all()
+                .map(row => row.suggestionId);
+
+            if (suggestionIds.length === 0) return [];
+
+            const suggestions = db
+                .select({
+                    id: bookMergeSuggestion.id,
+                    status: bookMergeSuggestion.status,
+                    reason: bookMergeSuggestion.reason,
+                    confidence: bookMergeSuggestion.confidence,
+                    targetBookId: bookMergeSuggestion.targetBookId,
+                }).from(bookMergeSuggestion)
+                .where(inArray(bookMergeSuggestion.id, suggestionIds))
+                .orderBy(desc(bookMergeSuggestion.id))
+                .all();
+
+            const bookIdsBySuggestion = getSuggestionBookIdsMap(db, suggestionIds);
+
+            return suggestions.map(suggestion => ({
+                ...suggestion,
+                bookIds: (bookIdsBySuggestion.get(suggestion.id) ?? []).sort((a, b) => a - b),
+            }));
+        };
+
+        if (input.mode === "authors") {
+            const byAuthor = getAuthorsByReviewStatus(db);
+            const progress = AdminRepository.getBookMergeReviewProgress(byAuthor);
+
+            if (input.author) {
+                const matchedAuthors: string[] = [];
+                const matchingBookIds = new Set<number>();
+
+                const targetKey = normalizeBookMatch(input.author);
+                const exactGroup = byAuthor.get(targetKey);
+
+                if (exactGroup) {
+                    matchedAuthors.push(exactGroup.name);
+                    for (const id of exactGroup.bookIds) matchingBookIds.add(id);
+                }
+                else if (targetKey) {
+                    for (const [key, group] of byAuthor) {
+                        if (!key.includes(targetKey)) continue;
+                        matchedAuthors.push(group.name);
+                        for (const id of group.bookIds) matchingBookIds.add(id);
+                    }
+                }
+
+                const limit = Math.min(input.limit ?? 50, 100);
+                const offset = (input.page - 1) * limit;
+                const matchingIds = [...matchingBookIds];
+
+                const pageIds = matchingIds.length > 0
+                    ? db.select({ id: books.id })
+                        .from(books)
+                        .where(inArray(books.id, matchingIds))
+                        .orderBy(sql`${books.name} COLLATE NOCASE`, asc(books.id))
+                        .limit(limit)
+                        .offset(offset)
+                        .all()
+                        .map(row => row.id)
+                    : [];
+
+                const bookById = new Map(loadBooksByIds(pageIds).map(book => [book.id, book]));
+                const pageBooks = pageIds.flatMap(id => bookById.get(id) ?? []);
+
+                return {
+                    progress,
+                    matchedAuthors,
+                    page: input.page,
+                    books: pageBooks,
+                    mode: "authors" as const,
+                    total: matchingIds.length,
+                    pages: Math.ceil(matchingIds.length / limit),
+                    existingSuggestions: loadExistingSuggestions(pageIds),
+                };
+            }
+
+            const maxBooksPerAuthor = 60;
+            const limit = Math.min(input.limit ?? 10, 30);
+
+            const candidates = Array.from(byAuthor, ([key, group]) => ({
+                key,
+                name: group.name,
+                bookCount: group.bookIds.size,
+                unreviewedCount: group.unreviewedIds.size,
+                bookIds: [
+                    ...[...group.unreviewedIds].sort((a, b) => a - b),
+                    ...[...group.bookIds].filter(id => !group.unreviewedIds.has(id)).sort((a, b) => a - b),
+                ],
+            })).filter(author => author.bookCount > 1 && (input.includeReviewed || author.unreviewedCount > 0))
+                .sort((a, b) => (input.includeReviewed ? 0 : b.unreviewedCount - a.unreviewedCount)
+                    || (b.bookCount - a.bookCount)
+                    || a.key.localeCompare(b.key));
+
+            const offset = (input.page - 1) * limit;
+            const pageAuthors = candidates.slice(offset, offset + limit);
+
+            const fetchedIds = pageAuthors.flatMap(author => author.bookIds.slice(0, maxBooksPerAuthor));
+            const bookById = new Map(loadBooksByIds(fetchedIds).map(book => [book.id, book]));
+
+            const authors = pageAuthors.map(author => ({
+                key: author.key,
+                name: author.name,
+                bookCount: author.bookCount,
+                unreviewedCount: author.unreviewedCount,
+                truncated: author.bookIds.length > maxBooksPerAuthor,
+                books: author.bookIds
+                    .slice(0, maxBooksPerAuthor)
+                    .flatMap(id => bookById.get(id) ?? [])
+                    .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id),
+            }));
+
+            return {
+                authors,
+                progress,
+                page: input.page,
+                mode: "authors" as const,
+                totalAuthors: candidates.length,
+                pages: Math.ceil(candidates.length / limit),
+                hasMore: candidates.length > offset + pageAuthors.length,
+                existingSuggestions: loadExistingSuggestions(fetchedIds),
+            };
+        }
+
+        const progress = AdminRepository.getBookMergeReviewProgress();
+
+        if (input.mode === "unreviewed") {
+            const limit = Math.min(input.limit ?? 50, 100);
+            const baseWhere = input.includeReviewed ? undefined : isNull(bookMergeReview.bookId);
+            const pageWhere = input.cursor ? and(baseWhere, gt(books.id, input.cursor)) : baseWhere;
+
+            const total = db
+                .select({ total: count() })
+                .from(books)
+                .leftJoin(bookMergeReview, eq(bookMergeReview.bookId, books.id))
+                .where(baseWhere)
+                .get()!.total;
+
+            const rows = db
+                .select({ id: books.id })
+                .from(books)
+                .leftJoin(bookMergeReview, eq(bookMergeReview.bookId, books.id))
+                .where(pageWhere)
+                .orderBy(asc(books.id))
+                .limit(limit + 1)
+                .all()
+                .map(row => row.id);
+
+            const hasMore = rows.length > limit;
+            const pageIds = rows.slice(0, limit);
+            const nextCursor = hasMore ? pageIds[pageIds.length - 1]! : null;
+
+            const bookById = new Map(loadBooksByIds(pageIds).map(book => [book.id, book]));
+            const pageBooks = pageIds.flatMap(id => bookById.get(id) ?? []);
+
+            return {
+                total,
+                hasMore,
+                progress,
+                nextCursor,
+                books: pageBooks,
+                mode: "unreviewed" as const,
+                existingSuggestions: loadExistingSuggestions(pageIds),
+            };
+        }
+
+        const trimmed = input.query!.trim();
+        const numericId = /^#?\d+$/.test(trimmed) ? Number(trimmed.replace(/^#/, "")) : null;
+
+        const limit = Math.min(input.limit ?? 30, 100);
+        const offset = (input.page - 1) * limit;
+
+        const where = or(
+            like(books.name, `%${trimmed}%`),
+            like(books.apiId, `%${trimmed}%`),
+            like(books.publishers, `%${trimmed}%`),
+            numericId !== null ? eq(books.id, numericId) : undefined,
+            exists(db.select({ id: booksAuthors.id })
+                .from(booksAuthors)
+                .where(and(eq(booksAuthors.mediaId, books.id), like(booksAuthors.name, `%${trimmed}%`))),
+            ),
+        );
+
+        const total = db.select({ total: count() }).from(books).where(where).get()!.total;
+        const pageIds = db
+            .select({ id: books.id })
+            .from(books)
+            .where(where)
+            .orderBy(desc(usersCountExpr), sql`${books.name} COLLATE NOCASE`, asc(books.id))
+            .limit(limit)
+            .offset(offset)
+            .all()
+            .map(row => row.id);
+
+        const bookById = new Map(loadBooksByIds(pageIds).map(book => [book.id, book]));
+        const pageBooks = pageIds.flatMap(id => bookById.get(id) ?? []);
+
+        return {
+            total,
+            progress,
+            query: trimmed,
+            books: pageBooks,
+            page: input.page,
+            mode: "search" as const,
+            pages: Math.ceil(total / limit),
+            existingSuggestions: loadExistingSuggestions(pageIds),
+        };
+    }
+
+    static proposeBookMerges(input: AdminProposeBookMergesInput) {
+        return withTransaction(() => {
+            const db = getDbClient();
+
+            const allReferencedIds = new Set<number>(input.markReviewedBookIds ?? []);
+            for (const proposal of input.proposals) {
+                allReferencedIds.add(proposal.targetBookId);
+                for (const id of proposal.sourceBookIds) allReferencedIds.add(id);
+            }
+
+            const existingIds = new Set(
+                allReferencedIds.size > 0
+                    ? db.select({ id: books.id }).from(books).where(inArray(books.id, [...allReferencedIds])).all().map(row => row.id)
+                    : [],
+            );
+
+            const candidateGroupKeys = input.proposals.map(proposal =>
+                formatGroupKey([proposal.targetBookId, ...proposal.sourceBookIds]),
+            );
+
+            const existingByKey = new Map(
+                candidateGroupKeys.length > 0
+                    ? db.select({
+                        id: bookMergeSuggestion.id,
+                        status: bookMergeSuggestion.status,
+                        groupKey: bookMergeSuggestion.groupKey,
+                    }).from(bookMergeSuggestion)
+                        .where(inArray(bookMergeSuggestion.groupKey, [...new Set(candidateGroupKeys)]))
+                        .all()
+                        .map(row => [row.groupKey, row])
+                    : [],
+            );
+
+            const seenKeys = new Set<string>();
+            const created: {
+                id: number;
+                confidence: string;
+                targetBookId: number;
+                sourceBookIds: number[];
+            }[] = [];
+
+            const skipped: {
+                targetBookId: number;
+                sourceBookIds: number[];
+                reason: "book_not_found" | "already_pending" | "already_dismissed",
+            }[] = [];
+
+            const reviewedBookIds = new Set<number>((input.markReviewedBookIds ?? []).filter(id => existingIds.has(id)));
+
+            for (const proposal of input.proposals) {
+                const memberIds = [proposal.targetBookId, ...proposal.sourceBookIds];
+                if (memberIds.some(id => !existingIds.has(id))) {
+                    skipped.push({
+                        reason: "book_not_found",
+                        targetBookId: proposal.targetBookId,
+                        sourceBookIds: proposal.sourceBookIds,
+                    });
+                    continue;
+                }
+
+                const groupKey = formatGroupKey(memberIds);
+                const existing = existingByKey.get(groupKey);
+                if (existing) {
+                    skipped.push({
+                        targetBookId: proposal.targetBookId,
+                        sourceBookIds: proposal.sourceBookIds,
+                        reason: existing.status === "dismissed" ? "already_dismissed" : "already_pending",
+                    });
+                    continue;
+                }
+
+                if (seenKeys.has(groupKey)) {
+                    skipped.push({
+                        reason: "already_pending",
+                        targetBookId: proposal.targetBookId,
+                        sourceBookIds: proposal.sourceBookIds,
+                    });
+                    continue;
+                }
+
+                seenKeys.add(groupKey);
+                const [inserted] = db
+                    .insert(bookMergeSuggestion)
+                    .values({
+                        groupKey,
+                        status: "pending",
+                        reason: proposal.reason,
+                        confidence: proposal.confidence,
+                        targetBookId: proposal.targetBookId,
+                    }).returning({ id: bookMergeSuggestion.id })
+                    .all();
+
+                db.insert(bookMergeSuggestionBook)
+                    .values(memberIds.map(bookId => ({ suggestionId: inserted.id, bookId })))
+                    .run();
+
+                created.push({
+                    id: inserted.id,
+                    confidence: proposal.confidence,
+                    targetBookId: proposal.targetBookId,
+                    sourceBookIds: proposal.sourceBookIds,
+                });
+
+                for (const id of memberIds) reviewedBookIds.add(id);
+            }
+
+            upsertReviewedBooks(db, reviewedBookIds);
+
+            return {
+                created,
+                skipped,
+                createdCount: created.length,
+                reviewedCount: reviewedBookIds.size,
+            };
+        });
+    }
+
+    static markBooksReviewed(input: AdminMarkBooksReviewedInput) {
+        return withTransaction(() => {
+            const db = getDbClient();
+
+            if (input.reset) {
+                const cleared = db.delete(bookMergeReview)
+                    .returning({ bookId: bookMergeReview.bookId })
+                    .all()
+                    .length;
+
+                return { reset: true, clearedCount: cleared };
+            }
+
+            const requestedIds = [...new Set(input.bookIds!)];
+            const existingIds = new Set(
+                db.select({ id: books.id })
+                    .from(books)
+                    .where(inArray(books.id, requestedIds))
+                    .all()
+                    .map(row => row.id),
+            );
+
+            const validIds = requestedIds.filter(id => existingIds.has(id));
+            const missingBookIds = requestedIds.filter(id => !existingIds.has(id));
+
+            upsertReviewedBooks(db, validIds);
+
+            return {
+                reset: false,
+                missingBookIds,
+                markedCount: validIds.length,
+            };
+        });
+    }
+
+    static listBookMergeSuggestions({ status, limit }: AdminListBookMergeSuggestionsInput) {
+        const db = getDbClient();
+
+        const rows = db
+            .select({
+                id: bookMergeSuggestion.id,
+                status: bookMergeSuggestion.status,
+                reason: bookMergeSuggestion.reason,
+                createdAt: bookMergeSuggestion.createdAt,
+                reviewedAt: bookMergeSuggestion.reviewedAt,
+                confidence: bookMergeSuggestion.confidence,
+                targetBookId: bookMergeSuggestion.targetBookId,
+            }).from(bookMergeSuggestion)
+            .where(status === "all" ? undefined : eq(bookMergeSuggestion.status, status))
+            .orderBy(desc(bookMergeSuggestion.id))
+            .limit(limit)
+            .all();
+
+        if (rows.length === 0) return [];
+
+        const bookIdsBySuggestion = getSuggestionBookIdsMap(db, rows.map(row => row.id));
+        const bookIds = [...new Set([...bookIdsBySuggestion.values()].flat())];
+        const bookRows = bookIds.length > 0
+            ? db.select({
+                id: books.id,
+                name: books.name,
+                pages: books.pages,
+                language: books.language,
+                authors: mediaRelationArray(booksAuthors, books.id, { name: booksAuthors.name }, booksAuthors.id),
+            }).from(books)
+                .where(inArray(books.id, bookIds))
+                .all()
+            : [];
+
+        const bookById = new Map(bookRows.map(book => [book.id, {
+            id: book.id,
+            name: book.name,
+            pages: book.pages,
+            language: book.language,
+            authors: book.authors.map(author => author.name),
+        }]));
+
+        return rows.map(row => ({
+            ...row,
+            books: (bookIdsBySuggestion.get(row.id) ?? []).flatMap(id => bookById.get(id) ?? []),
+        }));
     }
 
     static async getUserMediaAddedAndUpdatedForAdmin(mediaType: MediaType) {

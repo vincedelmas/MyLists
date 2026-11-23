@@ -33,6 +33,13 @@ export class AdminService {
         return this.repository.getBooksForAdminMerge(search);
     }
 
+    dismissBookMergeSuggestion(suggestionId: number) {
+        const dismissed = this.repository.dismissBookMergeSuggestion(suggestionId);
+        if (!dismissed) {
+            throw new FormattedError("This suggestion is no longer pending. Refresh the list to continue.");
+        }
+    }
+
     getBookMergePreview({ targetBookId, sourceBookIds }: AdminMergeBooks) {
         const existing = this.repository.findBooksByIds([targetBookId, ...sourceBookIds]);
         const existingIds = new Set(existing.map(book => book.id));

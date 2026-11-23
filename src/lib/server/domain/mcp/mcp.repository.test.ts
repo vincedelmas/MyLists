@@ -51,7 +51,7 @@ describe("MCP live authorization", () => {
     it("intersects token scopes with current consent", () => {
         dbContext.db.update(schema.oauthConsent).set({ scopes: [MCP_READ_SCOPE] }).where(eq(schema.oauthConsent.userId, 1)).run();
 
-        expect(getMcpAccess(claims)).toEqual({ userId: 1, username: "user1", scopes: new Set([MCP_READ_SCOPE]) });
+        expect(getMcpAccess(claims)).toEqual({ userId: 1, role: "user", username: "user1", scopes: new Set([MCP_READ_SCOPE]) });
     });
 
     it.each(["expired session", "wrong session owner", "disabled client", "different resource"])("rejects %s", reason => {

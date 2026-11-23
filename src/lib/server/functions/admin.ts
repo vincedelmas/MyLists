@@ -13,6 +13,7 @@ import {listAdminLogFiles, readAdminLogFile} from "@/lib/server/core/admin-logs-
 import {clearAdminCookie, isAdminAuthenticated, setAdminCookie, verifyAdminPassword} from "@/lib/server/core/admin-auth";
 import {
     adminBookMergeSearchSchema,
+    adminDismissBookMergeSuggestionSchema,
     adminListsSearchSchema,
     adminMergeBooksSchema,
     adminMissingCoversSchema,
@@ -77,6 +78,15 @@ export const postAdminMergeBooks = createServerFn({ method: "POST" })
     .handler(async ({ data }) => {
         const { services } = await getContainer();
         return services.admin.mergeBooks(data);
+    });
+
+
+export const postAdminDismissBookMergeSuggestion = createServerFn({ method: "POST" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(adminDismissBookMergeSuggestionSchema)
+    .handler(async ({ data: { suggestionId } }) => {
+        const { services } = await getContainer();
+        services.admin.dismissBookMergeSuggestion(suggestionId);
     });
 
 

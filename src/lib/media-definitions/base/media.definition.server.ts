@@ -22,8 +22,11 @@ type MediaTableColumns = {
     addedAt: NullableColumn<string>;
     synopsis: NullableColumn<string>;
     imageCover: NotNullColumn<string>;
+    voteCount?: NullableColumn<number>;
+    voteAverage?: NullableColumn<number>;
     releaseDate: NullableColumn<string>;
     originalName?: NullableColumn<string>;
+    collectionId?: NullableColumn<number>; // movies collection ids for example, not collections system ;)
     apiId: NotNullColumn<string | number>;
     lastApiUpdate: NullableColumn<string>;
 };

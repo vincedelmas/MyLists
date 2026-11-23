@@ -15,10 +15,10 @@ import {getDbClient, withTransaction} from "@/lib/server/database/async-storage"
 import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
-import {and, asc, count, desc, eq, exists, getTableColumns, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, sql} from "drizzle-orm";
+import {findSimilarMedia as findSimilarMediaQuery} from "@/lib/server/domain/media/base/media-similar.queries";
+import {and, asc, count, eq, exists, getTableColumns, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, sql} from "drizzle-orm";
 
 
-const SIMILAR_MAX_GENRES = 10;
 const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 
 
@@ -118,35 +118,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
     }
 
     async function findSimilarMedia(mediaId: number) {
-        const { mediaTable, genreTable } = repoDefinition.tables;
-
-        const targetGenresSubQuery = getDbClient()
-            .select({ name: genreTable.name })
-            .from(genreTable)
-            .where(eq(genreTable.mediaId, mediaId));
-
-        const similarSub = getDbClient()
-            .select({
-                mediaId: genreTable.mediaId,
-                commonGenreCount: count(genreTable.name).as("common_genre_count")
-            })
-            .from(genreTable)
-            .where(and(ne(genreTable.mediaId, mediaId), inArray(genreTable.name, targetGenresSubQuery)))
-            .groupBy(genreTable.mediaId)
-            .orderBy(desc(sql`common_genre_count`))
-            .limit(SIMILAR_MAX_GENRES)
-            .as("similar_media");
-
-        return getDbClient()
-            .select({
-                mediaId: mediaTable.id,
-                mediaName: mediaTable.name,
-                mediaCover: mediaTable.imageCover,
-                releaseDate: mediaTable.releaseDate,
-            })
-            .from(similarSub)
-            .innerJoin(mediaTable, eq(mediaTable.id, similarSub.mediaId))
-            .orderBy(desc(similarSub.commonGenreCount));
+        return findSimilarMediaQuery(definition, mediaId);
     }
 
     async function getMediaDetailsByIds(mediaIds: number[], userId?: number): Promise<MediaInfo[]> {

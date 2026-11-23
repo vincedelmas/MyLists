@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.4.0](https://github.com/vincedelmas/MyLists/compare/v4.3.0...v4.4.0) (2026-11-23)
+
+
+### Features
+
+* **media:** improve similar media ranking in /details page ([10fac6c](https://github.com/vincedelmas/MyLists/commit/10fac6c9dc51e24c41e70a4ea67162db02a7b079))
+
 ## [4.3.0](https://github.com/vincedelmas/MyLists/compare/v4.2.1...v4.3.0) (2026-11-22)
 
 

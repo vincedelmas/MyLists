@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.5.0](https://github.com/vincedelmas/MyLists/compare/v4.4.0...v4.5.0) (2026-11-23)
+
+
+### Features
+
+* **admin:** add admin MCP book-grouping tools ([e6733c7](https://github.com/vincedelmas/MyLists/commit/e6733c7a9202deab3e8195f3c1fae6e968a8b333))
+
+
+### Code Refactoring
+
+* remove game collection backfill and extract command palette items ([c07a43b](https://github.com/vincedelmas/MyLists/commit/c07a43bfbe099703dd17212508f027c9cabf4dc1))
+
 ## [4.4.0](https://github.com/vincedelmas/MyLists/compare/v4.3.0...v4.4.0) (2026-11-23)
 
 

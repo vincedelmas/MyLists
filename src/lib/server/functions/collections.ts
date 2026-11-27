@@ -1,4 +1,5 @@
 import {toActor} from "@/lib/server/authorization";
+import {AchievementCategory} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
@@ -89,8 +90,9 @@ export const postCreateCollection = createServerFn({ method: "POST" })
         const container = await getContainer();
         const collectionService = container.services.collections;
         const collectionId = collectionService.createCollection({ ...data, ownerId: currentUser.id });
+        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [AchievementCategory.COMMUNITY]);
 
-        return { id: collectionId };
+        return { id: collectionId, unlockedAchievements };
     });
 
 
@@ -101,6 +103,9 @@ export const postUpdateCollection = createServerFn({ method: "POST" })
         const container = await getContainer();
         const collectionService = container.services.collections;
         collectionService.updateCollection({ ...data, actor: toActor(currentUser) });
+        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [AchievementCategory.COMMUNITY]);
+
+        return { unlockedAchievements };
     });
 
 
@@ -140,7 +145,14 @@ export const postToggleCollectionLike = createServerFn({ method: "POST" })
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.toggleLike(collectionId, toActor(currentUser));
+        const result = collectionService.toggleLike(collectionId, toActor(currentUser));
+        if (result.isLiked) {
+            const collection = container.repositories.collections.getCollectionById(collectionId);
+            if (collection) {
+                container.services.achievements.evaluateUserCategories(collection.ownerId, [AchievementCategory.COMMUNITY]);
+            }
+        }
+        return result;
     });
 
 

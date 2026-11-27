@@ -1,47 +1,62 @@
-import {MediaType} from "@/lib/utils/enums";
-import {StatsCTE} from "@/lib/types/media-common.types";
-import {Achievement, AchievementSeedData} from "@/lib/types/achievements.types";
+import {AchievementCategory, MediaType} from "@/lib/utils/enums";
+import type {AchievementSeedData} from "@/lib/types/achievements.types";
 
 
-export type AchievementCalculation = (achievement: Achievement) => StatsCTE;
-type AchievementEntry = Omit<AchievementSeedData, "codeName" | "mediaType"> & { calculate: AchievementCalculation };
+export type AchievementCalculation = (userId?: number) => AchievementCalculationRow[];
+
+export type AchievementCalculationRow = {
+    value: number;
+    userId: number;
+    label?: string | null;
+};
 
 
-type AchievementCatalogOptions<TMediaType extends MediaType, TEntries extends Record<string, AchievementEntry>> = {
+type AchievementEntry = Omit<AchievementSeedData, "codeName" | "category" | "mediaType" | "sortOrder"> & {
+    calculate?: AchievementCalculation;
+};
+
+
+type AchievementCatalogOptions<TCategory extends AchievementCategory, TEntries extends Record<string, AchievementEntry>> = {
     entries: TEntries;
-    mediaType: TMediaType;
+    category: TCategory;
+    mediaType: MediaType | null;
 };
 
 
 export const defineAchievementCatalog = <
-    TMediaType extends MediaType,
+    TCategory extends AchievementCategory,
     TEntries extends Record<string, AchievementEntry>,
->({ mediaType, entries }: AchievementCatalogOptions<TMediaType, TEntries>) => {
-    const definitions: AchievementSeedData[] = Object.entries(entries).map(([codeName, entry]) => {
+>({ category, mediaType, entries }: AchievementCatalogOptions<TCategory, TEntries>) => {
+    const definitions: AchievementSeedData[] = Object.entries(entries).map(([codeName, entry], index) => {
         const { calculate: _calculate, ...definition } = entry;
 
         return {
             ...definition,
             codeName,
+            category,
             mediaType,
+            sortOrder: index + 1,
+            secret: definition.secret ?? false,
         };
     });
 
-    return ({
+    return {
+        category,
         mediaType,
         definitions,
-        buildProgressQuery(achievement: Achievement) {
-            if (achievement.mediaType !== mediaType) {
-                throw new Error(`Achievement ${achievement.codeName} belongs to ${achievement.mediaType}, not ${mediaType}`);
-            }
-
-            const entry = entries[achievement.codeName];
-            if (!entry) throw new Error(`Invalid achievement codeName: ${achievement.codeName}`);
-
-            return entry.calculate(achievement);
+        hasCalculation(codeName: string) {
+            return Boolean(entries[codeName]?.calculate);
         },
-    });
-}
+        calculate(codeName: string, userId?: number): AchievementCalculationRow[] | null {
+            const entry = entries[codeName];
+
+            if (!entry) throw new Error(`Invalid achievement codeName: ${codeName}`);
+            if (!entry.calculate) return null;
+
+            return entry.calculate(userId);
+        },
+    };
+};
 
 
 export type AchievementCatalog = ReturnType<typeof defineAchievementCatalog>;

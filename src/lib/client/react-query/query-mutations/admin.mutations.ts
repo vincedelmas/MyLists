@@ -4,19 +4,12 @@ import {toast} from "@/lib/client/components/ui/toast";
 import type {AdminBookMergeResult} from "@/lib/types/admin.types";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {mediaDetailsOptions} from "@/lib/client/react-query/query-options/media.options";
-import {
-    adminAchievementsOptions,
-    adminArchivedTasksOptions,
-    adminYearRecapReleasesOptions,
-    userAdminOptions,
-} from "@/lib/client/react-query/query-options/admin.options";
+import {adminAchievementsOptions, adminArchivedTasksOptions, adminYearRecapReleasesOptions, userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {
     postAdminDeleteArchivedTask,
     postAdminDismissBookMergeSuggestion,
     postAdminMergeBooks,
     postAdminTriggerTask,
-    postAdminUpdateAchievement,
-    postAdminUpdateTiers,
     postAdminUpdateUser,
     postAdminUpdateYearRecapRelease,
     postAdminUpdateMediaCover,
@@ -39,10 +32,10 @@ export const useAdminUpdateMediaCoverMutation = (mediaType: MediaType, mediaId: 
         meta: { noErrorToast: true, successToastMessage: "Cover saved." },
         onSuccess: async () => {
             await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["release-calendar"] }),
+                queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
                 queryClient.invalidateQueries({ queryKey: ["admin", "missing-covers"] }),
                 queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey }),
-                queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
-                queryClient.invalidateQueries({ queryKey: ["release-calendar"] }),
             ]);
             onSuccess?.();
         },
@@ -139,28 +132,6 @@ export const useAdminUpdateUserMutation = (filters: SearchType) => {
 };
 
 
-export const useAdminUpdateAchievementMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: postAdminUpdateAchievement,
-        onSuccess: () => {
-            return queryClient.invalidateQueries({ queryKey: adminAchievementsOptions.queryKey })
-        },
-    });
-};
-
-
-export const useAdminUpdateTiersMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: postAdminUpdateTiers,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: adminAchievementsOptions.queryKey }),
-    });
-};
-
-
 export const useAdminTriggerTaskMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
@@ -170,8 +141,11 @@ export const useAdminTriggerTaskMutation = (meta?: MutationMeta) => {
         onSuccess: (_data, { data: { taskName } }) => {
             toast.add({ title: `Task ${taskName} completed`, type: "success" });
         },
-        onSettled: async () => {
-            await queryClient.invalidateQueries({ queryKey: adminArchivedTasksOptions.queryKey })
+        onSettled: async (_data, _error, { data: { taskName } }) => {
+            await queryClient.invalidateQueries({ queryKey: adminArchivedTasksOptions.queryKey });
+            if (taskName === "seed-achievements" || taskName === "calculate-achievements") {
+                await queryClient.invalidateQueries({ queryKey: adminAchievementsOptions.queryKey });
+            }
         },
     });
 };

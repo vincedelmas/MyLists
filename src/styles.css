@@ -112,7 +112,7 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --bronze: oklch(0.52 0.11 55);
     --silver: oklch(0.58 0.02 255);
     --gold: oklch(0.60 0.14 85);
-    --platinum: oklch(0.52 0.10 185);
+    --platinum: oklch(0.56 0.09 232);
 
     --background: oklch(1 0 0);
     --foreground: oklch(0.1450 0 0);
@@ -211,7 +211,7 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --bronze: oklch(0.68 0.11 55);
     --silver: oklch(0.76 0.02 255);
     --gold: oklch(0.80 0.14 85);
-    --platinum: oklch(0.74 0.10 185);
+    --platinum: oklch(0.84 0.085 232);
 
     --background: oklch(0.15 0 0);
     --foreground: oklch(0.985 0 0);
@@ -411,6 +411,68 @@ input[type="search"]::-webkit-search-cancel-button:hover {
 
     .animate-wcf-shake {
         animation: wcf-shake 280ms ease-out;
+    }
+
+    @keyframes achievement-shimmer {
+        0% {
+            transform: translateX(-140%) skewX(-24deg);
+            opacity: 0;
+        }
+        25% {
+            opacity: 0.45;
+        }
+        100% {
+            transform: translateX(220%) skewX(-24deg);
+            opacity: 0;
+        }
+    }
+
+    @keyframes achievement-toast-timer {
+        from {
+            transform: scaleX(1);
+        }
+        to {
+            transform: scaleX(0);
+        }
+    }
+
+    .achievement-shimmer-hover::after,
+    .achievement-shimmer-live::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        width: 48%;
+        pointer-events: none;
+        opacity: 0;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            color-mix(in oklch, var(--gold) 24%, white 10%) 50%,
+            transparent 100%
+        );
+    }
+
+    .achievement-shimmer-ultra::after {
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            color-mix(in oklch, var(--platinum) 34%, white 28%) 48%,
+            rgba(224, 231, 255, 0.24) 62%,
+            transparent 100%
+        );
+    }
+
+    .achievement-shimmer-hover:hover::after {
+        animation: achievement-shimmer 0.85s ease-out 1;
+    }
+
+    .achievement-shimmer-live::after {
+        animation: achievement-shimmer 2.8s ease-in-out infinite;
+    }
+
+    .animate-achievement-timer {
+        transform-origin: left center;
+        animation: achievement-toast-timer var(--toast-duration, 5500ms) linear forwards;
     }
 }
 

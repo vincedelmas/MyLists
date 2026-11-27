@@ -121,8 +121,10 @@ async function initContainer(): Promise<AppContainer> {
         mediaModule.registries.mediaStatistics,
     );
 
+    const achievementsService = new AchievementsService(repositories.achievements, mediaModule.registries.mediaAchievements);
+
     const providerModule = setupProviderModule(mediaModule, apiClients);
-    const importModule = setupImportModule(mediaModule, providerModule);
+    const importModule = setupImportModule(mediaModule, providerModule, achievementsService);
 
     return {
         apiClients,
@@ -140,7 +142,7 @@ async function initContainer(): Promise<AppContainer> {
             notifications: notificationsService,
             inactiveAccount: inactiveAccountService,
             mediadle: new MediadleService(repositories.mediadle),
-            achievements: new AchievementsService(repositories.achievements),
+            achievements: achievementsService,
             account: new AccountService(repositories.account, inactiveAccountService),
             tasteSimilarity: new TasteSimilarityService(repositories.tasteSimilarity),
             profile: new ProfileService(repositories.profile, mediaModule.registries.mediaService),

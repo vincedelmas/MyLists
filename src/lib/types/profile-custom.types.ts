@@ -10,11 +10,13 @@ export type ProfileCustomKey = keyof ProfileCustomSettingsByKey;
 
 export type ProfileCustomSettingsByKey = {
     showContinue: boolean;
+    pinnedAchievements: string[];
     highlightedMedia: HighlightedMediaSettings;
 };
 
 
 export const PROFILE_MAX_HIGHLIGHTED_MEDIA = 6;
+export const PROFILE_MAX_PINNED_ACHIEVEMENTS = 6;
 
 export const HIGHLIGHTED_MEDIA_DEFAULT_TITLE = "Highlighted Media";
 

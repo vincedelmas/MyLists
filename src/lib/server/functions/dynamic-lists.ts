@@ -1,4 +1,4 @@
-import {DenialReason} from "@/lib/utils/enums";
+import {AchievementCategory, DenialReason} from "@/lib/utils/enums";
 import {toActor} from "@/lib/server/authorization";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
@@ -90,8 +90,12 @@ export const previewDynamicListSummary = createServerFn({ method: "GET" })
 export const postCreateDynamicList = createServerFn({ method: "POST" })
     .middleware([requiredMediaWriteMiddleware])
     .validator(dynamicListSpecSchema)
-    .handler(({ data, context: { currentUser } }) => {
-        return dynamicListsRepository.create(currentUser.id, data);
+    .handler(async ({ data, context: { currentUser } }) => {
+        const created = dynamicListsRepository.create(currentUser.id, data);
+        const container = await getContainer();
+        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [AchievementCategory.COMMUNITY]);
+
+        return { ...created, unlockedAchievements };
     });
 
 

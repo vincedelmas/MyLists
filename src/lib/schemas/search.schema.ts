@@ -1,5 +1,5 @@
 import * as z from "zod";
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {AchievementCategory, ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, optionalTrimmedSearchFieldSchema} from "@/lib/schemas/common.schema";
 
 
@@ -239,6 +239,11 @@ export const profileHeaderSearchSchema = z.object({
 
 export const mediaTabSearchSchema = z.object({
     activeTab: mediaActiveTabSchema.optional().default("all").catch("all"),
+});
+
+
+export const achievementTabSearchSchema = z.object({
+    activeTab: z.union([z.literal("all"), z.enum(AchievementCategory)]).optional().default("all").catch("all"),
 });
 
 

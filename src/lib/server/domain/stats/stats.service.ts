@@ -152,10 +152,10 @@ export class StatsService {
 
     private async getAdvancedSummaryStats(userId?: number) {
         const activityScope = userId === undefined ? { excludeBulkImports: true } : { userId };
-        const [preComputedStats, activityByMonth, platinumAchievements, updateFingerprint] = await Promise.all([
+        const [preComputedStats, activityByMonth, achievementStats, updateFingerprint] = await Promise.all([
             this.getComputedStatsSummary({ userId }),
             this.activityService.getActivityStatsByMonth(activityScope),
-            this.achievementsRepository.countPlatinumAchievements(userId),
+            this.achievementsRepository.countUnlockedAndRareAchievements(userId),
             this.updateHistoryRepository.mediaUpdateFingerprint(activityScope),
         ]);
 
@@ -167,7 +167,8 @@ export class StatsService {
             ...preComputedStats,
             activityByMonth,
             updateFingerprint,
-            platinumAchievements,
+            unlockedAchievements: achievementStats.unlocked,
+            rareAchievements: achievementStats.rare,
             totalTags: tagCounts.reduce((sum, count) => sum + count, 0),
         };
     }

@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {AchievementCategory, MediaType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {addMediadleGuessSchema, mediadleSuggestionsSchema} from "@/lib/schemas";
@@ -41,5 +41,10 @@ export const postAddMediadleGuess = createServerFn({ method: "POST" })
         const container = await getContainer();
         const mediadleService = container.services.mediadle;
         const moviesService = container.registries.mediaService.get(MediaType.MOVIES);
-        return mediadleService.addMediadleGuess(currentUser.id, guess, moviesService);
+        const result = mediadleService.addMediadleGuess(currentUser.id, guess, moviesService);
+        const unlockedAchievements = result.completed
+            ? container.services.achievements.evaluateUserCategories(currentUser.id, [AchievementCategory.MINIGAMES])
+            : [];
+
+        return { ...result, unlockedAchievements };
     });

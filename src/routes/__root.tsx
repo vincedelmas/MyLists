@@ -17,6 +17,7 @@ import {ConfirmDialogHost} from "@/lib/client/components/confirm/ConfirmDialogHo
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
 import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
 import {YearRecapReleaseRibbon} from "@/lib/client/components/year-recap/YearRecapReleaseRibbon";
+import {AchievementToastHost} from "@/lib/client/components/achievements/AchievementToastHost";
 import {ClientOnly, createRootRouteWithContext, HeadContent, Outlet, Scripts} from "@tanstack/react-router";
 
 
@@ -96,6 +97,7 @@ function AppShell() {
             <PostHogAuthSync/>
             <AuthSessionSync/>
             <Toaster/>
+            <AchievementToastHost/>
             <ConfirmDialogHost/>
             <YearRecapReleaseRibbon/>
             <Navbar/>

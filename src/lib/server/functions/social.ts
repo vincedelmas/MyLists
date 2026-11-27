@@ -1,4 +1,4 @@
-import {PrivacyType} from "@/lib/utils/enums";
+import {AchievementCategory, PrivacyType} from "@/lib/utils/enums";
 import {notFound} from "@tanstack/react-router";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
@@ -23,8 +23,9 @@ export const postFollow = createServerFn({ method: "POST" })
         if (!targetUser) throw notFound();
 
         const status = socialService.follow(currentUser.id, targetUserId, targetUser.privacy === PrivacyType.PRIVATE);
+        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [AchievementCategory.COMMUNITY]);
 
-        return { status };
+        return { status, unlockedAchievements };
     });
 
 

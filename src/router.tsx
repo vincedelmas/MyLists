@@ -6,6 +6,8 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {NotFound} from "@/lib/client/components/general/NotFound";
 import {NavLoader} from "./lib/client/components/general/NavLoader";
 import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
+import type {UnlockedAchievementToast} from "@/lib/types/achievements.types";
+import {enqueueAchievementToasts} from "@/lib/client/achievements/achievement-toasts";
 import {setupCoreRouterSsrQueryIntegration} from "@tanstack/router-ssr-query-core";
 import {ErrorCatchBoundary} from "@/lib/client/components/general/ErrorCatchBoundary";
 import {DEFAULT_ERROR_MESSAGE, DEFAULT_NOT_FOUND_MESSAGE} from "@/lib/utils/constants";
@@ -37,9 +39,21 @@ export function getRouter() {
 
                 toast.add({ title: error.message || DEFAULT_ERROR_MESSAGE, type: "error", priority: "high" });
             },
-            onSuccess: (_data, _variables, _context, mutation) => {
+            onSuccess: (data, _variables, _context, mutation) => {
                 if (mutation?.meta?.successToastMessage) {
                     toast.add({ title: mutation.meta.successToastMessage, type: "success" });
+                }
+
+                if (
+                    data
+                    && typeof data === "object"
+                    && "unlockedAchievements" in data
+                    && Array.isArray(data.unlockedAchievements)
+                    && data.unlockedAchievements.length > 0
+                ) {
+                    enqueueAchievementToasts(data.unlockedAchievements as UnlockedAchievementToast[]);
+                    void queryClient.invalidateQueries({ queryKey: ["achievementPage"] });
+                    void queryClient.invalidateQueries({ queryKey: ["profile"] });
                 }
             }
         }),

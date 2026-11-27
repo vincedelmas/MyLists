@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {AchievementCategory, MediaType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {continueRequestSchema} from "@/lib/schemas/continue.schema";
@@ -26,6 +26,13 @@ export const postContinueMedia = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(mediaTypeMediaIdSchema.extend({ mediaType: mediaTypeFieldSchema.exclude(["MOVIES"]) }))
     .handler(async ({ data, context: { currentUser } }) => {
-        const tracking = await getContainer().then(container => container.services.mediaTracking);
-        return tracking.continueUserMedia({ ...data, userId: currentUser.id });
+        const container = await getContainer();
+        const result = container.services.mediaTracking.continueUserMedia({ ...data, userId: currentUser.id });
+        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [
+            data.mediaType,
+            AchievementCategory.GENERAL,
+            AchievementCategory.SECRETS,
+        ]);
+
+        return { ...result, unlockedAchievements };
     });

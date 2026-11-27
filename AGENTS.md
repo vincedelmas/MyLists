@@ -12,6 +12,7 @@
   modified to support the use case.
 - Do not use overly defensive programming. Add checks where necessary; otherwise, trust the types.
 - Prefer the smallest change that fixes the root cause. Do not add fallback logic when an enforced data invariant is enough.
+- Never use the `Sparkles` icon from `lucide-react`.
 - After creating the feature, fix, refactor, etc. give me the name of the commit using a conventional commit message.
 
 - For troubleshooting authenticated pages with existing dev data, use the normal dev server (`bun run dev`) and open

@@ -1,11 +1,12 @@
 import {UpdateType} from "@/lib/utils/enums";
-import {useQuery} from "@tanstack/react-query";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {getThemeColor} from "@/lib/client/theme";
 import {formatRating} from "@/lib/client/ratings";
 import {useEffect, useRef, useState} from "react";
 import {useNavigate} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {captureEvent} from "@/lib/client/analytics";
+import {triggerClientAchievement} from "@/lib/client/achievements/achievement-toasts";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useCurrentDate} from "@/lib/client/hooks/use-dates";
@@ -33,7 +34,10 @@ const isMacPlatform = () => {
 
 export const CommandPalette = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { currentUser } = useAuth();
+    const currentUserIdRef = useRef(currentUser?.id);
+    currentUserIdRef.current = currentUser?.id;
     const currentDate = useCurrentDate();
     const isJumping = useRef(false);
     const isOpenRef = useRef(false);
@@ -73,6 +77,7 @@ export const CommandPalette = () => {
             const nextOpen = !isOpenRef.current;
             if (nextOpen) {
                 captureEvent("command_palette_opened", { trigger });
+                void triggerClientAchievement("secret_command_palette", queryClient, currentUserIdRef.current);
                 isJumping.current = false;
             }
             else {
@@ -128,7 +133,7 @@ export const CommandPalette = () => {
             window.removeEventListener("keyup", handleKeyUp);
             window.removeEventListener("blur", resetShiftTap);
         };
-    }, []);
+    }, [queryClient]);
 
     const handleOpenChange = (nextOpen: boolean) => {
         setPaletteOpen(nextOpen);

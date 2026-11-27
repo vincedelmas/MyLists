@@ -1,11 +1,9 @@
 import {LayoutGrid} from "lucide-react";
-import {AchievementDifficulty, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {getMediaTheme, MEDIA_THEME_COLORS} from "@/lib/client/components/media/media-theme";
 
 
-type DifficultyColorVariant = "text" | "border" | "ring" | "bg";
 type ThemeColorKey = MediaType | Status | "all" | "brand" | "overview";
-type DifficultyColorKey = `${DifficultyColorVariant}-${AchievementDifficulty}`;
 
 
 export const getThemeIcon = (type: MediaType | "all" | "overview") => {
@@ -46,26 +44,6 @@ const UPDATE_TYPE_COLOR_MAP: Record<UpdateType, string> = {
 };
 
 
-const DIFFICULTY_COLORS = {
-    "border-bronze": "border-bronze",
-    "border-silver": "border-silver",
-    "border-gold": "border-gold",
-    "border-platinum": "border-platinum",
-    "ring-bronze": "ring-bronze",
-    "ring-silver": "ring-silver",
-    "ring-gold": "ring-gold",
-    "ring-platinum": "ring-platinum",
-    "bg-bronze": "bg-bronze",
-    "bg-silver": "bg-silver",
-    "bg-gold": "bg-gold",
-    "bg-platinum": "bg-platinum",
-    "text-bronze": "text-bronze",
-    "text-silver": "text-silver",
-    "text-gold": "text-gold",
-    "text-platinum": "text-platinum",
-} satisfies Record<DifficultyColorKey, string>;
-
-
 export const getThemeColor = (type: ThemeColorKey | undefined) => {
     if (!type) return "var(--muted-foreground)";
     return THEME_COLOR_MAP[type];
@@ -75,10 +53,3 @@ export const getThemeColor = (type: ThemeColorKey | undefined) => {
 export const getUpdateTypeColor = (updateType: UpdateType) => {
     return UPDATE_TYPE_COLOR_MAP[updateType];
 }
-
-
-export const getDifficultyColors = (difficulty: AchievementDifficulty | undefined, variant: DifficultyColorVariant = "text") => {
-    if (!difficulty) return "";
-    const key: DifficultyColorKey = `${variant}-${difficulty}`;
-    return DIFFICULTY_COLORS[key];
-};

@@ -1,86 +1,278 @@
+import {useState} from "react";
 import {cn} from "@/lib/utils/classnames";
-import {Award, Check} from "lucide-react";
-import {Badge} from "@/lib/client/components/ui/badge";
-import {capitalize} from "@/lib/utils/formatting/text";
 import {AchCard} from "@/lib/types/query.options.types";
-import {getDifficultyColors} from "@/lib/client/theme";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {Progress} from "@/lib/client/components/ui/progress";
+import {Check, Eye, EyeOff, Gem, Pin, Star, Users} from "lucide-react";
+import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
-import {TiersDetails} from "@/lib/client/components/achievements/TierDetails";
-import {Progress, ProgressLabel, ProgressValue} from "@/lib/client/components/ui/progress";
+import {AchievementBadge} from "@/lib/client/components/achievements/AchievementBadge";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
+import {ACHIEVEMENT_CATEGORY_PALETTE} from "@/lib/client/components/achievements/achievement-icons";
+import {ACHIEVEMENT_CATEGORY_LABELS, getAchievementRarityTier, RARITY_MIN_LEVEL} from "@/lib/utils/achievements";
 
 
 interface AchievementCardProps {
+    isOwner: boolean;
+    isPinned: boolean;
     achievement: AchCard;
+    pinPending?: boolean;
+    compareMode: boolean;
+    highlighted?: boolean;
+    showCategory?: boolean;
+    revealAllSecrets: boolean;
+    onTogglePin?: (codeName: string) => void;
 }
 
 
-export const AchievementCard = ({ achievement }: AchievementCardProps) => {
-    const { name, mediaType, description, tiers } = achievement;
+export const AchievementCard = (props: AchievementCardProps) => {
+    const [spoilerOpen, setSpoilerOpen] = useState(false);
 
-    const completedTiers = tiers.filter((tier) => tier.completed);
-    const fullyCompleted = tiers.length > 0 && tiers.every((tier) => tier.completed);
-    const nextTier = fullyCompleted ? undefined : tiers.find((tier) => !tier.completed);
-    const highestCompletedTier = completedTiers.length > 0 ? completedTiers[completedTiers.length - 1] : undefined;
+    const {
+        achievement, isOwner, isPinned, pinPending = false, highlighted = false,
+        compareMode, showCategory = false, revealAllSecrets, onTogglePin,
+    } = props;
 
-    const displayDifficulty = highestCompletedTier?.difficulty;
-    const iconColorClass = getDifficultyColors(displayDifficulty);
-    const tierForProgressDisplay = nextTier ?? tiers[tiers.length - 1];
-    const progressValue = tierForProgressDisplay?.progress ?? 0;
-    const progressColor = fullyCompleted || !nextTier ? "var(--brand)" : `var(--${nextTier.difficulty})`;
+    const {
+        name, description, category, icon, shape, pattern, secret, target,
+        rarity, count, progress, completed, completedAt, metadata, viewerProgress,
+    } = achievement;
+
+    const rarityTier = getAchievementRarityTier(rarity);
+    const palette = ACHIEVEMENT_CATEGORY_PALETTE[category];
+
+    const isRare = completed && rarityTier === "rare";
+    const isUltra = completed && rarityTier === "ultra";
+    const isRedacted = secret && !completed && !revealAllSecrets && !spoilerOpen;
+
+    const remaining = Math.max(0, Math.ceil(target - count));
+    const displayCount = Number.isInteger(count) ? formatNumber(count) : formatNumber(count, { fractionDigits: 1 });
 
     return (
-        <article className="flex h-full min-w-0 flex-col rounded-xl border bg-popover p-4 shadow-xs transition-colors hover:border-brand/35">
-            <div className="flex min-w-0 items-center gap-2">
-                <Badge variant="outline" className="capitalize">
-                    <MainThemeIcon className="text-brand" type={mediaType}/>
-                    {mediaType}
-                </Badge>
-                <span className="ml-auto shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
-                    {completedTiers.length}/{tiers.length} tiers
-                </span>
-            </div>
+        <article
+            id={`ach-${achievement.codeName}`}
+            className={cn("relative flex h-full min-w-0 scroll-mt-24 items-start gap-3.5 overflow-hidden rounded-xl " +
+                "border p-3.5 transition-all duration-300",
+                completed ? "bg-card border-foreground/12 hover:border-foreground/22" : "bg-background/40 border-border/65 hover:border-border",
+                isUltra && "achievement-shimmer-hover achievement-shimmer-ultra border-platinum/55 bg-linear-to-br from-platinum/12 via-card to-card hover:border-platinum/80",
+                isRare && "achievement-shimmer-hover border-gold/45 bg-linear-to-br from-gold/8 via-card to-card hover:border-gold/65",
+                highlighted && "border-brand ring-2 ring-brand/60",
+            )}
+        >
+            <AchievementBadge
+                size="md"
+                icon={icon}
+                shape={shape}
+                rarity={rarity}
+                pattern={pattern}
+                className="mt-0.5"
+                category={category}
+                hidden={isRedacted}
+                unlocked={completed}
+            />
 
-            <div className="mt-3 flex min-w-0 items-center gap-2.5">
-                <Award className={cn("size-5 shrink-0", iconColorClass || "text-muted-foreground/60")}/>
-                <h3 className="truncate text-base font-semibold tracking-tight" title={name}>
-                    {name}
-                </h3>
-            </div>
-            <p className="mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground" title={description ?? ""}>
-                {description}
-            </p>
-
-            <div className="mt-auto pt-5">
-                <Progress value={progressValue} color={progressColor}>
-                    <ProgressLabel className="text-xs">
-                        {nextTier
-                            ? <>Next · <span className={getDifficultyColors(nextTier.difficulty)}>{capitalize(nextTier.difficulty)}</span></>
-                            : <span className="flex items-center gap-1 text-brand"><Check className="size-3.5"/> Completed</span>
-                        }
-                    </ProgressLabel>
-                    <ProgressValue className="text-xs"/>
-                </Progress>
-
-                <div className="mt-3 flex min-h-7 items-center justify-between gap-3 border-t pt-2">
-                    <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                        {highestCompletedTier
-                            ? <>
-                                <span className={cn("shrink-0 font-medium capitalize", iconColorClass)}>
-                                    {highestCompletedTier.difficulty}
+            <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                            <h3
+                                title={isRedacted ? "Hidden achievement" : name}
+                                className={cn("truncate text-sm font-semibold tracking-tight",
+                                    completed ? "text-foreground" : "text-foreground/80")}
+                            >
+                                {isRedacted ? "Hidden Achievement" : name}
+                            </h3>
+                            {secret &&
+                                <span className="shrink-0 rounded border border-brand/30 bg-brand/10 px-1.5 py-0.25 text-[9.5px]
+                                font-semibold uppercase tracking-wider text-brand">
+                                    Secret
                                 </span>
-                                <span aria-hidden="true">·</span>
-                                <RelativeTime
-                                    date={highestCompletedTier.completedAt}
-                                    className="max-w-full truncate text-xs text-muted-foreground"
+                            }
+                        </div>
+                        {showCategory &&
+                            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                <span
+                                    className="size-1.5 rounded-full"
+                                    style={{ backgroundColor: palette.accent }}
                                 />
-                            </>
-                            : <span>No tier earned yet</span>
+                                <span>
+                                    {ACHIEVEMENT_CATEGORY_LABELS[category]}
+                                </span>
+                            </div>
                         }
                     </div>
-                    <TiersDetails achievement={achievement}/>
+
+                    <div className="flex shrink-0 items-center gap-2.5">
+                        {isOwner && completed && onTogglePin &&
+                            <Tooltip>
+                                <TooltipTrigger
+                                    render={
+                                        <button
+                                            type="button"
+                                            disabled={pinPending}
+                                            onClick={() => onTogglePin(achievement.codeName)}
+                                            aria-label={isPinned ? `Unpin ${name} from profile` : `Pin ${name} to profile`}
+                                            className={cn("rounded-md p-1 transition-colors", isPinned
+                                                ? "bg-brand/15 text-brand hover:bg-brand/25"
+                                                : "text-muted-foreground/60 hover:bg-muted hover:text-foreground",
+                                            )}
+                                        />
+                                    }
+                                >
+                                    <Pin className={cn("size-3.5", isPinned && "fill-current")}/>
+                                </TooltipTrigger>
+                                <TooltipContent variant="popover">
+                                    {isPinned
+                                        ? "Pinned on profile"
+                                        : "Pin to profile showcase"
+                                    }
+                                </TooltipContent>
+                            </Tooltip>
+                        }
+
+                        <RarityPill
+                            rarity={rarity}
+                            unlocked={completed}
+                        />
+                    </div>
+                </div>
+
+                <p className={cn("mt-1 line-clamp-2 text-xs leading-relaxed", completed ? "text-muted-foreground" : "text-muted-foreground/75")}>
+                    {isRedacted
+                        ? "Details for this achievement are hidden until unlocked."
+                        : description
+                    }
+                </p>
+
+                <div className="mt-auto pt-2.5">
+                    {completed ? (
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2 text-[11px] text-muted-foreground">
+                            {metadata?.label ?
+                                <span
+                                    title={metadata.label}
+                                    className="inline-flex max-w-[68%] items-center gap-1.5 truncate rounded-md border border-border/80
+                                    bg-background/60 px-2 py-0.5 font-medium text-foreground"
+                                >
+                                    <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: palette.accent }}/>
+                                    <span className="truncate">
+                                        {metadata.label}
+                                    </span>
+                                </span>
+                                :
+                                <span className="inline-flex items-center gap-1 font-medium text-brand">
+                                    <Check className="size-3"/>
+                                    Unlocked
+                                </span>
+                            }
+                            <RelativeTime
+                                date={completedAt}
+                                className="shrink-0 text-[11px] text-muted-foreground/85"
+                            />
+                        </div>
+                    ) : secret ? (
+                        <div className="flex items-center justify-between gap-2 border-t border-border/50 pt-2 text-[11px]">
+                            <button
+                                type="button"
+                                onClick={() => setSpoilerOpen((prev) => !prev)}
+                                className="inline-flex items-center gap-1.5 font-medium text-brand transition-opacity hover:opacity-80"
+                            >
+                                {isRedacted
+                                    ? <><Eye className="size-3.5"/> Reveal spoiler</>
+                                    : <><EyeOff className="size-3.5"/> Hide spoiler</>
+                                }
+                            </button>
+                            <span className="text-muted-foreground/75">
+                                Locked
+                            </span>
+                        </div>
+                    ) : target > 1 ? (
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2.5">
+                                <Progress
+                                    value={progress}
+                                    color={palette.accent}
+                                    className="min-w-0 flex-1"
+                                    aria-label={`${name} progress`}
+                                />
+                                <span className="shrink-0 text-[11px] font-semibold tabular-nums text-foreground/85">
+                                    {displayCount}/{formatNumber(target)}
+                                </span>
+                            </div>
+                            {(metadata?.label || progress >= 75) &&
+                                <div className="truncate text-[11px] text-muted-foreground">
+                                    {metadata?.label
+                                        ? `${metadata.label} · ${formatNumber(remaining)} to go`
+                                        : `Almost there · ${formatNumber(remaining)} to go`
+                                    }
+                                </div>
+                            }
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-between border-t border-border/50 pt-2 text-[11px] text-muted-foreground/75">
+                            <span>Locked</span>
+                            <span className="tabular-nums">
+                                0/1
+                            </span>
+                        </div>
+                    )}
+
+                    {compareMode && viewerProgress &&
+                        <div className="mt-2 flex items-center gap-1.5 border-t border-border/60 pt-2 text-[11px]">
+                            <Users className="size-3 text-muted-foreground"/>
+                            {completed && viewerProgress.completed ?
+                                <span className="font-medium text-brand">
+                                    Both unlocked
+                                </span>
+                                : viewerProgress.completed ?
+                                    <span className="font-medium text-info">
+                                        You unlocked this
+                                    </span>
+                                    : completed ?
+                                        <span className="text-muted-foreground">
+                                            Not yet unlocked by you
+                                            {target > 1 ? ` (${formatNumber(Math.floor(viewerProgress.count))}/${formatNumber(target)})` : ""}
+                                            </span>
+                                        :
+                                        <span className="text-muted-foreground tabular-nums">
+                                            You: {formatNumber(Math.floor(viewerProgress.count))}/{formatNumber(target)}
+                                        </span>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         </article>
     );
 };
+
+
+function RarityPill({ rarity, unlocked }: { rarity: number | null; unlocked: boolean }) {
+    const hasRarity = rarity !== null && rarity > 0;
+    if (!hasRarity && !unlocked) return null;
+
+    const tier = getAchievementRarityTier(rarity);
+    const label = hasRarity ? formatPercent(rarity) : "New";
+
+    return (
+        <span
+            title={hasRarity ? `${label} of active users (Lvl ${RARITY_MIN_LEVEL}+) unlocked this` : "Recently unlocked, rarity updates daily"}
+            className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold tabular-nums",
+                tier === "ultra" && unlocked && hasRarity
+                    ? "border-platinum/55 bg-platinum/12 text-platinum"
+                    : tier === "rare" && unlocked && hasRarity
+                        ? "border-gold/55 bg-gold/12 text-gold"
+                        : "border-border/80 bg-muted/60 text-muted-foreground",
+            )}
+        >
+            {tier === "ultra" && hasRarity &&
+                <Gem className="size-2.5"/>
+            }
+
+            {tier === "rare" && hasRarity &&
+                <Star className="size-2.5 fill-current"/>
+            }
+
+            {label}
+        </span>
+    );
+}

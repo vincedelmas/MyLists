@@ -1,10 +1,10 @@
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {AchievementCategory, Status} from "@/lib/utils/enums";
 import {games, gamesCompanies, gamesList} from "@/lib/server/database/schema";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
-import {AchievementDifficulty, GamesPlatformsEnum, Status} from "@/lib/utils/enums";
 import {GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
-import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
-import {and, count, countDistinct, eq, gte, inArray, isNotNull, like, lte, max, notInArray, sql} from "drizzle-orm";
+import {and, count, countDistinct, eq, gt, gte, inArray, isNotNull, lte, notInArray, sql} from "drizzle-orm";
+import {createAchievementQueries, pickTopPerUser} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
@@ -14,275 +14,234 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
     const { minutesPerInputUnit } = gamesDefinition.progress.timing;
     const queries = createAchievementQueries(repository);
 
-    const gameMode: AchievementCalculation = (achievement) => {
-        const query = getDbClient()
+    const completedGames = queries.countList(eq(listTable.status, Status.COMPLETED));
+
+    const timeSpentHours: AchievementCalculation = (userId) => {
+        return getDbClient()
             .select({
                 userId: gamesList.userId,
-                value: count(gamesList.id).as("value"),
+                value: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0) / ${minutesPerInputUnit}`,
             })
             .from(gamesList)
-            .innerJoin(games, eq(gamesList.mediaId, games.id));
-
-        return queries.applyConditionsAndGroup(query, [
-            like(games.gameModes, `%${achievement.value}%`),
-            notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED]),
-        ]);
+            .where(queries.userFilter(userId))
+            .groupBy(gamesList.userId)
+            .all();
     };
 
-    const timeSpent: AchievementCalculation = () => {
-        const query = getDbClient()
+    const platforms: AchievementCalculation = (userId) => {
+        return getDbClient()
             .select({
                 userId: gamesList.userId,
-                value: sql`SUM(${gamesList.playtime}) / ${minutesPerInputUnit}`.as("value"),
-            })
-            .from(gamesList);
-
-        return queries.applyConditionsAndGroup(query, []);
-    };
-
-    const platform: AchievementCalculation = () => {
-        const query = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                value: countDistinct(gamesList.platform).as("value"),
-            })
-            .from(gamesList);
-
-        return queries.applyConditionsAndGroup(
-            query,
-            [notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED])],
-        );
-    };
-
-    const specificPlatform: AchievementCalculation = (achievement) => {
-        const query = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                value: count(gamesList.mediaId).as("value"),
-            })
-            .from(gamesList);
-
-        return queries.applyConditionsAndGroup(query, [
-            eq(gamesList.platform, achievement.value as GamesPlatformsEnum),
-            notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED]),
-        ]);
-    };
-
-    const duration: AchievementCalculation = (achievement) => {
-        const value = Number(achievement.value);
-        const isLong = achievement.codeName.includes("long");
-
-        const query = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                value: count(gamesList.mediaId).as("value"),
+                value: countDistinct(gamesList.platform),
             })
             .from(gamesList)
-            .innerJoin(games, eq(gamesList.mediaId, games.id));
-
-        return queries.applyConditionsAndGroup(query, [
-            isLong ? gte(gamesList.playtime, value) : lte(gamesList.playtime, value),
-            inArray(gamesList.status, [Status.IN_PROGRESS, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER]),
-        ]);
+            .where(and(
+                isNotNull(gamesList.platform),
+                notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED]),
+                queries.userFilter(userId),
+            ))
+            .groupBy(gamesList.userId)
+            .all();
     };
 
-    const company: AchievementCalculation = (achievement) => {
-        const isDeveloper = achievement.value === "developer";
+    const shortGames: AchievementCalculation = (userId) => {
+        return getDbClient()
+            .select({ userId: gamesList.userId, value: count(gamesList.mediaId) })
+            .from(gamesList)
+            .where(and(
+                eq(gamesList.status, Status.COMPLETED),
+                gt(gamesList.playtime, 0),
+                lte(gamesList.playtime, 300),
+                queries.userFilter(userId),
+            ))
+            .groupBy(gamesList.userId)
+            .all();
+    };
 
-        const companyCounts = getDbClient()
+    const longGames: AchievementCalculation = (userId) => {
+        return getDbClient()
+            .select({ userId: gamesList.userId, value: count(gamesList.mediaId) })
+            .from(gamesList)
+            .where(and(
+                gte(gamesList.playtime, 6000),
+                inArray(gamesList.status, [Status.IN_PROGRESS, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER]),
+                queries.userFilter(userId),
+            ))
+            .groupBy(gamesList.userId)
+            .all();
+    };
+
+    const developer: AchievementCalculation = (userId) => {
+        const rows = getDbClient()
             .select({
                 userId: gamesList.userId,
-                count: count(gamesList.mediaId).as("count"),
+                label: gamesCompanies.name,
+                count: count(gamesList.mediaId),
             })
             .from(gamesList)
             .innerJoin(gamesCompanies, eq(gamesList.mediaId, gamesCompanies.mediaId))
             .where(and(
                 notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED]),
-                isDeveloper ? eq(gamesCompanies.developer, true) : eq(gamesCompanies.publisher, true),
+                eq(gamesCompanies.developer, true),
+                queries.userFilter(userId),
             ))
             .groupBy(gamesList.userId, gamesCompanies.name)
-            .as("company_counts");
+            .all();
 
-        return getDbClient()
-            .select({
-                userId: companyCounts.userId,
-                value: max(companyCounts.count).as("value"),
-            })
-            .from(companyCounts)
-            .groupBy(companyCounts.userId)
-            .as("calculation");
+        return pickTopPerUser(rows);
     };
 
-    const perspective: AchievementCalculation = (achievement) => {
-        const query = getDbClient()
+    const perfectGames: AchievementCalculation = (userId) => {
+        const rows = getDbClient()
             .select({
                 userId: gamesList.userId,
-                value: count(gamesList.mediaId).as("value"),
+                gameName: games.name,
             })
             .from(gamesList)
-            .innerJoin(games, eq(gamesList.mediaId, games.id));
+            .innerJoin(games, eq(gamesList.mediaId, games.id))
+            .where(and(
+                isNotNull(gamesList.achievementsTotal),
+                gte(gamesList.achievementsTotal, 1),
+                eq(gamesList.achievementsUnlocked, gamesList.achievementsTotal),
+                queries.userFilter(userId),
+            ))
+            .all();
 
-        return queries.applyConditionsAndGroup(query, [
-            eq(games.playerPerspective, achievement.value as string),
-            notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED]),
-        ]);
+        const byUser = new Map<number, { value: number; label: string }>();
+        for (const row of rows) {
+            const existing = byUser.get(row.userId);
+            if (!existing) {
+                byUser.set(row.userId, { value: 1, label: row.gameName });
+            }
+            else {
+                existing.value += 1;
+            }
+        }
+
+        return [...byUser.entries()].map(([id, data]) => ({ userId: id, value: data.value, label: data.label }));
     };
 
     return defineAchievementCatalog({
+        category: AchievementCategory.GAMES,
         mediaType: identity.mediaType,
         entries: {
-            completed_games: {
-                name: "Gaming Completionist",
-                description: "Awarded for completing games, because finishing a game is the only thing that counts in the endless cycle of gaming.",
-                tiers: [
-                    { criteria: { count: 50 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 100 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 150 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 250 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: queries.countList(eq(listTable.status, Status.COMPLETED)),
+            games_first: {
+                name: "Press Start",
+                description: "Complete your very first game. The tutorial is officially over.",
+                icon: "gamepad",
+                shape: "circle",
+                pattern: "rings",
+                target: 1,
+                calculate: completedGames,
             },
-            rated_games: {
+            games_25: {
+                name: "Side-Quest Regular",
+                description: "Complete 25 games without getting permanently sidetracked by collectibles.",
+                icon: "controller",
+                shape: "octagon",
+                pattern: "rays",
+                target: 25,
+                calculate: completedGames,
+            },
+            games_100: {
+                name: "Gaming Completionist",
+                description: "Complete 100 games, conquering the endless backlog one boss fight at a time.",
+                icon: "crown",
+                shape: "shield",
+                pattern: "rays",
+                target: 100,
+                calculate: completedGames,
+            },
+            games_rated_25: {
                 name: "Critique Commander",
-                description: "Awarded for rating games, because everyone needs to know that that boss fight was so unfair!",
-                tiers: [
-                    { criteria: { count: 20 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 40 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 80 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 120 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
+                description: "Rate 25 games, because everyone needs to know that boss fight was unfair.",
+                icon: "stars",
+                shape: "circle",
+                pattern: "dots",
+                target: 25,
                 calculate: queries.countList(isNotNull(listTable.rating)),
             },
-            comment_games: {
-                name: "Commentary Crusader",
-                description: "Awarded for commenting games, because your opinions on loot boxes are too hot to keep to yourself!",
-                tiers: [
-                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 20 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 30 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 50 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: queries.countList(isNotNull(listTable.comment)),
+            games_commented_15: {
+                name: "Hot Take Hero",
+                description: "Comment on 15 games. Your opinions on frame rates and endings can't be contained.",
+                icon: "chat",
+                shape: "circle",
+                pattern: "dots",
+                target: 15,
+                calculate: queries.countNonEmptyComment(),
             },
-            developer_games: {
-                name: "Devoted Fan",
-                description: "Awarded for playing games from the same developers, showing your unwavering loyalty to your favorite game creators!",
-                value: "developer",
-                tiers: [
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: company,
-            },
-            publisher_games: {
-                name: "Publisher Pal",
-                description: "Awarded for playing games from the same publishers, because you've sworn an oath to defend their titles from all foes!",
-                value: "publisher",
-                tiers: [
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: company,
-            },
-            first_person_games: {
-                name: "First-Person Pro",
-                description:
-                    "Awarded for playing First Person Perspective games, because you prefer to see the world through your character's eyes—and their shaky hands.",
-                value: "First person",
-                tiers: [
-                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 20 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 40 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 60 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: perspective,
-            },
-            hack_slash_games: {
-                name: "Slash & Dash",
-                description: "Awarded for completing Hack & Slash games, because sometimes, mashing buttons is the best form of therapy!.",
-                value: "Hack and Slash",
-                tiers: [
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 15 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: queries.countCompletedGenre,
-            },
-            multiplayer_games: {
-                name: "Multiplayer Maestro",
-                description: "Awarded for playing multiplayer games, because teamwork makes the dream work—until it doesn’t!",
-                value: "Multiplayer",
-                tiers: [
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 20 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 40 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: gameMode,
-            },
-            log_hours_games: {
+            games_hours_500: {
                 name: "Time Sink Extraordinaire",
-                description: "Awarded for logging hours, because you’ve officially become a time lord in the gaming universe!",
-                tiers: [
-                    { criteria: { count: 200 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 800 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 2000 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 5000 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: timeSpent,
+                description: "Log 500 hours of total playtime across your gaming library.",
+                icon: "clockwork",
+                shape: "octagon",
+                pattern: "rings",
+                target: 500,
+                calculate: timeSpentHours,
             },
-            platform_games: {
+            games_hours_2500: {
+                name: "No-Life Legend",
+                description: "Log 2,500 hours of playtime. That's over 100 full days in virtual worlds.",
+                icon: "castle",
+                shape: "shield",
+                pattern: "rays",
+                target: 2500,
+                calculate: timeSpentHours,
+            },
+            games_developer_5: {
+                name: "Devoted Fan",
+                description: "Play 5 games by the same developer. Unwavering studio loyalty.",
+                icon: "swords",
+                shape: "hex",
+                pattern: "rays",
+                target: 5,
+                calculate: developer,
+            },
+            games_platforms_5: {
                 name: "Platform Hopper",
-                description: "Awarded for playing games on different platforms, proving you're a true adventurer who leaves no console unturned!",
-                tiers: [
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 12 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: platform,
+                description: "Play games across 5 different platforms, leaving no console unturned.",
+                icon: "joystick",
+                shape: "hex",
+                pattern: "rings",
+                target: 5,
+                calculate: platforms,
             },
-            pc_games: {
-                name: "PC Mastermind",
-                description: "Awarded for playing games on PC, because you like modding your way through every title!",
-                value: "PC",
-                tiers: [
-                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 20 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 50 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 100 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: specificPlatform,
+            games_short_8: {
+                name: "Bite-Sized Quest",
+                description: "Complete 8 games with under 5 hours logged. Short adventures that pack a punch.",
+                icon: "stopwatch",
+                shape: "circle",
+                pattern: "rings",
+                target: 8,
+                calculate: shortGames,
             },
-            short_games: {
-                name: "Short Game Sage",
-                description: "Awarded for completing games under 5 hours, because you appreciate the beauty of bite-sized adventures that pack a punch!",
-                value: 300,
-                tiers: [
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 15 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: duration,
+            games_long_5: {
+                name: "100-Hour Club",
+                description: "Put 100+ hours into 5 different games. Your save files are basically epics.",
+                icon: "hourglass",
+                shape: "octagon",
+                pattern: "rays",
+                target: 5,
+                calculate: longGames,
             },
-            long_games: {
-                name: "Epic Adventurer",
-                description: "Awarded for completing games above 100 hours, because your gaming journey is basically an epic saga at this point!",
-                value: 6000,
-                tiers: [
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE, },
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER, },
-                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD, },
-                    { criteria: { count: 12 }, difficulty: AchievementDifficulty.PLATINUM, },
-                ],
-                calculate: duration,
-            }
+            games_perfect_1: {
+                name: "Achievement-ception",
+                description: "Reach 100% in-game achievements on a tracked game. An achievement for achievements.",
+                icon: "trophy",
+                shape: "octagon",
+                pattern: "rays",
+                target: 1,
+                calculate: perfectGames,
+            },
+            games_perfect_10: {
+                name: "Trophy Hunter",
+                description: "Reach 100% in-game achievements on 10 tracked games. Certified completionist.",
+                icon: "diamond-trophy",
+                shape: "shield",
+                pattern: "rays",
+                target: 10,
+                calculate: perfectGames,
+            },
         },
     });
 };

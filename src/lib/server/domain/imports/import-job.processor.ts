@@ -4,10 +4,15 @@ import {ImportService} from "@/lib/server/domain/imports/import.service";
 import type {MediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import type {MediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
+import type {AchievementsService} from "@/lib/server/domain/achievements/achievements.service";
 
 
 export class ImportJobProcessor {
-    constructor(private importService: ImportService, private matcherRegistry: MediaRegistry<Record<MediaType, MediaMatcher>>) {
+    constructor(
+        private importService: ImportService,
+        private matcherRegistry: MediaRegistry<Record<MediaType, MediaMatcher>>,
+        private achievementsService?: AchievementsService,
+    ) {
     }
 
     requeueInterruptedJobs() {
@@ -39,6 +44,8 @@ export class ImportJobProcessor {
             if (!finalizedJob) {
                 throw new Error(`Import job ${job.id} could not be finalized because it still has unfinished items`);
             }
+
+            this.achievementsService?.evaluateUserAll(job.userId);
 
             return finalizedJob;
         }

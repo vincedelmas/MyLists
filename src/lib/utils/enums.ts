@@ -189,13 +189,19 @@ export const UpdateType = {
 export type UpdateType = (typeof UpdateType)[keyof typeof UpdateType];
 
 
-export const AchievementDifficulty = {
-    BRONZE: "bronze",
-    SILVER: "silver",
-    GOLD: "gold",
-    PLATINUM: "platinum",
+export const AchievementCategory = {
+    MOVIES: "movies",
+    SERIES: "series",
+    ANIME: "anime",
+    GAMES: "games",
+    BOOKS: "books",
+    MANGA: "manga",
+    GENERAL: "general",
+    MINIGAMES: "minigames",
+    COMMUNITY: "community",
+    SECRETS: "secrets",
 } as const;
-export type AchievementDifficulty = (typeof AchievementDifficulty)[keyof typeof AchievementDifficulty];
+export type AchievementCategory = (typeof AchievementCategory)[keyof typeof AchievementCategory];
 
 
 export const ApiProviderType = {

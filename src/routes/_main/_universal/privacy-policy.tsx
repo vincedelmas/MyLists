@@ -2,6 +2,7 @@ import {FileText, ShieldCheck} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {addSeo, addSeoLinks} from "@/lib/client/seo";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {useClientAchievement} from "@/lib/client/achievements/achievement-toasts";
 
 
 export const Route = createFileRoute("/_main/_universal/privacy-policy")({
@@ -18,6 +19,8 @@ export const Route = createFileRoute("/_main/_universal/privacy-policy")({
 
 
 function PrivacyPolicyPage() {
+    useClientAchievement("secret_privacy_policy");
+
     return (
         <div className="mb-12 flex flex-col pt-8">
             <PageHeader

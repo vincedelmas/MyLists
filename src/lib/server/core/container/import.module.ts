@@ -10,9 +10,14 @@ import {createBooksMatcher} from "@/lib/server/domain/media/books/books.matcher"
 import {createMangaMatcher} from "@/lib/server/domain/media/manga/manga.matcher";
 import {createMoviesMatcher} from "@/lib/server/domain/media/movies/movies.matcher";
 import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
+import type {AchievementsService} from "@/lib/server/domain/achievements/achievements.service";
 
 
-export function setupImportModule(mediaModule: MediaModule, providerModule: ProviderModule) {
+export function setupImportModule(
+    mediaModule: MediaModule,
+    providerModule: ProviderModule,
+    achievementsService?: AchievementsService,
+) {
     const externalProviderRegistry = providerModule.registries.externalProviders;
     const ingestionServiceRegistry = providerModule.registries.ingestionServices;
 
@@ -53,7 +58,7 @@ export function setupImportModule(mediaModule: MediaModule, providerModule: Prov
         ),
     });
 
-    const importProcessor = new ImportJobProcessor(importService, importMatcher);
+    const importProcessor = new ImportJobProcessor(importService, importMatcher, achievementsService);
 
     return {
         repositories: {

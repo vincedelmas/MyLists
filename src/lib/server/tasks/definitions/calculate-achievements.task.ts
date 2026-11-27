@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {MediaType} from "@/lib/utils/enums";
+import {AchievementCategory} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 
@@ -9,41 +9,26 @@ export const calculateAchievementsTask = defineTask({
     visibility: "admin",
     description: "Calculate achievements and rarity for all users",
     inputSchema: z.object({
-        mediaTypes: z.array(z.enum(MediaType)).optional().describe("Media types to calculate (all if omitted)"),
+        categories: z.array(z.enum(AchievementCategory)).optional().describe("Categories to calculate (all if omitted)"),
     }),
     handler: async (ctx, input) => {
         const container = await getContainer();
         const achievementsService = container.services.achievements;
-        const achievementsRegistry = container.registries.mediaAchievements;
-        const allAchievements = await achievementsService.getAllAchievements();
 
-        const mediaTypes = input.mediaTypes;
-        const typesToProcess = mediaTypes && mediaTypes.length > 0 ? mediaTypes : Object.values(MediaType);
+        const categoriesToProcess = input.categories && input.categories.length > 0
+            ? input.categories
+            : achievementsService.getAllCatalogCategories();
 
-        for (const mediaType of typesToProcess) {
-            await ctx.step(`calculate-${mediaType}`, async () => {
-                const catalog = achievementsRegistry.get(mediaType);
-                const mediaAchievements = allAchievements.filter((ach) => ach.mediaType === mediaType);
-
-                ctx.metric(`${mediaType}.count`, mediaAchievements.length);
-
-                for (const achievement of mediaAchievements) {
-                    try {
-                        await achievementsService.calculateAchievement(achievement, catalog);
-                        ctx.increment(`${mediaType}.processed`);
-                    }
-                    catch (err) {
-                        ctx.warn(`Failed to calculate achievement: ${achievement.name}`, {
-                            error: err instanceof Error ? err.message : String(err),
-                            achievementId: achievement.id
-                        });
-                    }
-                }
+        for (const category of categoriesToProcess) {
+            await ctx.step(`calculate-${category}`, async () => {
+                const { processed, total } = achievementsService.calculateCategory(category);
+                ctx.metric(`${category}.total`, total);
+                ctx.metric(`${category}.processed`, processed);
             });
         }
 
         await ctx.step("calculate-rarity", async () => {
-            await achievementsService.calculateAllAchievementsRarity();
+            achievementsService.calculateAllAchievementsRarity();
         });
     },
 });

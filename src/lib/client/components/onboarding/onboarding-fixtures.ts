@@ -1,4 +1,4 @@
-import {AchievementDifficulty, MediaType, RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
+import {AchievementCategory, MediaType, RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
 import type {HighlightedMediaResolvedSettings, ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
 import type {
     AchievementsType,
@@ -273,29 +273,63 @@ const followsUpdates = [
 ] satisfies (UserUpdateType & { username: string })[];
 
 
-const achievements = [
+const showcaseItems = [
     {
         id: -301,
-        name: "Cinephile Marathoner",
+        codeName: "movies_director_8",
+        name: "Director Devotee",
+        description: "Complete 8 movies from the same director.",
+        category: AchievementCategory.MOVIES,
+        mediaType: MediaType.MOVIES,
+        icon: "clapperboard" as const,
+        shape: "hex" as const,
+        pattern: "rays" as const,
+        secret: false,
+        rarity: 7.2,
         completedAt: "2026-06-12 19:00:00",
-        description: "Awarded for completing movies, because real life has too few explosions and car chases.",
-        difficulty: AchievementDifficulty.SILVER,
+        metadata: { label: "Christopher Nolan" },
     },
     {
         id: -302,
-        name: "Couch Potato",
+        codeName: "minigames_moviedle_sniper",
+        name: "20/20 Pixel Vision",
+        description: "Solve a daily Moviedle on your very first guess.",
+        category: AchievementCategory.MINIGAMES,
+        mediaType: null,
+        icon: "eye-target" as const,
+        shape: "shield" as const,
+        pattern: "rays" as const,
+        secret: false,
+        rarity: 1.8,
         completedAt: "2026-06-02 19:00:00",
-        description: "Awarded for completing series, because finishing what you started is a true feat!",
-        difficulty: AchievementDifficulty.GOLD,
+        metadata: { label: "Interstellar" },
     },
     {
         id: -303,
+        codeName: "movies_scifi_20",
         name: "Sci-Fi Navigator",
+        description: "Complete 20 Science Fiction movies.",
+        category: AchievementCategory.MOVIES,
+        mediaType: MediaType.MOVIES,
+        icon: "ufo" as const,
+        shape: "hex" as const,
+        pattern: "rays" as const,
+        secret: false,
+        rarity: 18.4,
         completedAt: "2026-05-28 19:00:00",
-        description: "Awarded for completing Science Fiction movies, because you like your plot twists served with a side of quantum stuff.",
-        difficulty: AchievementDifficulty.BRONZE,
+        metadata: null,
     },
-] satisfies AchievementsType;
+];
+
+const achievements = {
+    mode: "rarest",
+    items: showcaseItems,
+    recent: showcaseItems,
+    totalUnlocked: 24,
+    totalAvailable: 72,
+    rareUnlocked: 5,
+    perfectCategories: [AchievementCategory.MOVIES],
+} satisfies AchievementsType;
 
 
 export const onboardingProfileFixture = {

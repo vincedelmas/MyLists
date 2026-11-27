@@ -1,10 +1,10 @@
 import Database from "bun:sqlite";
 import {and, eq} from "drizzle-orm";
-import {achievement, achievementTier, anime, animeList, user, userAchievement, userMediaMonthlyActivity, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
+import {achievement, anime, animeList, user, userAchievement, userMediaMonthlyActivity, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {SQLiteBunDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {AchievementDifficulty, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {AchievementCategory, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {toActor} from "@/lib/server/authorization";
 
 
@@ -58,8 +58,8 @@ describe("disabled media visibility", () => {
             startMonth: "2026-04",
             endMonth: "2026-04",
         });
-        const disabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
-        const disabledAchievementPage = await AchievementsRepository.getUserAchievements(42);
+        const disabledAchievements = AchievementsRepository.getUnlockedAchievementsForProfile(42);
+        const disabledAchievementPage = AchievementsRepository.getUserAchievements(42);
         const disabledCommunity = await animeService.getMediaCommunityActivity(toActor(), 100, {});
         const disabledTasteAggregates = await TasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
         const disabledSharedFavorites = await TasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
@@ -71,7 +71,7 @@ describe("disabled media visibility", () => {
         expect(disabledHistory.items.map((item) => item.mediaType)).toEqual([MediaType.MOVIES]);
         expect(disabledActivity.items.map((item) => item.mediaType)).toEqual([MediaType.MOVIES]);
         expect(disabledAchievements.map((item) => item.name)).toEqual(["Movie achievement"]);
-        expect([...new Set(disabledAchievementPage.map((item) => item.achievement.mediaType))]).toEqual([MediaType.MOVIES]);
+        expect([...new Set(disabledAchievementPage.map((item) => item.mediaType))]).toEqual([MediaType.MOVIES]);
         expect(disabledCommunity.items.map(({ id }) => id)).toEqual([43]);
         expect(disabledTasteAggregates).toEqual([]);
         expect(disabledSharedFavorites).toEqual([]);
@@ -93,7 +93,7 @@ describe("disabled media visibility", () => {
             startMonth: "2026-04",
             endMonth: "2026-04",
         });
-        const enabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
+        const enabledAchievements = AchievementsRepository.getUnlockedAchievementsForProfile(42);
         const enabledCommunity = await animeService.getMediaCommunityActivity(toActor(), 100, {});
         const enabledTasteAggregates = await TasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
         const enabledSharedFavorites = await TasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
@@ -193,16 +193,36 @@ async function seedUserData(db: SQLiteBunDatabase) {
     ]);
 
     await db.insert(achievement).values([
-        { id: 1, codeName: "movie-ach", name: "Movie achievement", description: "Movie", mediaType: MediaType.MOVIES },
-        { id: 2, codeName: "anime-ach", name: "Anime achievement", description: "Anime", mediaType: MediaType.ANIME },
-    ]);
-    await db.insert(achievementTier).values([
-        { id: 1, achievementId: 1, difficulty: AchievementDifficulty.BRONZE, criteria: { count: 1 } },
-        { id: 2, achievementId: 2, difficulty: AchievementDifficulty.BRONZE, criteria: { count: 1 } },
+        {
+            id: 1,
+            codeName: "movie-ach",
+            name: "Movie achievement",
+            description: "Movie",
+            category: AchievementCategory.MOVIES,
+            mediaType: MediaType.MOVIES,
+            icon: "film-projector",
+            shape: "circle",
+            pattern: "rings",
+            target: 1,
+            sortOrder: 1,
+        },
+        {
+            id: 2,
+            codeName: "anime-ach",
+            name: "Anime achievement",
+            description: "Anime",
+            category: AchievementCategory.ANIME,
+            mediaType: MediaType.ANIME,
+            icon: "ninja",
+            shape: "circle",
+            pattern: "rings",
+            target: 1,
+            sortOrder: 1,
+        },
     ]);
     await db.insert(userAchievement).values([
-        { id: 1, userId: 42, tierId: 1, completed: true, completedAt: "2026-04-01 00:00:00" },
-        { id: 2, userId: 42, tierId: 2, completed: true, completedAt: "2026-04-02 00:00:00" },
+        { id: 1, userId: 42, achievementId: 1, count: 1, progress: 100, completed: true, completedAt: "2026-04-01 00:00:00" },
+        { id: 2, userId: 42, achievementId: 2, count: 1, progress: 100, completed: true, completedAt: "2026-04-02 00:00:00" },
     ]);
 
     await db.insert(anime).values({

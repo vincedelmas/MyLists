@@ -1,6 +1,6 @@
 import * as z from "zod";
+import {ImportJobStatus, MediaType, PrivacyType, RoleType} from "@/lib/utils/enums";
 import {YEAR_RECAP_FIRST_YEAR, yearRecapReleaseModes} from "@/lib/types/year-recap.types";
-import {AchievementDifficulty, ImportJobStatus, MediaType, PrivacyType, RoleType} from "@/lib/utils/enums";
 import {
     coercedPositiveIntFieldSchema,
     imageFileSchema,
@@ -13,7 +13,6 @@ import {
 
 
 export type AdminMergeBooks = z.infer<typeof adminMergeBooksSchema>;
-export type AchievementTier = z.infer<typeof tierAchievementSchema>;
 export type AdminImportsSearch = z.infer<typeof adminImportsSchema>;
 export type AdminListsSearch = z.infer<typeof adminListsSearchSchema>;
 export type AdminUpdatePayload = z.infer<typeof adminUpdatePayloadSchema>;
@@ -99,16 +98,6 @@ const adminUpdatePayloadSchema = z.object({
     showUpdateModal: z.boolean().optional(),
 });
 
-const tierAchievementSchema = z.object({
-    id: z.number(),
-    achievementId: z.number(),
-    rarity: z.number().nullable(),
-    difficulty: z.enum(AchievementDifficulty),
-    criteria: z.object({
-        count: z.number(),
-    }),
-});
-
 
 export const adminPostUpdateUserSchema = z.object({
     userId: positiveIntFieldSchema.optional(),
@@ -118,16 +107,6 @@ export const adminPostUpdateUserSchema = z.object({
 export const adminUpdateYearRecapReleaseSchema = z.object({
     mode: z.enum(yearRecapReleaseModes),
     year: z.number().int().min(YEAR_RECAP_FIRST_YEAR),
-});
-
-export const adminUpdateAchievementSchema = z.object({
-    achievementId: positiveIntFieldSchema,
-    name: z.string(),
-    description: z.string(),
-});
-
-export const adminPostUpdateTiersSchema = z.object({
-    tiers: z.array(tierAchievementSchema),
 });
 
 export const adminTriggerTaskSchema = z.object({

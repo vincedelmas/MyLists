@@ -2,7 +2,6 @@ import {MediaType} from "@/lib/utils/enums";
 import {EpsPerSeasonType} from "@/lib/types/media-list.types";
 
 
-export type StatsCTE = any;
 export type NameObj = { name: string };
 export type Tag = { oldName?: string, name: string };
 export type IdNamePair = { id: number, name: string };

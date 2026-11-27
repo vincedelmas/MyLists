@@ -1,12 +1,14 @@
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {ApiProviderType, SocialState} from "@/lib/utils/enums";
 import {ProviderSearchResults} from "@/lib/types/provider.types";
+import {toast} from "@/lib/client/components/ui/toast";
+import {postTogglePinnedAchievement} from "@/lib/server/functions/user-achievements";
 import {postUpdateShowOnboarding} from "@/lib/server/functions/user-profile";
 import {MutationMeta, QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
 import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/notifications";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/user-media-cache";
 import {postFollow, postRemoveFollower, postRespondToFollowRequest, postUnfollow} from "@/lib/server/functions/social";
-import {notificationsCountOptions, notificationsOptions, profileCustomOptions, profileHeaderOptions, profileOptions} from "@/lib/client/react-query/query-options";
+import {achievementOptions, notificationsCountOptions, notificationsOptions, profileCustomOptions, profileHeaderOptions, profileOptions} from "@/lib/client/react-query/query-options";
 import {
     getDownloadListAsCSV,
     postDeleteUserAccount,
@@ -212,5 +214,24 @@ export const useUpdateOnboardingMutation = () => {
     return useMutation({
         mutationFn: postUpdateShowOnboarding,
         onSuccess: () => refreshCurrentUser(),
+    });
+};
+
+
+export const useTogglePinnedAchievementMutation = (username: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (codeName: string) => postTogglePinnedAchievement({ data: { codeName } }),
+        onSuccess: async ({ pinned }) => {
+            toast.add({
+                type: "success",
+                title: pinned ? "Pinned to your profile showcase" : "Removed from profile showcase",
+            });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: achievementOptions(username).queryKey }),
+                queryClient.invalidateQueries({ queryKey: profileOptions(username).queryKey }),
+            ]);
+        },
     });
 };

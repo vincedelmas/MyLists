@@ -25,11 +25,9 @@ import {
     adminImportsSchema,
     importJobIssuesSchema,
     adminDeleteArchivedTaskSchema,
-    adminPostUpdateTiersSchema,
     adminPostUpdateUserSchema,
     adminRefreshSchema,
     adminTriggerTaskSchema,
-    adminUpdateAchievementSchema,
     adminUpdateYearRecapReleaseSchema,
     searchTypeSchema
 } from "@/lib/schemas";
@@ -219,7 +217,7 @@ export const getAdminAchievements = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
         const achievementService = await getContainer().then((c) => c.services.achievements);
-        return achievementService.getAllAchievements();
+        return achievementService.getAdminAchievementsOverview();
     });
 
 
@@ -229,24 +227,6 @@ export const postAdminUpdateUser = createServerFn({ method: "POST" })
     .handler(async ({ data: { userId, payload } }) => {
         const accountService = await getContainer().then((c) => c.services.account);
         return accountService.updateUserForAdmin(userId, payload);
-    });
-
-
-export const postAdminUpdateAchievement = createServerFn({ method: "POST" })
-    .middleware([requiredAuthAndAdminTokenMiddleware])
-    .validator(adminUpdateAchievementSchema)
-    .handler(async ({ data: { achievementId, name, description } }) => {
-        const achievementService = await getContainer().then((c) => c.services.achievements);
-        return achievementService.updateAchievementForAdmin(achievementId, name, description);
-    });
-
-
-export const postAdminUpdateTiers = createServerFn({ method: "POST" })
-    .middleware([requiredAuthAndAdminTokenMiddleware])
-    .validator(adminPostUpdateTiersSchema)
-    .handler(async ({ data: { tiers } }) => {
-        const achievementService = await getContainer().then((c) => c.services.achievements);
-        return achievementService.updateTiersForAdmin(tiers);
     });
 
 

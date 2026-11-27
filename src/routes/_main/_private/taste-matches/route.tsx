@@ -15,6 +15,7 @@ import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {tasteMatchesOptions} from "@/lib/client/react-query/query-options";
 import {TasteMatchesSearch, tasteMatchesSearchSchema} from "@/lib/schemas";
+import {useClientAchievement} from "@/lib/client/achievements/achievement-toasts";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {FeaturedTasteMatch, TasteMatchCard} from "@/lib/client/components/taste-matches/TasteMatchCard";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
@@ -41,6 +42,7 @@ const sortingItems = [
 
 
 function TasteMatchesPage() {
+    useClientAchievement("secret_taste_matches");
     const { currentUser } = useAuth();
     const filters = Route.useSearch();
     const { tasteMatchesQueryOptions } = Route.useRouteContext();

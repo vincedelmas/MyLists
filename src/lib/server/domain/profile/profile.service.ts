@@ -13,6 +13,7 @@ import {
     HighlightedMediaSettings,
     HighlightedMediaTab,
     PROFILE_MAX_HIGHLIGHTED_MEDIA,
+    PROFILE_MAX_PINNED_ACHIEVEMENTS,
     ProfileCustomizationSettings,
 } from "@/lib/types/profile-custom.types";
 
@@ -66,6 +67,25 @@ export class ProfileService {
 
     async getContinueVisibility(userId: number) {
         return await this.repository.getProfileCustomSetting(userId, "showContinue") ?? true;
+    }
+
+    async getPinnedAchievements(userId: number): Promise<string[]> {
+        const saved = await this.repository.getProfileCustomSetting(userId, "pinnedAchievements");
+        return Array.isArray(saved) ? saved.slice(0, PROFILE_MAX_PINNED_ACHIEVEMENTS) : [];
+    }
+
+    async togglePinnedAchievement(userId: number, codeName: string): Promise<{ pinnedCodeNames: string[]; pinned: boolean }> {
+        const current = await this.getPinnedAchievements(userId);
+        const exists = current.includes(codeName);
+        const next = exists
+            ? current.filter((code) => code !== codeName)
+            : [...current, codeName].slice(0, PROFILE_MAX_PINNED_ACHIEVEMENTS);
+
+        withTransaction(() => {
+            this.repository.upsertProfileCustomSetting(userId, "pinnedAchievements", next);
+        });
+
+        return { pinnedCodeNames: next, pinned: !exists };
     }
 
     saveProfileCustomSettings(userId: number, settings: ProfileCustomizationSettings) {

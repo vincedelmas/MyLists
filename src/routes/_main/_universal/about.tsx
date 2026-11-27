@@ -1,9 +1,10 @@
 import {clientEnv} from "@/env/client";
 import {FaGithub} from "react-icons/fa";
-import {createFileRoute} from "@tanstack/react-router";
 import {addSeo, addSeoLinks} from "@/lib/client/seo";
-import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {createFileRoute} from "@tanstack/react-router";
 import {buttonVariants} from "@/lib/client/components/ui/button";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {useClientAchievement} from "@/lib/client/achievements/achievement-toasts";
 import {CircleUserRound, Code2, Database, ExternalLink, Info, Mail, Palette} from "lucide-react";
 
 
@@ -22,6 +23,8 @@ export const Route = createFileRoute("/_main/_universal/about")({
 
 
 function AboutPage() {
+    useClientAchievement("secret_about_page");
+
     return (
         <div className="mb-16 flex flex-col pt-8">
             <PageHeader

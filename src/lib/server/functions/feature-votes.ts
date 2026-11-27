@@ -1,4 +1,5 @@
 import {createServerFn} from "@tanstack/react-start";
+import {AchievementCategory} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {postFeatureDeleteSchema, postFeatureRequestSchema, postFeatureStatusSchema, postFeatureVoteSchema} from "@/lib/schemas";
 import {publicAuthMiddleware, requiredAuthAndAdminRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
@@ -16,8 +17,10 @@ export const postCreateFeatureRequest = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(postFeatureRequestSchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const featureVotesService = await getContainer().then((c) => c.services.featureVotes);
-        featureVotesService.createFeatureRequest(currentUser.id, data);
+        const container = await getContainer();
+        container.services.featureVotes.createFeatureRequest(currentUser.id, data);
+        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [AchievementCategory.COMMUNITY]);
+        return { unlockedAchievements };
     });
 
 
@@ -25,8 +28,10 @@ export const postToggleFeatureVote = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(postFeatureVoteSchema)
     .handler(async ({ data: { featureId }, context: { currentUser } }) => {
-        const featureVotesService = await getContainer().then((c) => c.services.featureVotes);
-        featureVotesService.toggleFeatureVote(featureId, currentUser.id);
+        const container = await getContainer();
+        container.services.featureVotes.toggleFeatureVote(featureId, currentUser.id);
+        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [AchievementCategory.COMMUNITY]);
+        return { unlockedAchievements };
     });
 
 

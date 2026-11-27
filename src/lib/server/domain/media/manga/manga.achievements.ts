@@ -1,9 +1,9 @@
-import {AchievementDifficulty, Status} from "@/lib/utils/enums";
+import {AchievementCategory, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {count, eq, gte, isNotNull, lte, max, sum} from "drizzle-orm";
+import {and, count, eq, gt, gte, isNotNull, lte, sql} from "drizzle-orm";
 import {manga, mangaAuthors, mangaList} from "@/lib/server/database/schema";
 import {MangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
-import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
+import {createAchievementQueries, pickTopPerUser} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
@@ -12,206 +12,161 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
     const { listTable } = repository.tables;
     const queries = createAchievementQueries(repository);
 
-    const duration: AchievementCalculation = (achievement) => {
-        const value = Number(achievement.value);
-        const isLong = achievement.codeName.includes("long");
-        const condition = isLong ? gte(manga.chapters, value) : lte(manga.chapters, value);
+    const completedManga = queries.countList(eq(listTable.status, Status.COMPLETED));
 
-        const query = getDbClient()
-            .select({
-                userId: mangaList.userId,
-                value: count(mangaList.mediaId).as("value"),
-            })
+    const shortManga: AchievementCalculation = (userId) => {
+        return getDbClient()
+            .select({ userId: mangaList.userId, value: count(mangaList.mediaId) })
             .from(mangaList)
-            .innerJoin(manga, eq(mangaList.mediaId, manga.id));
-
-        return queries.applyConditionsAndGroup(query, [eq(mangaList.status, Status.COMPLETED), condition]);
+            .innerJoin(manga, eq(mangaList.mediaId, manga.id))
+            .where(and(
+                eq(mangaList.status, Status.COMPLETED),
+                isNotNull(manga.volumes),
+                gt(manga.volumes, 0),
+                lte(manga.volumes, 5),
+                queries.userFilter(userId),
+            ))
+            .groupBy(mangaList.userId)
+            .all();
     };
 
-    const authors: AchievementCalculation = () => {
-        const authorCounts = getDbClient()
+    const longManga: AchievementCalculation = (userId) => {
+        return getDbClient()
+            .select({ userId: mangaList.userId, value: count(mangaList.mediaId) })
+            .from(mangaList)
+            .innerJoin(manga, eq(mangaList.mediaId, manga.id))
+            .where(and(
+                eq(mangaList.status, Status.COMPLETED),
+                isNotNull(manga.volumes),
+                gte(manga.volumes, 30),
+                queries.userFilter(userId),
+            ))
+            .groupBy(mangaList.userId)
+            .all();
+    };
+
+    const authors: AchievementCalculation = (userId) => {
+        const rows = getDbClient()
             .select({
                 userId: mangaList.userId,
-                count: count(mangaList.mediaId).as("count"),
+                label: mangaAuthors.name,
+                count: count(mangaList.mediaId),
             })
             .from(mangaList)
             .innerJoin(mangaAuthors, eq(mangaList.mediaId, mangaAuthors.mediaId))
-            .where(eq(mangaList.status, Status.COMPLETED))
+            .where(and(eq(mangaList.status, Status.COMPLETED), queries.userFilter(userId)))
             .groupBy(mangaList.userId, mangaAuthors.name)
-            .as("author_counts");
+            .all();
 
-        return getDbClient()
-            .select({
-                userId: authorCounts.userId,
-                value: max(authorCounts.count).as("value"),
-            })
-            .from(authorCounts)
-            .groupBy(authorCounts.userId)
-            .as("calculation");
+        return pickTopPerUser(rows);
     };
 
-    const publishers: AchievementCalculation = () => {
-        const publisherCounts = getDbClient()
+    const chaptersRead: AchievementCalculation = (userId) => {
+        return getDbClient()
             .select({
                 userId: mangaList.userId,
-                count: count(mangaList.mediaId).as("count"),
+                value: sql<number>`COALESCE(SUM(${mangaList.total}), 0)`,
             })
             .from(mangaList)
-            .innerJoin(manga, eq(manga.id, mangaList.mediaId))
-            .where(eq(mangaList.status, Status.COMPLETED))
-            .groupBy(mangaList.userId, manga.publishers)
-            .as("publisher_counts");
-
-        return getDbClient()
-            .select({
-                userId: publisherCounts.userId,
-                value: max(publisherCounts.count).as("value"),
-            })
-            .from(publisherCounts)
-            .groupBy(publisherCounts.userId)
-            .as("calculation");
-    };
-
-    const chapters: AchievementCalculation = () => {
-        const query = getDbClient()
-            .select({
-                userId: mangaList.userId,
-                value: sum(mangaList.total).as("value"),
-            })
-            .from(mangaList);
-
-        return queries.applyConditionsAndGroup(query, []);
+            .where(queries.userFilter(userId))
+            .groupBy(mangaList.userId)
+            .all();
     };
 
     return defineAchievementCatalog({
+        category: AchievementCategory.MANGA,
         mediaType: identity.mediaType,
         entries: {
-            completed_manga: {
-                name: "Finish Line Hero",
-                description: "Awarded for completing manga, because you have more commitment to them than your real-life relationships",
-                tiers: [
-                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 30 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 80 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 150 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: queries.countList(eq(listTable.status, Status.COMPLETED)),
+            manga_first: {
+                name: "First Volume",
+                description: "Complete your first manga. Right to left feels natural now.",
+                icon: "scroll",
+                shape: "circle",
+                pattern: "rings",
+                target: 1,
+                calculate: completedManga,
             },
-            rated_manga: {
+            manga_25: {
+                name: "Finish Line Hero",
+                description: "Complete 25 manga. More commitment than most real-life hobbies.",
+                icon: "book-pile",
+                shape: "octagon",
+                pattern: "rays",
+                target: 25,
+                calculate: completedManga,
+            },
+            manga_100: {
+                name: "Mangaka's Muse",
+                description: "Complete 100 manga series from first chapter to epilogue.",
+                icon: "crown",
+                shape: "shield",
+                pattern: "rays",
+                target: 100,
+                calculate: completedManga,
+            },
+            manga_rated_25: {
                 name: "Opinionated Otaku",
-                description: "Awarded for rating manga, because everyone needs to know your totally professional 2AM judgment calls.",
-                tiers: [
-                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 30 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 50 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 100 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
+                description: "Rate 25 manga with your totally objective 2 AM judgment calls.",
+                icon: "stars",
+                shape: "circle",
+                pattern: "dots",
+                target: 25,
                 calculate: queries.countList(isNotNull(listTable.rating)),
             },
-            comment_manga: {
+            manga_commented_15: {
                 name: "Keyboard Warrior Sensei",
-                description: "Awarded for commenting manga, because typing 'OMG THAT PLOT TWIST!!1!' is literary criticism now.",
-                tiers: [
-                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 30 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 50 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 100 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: queries.countList(isNotNull(listTable.comment)),
+                description: "Comment on 15 manga, because screaming about plot twists counts as criticism.",
+                icon: "chat",
+                shape: "circle",
+                pattern: "dots",
+                target: 15,
+                calculate: queries.countNonEmptyComment(),
             },
-            author_manga: {
-                name: "Stalker-san",
-                description: "Awarded for completing manga from the same author, because following someone's entire career isn't creepy at all.",
-                tiers: [
-                    { criteria: { count: 2 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 4 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
+            manga_author_3: {
+                name: "Career Follower",
+                description: "Complete 3 manga by the same author. Following their entire bibliography.",
+                icon: "quill",
+                shape: "hex",
+                pattern: "rays",
+                target: 3,
                 calculate: authors,
             },
-            publisher_manga: {
-                name: "Corporate Loyalty",
-                description: "Awarded for completing manga from the same publisher, because brand loyalty is totally a personality trait.",
-                tiers: [
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 12 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: publishers,
-            },
-            short_manga: {
-                name: "Commitment Issues",
-                description: "Awarded for completing manga with less than 5 volumes, because good things come in small packages (or you're just lazy).",
-                value: 5,
-                tiers: [
-                    { criteria: { count: 2 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 4 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: duration,
-            },
-            long_manga: {
-                name: "Marathon Masochist",
-                description: "Awarded for completing manga with more than 50 volumes, because who needs sleep when you have 1000+ chapters to read?",
-                value: 50,
-                tiers: [
-                    { criteria: { count: 1 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 2 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 4 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: duration,
-            },
-            chapter_manga: {
+            manga_chapters_1000: {
                 name: "Page Turner Pro",
-                description: "Awarded for reading LOTS of manga chapters, because who needs vitamin D when you have manga?",
-                tiers: [
-                    { criteria: { count: 100 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 500 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 1000 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 5000 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: chapters,
+                description: "Read 1,000 manga chapters across your library.",
+                icon: "open-book",
+                shape: "octagon",
+                pattern: "rings",
+                target: 1000,
+                calculate: chaptersRead,
             },
-            hentai_manga: {
-                name: "Yamete Senpai",
-                description: "Awarded for completing hentai manga, because 'I read it for the plot' needed its own achievement.",
-                value: "Hentai",
-                tiers: [
-                    { criteria: { count: 1 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 2 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 4 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: queries.countCompletedGenre,
+            manga_short_5: {
+                name: "Short & Sweet",
+                description: "Complete 5 manga with 5 or fewer volumes. Good things come in compact runs.",
+                icon: "stopwatch",
+                shape: "circle",
+                pattern: "rings",
+                target: 5,
+                calculate: shortManga,
             },
-            shounen_manga: {
-                name: "Power of Friendship",
-                description: "Awarded for completing shounen manga, because screaming makes you stronger and that's just science.",
-                value: "Shounen",
-                tiers: [
-                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 6 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 9 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 15 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: queries.countCompletedGenre,
+            manga_long_2: {
+                name: "Marathon Masochist",
+                description: "Complete 2 manga with 30+ volumes. Who needs sleep when there are arcs to finish?",
+                icon: "hourglass",
+                shape: "octagon",
+                pattern: "rays",
+                target: 2,
+                calculate: longManga,
             },
-            seinen_manga: {
+            manga_seinen_6: {
                 name: "Sophisticated Weeb",
-                description: "Awarded for completing seinen manga, because reading about existential crises makes you mature.",
-                value: "Seinen",
-                tiers: [
-                    { criteria: { count: 2 }, difficulty: AchievementDifficulty.BRONZE },
-                    { criteria: { count: 4 }, difficulty: AchievementDifficulty.SILVER },
-                    { criteria: { count: 6 }, difficulty: AchievementDifficulty.GOLD },
-                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.PLATINUM },
-                ],
-                calculate: queries.countCompletedGenre,
-            }
+                description: "Complete 6 Seinen manga. Existential crises build character.",
+                icon: "katana",
+                shape: "hex",
+                pattern: "dots",
+                target: 6,
+                calculate: queries.countCompletedGenre("Seinen"),
+            },
         },
     });
 };

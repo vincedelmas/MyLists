@@ -103,9 +103,10 @@ export function OverviewDashboard({ stats, subjectName, onSelectMediaType, showH
                             icon: stats.scope === "platform" ? <Users className="size-4"/> : <CalendarDays className="size-4"/>
                         },
                         {
-                            label: "Platinum achievements",
+                            label: "Achievements",
                             icon: <Award className="size-4"/>,
-                            value: formatNumber(stats.platinumAchievements),
+                            value: formatNumber(stats.unlockedAchievements),
+                            note: `${formatNumber(stats.rareAchievements)} rare (<10%)`,
                         },
                         {
                             label: "Tags",

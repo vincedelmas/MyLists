@@ -108,6 +108,8 @@ const mediaProjections: MediaProjection[] = [
             catalog_rating: "m.vote_average",
             catalog_vote_count: "m.vote_count",
             hltb_main_hours: "m.hltb_main_time",
+            achievements_total: "l.achievements_total",
+            achievements_unlocked: "l.achievements_unlocked",
             hltb_main_extra_hours: "m.hltb_main_and_extra_time",
             hltb_completionist_hours: "m.hltb_total_complete_time",
         },

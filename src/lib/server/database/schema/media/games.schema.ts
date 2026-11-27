@@ -32,10 +32,10 @@ export const games = snakeCase.table("games", {
 
 
 export const gamesList = snakeCase.table("games_list", {
+    achievementsTotal: integer(),
+    achievementsUnlocked: integer(),
     playtime: integer().default(0),
     platform: text().$type<GamesPlatformsEnum>(),
-    achievementsTotal: integer("achievements_total"),
-    achievementsUnlocked: integer("achievements_unlocked"),
     ...commonMediaListCols(games.id, MediaType.GAMES),
 }, (table) => [
     ...commonMediaListIndexes(table, MediaType.GAMES),

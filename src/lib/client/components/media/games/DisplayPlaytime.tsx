@@ -32,7 +32,7 @@ export const DisplayPlaytime = ({ playtime, status, achievementsUnlocked, achiev
                 <span
                     title={`${achievementsUnlocked} / ${achievementsTotal} achievements`}
                     className={achievementPercent === 100
-                        ? "inline-flex items-center gap-0.5 text-amber-400"
+                        ? "inline-flex items-center gap-0.5 text-achievement"
                         : "inline-flex items-center gap-0.5 opacity-85"}
                 >
                     <Trophy className="size-3 shrink-0" aria-hidden="true"/>

@@ -120,7 +120,7 @@ describe("GamesService", () => {
     });
 
     describe("getGameAchievementPercent", () => {
-        it("floors percentages to match Steam and only returns 100 when complete", () => {
+        it("floors percentages and only returns 100 when complete", () => {
             expect(getGameAchievementPercent(0, 200)).toBe(0);
             expect(getGameAchievementPercent(1, 200)).toBe(0);
             expect(getGameAchievementPercent(199, 200)).toBe(99);

@@ -21,6 +21,8 @@ const formatValue = (value: number | null) => value === null ? "" : String(value
 
 export const UpdateAchievements = ({ achievementsUnlocked, achievementsTotal, updateAchievements, disabled = false }: UpdateAchievementsProps) => {
     const totalInputRef = useRef<HTMLInputElement>(null);
+    const unlockedInputRef = useRef<HTMLInputElement>(null);
+    
     const [state, setState] = useState({
         editing: false,
         syncedTotal: achievementsTotal,
@@ -129,9 +131,17 @@ export const UpdateAchievements = ({ achievementsUnlocked, achievementsTotal, up
     const handleTotalKeyDown = (ev: KeyboardEvent<HTMLInputElement>) => {
         if (ev.key === "Enter") {
             ev.preventDefault();
-            ev.currentTarget.blur();
+            if (state.unlockedDraft.trim() === "") {
+                unlockedInputRef.current?.focus();
+            }
+            else {
+                ev.currentTarget.blur();
+            }
         }
     };
+
+    const inputClassName = "h-7 min-w-0 flex-1 rounded-md px-1.5 text-center [appearance:textfield] " +
+        "[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
     return (
         <div className="flex justify-between items-center gap-2">
@@ -140,7 +150,7 @@ export const UpdateAchievements = ({ achievementsUnlocked, achievementsTotal, up
                 {percent !== null &&
                     <span
                         className={percent === 100
-                            ? "inline-flex items-center gap-0.5 text-xs font-medium text-amber-400"
+                            ? "inline-flex items-center gap-0.5 text-xs font-medium text-achievement"
                             : "inline-flex items-center gap-0.5 text-xs text-muted-foreground"
                         }
                     >
@@ -166,12 +176,13 @@ export const UpdateAchievements = ({ achievementsUnlocked, achievementsTotal, up
                             type="number"
                             max={PROGRESS_MAX}
                             inputMode="numeric"
+                            ref={unlockedInputRef}
                             disabled={saveDisabled}
                             value={state.unlockedDraft}
+                            className={inputClassName}
                             onKeyDown={handleUnlockedKeyDown}
                             aria-label="Unlocked achievements"
                             placeholder={DEFAULT_DASH_FALLBACK}
-                            className="h-7 min-w-0 flex-1 rounded-md px-1.5 text-center"
                             onChange={(ev) => setState(curr => ({ ...curr, unlockedDraft: ev.target.value }))}
                         />
                         <span className="shrink-0 text-xs text-muted-foreground">/</span>
@@ -184,10 +195,10 @@ export const UpdateAchievements = ({ achievementsUnlocked, achievementsTotal, up
                             ref={totalInputRef}
                             disabled={saveDisabled}
                             value={state.totalDraft}
+                            className={inputClassName}
                             onKeyDown={handleTotalKeyDown}
                             aria-label="Total achievements"
                             placeholder={DEFAULT_DASH_FALLBACK}
-                            className="h-7 min-w-0 flex-1 rounded-md px-1.5 text-center"
                             onChange={(ev) => setState(curr => ({ ...curr, totalDraft: ev.target.value }))}
                         />
                     </div>

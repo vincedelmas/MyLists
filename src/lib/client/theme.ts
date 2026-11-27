@@ -42,6 +42,7 @@ const UPDATE_TYPE_COLOR_MAP: Record<UpdateType, string> = {
     [UpdateType.COMMENT]: "var(--info)",
     [UpdateType.FAVORITE]: "var(--favorite)",
     [UpdateType.PLATFORM]: "var(--info)",
+    [UpdateType.ACHIEVEMENTS]: "var(--games)",
 };
 
 

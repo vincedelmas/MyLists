@@ -22,6 +22,7 @@ const updatesLabels: Record<UpdateType, string> = {
     [UpdateType.CHAPTER]: "Chapter progress",
     [UpdateType.PLAYTIME]: "Playtime updates",
     [UpdateType.PLATFORM]: "Platform changes",
+    [UpdateType.ACHIEVEMENTS]: "Achievements",
 };
 
 

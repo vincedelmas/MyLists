@@ -41,7 +41,7 @@ export const gamesDefinition = defineMediaDefinition({
             "title_asc", "title_desc", "release_newest", "release_oldest",
             "provider_rating_highest", "provider_rating_lowest", "added_newest", "added_oldest",
             "modified_newest", "modified_oldest", "rating_highest", "rating_lowest", "playtime_highest",
-            "playtime_lowest",
+            "playtime_lowest", "achievements_highest", "achievements_lowest",
         ],
         labels: {
             provider_rating_lowest: "IGDB Rating -",

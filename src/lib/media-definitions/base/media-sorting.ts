@@ -117,6 +117,18 @@ export const MEDIA_SORT_DEFINITIONS = {
         field: "playtime",
         label: "Playtime -",
     },
+    achievements_highest: {
+        personal: true,
+        direction: "desc",
+        field: "achievements",
+        label: "Achievements +",
+    },
+    achievements_lowest: {
+        personal: true,
+        direction: "asc",
+        field: "achievements",
+        label: "Achievements -",
+    },
 } as const;
 
 
@@ -129,6 +141,7 @@ export const MEDIA_SORT_FIELD_LABELS = {
     providerRating: "Community Rating",
     redo: "Re-experienced",
     playtime: "Playtime",
+    achievements: "Achievements %",
     pages: "Pages",
     chapters: "Chapters",
 } satisfies Record<MediaSortField, string>;

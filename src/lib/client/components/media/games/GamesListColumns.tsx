@@ -17,6 +17,8 @@ export const getGamesColumns = (props: ColumnConfigProps): ColumnDef<typeof medi
             <DisplayPlaytime
                 status={original.status}
                 playtime={original.playtime}
+                achievementsTotal={original.achievementsTotal}
+                achievementsUnlocked={original.achievementsUnlocked}
             />
         )
     });

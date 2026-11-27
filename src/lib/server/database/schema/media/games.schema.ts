@@ -1,5 +1,6 @@
+import {sql} from "drizzle-orm";
 import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";
-import {index, integer, real, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, real, snakeCase, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {
     commonGenericCols,
     commonGenericIndexes,
@@ -33,8 +34,19 @@ export const games = snakeCase.table("games", {
 export const gamesList = snakeCase.table("games_list", {
     playtime: integer().default(0),
     platform: text().$type<GamesPlatformsEnum>(),
+    achievementsTotal: integer("achievements_total"),
+    achievementsUnlocked: integer("achievements_unlocked"),
     ...commonMediaListCols(games.id, MediaType.GAMES),
-}, (table) => commonMediaListIndexes(table, MediaType.GAMES));
+}, (table) => [
+    ...commonMediaListIndexes(table, MediaType.GAMES),
+    check("games_list_achievements_check", sql`
+        (${table.achievementsUnlocked} IS NULL AND ${table.achievementsTotal} IS NULL)
+        OR (${table.achievementsUnlocked} IS NOT NULL AND ${table.achievementsTotal} IS NOT NULL
+            AND ${table.achievementsUnlocked} >= 0
+            AND ${table.achievementsTotal} >= 1
+            AND ${table.achievementsUnlocked} <= ${table.achievementsTotal})
+    `),
+]);
 
 
 export const gamesGenre = snakeCase.table("games_genre", {

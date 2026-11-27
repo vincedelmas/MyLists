@@ -5,6 +5,7 @@ import {UpdateStatus} from "@/lib/client/components/media/base/UpdateStatus";
 import {UpdatePlatform} from "@/lib/client/components/media/games/UpdatePlatform";
 import {UpdatePlaytime} from "@/lib/client/components/media/games/UpdatePlaytime";
 import {MediaUserDetailsProps} from "@/lib/client/components/media/media-config.types";
+import {UpdateAchievements} from "@/lib/client/components/media/games/UpdateAchievements";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
@@ -32,6 +33,12 @@ export const GamesUserDetails = ({ userMedia, mediaType, mutationOptions }: Game
                     <UpdatePlaytime
                         playtimeInMin={userMedia.playtime ?? 0}
                         updatePlaytime={updateUserMediaMutation}
+                    />
+                    <UpdateAchievements
+                        disabled={mutationOptions?.backlogMode}
+                        updateAchievements={updateUserMediaMutation}
+                        achievementsTotal={userMedia.achievementsTotal}
+                        achievementsUnlocked={userMedia.achievementsUnlocked}
                     />
                     <div className="flex justify-between items-center">
                         <div>Rating</div>

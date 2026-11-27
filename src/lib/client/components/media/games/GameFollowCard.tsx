@@ -17,6 +17,8 @@ export const GameFollowCard = ({ followData, rating, showComment }: GameFollowCa
                 <DisplayPlaytime
                     status={followData.userMedia.status}
                     playtime={followData.userMedia.playtime}
+                    achievementsTotal={followData.userMedia.achievementsTotal}
+                    achievementsUnlocked={followData.userMedia.achievementsUnlocked}
                 />
             }
         />

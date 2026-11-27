@@ -37,6 +37,7 @@ const allowedPayloadFieldsByUpdateType = {
     [UpdateType.REDO]: ["redo", "seasonRedos"],
     [UpdateType.RATING]: ["rating", "seasonRating"],
     [UpdateType.TV]: ["currentSeason", "currentEpisode"],
+    [UpdateType.ACHIEVEMENTS]: ["achievementsUnlocked", "achievementsTotal"],
 } satisfies Record<UpdateType, string[]>;
 
 
@@ -106,12 +107,15 @@ export const updateUserMediaSchema = z.object({
         rating: z.number().min(0).max(10).optional().nullable(),
         platform: z.enum(GamesPlatformsEnum).optional().nullable(),
         seasonRating: tvSeasonStateSchema.pick({ season: true, rating: true }).optional(),
+        achievementsTotal: z.number().int().min(1).max(PROGRESS_MAX).optional().nullable(),
+        achievementsUnlocked: z.number().int().min(0).max(PROGRESS_MAX).optional().nullable(),
         actualPage: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentSeason: z.number().int().min(1).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentChapter: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentEpisode: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         playtime: z.number().min(0).max(PLAYTIME_MAX_MINUTES, `Playtime cannot exceed ${PLAYTIME_MAX_MINUTES}!`).optional(),
-        comment: z.preprocess(emptyStringToNull, z.string().max(COMMENT_MAX_LENGTH, `Comment cannot exceed ${COMMENT_MAX_LENGTH} characters`).nullish()),
+        comment: z.preprocess(emptyStringToNull, z.string()
+            .max(COMMENT_MAX_LENGTH, `Comment cannot exceed ${COMMENT_MAX_LENGTH} characters`).nullish()),
         seasonRedos: z.array(tvSeasonStateSchema.pick({ season: true, redo: true })).min(1).max(PROGRESS_MAX)
             .refine(rows => new Set(rows.map(s => s.season)).size === rows.length, "Duplicate season numbers.").optional(),
     }).superRefine((data, ctx) => {
@@ -120,7 +124,41 @@ export const updateUserMediaSchema = z.object({
             .map(([key, _]) => key);
 
         const combinedTvPosition = data.type === UpdateType.TV && definedFields.length === 2
-            && definedFields.includes("currentSeason") && definedFields.includes("currentEpisode");
+            && definedFields.includes("currentSeason")
+            && definedFields.includes("currentEpisode");
+
+        const combinedAchievements = data.type === UpdateType.ACHIEVEMENTS && definedFields.length === 2
+            && definedFields.includes("achievementsUnlocked")
+            && definedFields.includes("achievementsTotal");
+
+        if (data.type === UpdateType.ACHIEVEMENTS) {
+            if (!combinedAchievements) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["achievementsUnlocked"],
+                    message: "Both unlocked and total achievements are required.",
+                });
+                return;
+            }
+
+            const hasTotal = data.achievementsTotal !== null;
+            const hasUnlocked = data.achievementsUnlocked !== null;
+            if (hasUnlocked !== hasTotal) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["achievementsUnlocked"],
+                    message: "Provide both unlocked and total achievements, or clear both.",
+                });
+            }
+            else if (hasUnlocked && hasTotal && data.achievementsUnlocked! > data.achievementsTotal!) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["achievementsUnlocked"],
+                    message: "Unlocked achievements cannot exceed total achievements.",
+                });
+            }
+            return;
+        }
 
         if (definedFields.length !== 1 && !combinedTvPosition) {
             ctx.addIssue({
@@ -151,6 +189,10 @@ export const updateUserMediaSchema = z.object({
 
     if (data.payload.type === UpdateType.REDO && isTv && !data.payload.seasonRedos) {
         ctx.addIssue({ code: "custom", path: ["payload", "seasonRedos"], message: "TV rewatches require season numbers." });
+    }
+
+    if (data.payload.type === UpdateType.ACHIEVEMENTS && data.mediaType !== MediaType.GAMES) {
+        ctx.addIssue({ code: "custom", path: ["payload"], message: "Achievements are only available for games." });
     }
 
     if (!data.payload.status) return;

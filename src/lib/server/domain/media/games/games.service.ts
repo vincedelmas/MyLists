@@ -1,23 +1,25 @@
+import {pick} from "@/lib/utils/arrays-objects";
 import {notFound} from "@tanstack/react-router";
-import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {LogPayload} from "@/lib/types/user-updates.types";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {createMediaService, createSimpleUpdateHandler} from "@/lib/server/domain/media/base/media.service";
+import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {Game, GamesList} from "@/lib/server/domain/media/games/games.types";
-import {PlaytimePayload, StatusPayload} from "@/lib/types/user-media.types";
 import {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
-import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
+import {AchievementsPayload, PlaytimePayload, StatusPayload} from "@/lib/types/user-media.types";
+import {createMediaService, createSimpleUpdateHandler} from "@/lib/server/domain/media/base/media.service";
 import {gamesServerDefinition, GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
-import {pick} from "@/lib/utils/arrays-objects";
+import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
 
 
 export function createGamesService(repository: GamesRepository, definition: GamesServerDefinition = gamesServerDefinition) {
     const { identity, service: servicePolicy } = definition;
     const editPayloadSchema = createMediaEditPayloadSchema(identity.mediaType, servicePolicy.editableFields);
+
     const service = createMediaService(repository, definition, {
         [UpdateType.STATUS]: updateStatusHandler,
         [UpdateType.PLAYTIME]: updatePlaytimeHandler,
+        [UpdateType.ACHIEVEMENTS]: updateAchievementsHandler,
         [UpdateType.PLATFORM]: createSimpleUpdateHandler("platform"),
     });
 
@@ -63,6 +65,8 @@ export function createGamesService(repository: GamesRepository, definition: Game
 
         if (payload.status === Status.PLANNED) {
             newState.playtime = 0;
+            newState.achievementsTotal = null;
+            newState.achievementsUnlocked = null;
         }
 
         return [newState, logPayload];
@@ -75,13 +79,24 @@ export function createGamesService(repository: GamesRepository, definition: Game
         return [newState, logPayload];
     }
 
+    function updateAchievementsHandler(currentState: GamesList, payload: AchievementsPayload, _media: Game): [GamesList, LogPayload] {
+        const newState = {
+            ...currentState,
+            achievementsTotal: payload.achievementsTotal,
+            achievementsUnlocked: payload.achievementsUnlocked,
+        };
+
+        return [newState, null];
+    }
+
     return {
         ...service,
+        updateStatusHandler,
+        updatePlaytimeHandler,
         getMediaEditableFields,
         getCompatiblePlatforms,
         updateMediaEditableFields,
-        updateStatusHandler,
-        updatePlaytimeHandler,
+        updateAchievementsHandler,
     };
 }
 

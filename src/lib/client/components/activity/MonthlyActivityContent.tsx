@@ -120,13 +120,6 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
             <MonthlyActivityStats
                 stats={activityStats}
             />
-            {hasFilters &&
-                <p className="pt-3 text-xs text-muted-foreground">
-                    Stats cover all visible media activity in this period.
-                    Filters apply to the results below.
-                </p>
-            }
-
             <section className="pt-6">
                 <MediaBrowseToolbar
                     search={localSearch}

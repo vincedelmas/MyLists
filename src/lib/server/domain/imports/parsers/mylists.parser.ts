@@ -77,14 +77,16 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
         throw new Error(MYLISTS_FORMAT_ERROR);
     }
 
-    const missingOptionalHeaders = new Set(
-        [...optionalHeaders].filter(header => !headers.includes(header) && header in baseValidator.shape),
-    );
-    const mediaZodValidator = (missingOptionalHeaders.size > 0
+    const missingOptionalHeaders = new Set([...optionalHeaders].filter(header => !headers.includes(header) && header in baseValidator.shape));
+    const rowObjectValidator = (missingOptionalHeaders.size > 0
         ? z.object(Object.fromEntries(
             Object.entries(baseValidator.shape).filter(([key]) => !missingOptionalHeaders.has(key)),
         ))
         : baseValidator) as typeof baseValidator;
+
+    const mediaZodValidator = definition.listImport.validateCsvRow
+        ? rowObjectValidator.superRefine(definition.listImport.validateCsvRow)
+        : rowObjectValidator;
 
     const versionColumn = headers.indexOf("formatVersion");
     if (rows.some(row => row[versionColumn] !== MYLISTS_CSV_VERSION)) {

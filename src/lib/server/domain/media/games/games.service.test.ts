@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
 import type {Game, GamesList} from "./games.types";
 import {RatingSystemType, Status} from "@/lib/utils/enums";
+import {getGameAchievementPercent} from "@/lib/utils/media/game-achievements";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
 import {createGamesService} from "@/lib/server/domain/media/games/games.service";
 import type {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
@@ -54,6 +55,8 @@ describe("GamesService", () => {
         lastUpdated: new Date().toISOString(),
         playtime: 0,
         platform: "PC",
+        achievementsUnlocked: null,
+        achievementsTotal: null,
         ...overrides,
     });
 
@@ -98,15 +101,31 @@ describe("GamesService", () => {
     });
 
     describe("updateHandlers", () => {
-        it("updateStatusHandler: IN_PROGRESS -> PLANNED should reset playtime", () => {
-            const current = makeState({ status: Status.IN_PROGRESS, playtime: 50 });
+        it("updateStatusHandler: IN_PROGRESS -> PLANNED should reset playtime and achievements", () => {
+            const current = makeState({
+                playtime: 50,
+                achievementsTotal: 40,
+                achievementsUnlocked: 12,
+                status: Status.IN_PROGRESS,
+            });
             const [next, log] = gamesService.updateStatusHandler(current, { status: Status.PLANNED }, baseGame);
 
             expect(next.playtime).toBe(0);
+            expect(next.achievementsUnlocked).toBeNull();
+            expect(next.achievementsTotal).toBeNull();
             expect(next.status).toBe(Status.PLANNED);
             expect(log?.oldValue).toBe(Status.IN_PROGRESS);
             expect(log?.newValue).toBe(Status.PLANNED);
         });
+    });
 
+    describe("getGameAchievementPercent", () => {
+        it("floors percentages and only returns 100 when complete", () => {
+            expect(getGameAchievementPercent(0, 200)).toBe(0);
+            expect(getGameAchievementPercent(1, 200)).toBe(0);
+            expect(getGameAchievementPercent(199, 200)).toBe(99);
+            expect(getGameAchievementPercent(200, 200)).toBe(100);
+            expect(getGameAchievementPercent(null, null)).toBeNull();
+        });
     });
 });

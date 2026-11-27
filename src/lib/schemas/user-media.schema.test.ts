@@ -131,6 +131,16 @@ describe("user media schemas", () => {
         expect(parse(MediaType.SERIES, { type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 1 }, { season: 1, redo: 2 }] }).success).toBe(false);
     });
 
+    it("validates game achievements pairs and rejects non-game media", () => {
+        const parse = (mediaType: MediaType, payload: unknown) => updateUserMediaSchema.safeParse({ mediaId: 1, mediaType, payload });
+
+        expect(parse(MediaType.GAMES, { type: UpdateType.ACHIEVEMENTS, achievementsUnlocked: 12, achievementsTotal: 50 }).success).toBe(true);
+        expect(parse(MediaType.GAMES, { type: UpdateType.ACHIEVEMENTS, achievementsUnlocked: null, achievementsTotal: null }).success).toBe(true);
+        expect(parse(MediaType.GAMES, { type: UpdateType.ACHIEVEMENTS, achievementsUnlocked: 51, achievementsTotal: 50 }).success).toBe(false);
+        expect(parse(MediaType.GAMES, { type: UpdateType.ACHIEVEMENTS, achievementsUnlocked: 10, achievementsTotal: null }).success).toBe(false);
+        expect(parse(MediaType.MOVIES, { type: UpdateType.ACHIEVEMENTS, achievementsUnlocked: 1, achievementsTotal: 10 }).success).toBe(false);
+    });
+
     it("applies shared update limits", () => {
         const result = updateUserMediaSchema.safeParse({
             mediaId: 1,

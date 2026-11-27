@@ -3,9 +3,9 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, eq, getTableColumns, inArray, like, ne, sql} from "drizzle-orm";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {normalizeGamePlatform} from "@/lib/server/domain/media/games/platforms";
-import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
 import {defineMediaFilterDefinitions} from "@/lib/server/domain/media/base/media-filters.queries";
 import {ApiProviderType, GamesPlatformsEnum, MediaCategory, MediaType, Status} from "@/lib/utils/enums";
+import {gamesMyListsCSVRowSchema, refineGameAchievementsPair} from "@/lib/server/domain/media/games/games.types";
 import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
@@ -23,11 +23,20 @@ const sortColumns = {
     ...getCommonMediaSortColumns(tables),
     playtime: gamesList.playtime,
     providerRating: games.voteAverage,
+    achievements: sql`CASE
+        WHEN ${gamesList.achievementsUnlocked} IS NOT NULL AND ${gamesList.achievementsTotal} > 0
+        THEN CAST(${gamesList.achievementsUnlocked} AS REAL) / ${gamesList.achievementsTotal}
+        ELSE NULL
+    END`,
 };
 
 
 export const gamesServerDefinition = defineServerMediaDefinition({
-    listImport: { csvRowSchema: gamesMyListsCSVRowSchema },
+    listImport: {
+        csvRowSchema: gamesMyListsCSVRowSchema,
+        validateCsvRow: refineGameAchievementsPair,
+        optionalHeaders: ["achievementsUnlocked", "achievementsTotal"],
+    },
     identity: {
         mediaType: MediaType.GAMES,
         coverDirectory: "games-covers",

@@ -55,7 +55,7 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
             redo: 1, total: mediaType === MediaType.BOOKS ? 400 : mediaType === MediaType.MANGA ? 80
                 : mediaType === MediaType.MOVIES ? 2 : 16,
             currentSeason: 1, currentEpisode: 8, actualPage: 200, currentChapter: 40,
-            playtime: 120, platform: "PC",
+            playtime: 120, platform: "PC", achievementsUnlocked: 12, achievementsTotal: 40,
             customTitle: 'A title, with "quotes" and é', customPages: 200,
             customReleaseDate: "2024-01-01",
         } as any).run();

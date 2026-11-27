@@ -9,7 +9,7 @@ export type UpdatePayload = {
         type: UpdateType;
         loggedAt?: string;
     } & (CommentPayload | PlatformPayload | RatingPayload | FavoritePayload |
-        PlaytimePayload | StatusPayload | PagePayload | ChapterPayload | RedoPayload |
+        PlaytimePayload | AchievementsPayload | StatusPayload | PagePayload | ChapterPayload | RedoPayload |
         RedoTvPayload | EpsSeasonPayload);
 }
 
@@ -29,6 +29,11 @@ type FavoritePayload = {
 
 export type PlaytimePayload = {
     playtime: number,
+}
+
+export type AchievementsPayload = {
+    achievementsTotal: number | null,
+    achievementsUnlocked: number | null,
 }
 
 export type StatusPayload = {

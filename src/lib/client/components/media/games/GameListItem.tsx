@@ -16,6 +16,8 @@ export const GameListItem = (props: GameListItemProps<typeof MediaType.GAMES>) =
                 <DisplayPlaytime
                     status={props.userMedia.status}
                     playtime={props.userMedia.playtime}
+                    achievementsTotal={props.userMedia.achievementsTotal}
+                    achievementsUnlocked={props.userMedia.achievementsUnlocked}
                 />
             }
         />

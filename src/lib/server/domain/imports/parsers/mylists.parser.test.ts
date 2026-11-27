@@ -173,6 +173,41 @@ describe("parseMyListsCsv", () => {
         expect(parsed.items[0].payload).not.toHaveProperty("customReleaseDate");
         expect(parsed.items[0].payload).not.toHaveProperty("customLanguage");
     });
+
+    it("fails only rows with invalid game achievement pairs while queuing valid rows", () => {
+        const baseGameRow = {
+            id: "1",
+            userId: "42",
+            mediaId: "100",
+            formatVersion: "2",
+            mediaType: MediaType.GAMES,
+            externalApiSource: ApiProviderType.IGDB,
+            releaseDate: "2020-09-17",
+            status: Status.COMPLETED,
+            rating: "9",
+            favorite: "true",
+            comment: "",
+            playtime: "480",
+            platform: "PC",
+            addedAt: "",
+            lastUpdated: "",
+            customCover: "",
+        };
+
+        const parsed = parseMyListsCsv(toCsv([
+            { ...baseGameRow, mediaName: "Valid Game", externalApiId: "114795", achievementsUnlocked: "10", achievementsTotal: "20" },
+            { ...baseGameRow, mediaName: "Invalid Pair", externalApiId: "114796", achievementsUnlocked: "12", achievementsTotal: "10" },
+            { ...baseGameRow, mediaName: "Missing Total", externalApiId: "114797", achievementsUnlocked: "5", achievementsTotal: "" },
+        ]));
+
+        expect(parsed.totalCount).toBe(3);
+        expect(parsed.failedCount).toBe(2);
+        expect(parsed.items[0].status).toBe(ImportItemStatus.QUEUED);
+        expect(parsed.items[1].status).toBe(ImportItemStatus.FAILED);
+        expect(parsed.items[1].statusReason).toContain("Unlocked achievements cannot exceed total achievements.");
+        expect(parsed.items[2].status).toBe(ImportItemStatus.FAILED);
+        expect(parsed.items[2].statusReason).toContain("Both unlocked and total achievements must be provided together.");
+    });
 });
 
 

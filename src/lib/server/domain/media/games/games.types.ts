@@ -10,7 +10,8 @@ import {
     importExternalNumericIdSchema,
     importFavoriteSchema,
     importPlaytimeSchema,
-    importRatingSchema
+    importRatingSchema,
+    nullableImportProgressSchema
 } from "@/lib/server/domain/imports/import-list-validation";
 
 
@@ -43,11 +44,47 @@ const gamesCSVListSchema = createInsertSchema(gamesList, {
     playtime: importPlaytimeSchema,
     favorite: importFavoriteSchema,
     status: mediaStatusSchema(MediaType.GAMES),
+    achievementsTotal: nullableImportProgressSchema,
+    achievementsUnlocked: nullableImportProgressSchema,
     platform: z.preprocess(emptyStringToNull, z.enum(GamesPlatformsEnum).nullable().optional()),
 });
 
 
-export const gamesImportPayloadSchema = gamesCSVListSchema.omit({
+export const refineGameAchievementsPair = (data: { achievementsUnlocked?: number | null; achievementsTotal?: number | null }, ctx: z.RefinementCtx) => {
+    const total = data.achievementsTotal ?? null;
+    const unlocked = data.achievementsUnlocked ?? null;
+
+    if (unlocked === null && total === null) {
+        return;
+    }
+
+    if (unlocked === null || total === null) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["achievementsUnlocked"],
+            message: "Both unlocked and total achievements must be provided together.",
+        });
+        return;
+    }
+
+    if (total < 1) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["achievementsTotal"],
+            message: "Total achievements must be at least 1.",
+        });
+    }
+    else if (unlocked > total) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["achievementsUnlocked"],
+            message: "Unlocked achievements cannot exceed total achievements.",
+        });
+    }
+};
+
+
+const gamesImportPayloadBaseSchema = gamesCSVListSchema.omit({
     id: true,
     userId: true,
     mediaId: true,
@@ -58,7 +95,10 @@ export const gamesImportPayloadSchema = gamesCSVListSchema.omit({
 });
 
 
+export const gamesImportPayloadSchema = gamesImportPayloadBaseSchema.superRefine(refineGameAchievementsPair);
+
+
 export const gamesMyListsCSVRowSchema = minimalMyListsCSVSchema.extend({
-    ...gamesImportPayloadSchema.shape,
+    ...gamesImportPayloadBaseSchema.shape,
     externalApiId: importExternalNumericIdSchema,
 });

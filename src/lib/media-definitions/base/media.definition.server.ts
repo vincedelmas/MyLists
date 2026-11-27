@@ -201,6 +201,9 @@ export interface ServerMediaDefinition<
     TIngestion extends MediaIngestionPolicy = MediaIngestionPolicy,
     TSortColumns extends MediaSortColumns = MediaSortColumns,
     TSelection extends BaseSelection = BaseSelection,
+    TCsvRowSchema extends z.ZodObject<{
+        [K in keyof MyListsCSVImport]: z.ZodType<MyListsCSVImport[K]>
+    }> = z.ZodObject<{ [K in keyof MyListsCSVImport]: z.ZodType<MyListsCSVImport[K]> }>,
 > {
     readonly ingestion: TIngestion;
     readonly attribution: ProviderAttribution;
@@ -209,8 +212,9 @@ export interface ServerMediaDefinition<
     readonly statistics: MediaStatisticsDefinition<TAffinityDefinitions>;
     readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions, TSortColumns, TSelection>;
     readonly listImport: {
+        readonly csvRowSchema: TCsvRowSchema;
         readonly optionalHeaders?: readonly string[];
-        readonly csvRowSchema: z.ZodObject<{ [K in keyof MyListsCSVImport]: z.ZodType<MyListsCSVImport[K]> }>;
+        readonly validateCsvRow?: (row: z.output<TCsvRowSchema>, ctx: z.RefinementCtx) => void;
     };
 }
 
@@ -249,7 +253,11 @@ export type AnyServerMediaDefinition = {
     readonly attribution: ProviderAttribution;
     readonly repository: AnyMediaRepositoryDefinition;
     readonly statistics: AnyMediaStatisticsDefinition;
-    readonly listImport: ServerMediaDefinition["listImport"];
+    readonly listImport: {
+        readonly optionalHeaders?: readonly string[];
+        readonly validateCsvRow?: (row: any, ctx: z.RefinementCtx) => void;
+        readonly csvRowSchema: z.ZodObject<{ [K in keyof MyListsCSVImport]: z.ZodType<MyListsCSVImport[K]> }>;
+    };
     readonly service: {
         readonly editableFields: readonly MediaEditFieldByType[MediaType][];
         readonly progressTotals: (state: any | null, media: any) => ProgressTotals;
@@ -265,7 +273,10 @@ export const defineServerMediaDefinition = <
     const TIngestion extends MediaIngestionPolicy,
     const TSortColumns extends MediaSortColumns,
     const TSelection extends BaseSelection,
->(definition: ServerMediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion, TSortColumns, TSelection>) => {
+    const TCsvRowSchema extends z.ZodObject<{ [K in keyof MyListsCSVImport]: z.ZodType<MyListsCSVImport[K]> }>,
+>(definition: ServerMediaDefinition<
+    TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion, TSortColumns, TSelection, TCsvRowSchema
+>) => {
     return {
         ...definition,
         repository: {

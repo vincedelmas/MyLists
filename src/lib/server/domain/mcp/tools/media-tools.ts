@@ -100,6 +100,7 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
         inputSchema: updateUserMediaSchema,
         annotations: { destructiveHint: true },
         description: "Update one existing entry. Ratings are 0–10; progress, playtime in minutes and repeats are absolute totals. " +
+            "Game achievements require both achievementsUnlocked and achievementsTotal, or null for both to clear. " +
             "TV rewatches require seasonRedos; read seasons first. Status changes can reset progress/repeats. " +
             "loggedAt backdates activity only. " +
             "kind=saved confirms persistence; kind=correction-required is an unsaved preview to review before supplying activityCorrection.",

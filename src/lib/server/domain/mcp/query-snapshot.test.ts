@@ -76,6 +76,7 @@ describe("MCP query snapshots", () => {
             source.run("UPDATE books SET language = 'fr', publishers = 'Known publisher' WHERE id = 10");
             source.run("UPDATE manga SET chapters = 100, volumes = 10, publishers = 'Known publisher', prod_status = 'Finished' WHERE id = 10");
             source.run("UPDATE games SET game_engine = 'Known engine', game_modes = 'Single player', player_perspective = 'Third person', hltb_main_time = 10 WHERE id = 10");
+            source.run("UPDATE games_list SET achievements_unlocked = 12, achievements_total = 40 WHERE user_id = 1 AND media_id = 10");
         })();
     });
 
@@ -107,6 +108,10 @@ describe("MCP query snapshots", () => {
             volume_count: 10,
             current_chapter: 10,
             duration_minutes: null
+        });
+        expect(snapshot.query("SELECT achievements_unlocked, achievements_total FROM my_entries WHERE media_type = 'games'").get()).toEqual({
+            achievements_unlocked: 12,
+            achievements_total: 40,
         });
         expect(snapshot.query("SELECT role, name FROM media_people WHERE media_type = 'games' ORDER BY role").all()).toEqual([{
             role: "developer",

@@ -184,6 +184,7 @@ export const UpdateType = {
     PLAYTIME: "playtime",
     FAVORITE: "favorite",
     PLATFORM: "platform",
+    ACHIEVEMENTS: "achievements",
 } as const;
 export type UpdateType = (typeof UpdateType)[keyof typeof UpdateType];
 

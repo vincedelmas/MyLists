@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.6.0](https://github.com/vincedelmas/MyLists/compare/v4.5.0...v4.6.0) (2026-11-27)
+
+
+### Features
+
+* **games:** add generic game achievements tracking and sorting ([fd6ad9c](https://github.com/vincedelmas/MyLists/commit/fd6ad9c85d6a3157433c86d7f531494730001bf8))
+
 ## [4.5.0](https://github.com/vincedelmas/MyLists/compare/v4.4.0...v4.5.0) (2026-11-23)
 
 

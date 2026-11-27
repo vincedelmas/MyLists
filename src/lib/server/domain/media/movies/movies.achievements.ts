@@ -1,7 +1,7 @@
 import {AchievementCategory, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {movies, moviesActors, moviesList} from "@/lib/server/database/schema";
-import {and, count, countDistinct, eq, gt, gte, isNotNull, lt, lte, ne} from "drizzle-orm";
+import {and, count, countDistinct, eq, gt, gte, isNotNull, lt, lte, ne, sql} from "drizzle-orm";
 import {MovieServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 import {createAchievementQueries, pickTopPerUser} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
@@ -110,6 +110,18 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
             .all();
     };
 
+    const rewatches: AchievementCalculation = (userId) => {
+        return getDbClient()
+            .select({
+                userId: moviesList.userId,
+                value: sql<number>`COALESCE(SUM(${moviesList.redo}), 0)`,
+            })
+            .from(moviesList)
+            .where(queries.userFilter(userId))
+            .groupBy(moviesList.userId)
+            .all();
+    };
+
     return defineAchievementCatalog({
         category: AchievementCategory.MOVIES,
         mediaType: identity.mediaType,
@@ -197,7 +209,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
             },
             movies_long_12: {
                 name: "Epic Endurance",
-                description: "Complete 12 movies longer than 2h30. You've trained for the cinematic marathon.",
+                description: "Complete 12 movies of 2h30 or longer. You've trained for the cinematic marathon.",
                 icon: "hourglass",
                 shape: "octagon",
                 pattern: "rings",
@@ -213,23 +225,23 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 target: 15,
                 calculate: shortMovies,
             },
-            movies_scifi_20: {
-                name: "Sci-Fi Navigator",
-                description: "Complete 20 Science Fiction movies. Plot twists served with a side of quantum stuff.",
-                icon: "ufo",
-                shape: "hex",
-                pattern: "rays",
-                target: 20,
-                calculate: queries.countCompletedGenre("Science Fiction"),
-            },
-            movies_animation_20: {
-                name: "Not Just for Kids",
-                description: "Complete 20 Animation movies, proving great storytelling knows no medium.",
+            movies_genres_10: {
+                name: "Genre Hopper",
+                description: "Complete movies across 10 different genres. No comfort zone can hold you.",
                 icon: "palette",
                 shape: "hex",
                 pattern: "dots",
-                target: 20,
-                calculate: queries.countCompletedGenre("Animation"),
+                target: 10,
+                calculate: queries.countDistinctGenres(),
+            },
+            movies_rewatch_5: {
+                name: "Again, From the Top",
+                description: "Log 5 movie rewatches. Some films only get better the second time around.",
+                icon: "cycle",
+                shape: "circle",
+                pattern: "rings",
+                target: 5,
+                calculate: rewatches,
             },
             movies_classic_10: {
                 name: "Silver Screen Classic",

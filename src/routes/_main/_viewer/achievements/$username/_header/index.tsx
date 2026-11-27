@@ -20,10 +20,20 @@ import {PROFILE_MAX_PINNED_ACHIEVEMENTS} from "@/lib/types/profile-custom.types"
 import {AchievementCard} from "@/lib/client/components/achievements/AchievementCard";
 import {AchievementBadge} from "@/lib/client/components/achievements/AchievementBadge";
 import {AchievementSummary} from "@/lib/client/components/achievements/AchievementSummary";
-import {useTogglePinnedAchievementMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {Award, Check, Compass, Eye, EyeOff, Gamepad2, LayoutGrid, Lock, Pin, Target, Trophy, Users} from "lucide-react";
+import {toggleAchievementSoundMuted, useAchievementSoundMuted} from "@/lib/client/achievements/achievement-toasts";
+import {
+    useReorderPinnedAchievementsMutation,
+    useTogglePinnedAchievementMutation,
+} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {Award, Check, Compass, Eye, EyeOff, Gamepad2, LayoutGrid, Lock, Pin, Target, Trophy, Users, Volume2, VolumeX} from "lucide-react";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {ACHIEVEMENT_CATEGORY_LABELS, isMediaAchievementCategory, isRareAchievement, NON_MEDIA_ACHIEVEMENT_CATEGORIES} from "@/lib/utils/achievements";
+import {
+    ACHIEVEMENT_CATEGORY_LABELS,
+    getRaritySortValue,
+    isMediaAchievementCategory,
+    isRareAchievement,
+    NON_MEDIA_ACHIEVEMENT_CATEGORIES,
+} from "@/lib/utils/achievements";
 
 
 type CategoryFilter = "all" | AchievementCategory;
@@ -71,19 +81,23 @@ function getCategoryIcon(category: CategoryFilter) {
     if (category === AchievementCategory.MINIGAMES) return <Gamepad2 className="size-3.5 text-series"/>;
     if (category === AchievementCategory.COMMUNITY) return <Users className="size-3.5 text-info"/>;
 
-    return <Lock className="size-3.5 text-brand"/>;
+    return <Lock className="size-3.5 text-fuchsia-600 dark:text-fuchsia-400"/>;
 }
 
 
-function sortAchievements(list: AchCard[], sortMode: SortMode) {
+function sortAchievements(list: AchCard[], sortMode: SortMode, pinnedIndex?: Map<string, number>) {
     return [...list].sort((a, b) => {
+        if (sortMode === "default" && pinnedIndex) {
+            return (pinnedIndex.get(a.codeName) ?? Number.MAX_SAFE_INTEGER) - (pinnedIndex.get(b.codeName) ?? Number.MAX_SAFE_INTEGER);
+        }
+
         if (sortMode === "closest") {
             if (a.completed !== b.completed) return a.completed ? 1 : -1;
-            return b.progress - a.progress || (a.rarity ?? 100) - (b.rarity ?? 100);
+            return b.progress - a.progress || getRaritySortValue(a.rarity) - getRaritySortValue(b.rarity);
         }
 
         if (sortMode === "rarest") {
-            return (a.rarity ?? 100) - (b.rarity ?? 100) || a.sortOrder - b.sortOrder;
+            return getRaritySortValue(a.rarity) - getRaritySortValue(b.rarity) || a.sortOrder - b.sortOrder;
         }
 
         if (sortMode === "common") {
@@ -106,13 +120,17 @@ function buildOrderedAchievements(params: {
     search: string;
     items: AchCard[];
     sortMode: SortMode;
-    pinnedSet: Set<string>;
+    pinnedCodeNames: string[];
     category: CategoryFilter;
     revealAllSecrets: boolean;
     statusFilter: StatusFilter;
     availableCategories: AchievementCategory[];
 }) {
-    const { items, availableCategories, pinnedSet, category, statusFilter, sortMode, search, revealAllSecrets } = params;
+    const { items, availableCategories, pinnedCodeNames, category, statusFilter, sortMode, search, revealAllSecrets } = params;
+    const pinnedSet = new Set(pinnedCodeNames);
+    const pinnedIndex = statusFilter === "pinned"
+        ? new Map(pinnedCodeNames.map((code, index) => [code, index]))
+        : undefined;
 
     const query = search.trim().toLowerCase();
     const categoryItems = items.filter((item) => category === "all" || item.category === category);
@@ -147,7 +165,7 @@ function buildOrderedAchievements(params: {
         };
     }
 
-    const sorted = sortAchievements(filteredItems, sortMode);
+    const sorted = sortAchievements(filteredItems, sortMode, pinnedIndex);
     const shouldSplitHiddenFlat = sortMode === "default" && statusFilter !== "unlocked" && statusFilter !== "pinned";
 
     if (!shouldSplitHiddenFlat) {
@@ -175,6 +193,8 @@ function AchievementPage() {
     const { activeTab } = Route.useSearch();
     const { achievementQueryOptions } = Route.useRouteContext();
     const togglePin = useTogglePinnedAchievementMutation(username);
+    const reorderPins = useReorderPinnedAchievementsMutation(username);
+    const soundMuted = useAchievementSoundMuted();
     const apiData = useSuspenseQuery(achievementQueryOptions).data;
     const locationHash = useLocation({ select: (loc) => loc.hash });
 
@@ -191,6 +211,7 @@ function AchievementPage() {
     const perfectSet = new Set(apiData.summary.perfectCategories);
     const pinnedSet = new Set(apiData.pinnedCodeNames);
     const canCompare = apiData.items.some((item) => item.viewerProgress !== null);
+    const pinMutationPending = togglePin.isPending || reorderPins.isPending;
 
     const availableCategories: AchievementCategory[] = [
         ...apiData.userActivatedMediaTypes,
@@ -208,7 +229,7 @@ function AchievementPage() {
     const { orderedItems, shouldGroupByCategory, shouldSplitHiddenFlat } = buildOrderedAchievements({
         items: apiData.items,
         availableCategories,
-        pinnedSet,
+        pinnedCodeNames: apiData.pinnedCodeNames,
         category: currentCategory,
         statusFilter,
         sortMode: effectiveSortMode,
@@ -216,9 +237,32 @@ function AchievementPage() {
         revealAllSecrets,
     });
 
-    const totalPages = Math.max(1, Math.ceil(orderedItems.length / PAGE_SIZE));
+    const totalPages = shouldGroupByCategory ? 1 : Math.max(1, Math.ceil(orderedItems.length / PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
-    const pageItems = orderedItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+    const pageItems = shouldGroupByCategory
+        ? orderedItems
+        : orderedItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+    const latestNavContextRef = useRef({
+        items: apiData.items,
+        availableCategories,
+        pinnedCodeNames: apiData.pinnedCodeNames,
+        currentCategory,
+        statusFilter,
+        effectiveSortMode,
+        search,
+        revealAllSecrets,
+    });
+    latestNavContextRef.current = {
+        items: apiData.items,
+        availableCategories,
+        pinnedCodeNames: apiData.pinnedCodeNames,
+        currentCategory,
+        statusFilter,
+        effectiveSortMode,
+        search,
+        revealAllSecrets,
+    };
 
     // Handle hash navigation (e.g. from Profile Showcase or Live Unlock Toast)
     useEffect(() => {
@@ -227,8 +271,33 @@ function AchievementPage() {
         const codeName = cleanHash.slice(4);
         const frame = requestAnimationFrame(() => {
             const el = document.getElementById(`ach-${codeName}`);
-            if (!el) return;
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                setHighlight((prev) => ({ code: codeName, seq: (prev?.seq ?? 0) + 1 }));
+                return;
+            }
+
+            const ctx = latestNavContextRef.current;
+            const target = ctx.items.find((item) => item.codeName === codeName);
+            if (!target) return;
+
+            if (ctx.search) setSearch("");
+            if (ctx.statusFilter !== "all") setStatusFilter("all");
+
+            const nextOrdered = buildOrderedAchievements({
+                items: ctx.items,
+                availableCategories: ctx.availableCategories,
+                pinnedCodeNames: ctx.pinnedCodeNames,
+                category: ctx.currentCategory,
+                statusFilter: "all",
+                sortMode: ctx.effectiveSortMode,
+                search: "",
+                revealAllSecrets: ctx.revealAllSecrets,
+            });
+            const idx = nextOrdered.orderedItems.findIndex((item) => item.codeName === codeName);
+            setPage(nextOrdered.shouldGroupByCategory || idx < 0 ? 1 : Math.floor(idx / PAGE_SIZE) + 1);
+
+            pendingScrollCodeRef.current = codeName;
             setHighlight((prev) => ({ code: codeName, seq: (prev?.seq ?? 0) + 1 }));
         });
         return () => cancelAnimationFrame(frame);
@@ -299,21 +368,33 @@ function AchievementPage() {
             });
         }
 
-        const { orderedItems: nextOrdered } = buildOrderedAchievements({
+        const nextOrdered = buildOrderedAchievements({
             items: apiData.items,
             availableCategories,
-            pinnedSet,
+            pinnedCodeNames: apiData.pinnedCodeNames,
             category: nextCategory,
             statusFilter: nextStatus,
             sortMode: nextSort,
             search: "",
             revealAllSecrets,
         });
-        const idx = nextOrdered.findIndex((item) => item.codeName === codeName);
-        setPage(idx >= 0 ? Math.floor(idx / PAGE_SIZE) + 1 : 1);
+        const idx = nextOrdered.orderedItems.findIndex((item) => item.codeName === codeName);
+        setPage(nextOrdered.shouldGroupByCategory || idx < 0 ? 1 : Math.floor(idx / PAGE_SIZE) + 1);
 
         pendingScrollCodeRef.current = codeName;
         setHighlight((prev) => ({ code: codeName, seq: (prev?.seq ?? 0) + 1 }));
+    };
+
+    const handleMovePin = (codeName: string, direction: "prev" | "next") => {
+        const currentIndex = apiData.pinnedCodeNames.indexOf(codeName);
+        if (currentIndex < 0) return;
+
+        const targetIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
+        if (targetIndex < 0 || targetIndex >= apiData.pinnedCodeNames.length) return;
+
+        const nextOrder = [...apiData.pinnedCodeNames];
+        [nextOrder[currentIndex], nextOrder[targetIndex]] = [nextOrder[targetIndex], nextOrder[currentIndex]];
+        reorderPins.mutate(nextOrder);
     };
 
     // Global Next Up strip (above the filter toolbar, never shifts or disappears when filtering)
@@ -569,6 +650,18 @@ function AchievementPage() {
                             {revealAllSecrets ? "Hide spoilers" : `Spoilers (${visibleHiddenLockedCount})`}
                         </button>
                     )}
+
+                    {apiData.isOwner && (
+                        <button
+                            type="button"
+                            onClick={() => toggleAchievementSoundMuted()}
+                            title={soundMuted ? "Unlock sound muted — click to unmute" : "Mute achievement unlock sound"}
+                            aria-label={soundMuted ? "Unmute achievement unlock sound" : "Mute achievement unlock sound"}
+                            className="inline-flex items-center justify-center rounded-lg border p-1.5 text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+                        >
+                            {soundMuted ? <VolumeX className="size-4"/> : <Volume2 className="size-4"/>}
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -633,7 +726,7 @@ function AchievementPage() {
                                             isOwner={apiData.isOwner}
                                             compareMode={compareMode}
                                             revealAllSecrets={revealAllSecrets}
-                                            pinPending={togglePin.isPending}
+                                            pinPending={pinMutationPending}
                                             highlighted={highlight?.code === achievement.codeName}
                                             isPinned={pinnedSet.has(achievement.codeName)}
                                             onTogglePin={(codeName) => togglePin.mutate(codeName)}
@@ -648,7 +741,7 @@ function AchievementPage() {
                         <section aria-label="Secret achievements">
                             <div className={cn("mb-3.5 flex items-center justify-between gap-3", groupedCategories.length > 0 && "border-t pt-6")}>
                                 <div className="flex items-center gap-2">
-                                    <Lock className="size-3.5 text-brand"/>
+                                    <Lock className="size-3.5 text-fuchsia-600 dark:text-fuchsia-400"/>
                                     <span className="text-sm font-semibold tracking-tight text-foreground">
                                         Secrets
                                     </span>
@@ -665,7 +758,7 @@ function AchievementPage() {
                                         isOwner={apiData.isOwner}
                                         compareMode={compareMode}
                                         revealAllSecrets={revealAllSecrets}
-                                        pinPending={togglePin.isPending}
+                                        pinPending={pinMutationPending}
                                         highlighted={highlight?.code === achievement.codeName}
                                         isPinned={pinnedSet.has(achievement.codeName)}
                                         onTogglePin={(codeName) => togglePin.mutate(codeName)}
@@ -679,27 +772,35 @@ function AchievementPage() {
                 <div className="mt-5">
                     {flatMainItems.length > 0 && (
                         <div className="grid grid-cols-2 gap-3.5 max-md:grid-cols-1">
-                            {flatMainItems.map((achievement) => (
-                                <AchievementCard
-                                    key={achievement.id}
-                                    achievement={achievement}
-                                    isOwner={apiData.isOwner}
-                                    compareMode={compareMode}
-                                    showCategory={currentCategory === "all"}
-                                    revealAllSecrets={revealAllSecrets}
-                                    pinPending={togglePin.isPending}
-                                    highlighted={highlight?.code === achievement.codeName}
-                                    isPinned={pinnedSet.has(achievement.codeName)}
-                                    onTogglePin={(codeName) => togglePin.mutate(codeName)}
-                                />
-                            ))}
+                            {flatMainItems.map((achievement) => {
+                                const pinnedPos = apiData.pinnedCodeNames.indexOf(achievement.codeName);
+                                const allowReorder = statusFilter === "pinned" && effectiveSortMode === "default" && !query && pinnedPos >= 0;
+
+                                return (
+                                    <AchievementCard
+                                        key={achievement.id}
+                                        achievement={achievement}
+                                        isOwner={apiData.isOwner}
+                                        compareMode={compareMode}
+                                        showCategory={currentCategory === "all"}
+                                        revealAllSecrets={revealAllSecrets}
+                                        pinPending={pinMutationPending}
+                                        highlighted={highlight?.code === achievement.codeName}
+                                        isPinned={pinnedSet.has(achievement.codeName)}
+                                        canMovePrev={allowReorder && pinnedPos > 0}
+                                        canMoveNext={allowReorder && pinnedPos < apiData.pinnedCodeNames.length - 1}
+                                        onTogglePin={(codeName) => togglePin.mutate(codeName)}
+                                        onMovePin={allowReorder ? (dir) => handleMovePin(achievement.codeName, dir) : undefined}
+                                    />
+                                );
+                            })}
                         </div>
                     )}
 
                     {flatHiddenItems.length > 0 && (
                         <section aria-label="Hidden achievements" className={cn(flatMainItems.length > 0 && "mt-7")}>
                             <div className="mb-3 flex items-center gap-2 border-t pt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                                <Lock className="size-3.5 text-brand"/>
+                                <Lock className="size-3.5 text-fuchsia-600 dark:text-fuchsia-400"/>
                                 {flatHiddenItems.length} hidden {flatHiddenItems.length === 1 ? "achievement" : "achievements"} remaining
                             </div>
                             <div className="grid grid-cols-2 gap-3.5 max-md:grid-cols-1">

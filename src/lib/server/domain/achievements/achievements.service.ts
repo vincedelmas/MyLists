@@ -3,8 +3,8 @@ import {AchievementCategory, MediaType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import type {MediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {PROFILE_MAX_PINNED_ACHIEVEMENTS} from "@/lib/types/profile-custom.types";
-import {isRareAchievement, ULTRA_RARE_RARITY_THRESHOLD} from "@/lib/utils/achievements";
-import {AchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
+import {getRaritySortValue, isRareAchievement, ULTRA_RARE_RARITY_THRESHOLD} from "@/lib/utils/achievements";
+import {AchievementCalculation, AchievementCalculationRow, AchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {createAppAchievementCatalogs} from "@/lib/server/domain/achievements/app-achievements.catalog";
 import type {
@@ -54,13 +54,18 @@ export class AchievementsService {
         if (!catalog) return { processed: 0, total: 0 };
 
         const achievements = this.repository.getAchievementsByCategories([category]);
+        const calcCache = new Map<AchievementCalculation, AchievementCalculationRow[]>();
         let processed = 0;
 
         for (const ach of achievements) {
-            if (!catalog.hasCalculation(ach.codeName)) continue;
+            const calculator = catalog.getCalculator(ach.codeName);
+            if (!calculator) continue;
 
-            const rows = catalog.calculate(ach.codeName);
-            if (!rows) continue;
+            let rows = calcCache.get(calculator);
+            if (!rows) {
+                rows = calculator();
+                calcCache.set(calculator, rows);
+            }
 
             withTransaction(() => this.repository.upsertAchievementProgress(ach, rows));
             processed += 1;
@@ -84,18 +89,30 @@ export class AchievementsService {
             if (achievements.length === 0) return [];
 
             const alreadyCompletedIds = this.repository.getUserCompletedAchievementIds(userId);
+            const calcCache = new Map<AchievementCalculation, AchievementCalculationRow[]>();
+            const evaluations: Array<{ ach: Achievement; rows: AchievementCalculationRow[] }> = [];
+
+            for (const ach of achievements) {
+                if (alreadyCompletedIds.has(ach.id)) continue;
+
+                const catalog = this.catalogsByCategory.get(ach.category);
+                const calculator = catalog?.getCalculator(ach.codeName);
+                if (!calculator) continue;
+
+                let rows = calcCache.get(calculator);
+                if (!rows) {
+                    rows = calculator(userId);
+                    calcCache.set(calculator, rows);
+                }
+
+                evaluations.push({ ach, rows });
+            }
+
+            if (evaluations.length === 0) return [];
+
             const newlyUnlocked: UnlockedAchievementToast[] = [];
-
             withTransaction(() => {
-                for (const ach of achievements) {
-                    if (alreadyCompletedIds.has(ach.id)) continue;
-
-                    const catalog = this.catalogsByCategory.get(ach.category);
-                    if (!catalog || !catalog.hasCalculation(ach.codeName)) continue;
-
-                    const rows = catalog.calculate(ach.codeName, userId);
-                    if (!rows) continue;
-
+                for (const { ach, rows } of evaluations) {
                     const unlocked = this.repository.upsertAchievementProgress(ach, rows, userId);
                     newlyUnlocked.push(...unlocked);
                 }
@@ -144,14 +161,13 @@ export class AchievementsService {
             .slice(0, PROFILE_MAX_PINNED_ACHIEVEMENTS);
 
         const rarestItems = [...unlockedItems]
-            .sort((a, b) => (a.rarity ?? 100) - (b.rarity ?? 100) || b.completedAt.localeCompare(a.completedAt))
+            .sort((a, b) => getRaritySortValue(a.rarity) - getRaritySortValue(b.rarity) || b.completedAt.localeCompare(a.completedAt))
             .slice(0, PROFILE_MAX_PINNED_ACHIEVEMENTS);
 
         return {
             perfectCategories,
             totalAvailable: allItems.length,
             totalUnlocked: unlockedItems.length,
-            recent: unlockedItems.slice(0, 3),
             mode: pinnedItems.length > 0 ? "pinned" : "rarest",
             items: pinnedItems.length > 0 ? pinnedItems : rarestItems,
             rareUnlocked: unlockedItems.filter((item) => isRareAchievement(item.rarity)).length,
@@ -163,13 +179,16 @@ export class AchievementsService {
         const perfectCategories = computePerfectCategories(items);
 
         const unlocked = items.filter((item) => item.completed);
+        const unlockedCodeSet = new Set(unlocked.map((item) => item.codeName));
+        const visiblePinnedCodeNames = pinnedCodeNames.filter((code) => unlockedCodeSet.has(code));
         const rareUnlocked = unlocked.filter((item) => isRareAchievement(item.rarity)).length;
 
         const ultraRareUnlocked = unlocked.filter((item) => item.rarity !== null && item.rarity > 0
             && item.rarity < ULTRA_RARE_RARITY_THRESHOLD).length;
 
         const rarestUnlocked = [...unlocked]
-            .sort((a, b) => (a.rarity ?? 100) - (b.rarity ?? 100))[0] ?? null;
+            .sort((a, b) => getRaritySortValue(a.rarity) - getRaritySortValue(b.rarity)
+                || (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))[0] ?? null;
 
         const viewerProgressMap = viewerUserId && viewerUserId !== targetUserId
             ? this.repository.getUserProgressMap(viewerUserId)
@@ -191,7 +210,7 @@ export class AchievementsService {
         });
 
         return {
-            pinnedCodeNames,
+            pinnedCodeNames: visiblePinnedCodeNames,
             items: itemsWithComparison,
             summary: {
                 rareUnlocked,

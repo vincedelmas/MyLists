@@ -158,14 +158,14 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 target: 2,
                 calculate: longManga,
             },
-            manga_seinen_6: {
-                name: "Sophisticated Weeb",
-                description: "Complete 6 Seinen manga. Existential crises build character.",
+            manga_genres_6: {
+                name: "Genre Collector",
+                description: "Complete manga across 6 different genres, from quiet slice-of-life to epic battles.",
                 icon: "katana",
                 shape: "hex",
                 pattern: "dots",
                 target: 6,
-                calculate: queries.countCompletedGenre("Seinen"),
+                calculate: queries.countDistinctGenres(),
             },
         },
     });

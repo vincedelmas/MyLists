@@ -1,5 +1,5 @@
 import {Status} from "@/lib/utils/enums";
-import {and, count, eq, isNotNull, ne, SQL} from "drizzle-orm";
+import {and, count, countDistinct, eq, isNotNull, ne, SQL} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import type {AchievementCalculation, AchievementCalculationRow} from "@/lib/server/domain/achievements/achievement-catalog";
@@ -21,6 +21,24 @@ export function pickTopPerUser(rows: { userId: number; label: string | null; cou
 }
 
 
+export function summarizeLabeledRows(rows: { userId: number; label: string | null }[]): AchievementCalculationRow[] {
+    const byUser = new Map<number, AchievementCalculationRow>();
+
+    for (const row of rows) {
+        const existing = byUser.get(row.userId);
+        if (!existing) {
+            byUser.set(row.userId, { userId: row.userId, value: 1, label: row.label });
+        }
+        else {
+            existing.value += 1;
+            if (!existing.label && row.label) existing.label = row.label;
+        }
+    }
+
+    return [...byUser.values()];
+}
+
+
 export const createAchievementQueries = <T extends AnyMediaRepositoryDefinition>(definition: T) => {
     const { mediaTable, listTable, genreTable } = definition.tables;
 
@@ -37,19 +55,16 @@ export const createAchievementQueries = <T extends AnyMediaRepositoryDefinition>
             .all();
     };
 
-    const countCompletedGenre = (genreName: string): AchievementCalculation => (userId) => {
+    const countDistinctGenres = (statusCondition: SQL = eq(listTable.status, Status.COMPLETED)): AchievementCalculation => (userId) => {
         return getDbClient()
             .select({
                 userId: listTable.userId,
-                value: count(listTable.mediaId),
+                value: countDistinct(genreTable.name),
             }).from(listTable)
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
             .innerJoin(genreTable, eq(mediaTable.id, genreTable.mediaId))
-            .where(and(
-                eq(listTable.status, Status.COMPLETED),
-                eq(genreTable.name, genreName),
-                userFilter(userId),
-            )).groupBy(listTable.userId)
+            .where(and(statusCondition, userFilter(userId)))
+            .groupBy(listTable.userId)
             .all();
     };
 
@@ -58,7 +73,7 @@ export const createAchievementQueries = <T extends AnyMediaRepositoryDefinition>
     return {
         countList,
         userFilter,
-        countCompletedGenre,
+        countDistinctGenres,
         countNonEmptyComment,
     };
 };

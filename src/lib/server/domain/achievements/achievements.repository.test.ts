@@ -4,7 +4,7 @@ import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type SQLiteBunDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {AchievementCategory, MediaType, Status} from "@/lib/utils/enums";
+import {AchievementCategory, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {AchievementsRepository} from "./achievements.repository";
 import {AchievementsService} from "./achievements.service";
 import {setupMediaModule} from "@/lib/server/core/container/media.module";
@@ -229,5 +229,111 @@ describe("flat achievements & permanent unlocks", () => {
         const pageData = service.getUserAchievementsPageData(1, 2);
         expect(pageData.summary.totalUnlocked).toBeGreaterThanOrEqual(2);
         expect(pageData.items.every((item) => item.viewerProgress !== null)).toBe(true);
+    });
+
+    it("prefers positive rarity over 0% for rarest trophy/showcase, excludes disabled media from secrets, and avoids backlog false positives", () => {
+        const mediaModule = setupMediaModule();
+        const service = new AchievementsService(AchievementsRepository, mediaModule.registries.mediaAchievements);
+        service.seedAllAchievements();
+
+        // Add an old movie completed on day 1 and edited 2 years later -> must NOT unlock secret_backlog_slayer
+        dbContext.db.insert(schema.movies).values([
+            {
+                id: 20,
+                apiId: 20,
+                name: "Day One Movie",
+                duration: 120,
+                releaseDate: "2026-05-01",
+                imageCover: "m20.jpg",
+            },
+            {
+                id: 21,
+                apiId: 21,
+                name: "Backlog Movie",
+                duration: 110,
+                releaseDate: "2020-01-01",
+                imageCover: "m21.jpg",
+            },
+        ]).run();
+
+        dbContext.db.insert(schema.moviesList).values([
+            {
+                id: 20,
+                userId: 1,
+                mediaId: 20,
+                status: Status.COMPLETED,
+                rating: 10,
+                favorite: true,
+                redo: 3,
+                comment: "Absolute cinema",
+                addedAt: "2024-01-01 10:00:00",
+                lastUpdated: "2026-05-02 10:00:00",
+            },
+            // User 3 has Movies DISABLED: must NOT unlock secret_harsh_critic
+            {
+                id: 21,
+                userId: 3,
+                mediaId: 21,
+                status: Status.COMPLETED,
+                rating: 1,
+                comment: "Terrible",
+                addedAt: "2024-01-01 10:00:00",
+                lastUpdated: "2026-05-02 10:00:00",
+            },
+        ]).run();
+
+        dbContext.db.insert(schema.userMediaUpdate).values({
+            userId: 1,
+            mediaId: 20,
+            mediaName: "Day One Movie",
+            mediaType: MediaType.MOVIES,
+            updateType: UpdateType.STATUS,
+            payload: { old_value: null, new_value: Status.COMPLETED },
+            timestamp: "2026-05-02 18:00:00",
+        }).run();
+
+        const user1Unlocks = service.evaluateUserCategories(1, [AchievementCategory.MOVIES, AchievementCategory.SECRETS]).map((a) => a.codeName);
+        expect(user1Unlocks).toContain("secret_love_letter");
+        expect(user1Unlocks).toContain("secret_superfan");
+        expect(user1Unlocks).toContain("secret_day_one");
+        expect(user1Unlocks).not.toContain("secret_backlog_slayer");
+
+        const user3Unlocks = service.evaluateUserCategories(3, [AchievementCategory.SECRETS]).map((a) => a.codeName);
+        expect(user3Unlocks).not.toContain("secret_harsh_critic");
+
+        // Now complete a title that actually transitioned from Planned -> Completed after 365+ days
+        dbContext.db.insert(schema.moviesList).values({
+            id: 22,
+            userId: 1,
+            mediaId: 21,
+            status: Status.COMPLETED,
+            addedAt: "2024-01-01 10:00:00",
+            lastUpdated: "2026-05-02 10:00:00",
+        }).run();
+        dbContext.db.insert(schema.userMediaUpdate).values({
+            userId: 1,
+            mediaId: 21,
+            mediaName: "Backlog Movie",
+            mediaType: MediaType.MOVIES,
+            updateType: UpdateType.STATUS,
+            payload: { old_value: Status.PLANNED, new_value: Status.COMPLETED },
+            timestamp: "2026-05-02 10:00:00",
+        }).run();
+
+        const backlogUnlock = service.evaluateUserCategories(1, [AchievementCategory.SECRETS]);
+        expect(backlogUnlock.map((a) => a.codeName)).toContain("secret_backlog_slayer");
+        expect(backlogUnlock.find((a) => a.codeName === "secret_backlog_slayer")?.metadata).toEqual({ label: "Backlog Movie" });
+
+        // Set one unlocked achievement to rarity 0% and another to 1.5% -> 1.5% MUST win as rarest
+        dbContext.db.update(schema.achievement).set({ rarity: 0 }).where(eq(schema.achievement.codeName, "secret_superfan")).run();
+        dbContext.db.update(schema.achievement).set({ rarity: 1.5 }).where(eq(schema.achievement.codeName, "secret_day_one")).run();
+        dbContext.db.update(schema.achievement).set({ rarity: 25 }).where(eq(schema.achievement.codeName, "secret_love_letter")).run();
+
+        const pageData = service.getUserAchievementsPageData(1, undefined, ["secret_day_one", "nonexistent_disabled"]);
+        expect(pageData.summary.rarestUnlocked?.name).toBe("Day One Fan");
+        expect(pageData.pinnedCodeNames).toEqual(["secret_day_one"]);
+
+        const showcase = service.getProfileShowcase(1, []);
+        expect(showcase.items[0]?.codeName).toBe("secret_day_one");
     });
 });

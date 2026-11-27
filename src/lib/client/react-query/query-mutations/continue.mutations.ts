@@ -6,6 +6,7 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {getContinueMedia, postContinueMedia} from "@/lib/server/functions/continue";
+import {maybeTriggerNightOwl} from "@/lib/client/achievements/achievement-toasts";
 import {historyOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import type {ContinueItem, continueOptions} from "@/lib/client/react-query/query-options/continue.options";
 import {invalidateUserProgressQueries, userMediaEditKey} from "@/lib/client/react-query/query-mutations/user-media-cache";
@@ -24,6 +25,7 @@ export const useContinueMediaMutation = ({ mediaType, mediaId, mediaName }: Cont
         },
         onSuccess: async ({ item, completed }) => {
             captureEvent("media_updated", { media_type: mediaType, source: "continue" });
+            maybeTriggerNightOwl(queryClient, currentUser?.id);
             const queryKey = ["continue", currentUser!.name];
 
             // Refetching started during save must not overwrite result

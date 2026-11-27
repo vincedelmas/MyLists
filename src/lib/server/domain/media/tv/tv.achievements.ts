@@ -1,6 +1,6 @@
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AchievementCategory, MediaType, Status} from "@/lib/utils/enums";
-import {and, count, countDistinct, eq, gt, gte, isNotNull, lte, ne} from "drizzle-orm";
+import {and, count, countDistinct, eq, gt, gte, isNotNull, lte, ne, sql} from "drizzle-orm";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {createAchievementQueries, pickTopPerUser} from "@/lib/server/domain/media/base/achievements-queries";
@@ -70,6 +70,18 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
             .all();
 
         return pickTopPerUser(rows);
+    };
+
+    const episodesWatched: AchievementCalculation = (userId) => {
+        return getDbClient()
+            .select({
+                userId: listTable.userId,
+                value: sql<number>`COALESCE(SUM(${listTable.total}), 0)`,
+            })
+            .from(listTable)
+            .where(queries.userFilter(userId))
+            .groupBy(listTable.userId)
+            .all();
     };
 
     if (identity.mediaType === MediaType.ANIME) {
@@ -149,23 +161,23 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     target: 3,
                     calculate: longShows(150),
                 },
-                anime_shonen_15: {
-                    name: "Shonen Showdown",
-                    description: "Complete 15 Shounen anime, because power-ups and friendship speeches never get old.",
+                anime_genres_8: {
+                    name: "Seasonal Explorer",
+                    description: "Complete anime across 8 different genres. From slice-of-life to mecha and beyond.",
                     icon: "punch",
                     shape: "hex",
                     pattern: "rays",
-                    target: 15,
-                    calculate: queries.countCompletedGenre("Shounen"),
-                },
-                anime_seinen_8: {
-                    name: "Seinen Sage",
-                    description: "Complete 8 Seinen anime. Too deep into complex plots for ordinary slice-of-life.",
-                    icon: "katana",
-                    shape: "hex",
-                    pattern: "dots",
                     target: 8,
-                    calculate: queries.countCompletedGenre("Seinen"),
+                    calculate: queries.countDistinctGenres(),
+                },
+                anime_episodes_1000: {
+                    name: "One Thousand Episodes",
+                    description: "Watch 1,000 anime episodes across your library.",
+                    icon: "katana",
+                    shape: "octagon",
+                    pattern: "rings",
+                    target: 1000,
+                    calculate: episodesWatched,
                 },
             },
         });
@@ -256,14 +268,14 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 target: 20,
                 calculate: networks,
             },
-            series_drama_25: {
-                name: "Drama Queen",
-                description: "Complete 25 Drama series, embracing every emotional roller-coaster.",
+            series_genres_8: {
+                name: "Prime Time Variety",
+                description: "Complete TV series across 8 different genres. Every slot on the schedule covered.",
                 icon: "sparkles",
                 shape: "hex",
                 pattern: "dots",
-                target: 25,
-                calculate: queries.countCompletedGenre("Drama"),
+                target: 8,
+                calculate: queries.countDistinctGenres(),
             },
         },
     });

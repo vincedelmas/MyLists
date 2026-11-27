@@ -71,6 +71,10 @@ export type AchievementIconKey =
     | "brain"
     | "bullseye"
     | "medal"
+    | "broken-heart"
+    | "rocket"
+    | "love-letter"
+    | "infinity"
     | "question";
 
 
@@ -80,10 +84,9 @@ export type AchievementMetadata = {
 
 
 export const CLIENT_EVENT_ACHIEVEMENT_CODES = [
-    "secret_about_page",
-    "secret_taste_matches",
     "secret_privacy_policy",
     "secret_command_palette",
+    "secret_night_owl",
 ] as const;
 export type ClientEventAchievementCode = (typeof CLIENT_EVENT_ACHIEVEMENT_CODES)[number];
 
@@ -167,7 +170,6 @@ export type ProfileAchievementsShowcase = {
     totalAvailable: number;
     mode: "pinned" | "rarest";
     items: ProfileAchievementItem[];
-    recent: ProfileAchievementItem[];
     perfectCategories: AchievementCategory[];
 };
 

@@ -1,7 +1,7 @@
 import {AchievementCategory, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {booksAuthors, booksList} from "@/lib/server/database/schema";
-import {and, count, countDistinct, eq, gt, gte, isNotNull, lte, ne} from "drizzle-orm";
+import {and, count, eq, gt, gte, isNotNull, lte, sql} from "drizzle-orm";
 import {BookServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {createAchievementQueries, pickTopPerUser} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
@@ -54,18 +54,14 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
         return pickTopPerUser(rows);
     };
 
-    const languages: AchievementCalculation = (userId) => {
+    const pagesRead: AchievementCalculation = (userId) => {
         return getDbClient()
             .select({
                 userId: booksList.userId,
-                value: countDistinct(booksList.customLanguage),
+                value: sql<number>`COALESCE(SUM(${booksList.total}), 0)`,
             }).from(booksList)
-            .where(and(
-                eq(booksList.status, Status.COMPLETED),
-                isNotNull(booksList.customLanguage),
-                ne(booksList.customLanguage, ""),
-                queries.userFilter(userId),
-            )).groupBy(booksList.userId)
+            .where(queries.userFilter(userId))
+            .groupBy(booksList.userId)
             .all();
     };
 
@@ -127,14 +123,14 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 target: 5,
                 calculate: authors,
             },
-            books_languages_2: {
-                name: "Linguistic Explorer",
-                description: "Complete books in 2 different languages.",
-                icon: "globe",
-                shape: "hex",
+            books_pages_10000: {
+                name: "Ten Thousand Pages",
+                description: "Read 10,000 total pages across your book library.",
+                icon: "scroll",
+                shape: "octagon",
                 pattern: "rings",
-                target: 2,
-                calculate: languages,
+                target: 10000,
+                calculate: pagesRead,
             },
             books_short_5: {
                 name: "Quick Read Guru",
@@ -147,21 +143,21 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
             },
             books_long_3: {
                 name: "Doorstopper",
-                description: "Complete 3 books over 800 pages. True literary stamina.",
+                description: "Complete 3 books of 800+ pages. True literary stamina.",
                 icon: "spell-book",
                 shape: "octagon",
                 pattern: "rays",
                 target: 3,
                 calculate: longBooks,
             },
-            books_fantasy_8: {
-                name: "Fantasy Realm Adventurer",
-                description: "Complete 8 Fantasy books. Enchanted lands, quests, and all.",
+            books_genres_6: {
+                name: "Genre Wanderer",
+                description: "Complete books across 6 different genres. Every shelf in the library explored.",
                 icon: "dragon",
                 shape: "hex",
                 pattern: "rays",
-                target: 8,
-                calculate: queries.countCompletedGenre("Fantasy"),
+                target: 6,
+                calculate: queries.countDistinctGenres(),
             },
         },
     });

@@ -8,6 +8,7 @@ import {formatMonthYear} from "@/lib/utils/formatting/date";
 import {toActivityDisplayValue} from "@/lib/utils/media/activity";
 import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
 import {postUpdateUserBookDetails} from "@/lib/server/functions/books";
+import {maybeTriggerNightOwl} from "@/lib/client/achievements/achievement-toasts";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {tvSeasonsOptions} from "@/lib/client/react-query/query-options/tv-seasons.options";
@@ -102,6 +103,7 @@ export const useAddMediaToListMutation = (source: "details" | "quick_add" = "det
         meta: { successToastMessage: "Media added to your list!" },
         onSuccess: async (data, variables) => {
             captureEvent("media_added", { media_type: variables.data.mediaType, source });
+            maybeTriggerNightOwl(queryClient, currentUser?.id);
             await createUserMediaCache(queryClient, currentUser!.name, variables.data.mediaType, data.mediaId).add();
 
             await Promise.all([
@@ -207,6 +209,7 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
             if (!data) return;
 
             captureEvent("media_updated", { media_type: mediaType, source: options.source ?? "details" });
+            maybeTriggerNightOwl(queryClient, currentUser?.id);
 
             const { payload } = variables;
             const activityUpdate = loggedActivityUpdateTypes.has(payload.type);

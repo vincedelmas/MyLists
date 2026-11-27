@@ -44,16 +44,10 @@ export const defineAchievementCatalog = <
         category,
         mediaType,
         definitions,
-        hasCalculation(codeName: string) {
-            return Boolean(entries[codeName]?.calculate);
-        },
-        calculate(codeName: string, userId?: number): AchievementCalculationRow[] | null {
+        getCalculator(codeName: string): AchievementCalculation | null {
             const entry = entries[codeName];
-
             if (!entry) throw new Error(`Invalid achievement codeName: ${codeName}`);
-            if (!entry.calculate) return null;
-
-            return entry.calculate(userId);
+            return entry.calculate ?? null;
         },
     };
 };

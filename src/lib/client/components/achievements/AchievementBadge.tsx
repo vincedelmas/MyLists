@@ -109,7 +109,7 @@ export function AchievementBadge({
     const sizeSpec = SIZE_CLASSES[size];
 
     const iconColor = !unlocked
-        ? "#52525b"
+        ? "var(--muted-foreground)"
         : isUltra
             ? "#f0f9ff"
             : isRare
@@ -150,8 +150,8 @@ export function AchievementBadge({
                         </linearGradient>
                     ) : !unlocked ? (
                         <linearGradient id={`rim-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#3c3c42"/>
-                            <stop offset="100%" stopColor="#232327"/>
+                            <stop offset="0%" style={{ stopColor: "var(--muted-foreground)" }} stopOpacity="0.45"/>
+                            <stop offset="100%" style={{ stopColor: "var(--border)" }}/>
                         </linearGradient>
                     ) : (
                         <linearGradient id={`rim-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -162,8 +162,8 @@ export function AchievementBadge({
 
                     {!unlocked ? (
                         <radialGradient id={`bg-${uid}`} cx="50%" cy="40%" r="70%">
-                            <stop offset="0%" stopColor="#1e1e22"/>
-                            <stop offset="100%" stopColor="#111114"/>
+                            <stop offset="0%" style={{ stopColor: "var(--card)" }}/>
+                            <stop offset="100%" style={{ stopColor: "var(--muted)" }}/>
                         </radialGradient>
                     ) : isUltra ? (
                         <radialGradient id={`bg-${uid}`} cx="32%" cy="20%" r="80%">

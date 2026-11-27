@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {postCreateBook} from "@/lib/server/functions/books";
+import {maybeTriggerNightOwl} from "@/lib/client/achievements/achievement-toasts";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {mediaDetailsOptions, profileOptions} from "@/lib/client/react-query/query-options";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/user-media-cache";
@@ -59,14 +60,17 @@ export const useCreateBookMutation = () => {
             noErrorToast: true,
             successToastMessage: "Book created and added to your list!",
         },
-        onSuccess: () => Promise.all([
-            queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
-            invalidateUserProgressQueries(queryClient, currentUser!.name),
-            queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
-            queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
-            queryClient.invalidateQueries({ queryKey: ["userList", MediaType.BOOKS] }),
-            queryClient.invalidateQueries({ queryKey: ["listFilters", MediaType.BOOKS, currentUser!.name] }),
-            queryClient.invalidateQueries({ queryKey: ["navSearch"] }),
-        ]),
+        onSuccess: () => {
+            maybeTriggerNightOwl(queryClient, currentUser?.id);
+            return Promise.all([
+                queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
+                invalidateUserProgressQueries(queryClient, currentUser!.name),
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+                queryClient.invalidateQueries({ queryKey: ["userList", MediaType.BOOKS] }),
+                queryClient.invalidateQueries({ queryKey: ["listFilters", MediaType.BOOKS, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: ["navSearch"] }),
+            ]);
+        },
     });
 };

@@ -62,7 +62,7 @@ export function AchievementDirectory({ achievements }: { achievements: AdminAchi
                                 {original.name}
                             </span>
                             {original.secret &&
-                                <Badge variant="outline" className="gap-1 border-brand/40 text-[10px] text-brand">
+                                <Badge variant="outline" className="gap-1 border-fuchsia-500/40 text-[10px] text-fuchsia-600 dark:text-fuchsia-400">
                                     <Lock className="size-2.5"/>
                                     Secret
                                 </Badge>

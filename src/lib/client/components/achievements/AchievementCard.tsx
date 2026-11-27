@@ -2,7 +2,7 @@ import {useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {AchCard} from "@/lib/types/query.options.types";
 import {Progress} from "@/lib/client/components/ui/progress";
-import {Check, Eye, EyeOff, Gem, Pin, Star, Users} from "lucide-react";
+import {Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gem, Pin, Star, Users} from "lucide-react";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {AchievementBadge} from "@/lib/client/components/achievements/AchievementBadge";
@@ -19,8 +19,11 @@ interface AchievementCardProps {
     compareMode: boolean;
     highlighted?: boolean;
     showCategory?: boolean;
+    canMovePrev?: boolean;
+    canMoveNext?: boolean;
     revealAllSecrets: boolean;
     onTogglePin?: (codeName: string) => void;
+    onMovePin?: (direction: "prev" | "next") => void;
 }
 
 
@@ -29,7 +32,8 @@ export const AchievementCard = (props: AchievementCardProps) => {
 
     const {
         achievement, isOwner, isPinned, pinPending = false, highlighted = false,
-        compareMode, showCategory = false, revealAllSecrets, onTogglePin,
+        compareMode, showCategory = false, canMovePrev = false, canMoveNext = false,
+        revealAllSecrets, onTogglePin, onMovePin,
     } = props;
 
     const {
@@ -82,8 +86,8 @@ export const AchievementCard = (props: AchievementCardProps) => {
                                 {isRedacted ? "Hidden Achievement" : name}
                             </h3>
                             {secret &&
-                                <span className="shrink-0 rounded border border-brand/30 bg-brand/10 px-1.5 py-0.25 text-[9.5px]
-                                font-semibold uppercase tracking-wider text-brand">
+                                <span className="shrink-0 rounded border border-fuchsia-500/35 bg-fuchsia-500/10 px-1.5 py-0.25 text-[9.5px]
+                                font-semibold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400">
                                     Secret
                                 </span>
                             }
@@ -101,7 +105,30 @@ export const AchievementCard = (props: AchievementCardProps) => {
                         }
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2.5">
+                    <div className="flex shrink-0 items-center gap-1.5">
+                        {isOwner && isPinned && onMovePin &&
+                            <div className="flex items-center">
+                                <button
+                                    type="button"
+                                    disabled={pinPending || !canMovePrev}
+                                    onClick={() => onMovePin("prev")}
+                                    aria-label={`Move ${name} earlier in showcase`}
+                                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                                >
+                                    <ChevronLeft className="size-3.5"/>
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={pinPending || !canMoveNext}
+                                    onClick={() => onMovePin("next")}
+                                    aria-label={`Move ${name} later in showcase`}
+                                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                                >
+                                    <ChevronRight className="size-3.5"/>
+                                </button>
+                            </div>
+                        }
+
                         {isOwner && completed && onTogglePin &&
                             <Tooltip>
                                 <TooltipTrigger
@@ -173,7 +200,7 @@ export const AchievementCard = (props: AchievementCardProps) => {
                             <button
                                 type="button"
                                 onClick={() => setSpoilerOpen((prev) => !prev)}
-                                className="inline-flex items-center gap-1.5 font-medium text-brand transition-opacity hover:opacity-80"
+                                className="inline-flex items-center gap-1.5 font-medium text-fuchsia-600 transition-opacity hover:opacity-80 dark:text-fuchsia-400"
                             >
                                 {isRedacted
                                     ? <><Eye className="size-3.5"/> Reveal spoiler</>

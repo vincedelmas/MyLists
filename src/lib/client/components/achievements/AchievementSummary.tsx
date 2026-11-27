@@ -62,7 +62,10 @@ export const AchievementSummary = ({ summary }: AchievementSummaryProps) => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 border-t pt-4 lg:contents">
-                    <div className="flex items-start gap-2.5 lg:border-l lg:px-6">
+                    <div
+                        title="Unlocked achievements earned by under 10% of active users (includes ultra rare)"
+                        className="flex items-start gap-2.5 lg:border-l lg:px-6"
+                    >
                         <Star className="mt-1 size-4 shrink-0 text-gold"/>
                         <div>
                             <div className="text-xl font-black tabular-nums text-foreground">
@@ -74,7 +77,10 @@ export const AchievementSummary = ({ summary }: AchievementSummaryProps) => {
                         </div>
                     </div>
 
-                    <div className="flex items-start gap-2.5 border-l pl-4 lg:px-6">
+                    <div
+                        title="Unlocked achievements earned by under 3% of active users"
+                        className="flex items-start gap-2.5 border-l pl-4 lg:px-6"
+                    >
                         <Gem className="mt-1 size-4 shrink-0 text-platinum"/>
                         <div>
                             <div className="text-xl font-black tabular-nums text-foreground">

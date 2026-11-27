@@ -15,6 +15,11 @@ export const calculateAchievementsTask = defineTask({
         const container = await getContainer();
         const achievementsService = container.services.achievements;
 
+        await ctx.step("seed-achievements", async () => {
+            const seededCount = achievementsService.seedAllAchievements();
+            ctx.metric("achievements.seeded", seededCount);
+        });
+
         const categoriesToProcess = input.categories && input.categories.length > 0
             ? input.categories
             : achievementsService.getAllCatalogCategories();

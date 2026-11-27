@@ -19,6 +19,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => ({
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => mocks.navigate }));
 vi.mock("@/lib/client/hooks/use-auth", () => ({ useAuth: () => ({ currentUser: { name: "alice" } }) }));
 vi.mock("@/lib/client/components/ui/toast", () => ({ toast: { add: mocks.toast } }));
+vi.mock("@/lib/client/achievements/achievement-toasts", () => ({ maybeTriggerNightOwl: vi.fn() }));
 vi.mock("@/lib/server/functions/continue", () => ({ postContinueMedia: mocks.save, getContinueMedia: vi.fn() }));
 vi.mock("@/lib/server/functions/profile-pins", () => ({ getProfilePins: vi.fn(), getOwnProfilePins: vi.fn() }));
 vi.mock("@/lib/client/react-query/query-options/media.options", () => ({

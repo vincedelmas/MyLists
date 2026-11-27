@@ -462,12 +462,14 @@ input[type="search"]::-webkit-search-cancel-button:hover {
         );
     }
 
-    .achievement-shimmer-hover:hover::after {
-        animation: achievement-shimmer 0.85s ease-out 1;
-    }
+    @media (prefers-reduced-motion: no-preference) {
+        .achievement-shimmer-hover:hover::after {
+            animation: achievement-shimmer 0.85s ease-out 1;
+        }
 
-    .achievement-shimmer-live::after {
-        animation: achievement-shimmer 2.8s ease-in-out infinite;
+        .achievement-shimmer-live::after {
+            animation: achievement-shimmer 2.8s ease-in-out infinite;
+        }
     }
 
     .animate-achievement-timer {

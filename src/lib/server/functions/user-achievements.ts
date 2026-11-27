@@ -28,20 +28,42 @@ export const postTogglePinnedAchievement = createServerFn({ method: "POST" })
     .validator(z.object({ codeName: z.string().min(1) }))
     .handler(async ({ data: { codeName }, context: { currentUser } }) => {
         const container = await getContainer();
-        const currentPinned = await container.services.profile.getPinnedAchievements(currentUser.id);
+        const unlockedCodes = new Set(
+            container.repositories.achievements.getUnlockedAchievementsForProfile(currentUser.id).map((item) => item.codeName),
+        );
+        const visiblePinned = (await container.services.profile.getPinnedAchievements(currentUser.id))
+            .filter((code) => unlockedCodes.has(code));
 
-        if (!currentPinned.includes(codeName)) {
-            if (currentPinned.length >= PROFILE_MAX_PINNED_ACHIEVEMENTS) {
+        const exists = visiblePinned.includes(codeName);
+        if (!exists) {
+            if (visiblePinned.length >= PROFILE_MAX_PINNED_ACHIEVEMENTS) {
                 throw new FormattedError(`You can pin up to ${PROFILE_MAX_PINNED_ACHIEVEMENTS} achievements to your profile.`);
             }
-
-            const unlocked = container.repositories.achievements.getUnlockedAchievementsForProfile(currentUser.id);
-            if (!unlocked.some((item) => item.codeName === codeName)) {
+            if (!unlockedCodes.has(codeName)) {
                 throw new FormattedError("Only unlocked achievements can be pinned to your profile.");
             }
         }
 
-        return container.services.profile.togglePinnedAchievement(currentUser.id, codeName);
+        const next = exists
+            ? visiblePinned.filter((code) => code !== codeName)
+            : [...visiblePinned, codeName];
+
+        const pinnedCodeNames = container.services.profile.savePinnedAchievements(currentUser.id, next);
+        return { pinnedCodeNames, pinned: !exists };
+    });
+
+
+export const postReorderPinnedAchievements = createServerFn({ method: "POST" })
+    .middleware([requiredAuthMiddleware])
+    .validator(z.object({ codeNames: z.array(z.string().min(1)).max(PROFILE_MAX_PINNED_ACHIEVEMENTS) }))
+    .handler(async ({ data: { codeNames }, context: { currentUser } }) => {
+        const container = await getContainer();
+        const unlockedCodes = new Set(
+            container.repositories.achievements.getUnlockedAchievementsForProfile(currentUser.id).map((item) => item.codeName),
+        );
+        const validOrdered = codeNames.filter((code) => unlockedCodes.has(code));
+        const pinnedCodeNames = container.services.profile.savePinnedAchievements(currentUser.id, validOrdered);
+        return { pinnedCodeNames };
     });
 
 

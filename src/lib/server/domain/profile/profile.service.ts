@@ -74,18 +74,12 @@ export class ProfileService {
         return Array.isArray(saved) ? saved.slice(0, PROFILE_MAX_PINNED_ACHIEVEMENTS) : [];
     }
 
-    async togglePinnedAchievement(userId: number, codeName: string): Promise<{ pinnedCodeNames: string[]; pinned: boolean }> {
-        const current = await this.getPinnedAchievements(userId);
-        const exists = current.includes(codeName);
-        const next = exists
-            ? current.filter((code) => code !== codeName)
-            : [...current, codeName].slice(0, PROFILE_MAX_PINNED_ACHIEVEMENTS);
-
+    savePinnedAchievements(userId: number, pinnedCodeNames: string[]): string[] {
+        const deduped = [...new Set(pinnedCodeNames)].slice(0, PROFILE_MAX_PINNED_ACHIEVEMENTS);
         withTransaction(() => {
-            this.repository.upsertProfileCustomSetting(userId, "pinnedAchievements", next);
+            this.repository.upsertProfileCustomSetting(userId, "pinnedAchievements", deduped);
         });
-
-        return { pinnedCodeNames: next, pinned: !exists };
+        return deduped;
     }
 
     saveProfileCustomSettings(userId: number, settings: ProfileCustomizationSettings) {

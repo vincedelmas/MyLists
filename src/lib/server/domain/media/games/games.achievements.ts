@@ -3,8 +3,8 @@ import {AchievementCategory, Status} from "@/lib/utils/enums";
 import {games, gamesCompanies, gamesList} from "@/lib/server/database/schema";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
-import {and, count, countDistinct, eq, gt, gte, inArray, isNotNull, lte, notInArray, sql} from "drizzle-orm";
-import {createAchievementQueries, pickTopPerUser} from "@/lib/server/domain/media/base/achievements-queries";
+import {and, asc, count, countDistinct, desc, eq, gt, gte, inArray, isNotNull, lte, notInArray, sql} from "drizzle-orm";
+import {createAchievementQueries, pickTopPerUser, summarizeLabeledRows} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
@@ -20,7 +20,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
         return getDbClient()
             .select({
                 userId: gamesList.userId,
-                value: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0) / ${minutesPerInputUnit}`,
+                value: sql<number>`CAST(COALESCE(SUM(${gamesList.playtime}), 0) AS REAL) / ${minutesPerInputUnit}`,
             })
             .from(gamesList)
             .where(queries.userFilter(userId))
@@ -95,7 +95,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
         const rows = getDbClient()
             .select({
                 userId: gamesList.userId,
-                gameName: games.name,
+                label: games.name,
             })
             .from(gamesList)
             .innerJoin(games, eq(gamesList.mediaId, games.id))
@@ -105,20 +105,10 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 eq(gamesList.achievementsUnlocked, gamesList.achievementsTotal),
                 queries.userFilter(userId),
             ))
+            .orderBy(desc(gamesList.lastUpdated), asc(games.name))
             .all();
 
-        const byUser = new Map<number, { value: number; label: string }>();
-        for (const row of rows) {
-            const existing = byUser.get(row.userId);
-            if (!existing) {
-                byUser.set(row.userId, { value: 1, label: row.gameName });
-            }
-            else {
-                existing.value += 1;
-            }
-        }
-
-        return [...byUser.entries()].map(([id, data]) => ({ userId: id, value: data.value, label: data.label }));
+        return summarizeLabeledRows(rows);
     };
 
     return defineAchievementCatalog({
@@ -208,7 +198,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
             },
             games_short_8: {
                 name: "Bite-Sized Quest",
-                description: "Complete 8 games with under 5 hours logged. Short adventures that pack a punch.",
+                description: "Complete 8 games with 5 hours or less logged. Short adventures that pack a punch.",
                 icon: "stopwatch",
                 shape: "circle",
                 pattern: "rings",
@@ -223,6 +213,15 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 pattern: "rays",
                 target: 5,
                 calculate: longGames,
+            },
+            games_genres_8: {
+                name: "All-Rounder",
+                description: "Play games across 8 different genres, from cozy indies to boss rushes.",
+                icon: "compass",
+                shape: "hex",
+                pattern: "dots",
+                target: 8,
+                calculate: queries.countDistinctGenres(notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED])),
             },
             games_perfect_1: {
                 name: "Achievement-ception",

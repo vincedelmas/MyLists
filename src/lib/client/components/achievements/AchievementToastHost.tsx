@@ -1,4 +1,4 @@
-import {X} from "lucide-react";
+import {Volume2, VolumeX, X} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {useEffect, useRef, useState} from "react";
 import {useNavigate} from "@tanstack/react-router";
@@ -7,7 +7,12 @@ import {formatPercent} from "@/lib/utils/formatting/number";
 import {getAchievementRarityTier} from "@/lib/utils/achievements";
 import type {UnlockedAchievementToast} from "@/lib/types/achievements.types";
 import {AchievementBadge} from "@/lib/client/components/achievements/AchievementBadge";
-import {subscribeAchievementToasts} from "@/lib/client/achievements/achievement-toasts";
+import {
+    isAchievementSoundMuted,
+    subscribeAchievementToasts,
+    toggleAchievementSoundMuted,
+    useAchievementSoundMuted,
+} from "@/lib/client/achievements/achievement-toasts";
 
 
 type QueuedToast = {
@@ -21,7 +26,7 @@ let sharedAudioContext: AudioContext | null = null;
 
 
 const playAchievementUnlockSound = (isSpecial: boolean) => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || isAchievementSoundMuted()) return;
 
     try {
         const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -102,6 +107,7 @@ const playAchievementUnlockSound = (isSpecial: boolean) => {
 export function AchievementToastHost() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const soundMuted = useAchievementSoundMuted();
     const startedAtRef = useRef<number>(0);
     const remainingMsRef = useRef(TOAST_DURATION_MS);
     const [queue, setQueue] = useState<QueuedToast[]>([]);
@@ -203,7 +209,8 @@ export function AchievementToastHost() {
                     currentUser && "cursor-pointer",
                     isUltra && "achievement-shimmer-live achievement-shimmer-ultra border-platinum/65 shadow-[0_12px_32px_-12px_rgba(186,230,253,0.42)]",
                     isRare && "achievement-shimmer-live border-gold/60 shadow-[0_12px_32px_-12px_rgba(234,185,73,0.45)]",
-                    !isRare && !isUltra && "border-brand/45 shadow-[0_12px_28px_-12px_rgba(0,0,0,0.75)]",
+                    !isRare && !isUltra && item.secret && "border-fuchsia-500/50 shadow-[0_12px_28px_-12px_rgba(232,121,197,0.35)]",
+                    !isRare && !isUltra && !item.secret && "border-brand/45 shadow-[0_12px_28px_-12px_rgba(0,0,0,0.75)]",
                 )}
             >
                 <AchievementBadge
@@ -219,7 +226,13 @@ export function AchievementToastHost() {
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                         <span className={cn("truncate text-[10px] font-bold uppercase tracking-[0.14em]",
-                            isUltra ? "text-platinum" : isRare ? "text-gold" : "text-brand")}
+                            isUltra
+                                ? "text-platinum"
+                                : isRare
+                                    ? "text-gold"
+                                    : item.secret
+                                        ? "text-fuchsia-600 dark:text-fuchsia-400"
+                                        : "text-brand")}
                         >
                             {eyebrow}
                         </span>
@@ -238,22 +251,36 @@ export function AchievementToastHost() {
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    aria-label="Dismiss achievement notification"
-                    className="shrink-0 self-start rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    onClick={(ev) => {
-                        ev.stopPropagation();
-                        dismissCurrent();
-                    }}
-                >
-                    <X className="size-3.5"/>
-                </button>
+                <div className="flex shrink-0 flex-col items-center gap-1 self-start">
+                    <button
+                        type="button"
+                        aria-label="Dismiss achievement notification"
+                        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        onClick={(ev) => {
+                            ev.stopPropagation();
+                            dismissCurrent();
+                        }}
+                    >
+                        <X className="size-3.5"/>
+                    </button>
+                    <button
+                        type="button"
+                        title={soundMuted ? "Unmute unlock sound" : "Mute unlock sound"}
+                        aria-label={soundMuted ? "Unmute achievement unlock sound" : "Mute achievement unlock sound"}
+                        className="rounded-md p-1 text-muted-foreground/75 transition-colors hover:bg-muted hover:text-foreground"
+                        onClick={(ev) => {
+                            ev.stopPropagation();
+                            toggleAchievementSoundMuted();
+                        }}
+                    >
+                        {soundMuted ? <VolumeX className="size-3.5"/> : <Volume2 className="size-3.5"/>}
+                    </button>
+                </div>
 
                 <div
                     style={{ "--toast-duration": `${TOAST_DURATION_MS}ms` } as React.CSSProperties}
                     className={cn("animate-achievement-timer absolute inset-x-0 bottom-0 h-0.5 group-hover/ach-toast:paused",
-                        isUltra ? "bg-platinum" : isRare ? "bg-gold" : "bg-brand",
+                        isUltra ? "bg-platinum" : isRare ? "bg-gold" : item.secret ? "bg-fuchsia-500" : "bg-brand",
                     )}
                 />
             </div>

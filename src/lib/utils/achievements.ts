@@ -50,3 +50,8 @@ export function getAchievementRarityTier(rarity: number | null | undefined): Ach
 export function isRareAchievement(rarity: number | null | undefined) {
     return rarity !== null && rarity !== undefined && rarity > 0 && rarity < RARE_RARITY_THRESHOLD;
 }
+
+
+export function getRaritySortValue(rarity: number | null | undefined) {
+    return rarity !== null && rarity !== undefined && rarity > 0 ? rarity : 101;
+}

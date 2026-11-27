@@ -2,7 +2,7 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {ApiProviderType, SocialState} from "@/lib/utils/enums";
 import {ProviderSearchResults} from "@/lib/types/provider.types";
 import {toast} from "@/lib/client/components/ui/toast";
-import {postTogglePinnedAchievement} from "@/lib/server/functions/user-achievements";
+import {postReorderPinnedAchievements, postTogglePinnedAchievement} from "@/lib/server/functions/user-achievements";
 import {postUpdateShowOnboarding} from "@/lib/server/functions/user-profile";
 import {MutationMeta, QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
 import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/notifications";
@@ -228,6 +228,21 @@ export const useTogglePinnedAchievementMutation = (username: string) => {
                 type: "success",
                 title: pinned ? "Pinned to your profile showcase" : "Removed from profile showcase",
             });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: achievementOptions(username).queryKey }),
+                queryClient.invalidateQueries({ queryKey: profileOptions(username).queryKey }),
+            ]);
+        },
+    });
+};
+
+
+export const useReorderPinnedAchievementsMutation = (username: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (codeNames: string[]) => postReorderPinnedAchievements({ data: { codeNames } }),
+        onSuccess: async () => {
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: achievementOptions(username).queryKey }),
                 queryClient.invalidateQueries({ queryKey: profileOptions(username).queryKey }),

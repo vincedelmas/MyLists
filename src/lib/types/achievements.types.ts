@@ -2,7 +2,7 @@ import {AchievementCategory, MediaType} from "@/lib/utils/enums";
 
 
 export type AchievementBadgePattern = "rings" | "rays" | "dots";
-export type AchievementRarityTier = "common" | "uncommon" | "rare" | "ultra";
+export type AchievementRarityTier = "common" | "rare" | "ultra";
 export type AchievementBadgeShape = "circle" | "hex" | "octagon" | "shield" | "diamond";
 
 
@@ -18,7 +18,6 @@ export type AchievementIconKey =
     | "globe"
     | "hourglass"
     | "stopwatch"
-    | "ufo"
     | "palette"
     | "film-strip"
     | "tv"
@@ -68,7 +67,6 @@ export type AchievementIconKey =
     | "thumb-down"
     | "cobweb"
     | "jester"
-    | "brain"
     | "bullseye"
     | "medal"
     | "broken-heart"

@@ -1,7 +1,7 @@
-import {AchievementCategory, MediaType, TagAction} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {AchievementCategory, MediaType, Status, TagAction} from "@/lib/utils/enums";
 import {ActivityCorrectionRequired} from "@/lib/server/domain/tracking/monthly-activity.service";
 import {requiredMediaReadMiddleware, requiredMediaWriteMiddleware} from "@/lib/server/middlewares/media-authentication";
 import {
@@ -30,12 +30,15 @@ export const postAddMediaToList = createServerFn({ method: "POST" })
     .validator(addMediaToListSchema)
     .handler(async ({ data: { mediaType, mediaId, status }, context: { currentUser } }) => {
         const container = await getContainer();
+
         const newState = container.services.mediaTracking.addMediaToList({ mediaType, mediaId, status, userId: currentUser.id });
+        const triggers = newState.status === Status.DROPPED ? (["status", "dropped"] as const) : (["status"] as const);
+
         const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [
             mediaType,
             AchievementCategory.GENERAL,
             AchievementCategory.SECRETS,
-        ]);
+        ], triggers);
 
         return { ...newState, unlockedAchievements };
     });
@@ -49,14 +52,17 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
 
         try {
             const saved = container.services.mediaTracking.updateUserMedia({ ...data, userId: currentUser.id });
+
             const seasons = data.mediaType === MediaType.SERIES || data.mediaType === MediaType.ANIME
                 ? container.registries.mediaService.get(data.mediaType).getUserSeasons(currentUser.id, data.mediaId)
                 : undefined;
-            const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [
+
+            const unlockedAchievements = container.services.achievements.evaluateUserMediaUpdate(
+                currentUser.id,
                 data.mediaType,
-                AchievementCategory.GENERAL,
-                AchievementCategory.SECRETS,
-            ]);
+                data.payload.type,
+                saved.userMedia.status,
+            );
 
             return {
                 kind: "saved" as const,
@@ -108,8 +114,10 @@ export const postRemoveMediaFromList = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
-        const mediaTrackingService = await getContainer().then(c => c.services.mediaTracking);
-        mediaTrackingService.removeMediaFromList({ mediaType, mediaId, userId: currentUser.id });
+        const container = await getContainer();
+        
+        container.services.mediaTracking.removeMediaFromList({ mediaType, mediaId, userId: currentUser.id });
+        container.services.achievements.evaluateUserCategories(currentUser.id, [mediaType, AchievementCategory.GENERAL]);
     });
 
 

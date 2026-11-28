@@ -2,13 +2,19 @@ import {useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {AchCard} from "@/lib/types/query.options.types";
 import {Progress} from "@/lib/client/components/ui/progress";
-import {Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gem, Pin, Star, Users} from "lucide-react";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {AchievementBadge} from "@/lib/client/components/achievements/AchievementBadge";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
+import {Check, ChevronLeft, ChevronRight, Eye, EyeOff, Gem, Pin, Star, Users} from "lucide-react";
 import {ACHIEVEMENT_CATEGORY_PALETTE} from "@/lib/client/components/achievements/achievement-icons";
-import {ACHIEVEMENT_CATEGORY_LABELS, getAchievementRarityTier, RARITY_MIN_LEVEL} from "@/lib/utils/achievements";
+import {
+    ACHIEVEMENT_CATEGORY_LABELS,
+    formatAchievementCount,
+    formatAchievementRemaining,
+    getAchievementRarityTier,
+    RARITY_MIN_LEVEL,
+} from "@/lib/utils/achievements";
 
 
 interface AchievementCardProps {
@@ -28,13 +34,18 @@ interface AchievementCardProps {
 
 
 export const AchievementCard = (props: AchievementCardProps) => {
-    const [spoilerOpen, setSpoilerOpen] = useState(false);
-
     const {
-        achievement, isOwner, isPinned, pinPending = false, highlighted = false,
-        compareMode, showCategory = false, canMovePrev = false, canMoveNext = false,
-        revealAllSecrets, onTogglePin, onMovePin,
+        achievement, isOwner, isPinned, pinPending = false, highlighted = false, compareMode,
+        showCategory = false, canMovePrev = false, canMoveNext = false, revealAllSecrets, onTogglePin, onMovePin,
     } = props;
+
+    const [revealed, setRevealed] = useState(revealAllSecrets);
+    const [prevRevealAll, setPrevRevealAll] = useState(revealAllSecrets);
+
+    if (revealAllSecrets !== prevRevealAll) {
+        setPrevRevealAll(revealAllSecrets);
+        setRevealed(revealAllSecrets);
+    }
 
     const {
         name, description, category, icon, shape, pattern, secret, target,
@@ -46,10 +57,10 @@ export const AchievementCard = (props: AchievementCardProps) => {
 
     const isRare = completed && rarityTier === "rare";
     const isUltra = completed && rarityTier === "ultra";
-    const isRedacted = secret && !completed && !revealAllSecrets && !spoilerOpen;
+    const isRedacted = secret && !completed && !revealed;
 
+    const displayCount = formatAchievementCount(count);
     const remaining = Math.max(0, Math.ceil(target - count));
-    const displayCount = Number.isInteger(count) ? formatNumber(count) : formatNumber(count, { fractionDigits: 1 });
 
     return (
         <article
@@ -86,7 +97,7 @@ export const AchievementCard = (props: AchievementCardProps) => {
                                 {isRedacted ? "Hidden Achievement" : name}
                             </h3>
                             {secret &&
-                                <span className="shrink-0 rounded border border-fuchsia-500/35 bg-fuchsia-500/10 px-1.5 py-0.25 text-[9.5px]
+                                <span className="shrink-0 rounded border border-fuchsia-500/35 bg-fuchsia-500/10 px-1.5 py-px text-[9.5px]
                                 font-semibold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400">
                                     Secret
                                 </span>
@@ -163,7 +174,7 @@ export const AchievementCard = (props: AchievementCardProps) => {
                     </div>
                 </div>
 
-                <p className={cn("mt-1 line-clamp-2 text-xs leading-relaxed", completed ? "text-muted-foreground" : "text-muted-foreground/75")}>
+                <p className={cn("mt-1 text-xs leading-relaxed", completed ? "text-muted-foreground" : "text-muted-foreground/75")}>
                     {isRedacted
                         ? "Details for this achievement are hidden until unlocked."
                         : description
@@ -185,7 +196,7 @@ export const AchievementCard = (props: AchievementCardProps) => {
                                     </span>
                                 </span>
                                 :
-                                <span className="inline-flex items-center gap-1 font-medium text-brand">
+                                <span className="inline-flex items-center gap-1 font-medium text-achievement">
                                     <Check className="size-3"/>
                                     Unlocked
                                 </span>
@@ -199,8 +210,9 @@ export const AchievementCard = (props: AchievementCardProps) => {
                         <div className="flex items-center justify-between gap-2 border-t border-border/50 pt-2 text-[11px]">
                             <button
                                 type="button"
-                                onClick={() => setSpoilerOpen((prev) => !prev)}
-                                className="inline-flex items-center gap-1.5 font-medium text-fuchsia-600 transition-opacity hover:opacity-80 dark:text-fuchsia-400"
+                                onClick={() => setRevealed((prev) => !prev)}
+                                className="inline-flex items-center gap-1.5 font-medium text-fuchsia-600 transition-opacity
+                                hover:opacity-80 dark:text-fuchsia-400"
                             >
                                 {isRedacted
                                     ? <><Eye className="size-3.5"/> Reveal spoiler</>
@@ -227,8 +239,8 @@ export const AchievementCard = (props: AchievementCardProps) => {
                             {(metadata?.label || progress >= 75) &&
                                 <div className="truncate text-[11px] text-muted-foreground">
                                     {metadata?.label
-                                        ? `${metadata.label} · ${formatNumber(remaining)} to go`
-                                        : `Almost there · ${formatNumber(remaining)} to go`
+                                        ? `${metadata.label} · ${formatAchievementRemaining(achievement.codeName, remaining)} to go`
+                                        : `Almost there · ${formatAchievementRemaining(achievement.codeName, remaining)} to go`
                                     }
                                 </div>
                             }
@@ -256,11 +268,11 @@ export const AchievementCard = (props: AchievementCardProps) => {
                                     : completed ?
                                         <span className="text-muted-foreground">
                                             Not yet unlocked by you
-                                            {target > 1 ? ` (${formatNumber(Math.floor(viewerProgress.count))}/${formatNumber(target)})` : ""}
+                                            {target > 1 ? ` (${formatAchievementCount(viewerProgress.count)}/${formatNumber(target)})` : ""}
                                             </span>
                                         :
                                         <span className="text-muted-foreground tabular-nums">
-                                            You: {formatNumber(Math.floor(viewerProgress.count))}/{formatNumber(target)}
+                                            You: {formatAchievementCount(viewerProgress.count)}/{formatNumber(target)}
                                         </span>
                             }
                         </div>

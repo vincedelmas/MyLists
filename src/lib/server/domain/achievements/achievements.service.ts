@@ -1,19 +1,13 @@
 import {logger} from "@/lib/server/core/logger";
-import {AchievementCategory, MediaType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import type {MediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {PROFILE_MAX_PINNED_ACHIEVEMENTS} from "@/lib/types/profile-custom.types";
-import {getRaritySortValue, isRareAchievement, ULTRA_RARE_RARITY_THRESHOLD} from "@/lib/utils/achievements";
-import {AchievementCalculation, AchievementCalculationRow, AchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
+import {AchievementCategory, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {createAppAchievementCatalogs} from "@/lib/server/domain/achievements/app-achievements.catalog";
-import type {
-    Achievement,
-    AchievementMetadata,
-    ProfileAchievementsShowcase,
-    UnlockedAchievementToast,
-    UserAchievementItem,
-} from "@/lib/types/achievements.types";
+import {getRaritySortValue, isRareAchievement, ULTRA_RARE_RARITY_THRESHOLD} from "@/lib/utils/achievements";
+import {Achievement, AchievementMetadata, ProfileAchievementsShowcase, UnlockedAchievementToast, UserAchievementItem} from "@/lib/types/achievements.types";
+import {AchievementCalculation, AchievementCalculationRow, AchievementCatalog, AchievementTrigger} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
 export class AchievementsService {
@@ -80,7 +74,7 @@ export class AchievementsService {
 
     // --- Real-Time Single-User Evaluation & Event Unlocks ---------------------
 
-    evaluateUserCategories(userId: number, categories: AchievementCategory[]): UnlockedAchievementToast[] {
+    evaluateUserCategories(userId: number, categories: AchievementCategory[], triggers?: readonly AchievementTrigger[]): UnlockedAchievementToast[] {
         if (categories.length === 0) return [];
 
         try {
@@ -96,7 +90,9 @@ export class AchievementsService {
                 if (alreadyCompletedIds.has(ach.id)) continue;
 
                 const catalog = this.catalogsByCategory.get(ach.category);
-                const calculator = catalog?.getCalculator(ach.codeName);
+                if (!catalog?.matchesTriggers(ach.codeName, triggers)) continue;
+
+                const calculator = catalog.getCalculator(ach.codeName);
                 if (!calculator) continue;
 
                 let rows = calcCache.get(calculator);
@@ -121,13 +117,22 @@ export class AchievementsService {
             return newlyUnlocked;
         }
         catch (err) {
-            logger.warn({ err, userId, categories }, "Failed to evaluate user achievements");
+            logger.warn({ err, userId, categories, triggers }, "Failed to evaluate user achievements");
             return [];
         }
     }
 
+    evaluateUserMediaUpdate(userId: number, mediaType: MediaType, updateType: UpdateType, status?: Status): UnlockedAchievementToast[] {
+        const triggers = getTriggersForMediaUpdate(updateType, status);
+        return this.evaluateUserCategories(userId, [mediaType, AchievementCategory.GENERAL, AchievementCategory.SECRETS], triggers);
+    }
+
     evaluateUserAll(userId: number): UnlockedAchievementToast[] {
         return this.evaluateUserCategories(userId, this.getAllCatalogCategories());
+    }
+
+    getRecentUnlockedAchievements(userId: number, since?: string, limit = 3) {
+        return this.repository.getRecentUnlockedAchievements(userId, since, limit);
     }
 
     unlockEventAchievement(userId: number, codeName: string, metadata: AchievementMetadata = null): UnlockedAchievementToast | null {
@@ -263,4 +268,31 @@ function computePerfectCategories(items: UserAchievementItem[]): AchievementCate
     }
 
     return perfected;
+}
+
+
+function getTriggersForMediaUpdate(updateType: UpdateType, status?: Status): AchievementTrigger[] {
+    switch (updateType) {
+        case UpdateType.RATING:
+            return ["rating"];
+        case UpdateType.COMMENT:
+            return ["comment"];
+        case UpdateType.FAVORITE:
+            return ["favorite"];
+        case UpdateType.REDO:
+            return ["redo"];
+        case UpdateType.PLATFORM:
+            return ["platform"];
+        case UpdateType.ACHIEVEMENTS:
+            return ["game-achievements"];
+        case UpdateType.STATUS:
+            return status === Status.DROPPED ? ["status", "dropped"] : ["status"];
+        case UpdateType.TV:
+        case UpdateType.PAGE:
+        case UpdateType.CHAPTER:
+        case UpdateType.PLAYTIME:
+            if (status === Status.COMPLETED) return ["progress", "status"];
+            if (status === Status.DROPPED) return ["progress", "dropped"];
+            return ["progress"];
+    }
 }

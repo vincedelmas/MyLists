@@ -141,6 +141,7 @@ export const useRemoveMediaFromListMutation = (mediaType: MediaType, mediaId: nu
                 queryClient.invalidateQueries({ queryKey: ["tagsView", variables.data.mediaType, currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: tagNamesOptions(variables.data.mediaType, false).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", variables.data.mediaType, variables.data.mediaId] }),
+                queryClient.invalidateQueries({ queryKey: ["achievementPage"], refetchType: "none" }),
             ]);
         }
     });
@@ -305,6 +306,7 @@ export const useUpdateUserBookDetailsMutation = (mediaId: number, meta?: Mutatio
             ...meta,
         },
         onSuccess: async (data) => {
+            maybeTriggerNightOwl(queryClient, currentUser?.id);
             await createUserMediaCache(queryClient, currentUser!.name, MediaType.BOOKS, mediaId).update({
                 total: data.total,
                 pages: data.customPages,

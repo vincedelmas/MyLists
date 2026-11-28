@@ -336,4 +336,117 @@ describe("flat achievements & permanent unlocks", () => {
         const showcase = service.getProfileShowcase(1, []);
         expect(showcase.items[0]?.codeName).toBe("secret_day_one");
     });
+
+    it("handles TV season redos accurately in superfan and sunk_cost, guards day_one against backdating, scopes triggers, and returns recent async unlocks", () => {
+        const mediaModule = setupMediaModule();
+        const service = new AchievementsService(AchievementsRepository, mediaModule.registries.mediaAchievements);
+        const totalSeeded = service.seedAllAchievements();
+        expect(totalSeeded).toBe(108);
+
+        // Activate series for user 1
+        dbContext.db.insert(schema.userMediaSettings).values({
+            userId: 1,
+            mediaType: MediaType.SERIES,
+            active: true,
+            totalEntries: 1,
+            timeSpent: 900,
+        }).run();
+
+        // 4-season series, 10 eps each (40 total). User watched S1-S2 (20 eps = 50%), rewatched S1 once and S2 once, S3 once (sum redo = 3, max season redo = 1),
+        // then dropped it: total = 20 + 20 redo = 40, wait -> let's make S1 (10 eps, redo=2), S2 (10 eps, redo=1), watched=15 -> total = 15 + 30 = 45 (or total=35 < 40).
+        // Specifically: 4 seasons x 10 eps = 40 total. Watched S1 (10) + 5 of S2 (15 eps = 37.5%), rewatched S1 twice (redo=2 -> 20 redo eps, total = 35 = 87.5% of 40!).
+        // And add S3 redo=1 so sum redo = 3 (but max per-season redo = 2!).
+        // Neither secret_superfan nor secret_sunk_cost should unlock!
+        dbContext.db.insert(schema.series).values({
+            id: 50,
+            apiId: 50,
+            name: "Four Season Drama",
+            duration: 45,
+            totalSeasons: 4,
+            totalEpisodes: 40,
+            imageCover: "s50.jpg",
+        }).run();
+        dbContext.db.insert(schema.seriesEpisodesPerSeason).values([
+            { mediaId: 50, season: 1, episodes: 10 },
+            { mediaId: 50, season: 2, episodes: 10 },
+            { mediaId: 50, season: 3, episodes: 10 },
+            { mediaId: 50, season: 4, episodes: 10 },
+        ]).run();
+        dbContext.db.insert(schema.seriesList).values({
+            id: 50,
+            userId: 1,
+            mediaId: 50,
+            status: Status.DROPPED,
+            currentSeason: 2,
+            currentEpisode: 5,
+            redo: 3,
+            total: 35,
+        }).run();
+        dbContext.db.insert(schema.seriesListSeasons).values([
+            { listId: 50, season: 1, redo: 2 },
+            { listId: 50, season: 2, redo: 0 },
+            { listId: 50, season: 3, redo: 1 },
+            { listId: 50, season: 4, redo: 0 },
+        ]).run();
+
+        const falsePositiveCheck = service.evaluateUserCategories(1, [AchievementCategory.SECRETS], ["redo", "dropped"]);
+        expect(falsePositiveCheck.map((a) => a.codeName)).not.toContain("secret_superfan");
+        expect(falsePositiveCheck.map((a) => a.codeName)).not.toContain("secret_sunk_cost");
+
+        // Now set season 1 redo to 3 -> secret_superfan MUST unlock via redo trigger!
+        dbContext.db.update(schema.seriesListSeasons)
+            .set({ redo: 3 })
+            .where(and(eq(schema.seriesListSeasons.listId, 50), eq(schema.seriesListSeasons.season, 1)))
+            .run();
+
+        const superfanUnlock = service.evaluateUserMediaUpdate(1, MediaType.SERIES, UpdateType.REDO, Status.DROPPED);
+        expect(superfanUnlock.map((a) => a.codeName)).toContain("secret_superfan");
+
+        // Now raise first-watch progress to 32/40 (80%, with 30 redo eps -> total = 62? No, redo=3*10 + 1*10 = 40 -> total = 72, first-watch = 32 -> 80% < 40)
+        dbContext.db.update(schema.seriesList)
+            .set({ currentSeason: 4, currentEpisode: 2, total: 72 })
+            .where(eq(schema.seriesList.id, 50))
+            .run();
+
+        const sunkCostUnlock = service.evaluateUserMediaUpdate(1, MediaType.SERIES, UpdateType.STATUS, Status.DROPPED);
+        expect(sunkCostUnlock.map((a) => a.codeName)).toContain("secret_sunk_cost");
+
+        // Backdated old movie completion must NOT unlock secret_day_one
+        dbContext.db.insert(schema.movies).values({
+            id: 60,
+            apiId: 60,
+            name: "Classic 1999 Film",
+            duration: 120,
+            releaseDate: "1999-03-31",
+            imageCover: "m60.jpg",
+        }).run();
+        dbContext.db.insert(schema.moviesList).values({
+            id: 60,
+            userId: 1,
+            mediaId: 60,
+            status: Status.COMPLETED,
+            addedAt: "2026-11-28 10:00:00",
+        }).run();
+        dbContext.db.insert(schema.userMediaUpdate).values({
+            userId: 1,
+            mediaId: 60,
+            mediaName: "Classic 1999 Film",
+            mediaType: MediaType.MOVIES,
+            updateType: UpdateType.STATUS,
+            payload: { old_value: null, new_value: Status.COMPLETED },
+            timestamp: "1999-03-31 12:00:00",
+        }).run();
+
+        const backdatedCheck = service.evaluateUserMediaUpdate(1, MediaType.MOVIES, UpdateType.STATUS, Status.COMPLETED);
+        expect(backdatedCheck.map((a) => a.codeName)).not.toContain("secret_day_one");
+
+        // Async recent unlock sync returns only unlocks after watermark and excludes empty initial call
+        const initialWatermark = service.getRecentUnlockedAchievements(1);
+        expect(initialWatermark.items).toEqual([]);
+        expect(initialWatermark.serverNow).toBeTruthy();
+
+        const recentSinceOld = service.getRecentUnlockedAchievements(1, "2020-01-01 00:00:00");
+        expect(recentSinceOld.totalNew).toBeGreaterThanOrEqual(2);
+        expect(recentSinceOld.items.length).toBeLessThanOrEqual(3);
+    });
 });

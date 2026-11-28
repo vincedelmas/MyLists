@@ -15,7 +15,7 @@ export const postCreateBook = createServerFn({ method: "POST" })
             AchievementCategory.BOOKS,
             AchievementCategory.GENERAL,
             AchievementCategory.SECRETS,
-        ]);
+        ], ["status", "book-details"]);
 
         return { ...result, unlockedAchievements };
     });
@@ -31,7 +31,7 @@ export const postUpdateUserBookDetails = createServerFn({ method: "POST" })
             AchievementCategory.BOOKS,
             AchievementCategory.GENERAL,
             AchievementCategory.SECRETS,
-        ]);
+        ], ["book-details"]);
 
         return { ...result, unlockedAchievements };
     });

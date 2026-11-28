@@ -28,9 +28,11 @@ export const postAnswerWhichCameFirstRound = createServerFn({ method: "POST" })
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const result = container.services.whichCameFirst.answerRound(currentUser.id, data.runId, data.roundId, data.selectedSide);
+
         const categories: AchievementCategory[] = [AchievementCategory.MINIGAMES];
         if (result.runEnded) categories.push(AchievementCategory.SECRETS);
-        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, categories);
+        
+        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, categories, ["wcf"]);
 
         return { ...result, unlockedAchievements };
     });

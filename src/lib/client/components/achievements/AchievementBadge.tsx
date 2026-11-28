@@ -168,7 +168,7 @@ export function AchievementBadge({
                     ) : isUltra ? (
                         <radialGradient id={`bg-${uid}`} cx="32%" cy="20%" r="80%">
                             <stop offset="0%" stopColor="#e0f2fe" stopOpacity="0.34"/>
-                            <stop offset="42%" stopColor="#1e293b" stopOpacity="0.94"/>
+                            <stop offset="48%" stopColor={palette.deep} stopOpacity="0.94"/>
                             <stop offset="100%" stopColor="#090d16"/>
                         </radialGradient>
                     ) : (

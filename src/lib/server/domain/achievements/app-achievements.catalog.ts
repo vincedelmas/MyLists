@@ -216,6 +216,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 shape: "circle",
                 pattern: "rings",
                 target: 3,
+                triggers: ["status"],
                 calculate: polymath,
             },
             general_completed_100: {
@@ -225,6 +226,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 shape: "shield",
                 pattern: "rays",
                 target: 100,
+                triggers: ["status"],
                 calculate: totalCompleted,
             },
             general_favorites_15: {
@@ -234,6 +236,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 shape: "circle",
                 pattern: "dots",
                 target: 15,
+                triggers: ["favorite", "status"],
                 calculate: totalFavorites,
             },
             general_redo_10: {
@@ -243,6 +246,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 shape: "hex",
                 pattern: "rings",
                 target: 10,
+                triggers: ["redo", "status"],
                 calculate: totalRedo,
             },
             general_decades_6: {
@@ -252,6 +256,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 shape: "hex",
                 pattern: "rays",
                 target: 6,
+                triggers: ["status", "book-details"],
                 calculate: decadeHopper,
             },
             general_active_months_6: {
@@ -261,6 +266,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 shape: "octagon",
                 pattern: "rings",
                 target: 6,
+                triggers: ["status", "progress", "redo"],
                 calculate: activeMonths,
             },
             general_time_1000: {
@@ -270,6 +276,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 shape: "shield",
                 pattern: "rays",
                 target: 1000,
+                triggers: ["status", "progress", "redo", "book-details"],
                 calculate: totalHours,
             },
             general_full_house: {
@@ -279,6 +286,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 shape: "octagon",
                 pattern: "dots",
                 target: 3,
+                triggers: ["status"],
                 calculate: fullHouseMonth,
             },
         },
@@ -663,13 +671,43 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
     };
 
     const superfan: AchievementCalculation = (userId) => {
-        const userClause = userId !== undefined ? sql`AND all_media.user_id = ${userId}` : sql``;
+        const listUserClause = userId !== undefined ? sql`AND l.user_id = ${userId}` : sql``;
         const rows = getDbClient().all<{ userId: number; label: string | null }>(sql`
-            SELECT all_media.user_id AS userId, all_media.title AS label
-            FROM (${ACTIVE_MEDIA_UNION}) AS all_media
-            WHERE all_media.redo >= 3
-              ${userClause}
-            ORDER BY all_media.redo DESC, COALESCE(all_media.last_updated, all_media.added_at) DESC, all_media.title ASC
+            SELECT repeats.user_id AS userId, repeats.title AS label
+            FROM (
+                SELECT l.user_id, 'movies' AS media_type, m.name AS title, l.redo AS max_redo, l.added_at, l.last_updated
+                FROM movies_list l INNER JOIN movies m ON m.id = l.media_id
+                WHERE l.redo >= 3 ${listUserClause}
+                UNION ALL
+                SELECT l.user_id, 'series' AS media_type, m.name AS title, MAX(s.redo) AS max_redo, l.added_at, l.last_updated
+                FROM series_list l
+                INNER JOIN series m ON m.id = l.media_id
+                INNER JOIN series_list_seasons s ON s.list_id = l.id
+                WHERE 1 = 1 ${listUserClause}
+                GROUP BY l.id
+                HAVING MAX(s.redo) >= 3
+                UNION ALL
+                SELECT l.user_id, 'anime' AS media_type, m.name AS title, MAX(s.redo) AS max_redo, l.added_at, l.last_updated
+                FROM anime_list l
+                INNER JOIN anime m ON m.id = l.media_id
+                INNER JOIN anime_list_seasons s ON s.list_id = l.id
+                WHERE 1 = 1 ${listUserClause}
+                GROUP BY l.id
+                HAVING MAX(s.redo) >= 3
+                UNION ALL
+                SELECT l.user_id, 'books' AS media_type, COALESCE(l.custom_title, m.name) AS title, l.redo AS max_redo, l.added_at, l.last_updated
+                FROM books_list l INNER JOIN books m ON m.id = l.media_id
+                WHERE l.redo >= 3 ${listUserClause}
+                UNION ALL
+                SELECT l.user_id, 'manga' AS media_type, m.name AS title, l.redo AS max_redo, l.added_at, l.last_updated
+                FROM manga_list l INNER JOIN manga m ON m.id = l.media_id
+                WHERE l.redo >= 3 ${listUserClause}
+            ) AS repeats
+            INNER JOIN user_media_settings ums
+                ON ums.user_id = repeats.user_id
+               AND ums.media_type = repeats.media_type
+               AND ums.active = 1
+            ORDER BY repeats.max_redo DESC, COALESCE(repeats.last_updated, repeats.added_at) DESC, repeats.title ASC
         `);
 
         return summarizeLabeledRows(rows);
@@ -705,7 +743,8 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
               AND json_extract(u.payload, '$.new_value') = ${Status.COMPLETED}
               AND all_media.release_date IS NOT NULL
               AND substr(all_media.release_date, 1, 10) GLOB '[12][0-9][0-9][0-9]-[01][0-9]-[0-3][0-9]'
-              AND (julianday(substr(u.timestamp, 1, 10)) - julianday(substr(all_media.release_date, 1, 10))) BETWEEN 0 AND 3
+              AND (julianday(substr(u.timestamp, 1, 10)) - julianday(substr(all_media.release_date, 1, 10))) BETWEEN -1 AND 3
+              AND (all_media.added_at IS NULL OR julianday(substr(u.timestamp, 1, 10)) >= julianday(substr(all_media.added_at, 1, 10)) - 1)
               ${userClause}
             ORDER BY u.timestamp DESC, all_media.title ASC
         `);
@@ -714,7 +753,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
     };
 
     const sunkCost: AchievementCalculation = (userId) => {
-        const userClause = userId !== undefined ? sql`AND dropped.user_id = ${userId}` : sql``;
+        const listUserClause = userId !== undefined ? sql`AND l.user_id = ${userId}` : sql``;
         const rows = getDbClient().all<{ userId: number; label: string | null }>(sql`
             SELECT dropped.user_id AS userId, dropped.title AS label
             FROM (
@@ -722,15 +761,41 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 FROM series_list l INNER JOIN series m ON m.id = l.media_id
                 WHERE l.status = ${Status.DROPPED}
                   AND m.total_episodes >= 4
-                  AND l.total >= m.total_episodes * 0.75
-                  AND l.total < m.total_episodes
+                  ${listUserClause}
+                  AND (l.total - COALESCE((
+                      SELECT SUM(s.redo * eps.episodes)
+                      FROM series_list_seasons s
+                      INNER JOIN series_episodes_per_season eps
+                          ON eps.media_id = l.media_id AND eps.season = s.season
+                      WHERE s.list_id = l.id
+                  ), 0)) >= m.total_episodes * 0.75
+                  AND (l.total - COALESCE((
+                      SELECT SUM(s.redo * eps.episodes)
+                      FROM series_list_seasons s
+                      INNER JOIN series_episodes_per_season eps
+                          ON eps.media_id = l.media_id AND eps.season = s.season
+                      WHERE s.list_id = l.id
+                  ), 0)) < m.total_episodes
                 UNION ALL
                 SELECT l.user_id, 'anime' AS media_type, m.name AS title, l.added_at, l.last_updated
                 FROM anime_list l INNER JOIN anime m ON m.id = l.media_id
                 WHERE l.status = ${Status.DROPPED}
                   AND m.total_episodes >= 4
-                  AND l.total >= m.total_episodes * 0.75
-                  AND l.total < m.total_episodes
+                  ${listUserClause}
+                  AND (l.total - COALESCE((
+                      SELECT SUM(s.redo * eps.episodes)
+                      FROM anime_list_seasons s
+                      INNER JOIN anime_episodes_per_season eps
+                          ON eps.media_id = l.media_id AND eps.season = s.season
+                      WHERE s.list_id = l.id
+                  ), 0)) >= m.total_episodes * 0.75
+                  AND (l.total - COALESCE((
+                      SELECT SUM(s.redo * eps.episodes)
+                      FROM anime_list_seasons s
+                      INNER JOIN anime_episodes_per_season eps
+                          ON eps.media_id = l.media_id AND eps.season = s.season
+                      WHERE s.list_id = l.id
+                  ), 0)) < m.total_episodes
                 UNION ALL
                 SELECT l.user_id, 'books' AS media_type, COALESCE(l.custom_title, m.name) AS title, l.added_at, l.last_updated
                 FROM books_list l INNER JOIN books m ON m.id = l.media_id
@@ -739,6 +804,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                   AND l.actual_page IS NOT NULL
                   AND l.actual_page >= l.custom_pages * 0.75
                   AND l.actual_page < l.custom_pages
+                  ${listUserClause}
                 UNION ALL
                 SELECT l.user_id, 'manga' AS media_type, m.name AS title, l.added_at, l.last_updated
                 FROM manga_list l INNER JOIN manga m ON m.id = l.media_id
@@ -747,13 +813,12 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                   AND m.chapters >= 10
                   AND l.current_chapter >= m.chapters * 0.75
                   AND l.current_chapter < m.chapters
+                  ${listUserClause}
             ) AS dropped
             INNER JOIN user_media_settings ums
                 ON ums.user_id = dropped.user_id
                AND ums.media_type = dropped.media_type
                AND ums.active = 1
-            WHERE 1 = 1
-              ${userClause}
             ORDER BY COALESCE(dropped.last_updated, dropped.added_at) DESC, dropped.title ASC
         `);
 
@@ -799,26 +864,29 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 pattern: "dots",
                 secret: true,
                 target: 1,
+                triggers: ["wcf"],
                 calculate: wcfRoundOneLoss,
             },
             secret_harsh_critic: {
                 name: "Professional Hater",
-                description: "Give a title a rating of 2 or lower and write a comment explaining why.",
+                description: "Give a title a low rating (2 or below, or Angry/Poop) and write a comment explaining why.",
                 icon: "thumb-down",
                 shape: "diamond",
                 pattern: "rays",
                 secret: true,
                 target: 1,
+                triggers: ["rating", "comment"],
                 calculate: harshCritic,
             },
             secret_love_letter: {
                 name: "Certified Masterpiece",
-                description: "Give a title a perfect 10 rating, favorite it, and write a comment about it.",
+                description: "Give a title a top rating (10 or Love), favorite it, and write a comment about it.",
                 icon: "love-letter",
                 shape: "diamond",
                 pattern: "rays",
                 secret: true,
                 target: 1,
+                triggers: ["rating", "favorite", "comment"],
                 calculate: loveLetter,
             },
             secret_backlog_slayer: {
@@ -829,6 +897,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 pattern: "rays",
                 secret: true,
                 target: 1,
+                triggers: ["status"],
                 calculate: backlogSlayer,
             },
             secret_superfan: {
@@ -839,6 +908,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 pattern: "rings",
                 secret: true,
                 target: 1,
+                triggers: ["redo"],
                 calculate: superfan,
             },
             secret_day_one: {
@@ -849,6 +919,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 pattern: "rays",
                 secret: true,
                 target: 1,
+                triggers: ["status", "book-details"],
                 calculate: dayOne,
             },
             secret_sunk_cost: {
@@ -859,6 +930,7 @@ export function createAppAchievementCatalogs(): AchievementCatalog[] {
                 pattern: "dots",
                 secret: true,
                 target: 1,
+                triggers: ["dropped", "book-details"],
                 calculate: sunkCost,
             },
         },

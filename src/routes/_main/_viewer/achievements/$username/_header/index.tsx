@@ -8,6 +8,7 @@ import {achievementTabSearchSchema} from "@/lib/schemas";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {Progress} from "@/lib/client/components/ui/progress";
+import {createFileRoute, useLocation} from "@tanstack/react-router";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -15,25 +16,42 @@ import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {achievementOptions} from "@/lib/client/react-query/query-options";
-import {createFileRoute, Link, useLocation} from "@tanstack/react-router";
 import {PROFILE_MAX_PINNED_ACHIEVEMENTS} from "@/lib/types/profile-custom.types";
 import {AchievementCard} from "@/lib/client/components/achievements/AchievementCard";
 import {AchievementBadge} from "@/lib/client/components/achievements/AchievementBadge";
 import {AchievementSummary} from "@/lib/client/components/achievements/AchievementSummary";
 import {toggleAchievementSoundMuted, useAchievementSoundMuted} from "@/lib/client/achievements/achievement-toasts";
-import {
-    useReorderPinnedAchievementsMutation,
-    useTogglePinnedAchievementMutation,
-} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {Award, Check, Compass, Eye, EyeOff, Gamepad2, LayoutGrid, Lock, Pin, Target, Trophy, Users, Volume2, VolumeX} from "lucide-react";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {useReorderPinnedAchievementsMutation, useTogglePinnedAchievementMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {
     ACHIEVEMENT_CATEGORY_LABELS,
+    formatAchievementRemaining,
     getRaritySortValue,
     isMediaAchievementCategory,
     isRareAchievement,
     NON_MEDIA_ACHIEVEMENT_CATEGORIES,
 } from "@/lib/utils/achievements";
+import {
+    Award,
+    Check,
+    ChevronDown,
+    ChevronRight,
+    ChevronsDownUp,
+    ChevronsUpDown,
+    Compass,
+    Eye,
+    EyeOff,
+    Gamepad2,
+    LayoutGrid,
+    Lock,
+    Pin,
+    Target,
+    Trophy,
+    Users,
+    Volume2,
+    VolumeX,
+} from "lucide-react";
+import {Button} from "@/lib/client/components/ui/button";
 
 
 type CategoryFilter = "all" | AchievementCategory;
@@ -204,6 +222,7 @@ function AchievementPage() {
     const [sortMode, setSortMode] = useState<SortMode>("default");
     const [compareMode, setCompareMode] = useState(false);
     const [revealAllSecrets, setRevealAllSecrets] = useState(false);
+    const [collapsedCategories, setCollapsedCategories] = useState<Set<AchievementCategory>>(() => new Set());
     const [highlight, setHighlight] = useState<{ code: string; seq: number } | null>(null);
     const pendingScrollCodeRef = useRef<string | null>(null);
     const toolbarRef = useRef<HTMLDivElement | null>(null);
@@ -281,6 +300,12 @@ function AchievementPage() {
             const target = ctx.items.find((item) => item.codeName === codeName);
             if (!target) return;
 
+            setCollapsedCategories((prev) => {
+                if (!prev.has(target.category)) return prev;
+                const next = new Set(prev);
+                next.delete(target.category);
+                return next;
+            });
             if (ctx.search) setSearch("");
             if (ctx.statusFilter !== "all") setStatusFilter("all");
 
@@ -311,7 +336,7 @@ function AchievementPage() {
         if (!el) return;
         pendingScrollCodeRef.current = null;
         el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, [highlight, currentCategory, statusFilter, search, safePage]);
+    }, [highlight, currentCategory, statusFilter, search, safePage, collapsedCategories]);
 
     // Clear temporary card highlight ring
     useEffect(() => {
@@ -361,6 +386,12 @@ function AchievementPage() {
         if (nextStatus !== statusFilter) setStatusFilter(nextStatus);
         if (nextSort !== sortMode) setSortMode(nextSort);
         if (search) setSearch("");
+        setCollapsedCategories((prev) => {
+            if (!prev.has(category)) return prev;
+            const next = new Set(prev);
+            next.delete(category);
+            return next;
+        });
         if (nextCategory !== currentCategory) {
             void navigate({
                 resetScroll: false,
@@ -413,36 +444,6 @@ function AchievementPage() {
         }),
     );
 
-    const categoryOptions = [
-        {
-            value: "all",
-            label: (
-                <span className="flex items-center gap-2">
-                    {getCategoryIcon("all")}
-                    <span>All categories</span>
-                </span>
-            ),
-        },
-        ...availableCategories.map((category) => {
-            const stats = categoryStats.get(category) ?? { unlocked: 0, total: 0 };
-            return {
-                value: category,
-                label: (
-                    <span className="flex w-full items-center justify-between gap-3">
-                        <span className="flex items-center gap-2">
-                            {getCategoryIcon(category)}
-                            <span>{ACHIEVEMENT_CATEGORY_LABELS[category]}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground">
-                            {perfectSet.has(category) && <Check className="size-3 text-brand"/>}
-                            {stats.unlocked}/{stats.total}
-                        </span>
-                    </span>
-                ),
-            };
-        }),
-    ];
-
     const statusOptions: { id: StatusFilter; label: string }[] = [
         { id: "all", label: "All" },
         { id: "unlocked", label: "Unlocked" },
@@ -476,6 +477,28 @@ function AchievementPage() {
         : [];
     const secretStats = categoryStats.get(AchievementCategory.SECRETS) ?? { unlocked: 0, total: 0 };
 
+    const visibleGroupedCategoryKeys: AchievementCategory[] = shouldGroupByCategory
+        ? [
+            ...groupedCategories.map((group) => group.category),
+            ...(secretCategoryItems.length > 0 ? [AchievementCategory.SECRETS] : []),
+        ]
+        : [];
+    const allGroupsCollapsed = visibleGroupedCategoryKeys.length > 0
+        && visibleGroupedCategoryKeys.every((cat) => collapsedCategories.has(cat));
+
+    const toggleCategoryCollapsed = (category: AchievementCategory) => {
+        setCollapsedCategories((prev) => {
+            const next = new Set(prev);
+            if (next.has(category)) next.delete(category);
+            else next.add(category);
+            return next;
+        });
+    };
+
+    const toggleAllGroupsCollapsed = () => {
+        setCollapsedCategories(allGroupsCollapsed ? new Set() : new Set(visibleGroupedCategoryKeys));
+    };
+
     const flatMainItems = !shouldGroupByCategory && shouldSplitHiddenFlat
         ? pageItems.filter((item) => !item.secret || item.completed)
         : !shouldGroupByCategory
@@ -493,104 +516,100 @@ function AchievementPage() {
                 title={`${username}'s achievements`}
                 asideValue={<QuickActions username={username}/>}
                 description={apiData.isOwner
-                    ? `Unlock trophies across your media, minigames, and hidden secrets. Pin up to ${PROFILE_MAX_PINNED_ACHIEVEMENTS} to feature on your profile.`
+                    ? `Unlock trophies across media, minigames, and hidden secrets. Pin up to ${PROFILE_MAX_PINNED_ACHIEVEMENTS} 
+                    to feature on your profile.`
                     : `Explore ${username}'s unlocked trophies, rarest badges, and category masteries.`
                 }
             />
 
-            <AchievementSummary summary={apiData.summary}/>
+            <AchievementSummary
+                summary={apiData.summary}
+            />
 
-            {globalNextUp.length > 0 && (
-                <section aria-label="Next up" className="mt-5">
-                    <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        <Target className="size-3.5 text-brand"/>
-                        Next up
-                    </div>
-                    <div className="grid grid-cols-3 gap-2.5 max-lg:grid-cols-2 max-sm:grid-cols-1">
-                        {globalNextUp.map((item) => {
-                            const remaining = Math.max(1, Math.ceil(item.target - item.count));
-                            return (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    onClick={() => handleJumpToNextUp(item.codeName, item.category)}
-                                    className="group/next flex items-center gap-3 rounded-xl border border-border/80 bg-card/50 px-3 py-2.5 text-left transition-colors hover:border-brand/50 hover:bg-card"
-                                >
-                                    <AchievementBadge
-                                        size="xs"
-                                        icon={item.icon}
-                                        shape={item.shape}
-                                        rarity={item.rarity}
-                                        pattern={item.pattern}
-                                        category={item.category}
-                                        unlocked={false}
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="truncate text-xs font-semibold text-foreground transition-colors group-hover/next:text-brand">
-                                                {item.name}
-                                            </span>
-                                            <span className="shrink-0 text-[11px] font-bold tabular-nums text-brand">
-                                                {Math.round(item.progress)}%
-                                            </span>
-                                        </div>
-                                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                                            {item.description}
-                                        </p>
-                                        <div className="mt-0.5 truncate text-[10.5px] font-medium text-muted-foreground/80">
-                                            {item.metadata?.label ? `${item.metadata.label} · ` : `${ACHIEVEMENT_CATEGORY_LABELS[item.category]} · `}
-                                            {formatNumber(remaining)} more
-                                        </div>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </section>
-            )}
-
-            <div
-                ref={toolbarRef}
-                className="mt-6 flex scroll-mt-18 flex-wrap items-center justify-between gap-3 border-b pb-4"
-            >
-                <div className="inline-flex flex-wrap items-center gap-1 rounded-lg bg-muted/45 p-1">
-                    {statusOptions.map((option) => (
-                        <button
-                            key={option.id}
-                            type="button"
-                            onClick={() => handleStatusChange(option.id)}
-                            className={cn(
-                                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-                                statusFilter === option.id
-                                    ? "bg-card text-foreground shadow-xs ring-1 ring-border/70"
-                                    : "text-muted-foreground hover:text-foreground",
-                            )}
-                        >
-                            {option.id === "pinned" && <Pin className="size-3"/>}
-                            {option.label}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
-                    <Select
-                        items={categoryOptions}
-                        value={currentCategory}
-                        onValueChange={(value) => value && setCategory(value as CategoryFilter)}
+            <nav aria-label="Achievement categories" className="mt-6">
+                <div className="flex flex-wrap justify-center items-center gap-1.5 pb-3 max-w-3xl mx-auto max-sm:w-full">
+                    <button
+                        type="button"
+                        aria-pressed={currentCategory === "all"}
+                        onClick={() => setCategory("all")}
+                        className={cn(
+                            "inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                            currentCategory === "all"
+                                ? "border-brand/50 bg-brand/12 text-foreground shadow-xs"
+                                : "border-border/70 bg-card/40 text-muted-foreground hover:border-foreground/20 hover:text-foreground",
+                        )}
                     >
-                        <SelectTrigger aria-label="Filter by category" className="w-48 max-sm:flex-1">
-                            <SelectValue/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                {categoryOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                        {getCategoryIcon("all")}
+                        <span>All</span>
+                        <span className="text-[11px] tabular-nums text-muted-foreground">
+                            {formatNumber(apiData.summary.totalUnlocked)}/{formatNumber(apiData.summary.totalAvailable)}
+                        </span>
+                    </button>
+
+                    {availableCategories.map((category) => {
+                        const isPerfect = perfectSet.has(category);
+                        const isActive = currentCategory === category;
+                        const stats = categoryStats.get(category) ?? { unlocked: 0, total: 0 };
+
+                        return (
+                            <button
+                                type="button"
+                                key={category}
+                                aria-pressed={isActive}
+                                onClick={() => setCategory(category)}
+                                className={cn("inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs " +
+                                    "font-medium transition-colors", isActive
+                                    ? "border-brand/50 bg-brand/12 text-foreground shadow-xs"
+                                    : "border-border/70 bg-card/40 text-muted-foreground hover:border-foreground/20 hover:text-foreground",
+                                )}
+                            >
+                                {getCategoryIcon(category)}
+                                <span>
+                                    {ACHIEVEMENT_CATEGORY_LABELS[category]}
+                                </span>
+                                <span className={cn("inline-flex items-center gap-1 text-[11px] tabular-nums",
+                                    isPerfect ? "font-semibold text-achievement" : "text-muted-foreground")}
+                                >
+                                    {isPerfect && <Check className="size-3"/>}
+                                    {stats.unlocked}/{stats.total}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </nav>
+
+            <div ref={toolbarRef} className="mt-3 flex scroll-mt-18 flex-wrap items-center justify-between gap-3 border-b pb-4">
+                <SearchInput
+                    value={search}
+                    placeholder="Search..."
+                    className="w-100 max-sm:w-full"
+                    aria-label="Search achievements"
+                    onChange={(ev) => {
+                        setSearch(ev.target.value);
+                        setPage(1);
+                    }}
+                />
+
+                <div className="flex flex-wrap items-center gap-3 max-sm:w-full">
+                    <div className="inline-flex flex-wrap items-center gap-1 rounded-lg bg-muted/45 p-0.5 border">
+                        {statusOptions.map((option) =>
+                            <button
+                                type="button"
+                                key={option.id}
+                                onClick={() => handleStatusChange(option.id)}
+                                className={cn(
+                                    "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                                    statusFilter === option.id
+                                        ? "bg-card text-foreground shadow-xs ring-1 ring-border/70"
+                                        : "text-muted-foreground hover:text-foreground",
+                                )}
+                            >
+                                {option.id === "pinned" && <Pin className="size-3"/>}
+                                {option.label}
+                            </button>
+                        )}
+                    </div>
 
                     <Select
                         items={sortItems}
@@ -616,52 +635,43 @@ function AchievementPage() {
                         </SelectContent>
                     </Select>
 
-                    <SearchInput
-                        value={search}
-                        onChange={(ev) => {
-                            setSearch(ev.target.value);
-                            setPage(1);
-                        }}
-                        aria-label="Search achievements"
-                        placeholder="Search..."
-                        className="w-44 max-sm:w-full"
-                    />
-
-                    {canCompare && (
+                    {canCompare &&
                         <div className="flex items-center gap-2 rounded-lg border px-2.5 py-1.5">
                             <Switch
-                                id="compare-achievements"
                                 checked={compareMode}
+                                id="compare-achievements"
                                 onCheckedChange={setCompareMode}
                             />
                             <Label htmlFor="compare-achievements" className="cursor-pointer whitespace-nowrap text-xs">
                                 Compare
                             </Label>
                         </div>
-                    )}
+                    }
 
-                    {visibleHiddenLockedCount > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => setRevealAllSecrets((prev) => !prev)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-                        >
-                            {revealAllSecrets ? <EyeOff className="size-3.5"/> : <Eye className="size-3.5"/>}
+                    {visibleHiddenLockedCount > 0 &&
+                        <Button variant="outline" onClick={() => setRevealAllSecrets((prev) => !prev)}>
+                            {revealAllSecrets ? <EyeOff/> : <Eye/>}
                             {revealAllSecrets ? "Hide spoilers" : `Spoilers (${visibleHiddenLockedCount})`}
-                        </button>
-                    )}
+                        </Button>
+                    }
 
-                    {apiData.isOwner && (
-                        <button
-                            type="button"
-                            onClick={() => toggleAchievementSoundMuted()}
-                            title={soundMuted ? "Unlock sound muted — click to unmute" : "Mute achievement unlock sound"}
-                            aria-label={soundMuted ? "Unmute achievement unlock sound" : "Mute achievement unlock sound"}
-                            className="inline-flex items-center justify-center rounded-lg border p-1.5 text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-                        >
-                            {soundMuted ? <VolumeX className="size-4"/> : <Volume2 className="size-4"/>}
-                        </button>
-                    )}
+                    {visibleGroupedCategoryKeys.length > 1 &&
+                        <Button variant="outline" onClick={toggleAllGroupsCollapsed}>
+                            {allGroupsCollapsed
+                                ? <><ChevronsUpDown/> </>
+                                : <><ChevronsDownUp/> </>
+                            }
+                        </Button>
+                    }
+
+                    {apiData.isOwner &&
+                        <Button variant="outline" onClick={() => toggleAchievementSoundMuted()}>
+                            {soundMuted
+                                ? <><VolumeX/> </>
+                                : <><Volume2/> </>
+                            }
+                        </Button>
+                    }
                 </div>
             </div>
 
@@ -678,32 +688,39 @@ function AchievementPage() {
                     }
                 />
             ) : shouldGroupByCategory ? (
-                <div className="mt-6 space-y-9">
+                <div className="mt-6 space-y-8">
                     {groupedCategories.map((group) => {
                         const pct = group.totalCount > 0 ? (group.unlockedCount / group.totalCount) * 100 : 0;
                         const isPerfected = group.totalCount > 0 && group.unlockedCount === group.totalCount;
+                        const isCollapsed = collapsedCategories.has(group.category);
 
                         return (
                             <section key={group.category} aria-label={`${ACHIEVEMENT_CATEGORY_LABELS[group.category]} achievements`}>
-                                <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
+                                <button
+                                    type="button"
+                                    aria-expanded={!isCollapsed}
+                                    onClick={() => toggleCategoryCollapsed(group.category)}
+                                    className="group/cat-hdr mb-3.5 flex w-full flex-wrap items-center justify-between
+                                     gap-3 rounded-lg py-1 text-left transition-colors hover:text-brand"
+                                >
                                     <div className="flex items-center gap-2.5">
+                                        {isCollapsed
+                                            ? <ChevronRight className="size-4 text-muted-foreground transition-colors group-hover/cat-hdr:text-foreground"/>
+                                            : <ChevronDown className="size-4 text-muted-foreground transition-colors group-hover/cat-hdr:text-foreground"/>
+                                        }
                                         {getCategoryIcon(group.category)}
-                                        <Link
-                                            resetScroll={false}
-                                            params={{ username }}
-                                            to="/achievements/$username"
-                                            search={{ activeTab: group.category }}
-                                            className="text-sm font-semibold tracking-tight text-foreground transition-colors hover:text-brand"
-                                        >
+                                        <span className="text-sm font-semibold tracking-tight text-foreground transition-colors
+                                        group-hover/cat-hdr:text-brand">
                                             {ACHIEVEMENT_CATEGORY_LABELS[group.category]}
-                                        </Link>
-                                        {isPerfected && (
-                                            <span
-                                                className="inline-flex items-center gap-1 rounded-full border border-brand/40 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand">
+                                        </span>
+
+                                        {isPerfected &&
+                                            <span className="inline-flex items-center gap-1 rounded-full border
+                                            border-brand/40 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand">
                                                 <Trophy className="size-2.5"/>
                                                 100%
                                             </span>
-                                        )}
+                                        }
                                     </div>
                                     <div className="flex items-center gap-2.5">
                                         <Progress
@@ -716,57 +733,76 @@ function AchievementPage() {
                                             {group.unlockedCount}/{group.totalCount}
                                         </span>
                                     </div>
-                                </div>
+                                </button>
 
-                                <div className="grid grid-cols-2 gap-3.5 max-md:grid-cols-1">
-                                    {group.items.map((achievement) => (
-                                        <AchievementCard
-                                            key={achievement.id}
-                                            achievement={achievement}
-                                            isOwner={apiData.isOwner}
-                                            compareMode={compareMode}
-                                            revealAllSecrets={revealAllSecrets}
-                                            pinPending={pinMutationPending}
-                                            highlighted={highlight?.code === achievement.codeName}
-                                            isPinned={pinnedSet.has(achievement.codeName)}
-                                            onTogglePin={(codeName) => togglePin.mutate(codeName)}
-                                        />
-                                    ))}
-                                </div>
+                                {!isCollapsed && (
+                                    <div className="grid grid-cols-2 gap-3.5 max-md:grid-cols-1">
+                                        {group.items.map((achievement) => (
+                                            <AchievementCard
+                                                key={achievement.id}
+                                                achievement={achievement}
+                                                isOwner={apiData.isOwner}
+                                                compareMode={compareMode}
+                                                revealAllSecrets={revealAllSecrets}
+                                                pinPending={pinMutationPending}
+                                                highlighted={highlight?.code === achievement.codeName}
+                                                isPinned={pinnedSet.has(achievement.codeName)}
+                                                onTogglePin={(codeName) => togglePin.mutate(codeName)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </section>
                         );
                     })}
 
-                    {secretCategoryItems.length > 0 && (
-                        <section aria-label="Secret achievements">
-                            <div className={cn("mb-3.5 flex items-center justify-between gap-3", groupedCategories.length > 0 && "border-t pt-6")}>
-                                <div className="flex items-center gap-2">
-                                    <Lock className="size-3.5 text-fuchsia-600 dark:text-fuchsia-400"/>
-                                    <span className="text-sm font-semibold tracking-tight text-foreground">
-                                        Secrets
-                                    </span>
-                                    <span className="text-xs tabular-nums text-muted-foreground">
-                                        {secretStats.unlocked}/{secretStats.total}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3.5 max-md:grid-cols-1">
-                                {secretCategoryItems.map((achievement) => (
-                                    <AchievementCard
-                                        key={achievement.id}
-                                        achievement={achievement}
-                                        isOwner={apiData.isOwner}
-                                        compareMode={compareMode}
-                                        revealAllSecrets={revealAllSecrets}
-                                        pinPending={pinMutationPending}
-                                        highlighted={highlight?.code === achievement.codeName}
-                                        isPinned={pinnedSet.has(achievement.codeName)}
-                                        onTogglePin={(codeName) => togglePin.mutate(codeName)}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    )}
+                    {secretCategoryItems.length > 0 && (() => {
+                        const isSecretsCollapsed = collapsedCategories.has(AchievementCategory.SECRETS);
+                        return (
+                            <section aria-label="Secret achievements">
+                                <button
+                                    type="button"
+                                    aria-expanded={!isSecretsCollapsed}
+                                    onClick={() => toggleCategoryCollapsed(AchievementCategory.SECRETS)}
+                                    className={cn(
+                                        "group/cat-hdr mb-3.5 flex w-full items-center justify-between gap-3 py-1 text-left",
+                                        groupedCategories.length > 0 && "border-t pt-6",
+                                    )}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        {isSecretsCollapsed
+                                            ? <ChevronRight className="size-4 text-muted-foreground transition-colors group-hover/cat-hdr:text-foreground"/>
+                                            : <ChevronDown className="size-4 text-muted-foreground transition-colors group-hover/cat-hdr:text-foreground"/>
+                                        }
+                                        <Lock className="size-3.5 text-fuchsia-400"/>
+                                        <span className="text-sm font-semibold tracking-tight text-foreground transition-colors group-hover/cat-hdr:text-brand">
+                                            Secrets
+                                        </span>
+                                        <span className="text-xs tabular-nums text-muted-foreground">
+                                            {secretStats.unlocked}/{secretStats.total}
+                                        </span>
+                                    </div>
+                                </button>
+                                {!isSecretsCollapsed && (
+                                    <div className="grid grid-cols-2 gap-3.5 max-md:grid-cols-1">
+                                        {secretCategoryItems.map((achievement) => (
+                                            <AchievementCard
+                                                key={achievement.id}
+                                                achievement={achievement}
+                                                isOwner={apiData.isOwner}
+                                                compareMode={compareMode}
+                                                revealAllSecrets={revealAllSecrets}
+                                                pinPending={pinMutationPending}
+                                                highlighted={highlight?.code === achievement.codeName}
+                                                isPinned={pinnedSet.has(achievement.codeName)}
+                                                onTogglePin={(codeName) => togglePin.mutate(codeName)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </section>
+                        );
+                    })()}
                 </div>
             ) : (
                 <div className="mt-5">

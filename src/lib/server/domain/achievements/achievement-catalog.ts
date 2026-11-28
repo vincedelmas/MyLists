@@ -10,9 +10,23 @@ export type AchievementCalculationRow = {
     label?: string | null;
 };
 
+export type AchievementTrigger =
+    | "status"
+    | "dropped"
+    | "rating"
+    | "comment"
+    | "favorite"
+    | "redo"
+    | "progress"
+    | "platform"
+    | "game-achievements"
+    | "book-details"
+    | "wcf";
+
 
 type AchievementEntry = Omit<AchievementSeedData, "codeName" | "category" | "mediaType" | "sortOrder"> & {
     calculate?: AchievementCalculation;
+    triggers?: readonly AchievementTrigger[];
 };
 
 
@@ -28,7 +42,7 @@ export const defineAchievementCatalog = <
     TEntries extends Record<string, AchievementEntry>,
 >({ category, mediaType, entries }: AchievementCatalogOptions<TCategory, TEntries>) => {
     const definitions: AchievementSeedData[] = Object.entries(entries).map(([codeName, entry], index) => {
-        const { calculate: _calculate, ...definition } = entry;
+        const { calculate: _calculate, triggers: _triggers, ...definition } = entry;
 
         return {
             ...definition,
@@ -48,6 +62,12 @@ export const defineAchievementCatalog = <
             const entry = entries[codeName];
             if (!entry) throw new Error(`Invalid achievement codeName: ${codeName}`);
             return entry.calculate ?? null;
+        },
+        matchesTriggers(codeName: string, activeTriggers?: readonly AchievementTrigger[]): boolean {
+            if (!activeTriggers || activeTriggers.length === 0) return true;
+            const entry = entries[codeName];
+            if (!entry?.triggers || entry.triggers.length === 0) return true;
+            return entry.triggers.some((trigger) => activeTriggers.includes(trigger));
         },
     };
 };

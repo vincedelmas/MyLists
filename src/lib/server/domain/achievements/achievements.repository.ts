@@ -1,9 +1,9 @@
 import {timeRequiredForLevel} from "@/lib/utils/media/level";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AchievementCategory, MediaType} from "@/lib/utils/enums";
-import {RARE_RARITY_THRESHOLD, RARITY_MIN_LEVEL} from "@/lib/utils/achievements";
 import {achievement, user, userAchievement, userMediaSettings} from "@/lib/server/database/schema";
 import type {AchievementCalculationRow} from "@/lib/server/domain/achievements/achievement-catalog";
+import {getRaritySortValue, RARE_RARITY_THRESHOLD, RARITY_MIN_LEVEL} from "@/lib/utils/achievements";
 import {and, asc, count, desc, eq, gt, gte, inArray, isNull, lt, notInArray, or, sql} from "drizzle-orm";
 import type {
     Achievement,
@@ -469,7 +469,7 @@ export class AchievementsRepository {
                 : eligibleGlobalCount;
 
             if (eligibleUsers === 0) {
-                db.update(achievement).set({ rarity: 0 }).where(eq(achievement.id, ach.id)).run();
+                db.update(achievement).set({ rarity: null }).where(eq(achievement.id, ach.id)).run();
                 continue;
             }
 
@@ -491,6 +491,47 @@ export class AchievementsRepository {
             unlockedCount: unlockedByAchievement.get(ach.id) ?? 0,
             eligibleUsers: ach.mediaType ? (eligibleUsersByMedia.get(ach.mediaType) ?? 0) : eligibleGlobalCount,
         }));
+    }
+
+    static getRecentUnlockedAchievements(userId: number, since?: string, limit = 3): {
+        totalNew: number;
+        serverNow: string;
+        items: UnlockedAchievementToast[];
+    } {
+        const db = getDbClient();
+
+        const serverNow = db.get<{ now: string }>(sql`SELECT datetime('now') AS now`)!.now;
+        if (!since) return { serverNow, totalNew: 0, items: [] };
+
+        const activeMediaTypes = this.getActiveMediaTypesForUser(userId);
+        const visibilityCondition = activeMediaTypes.length > 0
+            ? or(isNull(achievement.mediaType), inArray(achievement.mediaType, activeMediaTypes))
+            : isNull(achievement.mediaType);
+
+        const rows = db
+            .select({
+                achievement,
+                metadata: userAchievement.metadata,
+                completedAt: userAchievement.completedAt,
+            }).from(userAchievement)
+            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .where(and(
+                visibilityCondition,
+                eq(userAchievement.userId, userId),
+                eq(userAchievement.completed, true),
+                gt(userAchievement.completedAt, since),
+            )).all();
+
+        const sorted = rows.sort((a, b) =>
+            getRaritySortValue(a.achievement.rarity) - getRaritySortValue(b.achievement.rarity)
+            || (b.completedAt ?? "").localeCompare(a.completedAt ?? ""),
+        );
+
+        return {
+            serverNow,
+            totalNew: sorted.length,
+            items: sorted.slice(0, limit).map((row) => toUnlockedToast(row.achievement, row.metadata ?? null)),
+        };
     }
 }
 

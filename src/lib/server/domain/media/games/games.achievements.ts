@@ -122,6 +122,17 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "circle",
                 pattern: "rings",
                 target: 1,
+                triggers: ["status"],
+                calculate: completedGames,
+            },
+            games_10: {
+                name: "Quest Log Clearing",
+                description: "Complete 10 games. Credits rolled, next adventure queued.",
+                icon: "joystick",
+                shape: "circle",
+                pattern: "rings",
+                target: 10,
+                triggers: ["status"],
                 calculate: completedGames,
             },
             games_25: {
@@ -131,6 +142,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "octagon",
                 pattern: "rays",
                 target: 25,
+                triggers: ["status"],
                 calculate: completedGames,
             },
             games_100: {
@@ -140,6 +152,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "shield",
                 pattern: "rays",
                 target: 100,
+                triggers: ["status"],
                 calculate: completedGames,
             },
             games_rated_25: {
@@ -149,6 +162,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "circle",
                 pattern: "dots",
                 target: 25,
+                triggers: ["rating"],
                 calculate: queries.countList(isNotNull(listTable.rating)),
             },
             games_commented_15: {
@@ -158,6 +172,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "circle",
                 pattern: "dots",
                 target: 15,
+                triggers: ["comment"],
                 calculate: queries.countNonEmptyComment(),
             },
             games_hours_500: {
@@ -167,6 +182,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "octagon",
                 pattern: "rings",
                 target: 500,
+                triggers: ["progress", "status"],
                 calculate: timeSpentHours,
             },
             games_hours_2500: {
@@ -176,6 +192,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "shield",
                 pattern: "rays",
                 target: 2500,
+                triggers: ["progress", "status"],
                 calculate: timeSpentHours,
             },
             games_developer_5: {
@@ -185,6 +202,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "hex",
                 pattern: "rays",
                 target: 5,
+                triggers: ["status"],
                 calculate: developer,
             },
             games_platforms_5: {
@@ -194,6 +212,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "hex",
                 pattern: "rings",
                 target: 5,
+                triggers: ["platform", "status"],
                 calculate: platforms,
             },
             games_short_8: {
@@ -203,6 +222,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "circle",
                 pattern: "rings",
                 target: 8,
+                triggers: ["progress", "status"],
                 calculate: shortGames,
             },
             games_long_5: {
@@ -212,6 +232,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "octagon",
                 pattern: "rays",
                 target: 5,
+                triggers: ["progress", "status"],
                 calculate: longGames,
             },
             games_genres_8: {
@@ -221,6 +242,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "hex",
                 pattern: "dots",
                 target: 8,
+                triggers: ["status"],
                 calculate: queries.countDistinctGenres(notInArray(gamesList.status, [Status.DROPPED, Status.PLANNED])),
             },
             games_perfect_1: {
@@ -230,6 +252,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "octagon",
                 pattern: "rays",
                 target: 1,
+                triggers: ["game-achievements"],
                 calculate: perfectGames,
             },
             games_perfect_10: {
@@ -239,6 +262,7 @@ export const createGamesAchievementCatalog = (definition: GamesServerDefinition)
                 shape: "shield",
                 pattern: "rays",
                 target: 10,
+                triggers: ["game-achievements"],
                 calculate: perfectGames,
             },
         },

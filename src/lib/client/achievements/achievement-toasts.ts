@@ -1,19 +1,25 @@
-import {useEffect, useSyncExternalStore} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {useEffect, useSyncExternalStore} from "react";
 import {useQueryClient, type QueryClient} from "@tanstack/react-query";
-import {postUnlockClientAchievement} from "@/lib/server/functions/user-achievements";
 import type {ClientEventAchievementCode, UnlockedAchievementToast} from "@/lib/types/achievements.types";
+import {getRecentUnlockedAchievements, postUnlockClientAchievement} from "@/lib/server/functions/user-achievements";
 
 
-type Listener = (items: UnlockedAchievementToast[]) => void;
+type Listener = (items: UnlockedAchievementToast[], overflowCount: number) => void;
 
 
-const SOUND_MUTED_STORAGE_KEY = "mylists:achievement-sound-muted";
+const SYNC_COOLDOWN_MS = 60_000;
 const CLIENT_ACH_STORAGE_PREFIX = "mylists:client-achievements:";
+const SOUND_MUTED_STORAGE_KEY = "mylists:achievement-sound-muted";
+const LAST_SEEN_STORAGE_PREFIX = "mylists:achievements-last-seen:";
 
 const listeners = new Set<Listener>();
-const soundListeners = new Set<() => void>();
 const inFlightRequests = new Set<string>();
+const soundListeners = new Set<() => void>();
+const toastedThisSession = new Set<string>();
+
+let lastSyncAt = 0;
+let syncInFlight = false;
 
 
 const readCompletedClientCodes = (userId: number): Set<string> => {
@@ -36,6 +42,28 @@ const markCompletedClientCode = (userId: number, codeName: string) => {
         const existing = readCompletedClientCodes(userId);
         existing.add(codeName);
         window.localStorage.setItem(`${CLIENT_ACH_STORAGE_PREFIX}${userId}`, JSON.stringify([...existing]));
+    }
+    catch {
+        // Ignore storage quota / private mode errors
+    }
+};
+
+
+const readLastSeenAt = (userId: number): string | null => {
+    if (typeof window === "undefined") return null;
+    try {
+        return window.localStorage.getItem(`${LAST_SEEN_STORAGE_PREFIX}${userId}`);
+    }
+    catch {
+        return null;
+    }
+};
+
+
+const writeLastSeenAt = (userId: number, timestamp: string) => {
+    if (typeof window === "undefined") return;
+    try {
+        window.localStorage.setItem(`${LAST_SEEN_STORAGE_PREFIX}${userId}`, timestamp);
     }
     catch {
         // Ignore storage quota / private mode errors
@@ -101,10 +129,48 @@ export const useClientAchievement = (codeName: ClientEventAchievementCode) => {
 };
 
 
-export const enqueueAchievementToasts = (items: UnlockedAchievementToast[]) => {
+export const enqueueAchievementToasts = (items: UnlockedAchievementToast[], overflowCount = 0) => {
     if (items.length === 0) return;
+    for (const item of items) {
+        toastedThisSession.add(item.codeName);
+    }
     for (const listener of listeners) {
-        listener(items);
+        listener(items, overflowCount);
+    }
+};
+
+
+export const syncRecentAchievements = async (userId: number, queryClient: QueryClient, force = false) => {
+    if (typeof window === "undefined" || syncInFlight) return;
+
+    const now = Date.now();
+    if (!force && now - lastSyncAt < SYNC_COOLDOWN_MS) return;
+
+    syncInFlight = true;
+    lastSyncAt = now;
+
+    try {
+        const since = readLastSeenAt(userId);
+        const { serverNow, items, totalNew } = await getRecentUnlockedAchievements({
+            data: since ? { since } : {},
+        });
+
+        writeLastSeenAt(userId, serverNow);
+        if (!since || items.length === 0) return;
+
+        const unseen = items.filter((item) => !toastedThisSession.has(item.codeName));
+        if (unseen.length === 0) return;
+
+        const overflowCount = Math.max(0, totalNew - items.length);
+        enqueueAchievementToasts(unseen, overflowCount);
+        void queryClient.invalidateQueries({ queryKey: ["profile"] });
+        void queryClient.invalidateQueries({ queryKey: ["achievementPage"] });
+    }
+    catch {
+        // Non-critical background sync, retry on next focus
+    }
+    finally {
+        syncInFlight = false;
     }
 };
 

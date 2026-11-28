@@ -1,8 +1,9 @@
-import {Volume2, VolumeX, X} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
+import {Volume2, VolumeX, X} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import {useNavigate} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {useQueryClient} from "@tanstack/react-query";
 import {formatPercent} from "@/lib/utils/formatting/number";
 import {getAchievementRarityTier} from "@/lib/utils/achievements";
 import type {UnlockedAchievementToast} from "@/lib/types/achievements.types";
@@ -10,6 +11,7 @@ import {AchievementBadge} from "@/lib/client/components/achievements/Achievement
 import {
     isAchievementSoundMuted,
     subscribeAchievementToasts,
+    syncRecentAchievements,
     toggleAchievementSoundMuted,
     useAchievementSoundMuted,
 } from "@/lib/client/achievements/achievement-toasts";
@@ -107,33 +109,59 @@ const playAchievementUnlockSound = (isSpecial: boolean) => {
 export function AchievementToastHost() {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const queryClient = useQueryClient();
+    const isHoveredRef = useRef(false);
     const soundMuted = useAchievementSoundMuted();
     const startedAtRef = useRef<number>(0);
     const remainingMsRef = useRef(TOAST_DURATION_MS);
-    const [queue, setQueue] = useState<QueuedToast[]>([]);
     const [paused, setPaused] = useState(false);
+    const [queue, setQueue] = useState<QueuedToast[]>([]);
     const lastKeyRef = useRef<string | null>(null);
+    const [overflowCount, setOverflowCount] = useState(0);
 
     const current = queue[0] ?? null;
     const currentKey = current?.key ?? null;
-    const queuedCount = Math.max(0, queue.length - 1);
+    const extraCount = Math.max(0, queue.length - 1) + overflowCount;
 
     const currentTier = current ? getAchievementRarityTier(current.item.rarity) : "common";
-    const isSpecialSound = Boolean(current && (current.item.secret || currentTier === "rare" || currentTier === "ultra"));
+    const isFirstUnlock = Boolean(current && current.item.rarity === 0);
+    const isSpecialSound = Boolean(current && (current.item.secret || currentTier === "rare" || currentTier === "ultra" || isFirstUnlock));
 
     useEffect(() => {
-        return subscribeAchievementToasts((items) => {
+        return subscribeAchievementToasts((items, extra) => {
             const nextEntries = items.map((item) => ({
                 item,
                 key: `${item.codeName}-${Date.now()}-${Math.random()}`,
             }));
             setQueue((prev) => [...prev, ...nextEntries]);
+            if (extra > 0) {
+                setOverflowCount((prev) => prev + extra);
+            }
         });
     }, []);
 
     useEffect(() => {
+        const userId = currentUser?.id;
+        if (!userId) return;
+
+        void syncRecentAchievements(userId, queryClient, true);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") {
+                void syncRecentAchievements(userId, queryClient);
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibility);
+        return () => document.removeEventListener("visibilitychange", handleVisibility);
+    }, [currentUser?.id, queryClient]);
+
+    useEffect(() => {
         if (!currentKey) {
             lastKeyRef.current = null;
+            isHoveredRef.current = false;
+            setPaused(false);
+            setOverflowCount(0);
             return;
         }
 
@@ -161,25 +189,31 @@ export function AchievementToastHost() {
 
     const { item } = current;
     const isRare = currentTier === "rare";
-    const isUltra = currentTier === "ultra";
+    const isUltra = currentTier === "ultra" || isFirstUnlock;
     const hasRarity = item.rarity !== null && item.rarity > 0;
 
     const eyebrow = item.secret
-        ? `Secret unlocked${hasRarity ? ` · ${formatPercent(item.rarity)}` : ""}`
-        : isUltra && hasRarity
-            ? `Ultra rare · ${formatPercent(item.rarity)}`
-            : isRare && hasRarity
-                ? `Rare achievement · ${formatPercent(item.rarity)}`
-                : "Achievement unlocked";
+        ? isFirstUnlock
+            ? "Secret · First to unlock!"
+            : `Secret unlocked${hasRarity ? ` · ${formatPercent(item.rarity)}` : ""}`
+        : isFirstUnlock
+            ? "First to unlock!"
+            : currentTier === "ultra" && hasRarity
+                ? `Ultra rare · ${formatPercent(item.rarity)}`
+                : isRare && hasRarity
+                    ? `Rare achievement · ${formatPercent(item.rarity)}`
+                    : "Achievement unlocked";
 
     const dismissCurrent = () => {
-        setPaused(false);
+        setPaused(isHoveredRef.current);
         setQueue((prev) => prev.slice(1));
     };
 
     const handleOpen = () => {
         if (!currentUser) return;
-        dismissCurrent();
+        isHoveredRef.current = false;
+        setPaused(false);
+        setQueue((prev) => prev.slice(1));
 
         void navigate({
             hash: `ach-${item.codeName}`,
@@ -190,14 +224,23 @@ export function AchievementToastHost() {
     };
 
     return (
-        <div aria-live="polite" className="pointer-events-none fixed inset-x-4 top-18 z-50 mx-auto w-auto max-w-md">
+        <div
+            aria-live="polite"
+            onMouseEnter={() => {
+                isHoveredRef.current = true;
+                setPaused(true);
+            }}
+            onMouseLeave={() => {
+                isHoveredRef.current = false;
+                setPaused(false);
+            }}
+            className="pointer-events-none fixed inset-x-4 top-18 z-50 mx-auto w-auto max-w-md"
+        >
             <div
                 key={current.key}
                 onClick={handleOpen}
                 tabIndex={currentUser ? 0 : undefined}
                 role={currentUser ? "button" : "status"}
-                onMouseEnter={() => setPaused(true)}
-                onMouseLeave={() => setPaused(false)}
                 onKeyDown={(ev) => {
                     if (currentUser && (ev.key === "Enter" || ev.key === " ")) {
                         ev.preventDefault();
@@ -218,7 +261,7 @@ export function AchievementToastHost() {
                     unlocked={true}
                     icon={item.icon}
                     shape={item.shape}
-                    rarity={item.rarity}
+                    rarity={isFirstUnlock ? 1 : item.rarity}
                     pattern={item.pattern}
                     category={item.category}
                 />
@@ -231,15 +274,15 @@ export function AchievementToastHost() {
                                 : isRare
                                     ? "text-gold"
                                     : item.secret
-                                        ? "text-fuchsia-600 dark:text-fuchsia-400"
+                                        ? "text-fuchsia-400"
                                         : "text-brand")}
                         >
                             {eyebrow}
                         </span>
-                        {queuedCount > 0 &&
+                        {extraCount > 0 &&
                             <span className="shrink-0 rounded-full border border-border bg-muted px-1.5 py-px text-[10px]
                             font-semibold tabular-nums text-muted-foreground">
-                                +{queuedCount}
+                                +{extraCount}
                             </span>
                         }
                     </div>
@@ -278,8 +321,11 @@ export function AchievementToastHost() {
                 </div>
 
                 <div
-                    style={{ "--toast-duration": `${TOAST_DURATION_MS}ms` } as React.CSSProperties}
-                    className={cn("animate-achievement-timer absolute inset-x-0 bottom-0 h-0.5 group-hover/ach-toast:paused",
+                    style={{
+                        "--toast-duration": `${TOAST_DURATION_MS}ms`,
+                        animationPlayState: paused ? "paused" : "running",
+                    } as React.CSSProperties}
+                    className={cn("animate-achievement-timer absolute inset-x-0 bottom-0 h-0.5",
                         isUltra ? "bg-platinum" : isRare ? "bg-gold" : item.secret ? "bg-fuchsia-500" : "bg-brand",
                     )}
                 />

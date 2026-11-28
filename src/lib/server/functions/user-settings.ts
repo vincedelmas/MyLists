@@ -1,12 +1,12 @@
 import {APIError} from "better-auth/api";
 import {auth} from "@/lib/server/core/auth";
-import {MediaType} from "@/lib/utils/enums";
 import {user} from "@/lib/server/database/schema";
 import {createServerFn} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
 import {ValidationError} from "@/lib/utils/error-classes";
 import {clearAdminCookie} from "@/lib/server/core/admin-auth";
+import {AchievementCategory, MediaType} from "@/lib/utils/enums";
 import {getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {saveUploadedImage} from "@/lib/server/core/images/image-saver";
@@ -87,7 +87,14 @@ export const postMediaListSettings = createServerFn({ method: "POST" })
         });
 
         // Re compute user's overview stats
-        await container.cacheManager.del(getUserStatsCacheKey(currentUser.id, "overview"))
+        await container.cacheManager.del(getUserStatsCacheKey(currentUser.id, "overview"));
+
+        const unlockedAchievements = container.services.achievements.evaluateUserCategories(currentUser.id, [
+            AchievementCategory.GENERAL,
+            AchievementCategory.SECRETS,
+        ]);
+
+        return { unlockedAchievements };
     });
 
 

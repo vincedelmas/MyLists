@@ -75,3 +75,12 @@ export const postUnlockClientAchievement = createServerFn({ method: "POST" })
         const unlocked = container.services.achievements.unlockEventAchievement(currentUser.id, codeName);
         return { unlocked };
     });
+
+
+export const getRecentUnlockedAchievements = createServerFn({ method: "GET" })
+    .middleware([requiredAuthMiddleware])
+    .validator(z.object({ since: z.string().optional() }))
+    .handler(async ({ data: { since }, context: { currentUser } }) => {
+        const container = await getContainer();
+        return container.services.achievements.getRecentUnlockedAchievements(currentUser.id, since);
+    });

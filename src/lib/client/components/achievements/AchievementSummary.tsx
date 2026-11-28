@@ -5,6 +5,7 @@ import {Progress} from "@/lib/client/components/ui/progress";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
 import {AchievementBadge} from "@/lib/client/components/achievements/AchievementBadge";
 import {ACHIEVEMENT_CATEGORY_LABELS, getAchievementRarityTier} from "@/lib/utils/achievements";
+import {Badge} from "@/lib/client/components/ui/badge";
 
 
 interface AchievementSummaryProps {
@@ -43,22 +44,19 @@ export const AchievementSummary = ({ summary }: AchievementSummaryProps) => {
                         aria-label="Overall achievement completion"
                     />
 
-                    {summary.perfectCategories.length > 0 && (
+                    {summary.perfectCategories.length > 0 &&
                         <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
-                            <span className="inline-flex items-center gap-1 font-semibold text-brand">
+                            <span className="inline-flex items-center gap-1 font-semibold text-achievement">
                                 <Trophy className="size-3.5"/>
                                 100%:
                             </span>
-                            {summary.perfectCategories.map((category) => (
-                                <span
-                                    key={category}
-                                    className="rounded-md border border-brand/30 bg-brand/8 px-2 py-0.5 text-[11px] font-medium text-foreground"
-                                >
+                            {summary.perfectCategories.map((category) =>
+                                <Badge variant="outline">
                                     {ACHIEVEMENT_CATEGORY_LABELS[category]}
-                                </span>
-                            ))}
+                                </Badge>
+                            )}
                         </div>
-                    )}
+                    }
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 border-t pt-4 lg:contents">
@@ -94,7 +92,7 @@ export const AchievementSummary = ({ summary }: AchievementSummaryProps) => {
                 </div>
 
                 <div className="flex items-center gap-3 border-t pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
-                    {summary.rarestUnlocked ? (
+                    {summary.rarestUnlocked ?
                         <>
                             <AchievementBadge
                                 size="xs"
@@ -129,14 +127,14 @@ export const AchievementSummary = ({ summary }: AchievementSummaryProps) => {
                                 </div>
                             </div>
                         </>
-                    ) : (
+                        :
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Award className="size-4 shrink-0"/>
                             <span>
                                 No trophies unlocked yet
                             </span>
                         </div>
-                    )}
+                    }
                 </div>
             </div>
         </section>

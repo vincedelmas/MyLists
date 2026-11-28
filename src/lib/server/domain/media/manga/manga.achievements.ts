@@ -84,6 +84,17 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "circle",
                 pattern: "rings",
                 target: 1,
+                triggers: ["status"],
+                calculate: completedManga,
+            },
+            manga_10: {
+                name: "Panel Regular",
+                description: "Complete 10 manga. Your reading speed has officially leveled up.",
+                icon: "open-book",
+                shape: "circle",
+                pattern: "rings",
+                target: 10,
+                triggers: ["status"],
                 calculate: completedManga,
             },
             manga_25: {
@@ -93,6 +104,7 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "octagon",
                 pattern: "rays",
                 target: 25,
+                triggers: ["status"],
                 calculate: completedManga,
             },
             manga_100: {
@@ -102,6 +114,7 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "shield",
                 pattern: "rays",
                 target: 100,
+                triggers: ["status"],
                 calculate: completedManga,
             },
             manga_rated_25: {
@@ -111,6 +124,7 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "circle",
                 pattern: "dots",
                 target: 25,
+                triggers: ["rating"],
                 calculate: queries.countList(isNotNull(listTable.rating)),
             },
             manga_commented_15: {
@@ -120,6 +134,7 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "circle",
                 pattern: "dots",
                 target: 15,
+                triggers: ["comment"],
                 calculate: queries.countNonEmptyComment(),
             },
             manga_author_3: {
@@ -129,6 +144,7 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "hex",
                 pattern: "rays",
                 target: 3,
+                triggers: ["status"],
                 calculate: authors,
             },
             manga_chapters_1000: {
@@ -138,6 +154,7 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "octagon",
                 pattern: "rings",
                 target: 1000,
+                triggers: ["progress", "status", "redo"],
                 calculate: chaptersRead,
             },
             manga_short_5: {
@@ -147,6 +164,7 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "circle",
                 pattern: "rings",
                 target: 5,
+                triggers: ["status"],
                 calculate: shortManga,
             },
             manga_long_2: {
@@ -156,6 +174,7 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "octagon",
                 pattern: "rays",
                 target: 2,
+                triggers: ["status"],
                 calculate: longManga,
             },
             manga_genres_6: {
@@ -165,6 +184,7 @@ export const createMangaAchievementCatalog = (definition: MangaServerDefinition)
                 shape: "hex",
                 pattern: "dots",
                 target: 6,
+                triggers: ["status"],
                 calculate: queries.countDistinctGenres(),
             },
         },

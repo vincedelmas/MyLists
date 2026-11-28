@@ -133,24 +133,37 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "circle",
                 pattern: "rings",
                 target: 1,
+                triggers: ["status"],
+                calculate: completedMovies,
+            },
+            movies_10: {
+                name: "Matinee Regular",
+                description: "Complete 10 movies. Your watchlist is finally making real progress.",
+                icon: "ticket",
+                shape: "circle",
+                pattern: "rings",
+                target: 10,
+                triggers: ["status"],
                 calculate: completedMovies,
             },
             movies_50: {
                 name: "Regular Ticket Holder",
                 description: "Complete 50 movies. Your local cinema misses your popcorn budget.",
-                icon: "ticket",
+                icon: "popcorn",
                 shape: "circle",
-                pattern: "rings",
+                pattern: "rays",
                 target: 50,
+                triggers: ["status"],
                 calculate: completedMovies,
             },
             movies_250: {
                 name: "Cinephile Marathoner",
                 description: "Complete 250 movies, because real life has too few explosions and car chases.",
-                icon: "popcorn",
+                icon: "film-strip",
                 shape: "octagon",
                 pattern: "rays",
                 target: 250,
+                triggers: ["status"],
                 calculate: completedMovies,
             },
             movies_750: {
@@ -160,6 +173,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "shield",
                 pattern: "rays",
                 target: 750,
+                triggers: ["status"],
                 calculate: completedMovies,
             },
             movies_rated_50: {
@@ -169,6 +183,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "circle",
                 pattern: "dots",
                 target: 50,
+                triggers: ["rating"],
                 calculate: queries.countList(isNotNull(listTable.rating)),
             },
             movies_commented_25: {
@@ -178,6 +193,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "circle",
                 pattern: "dots",
                 target: 25,
+                triggers: ["comment"],
                 calculate: queries.countNonEmptyComment(),
             },
             movies_director_8: {
@@ -187,6 +203,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "hex",
                 pattern: "rays",
                 target: 8,
+                triggers: ["status"],
                 calculate: director,
             },
             movies_actor_12: {
@@ -196,6 +213,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "hex",
                 pattern: "dots",
                 target: 12,
+                triggers: ["status"],
                 calculate: actor,
             },
             movies_languages_6: {
@@ -205,6 +223,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "hex",
                 pattern: "rings",
                 target: 6,
+                triggers: ["status"],
                 calculate: language,
             },
             movies_long_12: {
@@ -214,6 +233,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "octagon",
                 pattern: "rings",
                 target: 12,
+                triggers: ["status"],
                 calculate: longMovies,
             },
             movies_short_15: {
@@ -223,6 +243,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "circle",
                 pattern: "rings",
                 target: 15,
+                triggers: ["status"],
                 calculate: shortMovies,
             },
             movies_genres_10: {
@@ -232,6 +253,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "hex",
                 pattern: "dots",
                 target: 10,
+                triggers: ["status"],
                 calculate: queries.countDistinctGenres(),
             },
             movies_rewatch_5: {
@@ -241,6 +263,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "circle",
                 pattern: "rings",
                 target: 5,
+                triggers: ["redo", "status"],
                 calculate: rewatches,
             },
             movies_classic_10: {
@@ -250,6 +273,7 @@ export const createMoviesAchievementCatalog = (definition: MovieServerDefinition
                 shape: "octagon",
                 pattern: "rays",
                 target: 10,
+                triggers: ["status"],
                 calculate: classicMovies,
             },
         },

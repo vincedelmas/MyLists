@@ -96,6 +96,17 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "circle",
                     pattern: "rings",
                     target: 1,
+                    triggers: ["status"],
+                    calculate: completedShows,
+                },
+                anime_10: {
+                    name: "Subbed & Hooked",
+                    description: "Complete 10 anime. You've already got strong opinions on opening themes.",
+                    icon: "katana",
+                    shape: "circle",
+                    pattern: "rings",
+                    target: 10,
+                    triggers: ["status"],
                     calculate: completedShows,
                 },
                 anime_30: {
@@ -105,6 +116,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "octagon",
                     pattern: "rays",
                     target: 30,
+                    triggers: ["status"],
                     calculate: completedShows,
                 },
                 anime_120: {
@@ -114,6 +126,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "shield",
                     pattern: "rays",
                     target: 120,
+                    triggers: ["status"],
                     calculate: completedShows,
                 },
                 anime_rated_30: {
@@ -123,6 +136,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "circle",
                     pattern: "dots",
                     target: 30,
+                    triggers: ["rating"],
                     calculate: queries.countList(isNotNull(listTable.rating)),
                 },
                 anime_commented_15: {
@@ -132,6 +146,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "circle",
                     pattern: "dots",
                     target: 15,
+                    triggers: ["comment"],
                     calculate: queries.countNonEmptyComment(),
                 },
                 anime_seiyuu_10: {
@@ -141,6 +156,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "hex",
                     pattern: "rays",
                     target: 10,
+                    triggers: ["status"],
                     calculate: actor,
                 },
                 anime_short_12: {
@@ -150,6 +166,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "circle",
                     pattern: "rings",
                     target: 12,
+                    triggers: ["status"],
                     calculate: shortShows(13),
                 },
                 anime_long_3: {
@@ -159,6 +176,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "octagon",
                     pattern: "rays",
                     target: 3,
+                    triggers: ["status"],
                     calculate: longShows(150),
                 },
                 anime_genres_8: {
@@ -168,6 +186,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "hex",
                     pattern: "rays",
                     target: 8,
+                    triggers: ["status"],
                     calculate: queries.countDistinctGenres(),
                 },
                 anime_episodes_1000: {
@@ -177,6 +196,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                     shape: "octagon",
                     pattern: "rings",
                     target: 1000,
+                    triggers: ["progress", "status", "redo"],
                     calculate: episodesWatched,
                 },
             },
@@ -194,6 +214,17 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "circle",
                 pattern: "rings",
                 target: 1,
+                triggers: ["status"],
+                calculate: completedShows,
+            },
+            series_10: {
+                name: "Seasoned Viewer",
+                description: "Complete 10 TV series. Just one more episode is officially a lifestyle.",
+                icon: "video-camera",
+                shape: "circle",
+                pattern: "rings",
+                target: 10,
+                triggers: ["status"],
                 calculate: completedShows,
             },
             series_25: {
@@ -203,6 +234,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "octagon",
                 pattern: "rays",
                 target: 25,
+                triggers: ["status"],
                 calculate: completedShows,
             },
             series_100: {
@@ -212,6 +244,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "shield",
                 pattern: "rays",
                 target: 100,
+                triggers: ["status"],
                 calculate: completedShows,
             },
             series_rated_30: {
@@ -221,6 +254,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "circle",
                 pattern: "dots",
                 target: 30,
+                triggers: ["rating"],
                 calculate: queries.countList(isNotNull(listTable.rating)),
             },
             series_commented_15: {
@@ -230,6 +264,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "circle",
                 pattern: "dots",
                 target: 15,
+                triggers: ["comment"],
                 calculate: queries.countNonEmptyComment(),
             },
             series_actor_8: {
@@ -239,6 +274,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "hex",
                 pattern: "rays",
                 target: 8,
+                triggers: ["status"],
                 calculate: actor,
             },
             series_short_10: {
@@ -248,6 +284,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "circle",
                 pattern: "rings",
                 target: 10,
+                triggers: ["status"],
                 calculate: shortShows(8),
             },
             series_long_3: {
@@ -257,6 +294,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "octagon",
                 pattern: "rays",
                 target: 3,
+                triggers: ["status"],
                 calculate: longShows(150),
             },
             series_networks_20: {
@@ -266,6 +304,7 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "hex",
                 pattern: "rings",
                 target: 20,
+                triggers: ["status"],
                 calculate: networks,
             },
             series_genres_8: {
@@ -275,7 +314,18 @@ export const createTvAchievementCatalog = (definition: TvDefinition) => {
                 shape: "hex",
                 pattern: "dots",
                 target: 8,
+                triggers: ["status"],
                 calculate: queries.countDistinctGenres(),
+            },
+            series_episodes_1000: {
+                name: "Remote Control Royalty",
+                description: "Watch 1,000 TV series episodes across your library.",
+                icon: "tv",
+                shape: "octagon",
+                pattern: "rings",
+                target: 1000,
+                triggers: ["progress", "status", "redo"],
+                calculate: episodesWatched,
             },
         },
     });

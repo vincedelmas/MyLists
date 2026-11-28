@@ -32,7 +32,7 @@ export const postContinueMedia = createServerFn({ method: "POST" })
             data.mediaType,
             AchievementCategory.GENERAL,
             AchievementCategory.SECRETS,
-        ]);
+        ], result.completed ? ["progress", "status"] : ["progress"]);
 
         return { ...result, unlockedAchievements };
     });

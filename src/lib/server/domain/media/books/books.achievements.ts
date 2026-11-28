@@ -75,8 +75,19 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 name: "Page One",
                 pattern: "rings",
                 icon: "open-book",
+                triggers: ["status"],
                 calculate: completedBooks,
                 description: "Complete your first book. Every library starts with one spine.",
+            },
+            books_10: {
+                name: "Shelf Starter",
+                description: "Complete 10 books. A proper reading streak is underway.",
+                icon: "book-cover",
+                shape: "circle",
+                pattern: "rings",
+                target: 10,
+                triggers: ["status"],
+                calculate: completedBooks,
             },
             books_25: {
                 name: "Bookworm",
@@ -85,6 +96,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 shape: "octagon",
                 pattern: "rays",
                 target: 25,
+                triggers: ["status"],
                 calculate: completedBooks,
             },
             books_100: {
@@ -94,6 +106,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 shape: "shield",
                 pattern: "rays",
                 target: 100,
+                triggers: ["status"],
                 calculate: completedBooks,
             },
             books_rated_25: {
@@ -103,6 +116,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 shape: "circle",
                 pattern: "dots",
                 target: 25,
+                triggers: ["rating"],
                 calculate: queries.countList(isNotNull(listTable.rating)),
             },
             books_commented_15: {
@@ -112,6 +126,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 shape: "circle",
                 pattern: "dots",
                 target: 15,
+                triggers: ["comment"],
                 calculate: queries.countNonEmptyComment(),
             },
             books_author_5: {
@@ -121,6 +136,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 shape: "hex",
                 pattern: "dots",
                 target: 5,
+                triggers: ["status"],
                 calculate: authors,
             },
             books_pages_10000: {
@@ -130,6 +146,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 shape: "octagon",
                 pattern: "rings",
                 target: 10000,
+                triggers: ["progress", "status", "redo", "book-details"],
                 calculate: pagesRead,
             },
             books_short_5: {
@@ -139,6 +156,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 shape: "circle",
                 pattern: "rings",
                 target: 5,
+                triggers: ["status", "book-details"],
                 calculate: shortBooks,
             },
             books_long_3: {
@@ -148,6 +166,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 shape: "octagon",
                 pattern: "rays",
                 target: 3,
+                triggers: ["status", "book-details"],
                 calculate: longBooks,
             },
             books_genres_6: {
@@ -157,6 +176,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
                 shape: "hex",
                 pattern: "rays",
                 target: 6,
+                triggers: ["status"],
                 calculate: queries.countDistinctGenres(),
             },
         },

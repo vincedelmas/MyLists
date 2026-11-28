@@ -145,6 +145,7 @@ export const useListSettingsMutation = (meta?: MutationMeta) => {
                 invalidateUserProgressQueries(queryClient, currentUser!.name),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+                queryClient.invalidateQueries({ queryKey: ["achievementPage"], refetchType: "none" }),
             ]);
         },
     });
